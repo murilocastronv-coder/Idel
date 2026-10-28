@@ -243,8 +243,18 @@
       props.push({ img: pc, x: x / GS, y: y / GS, ax, ay, w, h, sway, ph: r() * 6.28 });
     };
     px(0, 0, W, H, T.base);
-    for (let i = 0; i < W * H / 2200; i++) px(r() * W, r() * H, 10 + r() * 26, 4 + r() * 10, r() < 0.5 ? T.a : T.b);
-    for (let i = 0; i < W * H / 140; i++) { const x = r() * W, y = r() * H; px(x, y, 1, 2, T.blade); if (r() < 0.4) px(x + 1, y + 1, 1, 1, T.b); }
+    // manchas grandes e suaves com borda pontilhada (estilo pixel art HD)
+    for (let i = 0; i < W * H / 7000; i++) {
+      const x = r() * W, y = r() * H, rad = 18 + r() * 54, col = r() < 0.5 ? T.a : T.b;
+      disc(x, y, rad, col, 1);
+      for (let k = 0; k < rad * 3; k++) { const a = r() * Math.PI * 2, d = rad + 1 + r() * 4; px(x + Math.cos(a) * d, y + Math.sin(a) * d, 2, 2, col); }
+    }
+    // tufos e pedrinhas
+    for (let i = 0; i < W * H / 650; i++) {
+      const x = r() * W, y = r() * H;
+      px(x, y - 3, 1, 4, T.blade); px(x - 2, y - 1, 1, 2, T.blade); px(x + 2, y - 2, 1, 3, T.blade); px(x - 1, y, 4, 1, T.b);
+    }
+    for (let i = 0; i < W * H / 2600; i++) { const x = r() * W, y = r() * H; px(x, y, 4, 3, T.b); px(x, y, 2, 1, T.a); px(x + 1, y + 3, 3, 1, 'rgba(0,0,0,.18)'); }
 
     const treeArt = (x, y, s = 1, dark = false, pink = false) => {
       px(x - 4 * s, y - 18 * s, 8 * s, 20 * s, '#3a2410'); px(x - 3 * s, y - 18 * s, 6 * s, 20 * s, '#5a3a1c'); px(x - 3 * s, y - 18 * s, 2 * s, 20 * s, '#7a5230');

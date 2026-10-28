@@ -2,7 +2,7 @@
 de cada conjunto. Cada peça é desenhada na mesma pose/articulação do herói, quadro a quadro."""
 from pixelkit import Canvas, ramp, flat, at, quad
 import heroes
-from heroes import (Body, BUILD, FW, FH, FOOT_Y, GOLD, SILVER, pose_for, pauldron, gem,
+from heroes import (Body, BUILD, FW, FH, FOOT_Y, GOLD, SILVER, K, pose_for, pauldron, gem,
                     weapon_staff, weapon_bow, weapon_spearblade, weapon_scepter)
 
 
@@ -169,27 +169,27 @@ def helm(c, B, st, name):
     hx, hy = B.head
     m, t = st['main'], st['trim']
     if name == 'leather':
-        c.part(lambda d: d.polygon([(hx - 7, hy + 3), (hx - 7, hy - 4), (hx - 3, hy - 8), (hx + 4, hy - 8), (hx + 7, hy - 3), (hx + 7, hy - 1), (hx - 2, hy - 1), (hx - 3, hy + 5)], fill=255), m)
-        c.part(lambda d: d.line([(hx - 6, hy - 2), (hx + 7, hy - 2)], fill=255, width=1), t, shade=False, sep=False)
+        c.part(lambda d: d.polygon([(hx - 7 * K, hy + 3 * K), (hx - 7 * K, hy - 4 * K), (hx - 3 * K, hy - 8 * K), (hx + 4 * K, hy - 8 * K), (hx + 7 * K, hy - 3 * K), (hx + 7 * K, hy - 1 * K), (hx - 2 * K, hy - 1 * K), (hx - 3 * K, hy + 5 * K)], fill=255), m)
+        c.part(lambda d: d.line([(hx - 6 * K, hy - 2 * K), (hx + 7 * K, hy - 2 * K)], fill=255, width=1), t, shade=False, sep=False)
     elif name == 'bronze':
-        c.part(lambda d: d.polygon([(hx - 7, hy + 4), (hx - 7, hy - 4), (hx - 3, hy - 9), (hx + 4, hy - 9), (hx + 8, hy - 3), (hx + 8, hy - 1), (hx + 4, hy - 1), (hx + 4, hy + 3), (hx + 2, hy + 3), (hx + 2, hy - 1), (hx - 2, hy - 1), (hx - 2, hy + 6)], fill=255), m)
-        c.part(lambda d: d.polygon([(hx - 3, hy - 9), (hx, hy - 14), (hx + 4, hy - 13), (hx + 3, hy - 9)], fill=255), t, sep=False)
+        c.part(lambda d: d.polygon([(hx - 7 * K, hy + 4 * K), (hx - 7 * K, hy - 4 * K), (hx - 3 * K, hy - 9 * K), (hx + 4 * K, hy - 9 * K), (hx + 8 * K, hy - 3 * K), (hx + 8 * K, hy - 1 * K), (hx + 4 * K, hy - 1 * K), (hx + 4 * K, hy + 3 * K), (hx + 2 * K, hy + 3 * K), (hx + 2 * K, hy - 1 * K), (hx - 2 * K, hy - 1 * K), (hx - 2 * K, hy + 6 * K)], fill=255), m)
+        c.part(lambda d: d.polygon([(hx - 3 * K, hy - 9 * K), (hx, hy - 14 * K), (hx + 4 * K, hy - 13 * K), (hx + 3 * K, hy - 9 * K)], fill=255), t, sep=False)
     elif name == 'scale':
-        c.part(lambda d: d.polygon([(hx - 7, hy + 6), (hx - 8, hy - 3), (hx - 4, hy - 9), (hx + 3, hy - 10), (hx + 8, hy - 5), (hx + 9, hy + 2), (hx + 7, hy + 6), (hx + 2, hy + 8), (hx - 3, hy + 8)], fill=255), m)
-        c.part(lambda d: d.line([(hx + 1, hy + 1), (hx + 9, hy + 1)], fill=255, width=2), flat('#0e0a12'), shade=False, sep=False)
+        c.part(lambda d: d.polygon([(hx - 7 * K, hy + 6 * K), (hx - 8 * K, hy - 3 * K), (hx - 4 * K, hy - 9 * K), (hx + 3 * K, hy - 10 * K), (hx + 8 * K, hy - 5 * K), (hx + 9 * K, hy + 2 * K), (hx + 7 * K, hy + 6 * K), (hx + 2 * K, hy + 8 * K), (hx - 3 * K, hy + 8 * K)], fill=255), m)
+        c.part(lambda d: d.line([(hx + 1 * K, hy + 1 * K), (hx + 9 * K, hy + 1 * K)], fill=255, width=2), flat('#0e0a12'), shade=False, sep=False)
         for k in range(3):
-            c.part(lambda d, k=k: d.line([(hx - 6, hy - 5 + k * 4), (hx, hy - 6 + k * 4)], fill=255, width=1), st['dark'], shade=False, sep=False)
-        c.px(hx + 5, hy + 1, st['eye']); c.px(hx + 7, hy + 1, st['eye'])
-        c.part(lambda d: d.line([(hx - 4, hy - 9), (hx + 4, hy - 10)], fill=255, width=1), t, sep=False)
+            c.part(lambda d, k=k: d.line([(hx - 6 * K, hy - 5 * K + k * 4), (hx, hy - 6 * K + k * 4)], fill=255, width=1), st['dark'], shade=False, sep=False)
+        c.px(hx + 5 * K, hy + 1 * K, st['eye']); c.px(hx + 7 * K, hy + 1 * K, st['eye'])
+        c.part(lambda d: d.line([(hx - 4 * K, hy - 9 * K), (hx + 4 * K, hy - 10 * K)], fill=255, width=1), t, sep=False)
     else:  # dragon
-        c.part(lambda d: d.polygon([(hx - 8, hy + 6), (hx - 8, hy - 3), (hx - 4, hy - 9), (hx + 3, hy - 10), (hx + 9, hy - 5), (hx + 10, hy + 2), (hx + 8, hy + 7), (hx + 2, hy + 9), (hx - 3, hy + 9)], fill=255), m)
-        c.part(lambda d: d.line([(hx + 1, hy + 1), (hx + 10, hy + 1)], fill=255, width=2), flat('#0e0a12'), shade=False, sep=False)
-        c.px(hx + 5, hy + 1, st['eye']); c.px(hx + 8, hy + 1, st['eye'])
-        c.glow(hx + 6, hy + 1, 4, st['eye'], 80)
+        c.part(lambda d: d.polygon([(hx - 8 * K, hy + 6 * K), (hx - 8 * K, hy - 3 * K), (hx - 4 * K, hy - 9 * K), (hx + 3 * K, hy - 10 * K), (hx + 9 * K, hy - 5 * K), (hx + 10 * K, hy + 2 * K), (hx + 8 * K, hy + 7 * K), (hx + 2 * K, hy + 9 * K), (hx - 3 * K, hy + 9 * K)], fill=255), m)
+        c.part(lambda d: d.line([(hx + 1 * K, hy + 1 * K), (hx + 10 * K, hy + 1 * K)], fill=255, width=2), flat('#0e0a12'), shade=False, sep=False)
+        c.px(hx + 5 * K, hy + 1 * K, st['eye']); c.px(hx + 8 * K, hy + 1 * K, st['eye'])
+        c.glow(hx + 6 * K, hy + 1 * K, 4, st['eye'], 80)
         # chifres e crista
-        c.part(lambda d: d.polygon([(hx - 6, hy - 5), (hx - 13, hy - 10), (hx - 12, hy - 17), (hx - 9, hy - 11), (hx - 3, hy - 8)], fill=255), t, sep=False)
-        c.part(lambda d: d.polygon([(hx + 4, hy - 8), (hx + 7, hy - 15), (hx + 12, hy - 18), (hx + 10, hy - 12), (hx + 8, hy - 6)], fill=255), t, sep=False)
-        c.part(lambda d: d.polygon([(hx - 4, hy - 9), (hx, hy - 13), (hx + 4, hy - 10)], fill=255), t, sep=False)
+        c.part(lambda d: d.polygon([(hx - 6 * K, hy - 5 * K), (hx - 13 * K, hy - 10 * K), (hx - 12 * K, hy - 17 * K), (hx - 9 * K, hy - 11 * K), (hx - 3 * K, hy - 8 * K)], fill=255), t, sep=False)
+        c.part(lambda d: d.polygon([(hx + 4 * K, hy - 8 * K), (hx + 7 * K, hy - 15 * K), (hx + 12 * K, hy - 18 * K), (hx + 10 * K, hy - 12 * K), (hx + 8 * K, hy - 6 * K)], fill=255), t, sep=False)
+        c.part(lambda d: d.polygon([(hx - 4 * K, hy - 9 * K), (hx, hy - 13 * K), (hx + 4 * K, hy - 10 * K)], fill=255), t, sep=False)
 
 
 def chest(c, B, st, name):

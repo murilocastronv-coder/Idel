@@ -9,7 +9,12 @@
   const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
   const mix = (c, t, f) => c.map((v, i) => Math.round(v + (t[i] - v) * f));
   // mesmas regras do gerador (tools/sprites/pixelkit.py)
-  const ramp = (base) => { const b = hex(base); return [mix(b, [255, 250, 230], 0.38), b, mix(b, [18, 10, 40], 0.45)]; };
+  // mesmas 5 cores do gerador: realce, base, sombra, meio-escuro, meio-claro
+  const ramp = (base) => {
+    const b = hex(base), h = mix(b, [255, 250, 230], 0.38), sh = mix(b, [18, 10, 40], 0.45);
+    const md = b.map((v, i) => Math.floor(v * 0.6 + sh[i] * 0.4)), ml = b.map((v, i) => Math.floor(v * 0.6 + h[i] * 0.4));
+    return [h, b, sh, md, ml];
+  };
 
   function loadImg(src) {
     return new Promise((ok, fail) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => fail(new Error('sprite ' + src)); im.src = src; });

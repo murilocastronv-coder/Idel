@@ -13,7 +13,7 @@ import heroes  # noqa: E402
 import monsters  # noqa: E402
 import effects  # noqa: E402
 import equipment  # noqa: E402
-from pixelkit import hexc  # noqa: E402
+from pixelkit import hexc, ramp5  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 OUT = os.path.join(ROOT, 'public', 'assets', 'sprites')
@@ -54,8 +54,8 @@ def main():
     os.makedirs(os.path.join(OUT, 'monsters'), exist_ok=True)
     os.makedirs(os.path.join(OUT, 'effects'), exist_ok=True)
     os.makedirs(PREVIEW, exist_ok=True)
-    manifest = {'version': 3, 'heroes': {}, 'monsters': {}, 'effects': {},
-                'skinKeys': [rgb(c) for c in heroes.SKIN]}
+    manifest = {'version': 4, 'heroes': {}, 'monsters': {}, 'effects': {},
+                'skinKeys': [list(c) for c in ramp5(heroes.SKIN)]}
     pivot = (heroes.BUILD['cx'], heroes.FOOT_Y)
 
     for cls in CLASSES:
@@ -64,7 +64,7 @@ def main():
         img.save(os.path.join(OUT, path))
         hk = None
         if cls in heroes.HAIR_DEFAULT:
-            hk = [rgb(c) for c in heroes.hair_ramp(heroes.HAIR_DEFAULT[cls])]
+            hk = [list(c) for c in ramp5(heroes.hair_ramp(heroes.HAIR_DEFAULT[cls]))]
         manifest['heroes'][cls] = {'sheet': path, 'fw': heroes.FW, 'fh': heroes.FH, 'pivot': list(pivot), 'actions': meta,
                                    'hairKeys': hk, 'defaultHair': heroes.HAIR_DEFAULT.get(cls)}
 

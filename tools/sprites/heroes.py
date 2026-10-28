@@ -125,18 +125,24 @@ def draw_torso(c, B, r, waist=None):
 def head_base(c, B, r=None):
     hx, hy = B.head
     hr = B.b['head']
-    c.part(lambda d: d.rounded_rectangle([hx - hr, hy - hr, hx + hr, hy + hr + 1], radius=4, fill=255), r or SKIN)
-    # pescoço
-    c.part(lambda d: d.rectangle([hx - 2, hy + hr, hx + 2, hy + hr + 5], fill=255), r or SKIN, sep=False)
+    c.part(lambda d: d.rounded_rectangle([hx - hr, hy - hr, hx + hr, hy + hr + 1], radius=int(hr * 0.75), fill=255), r or SKIN)
+    # pescoço curto (estilo chibi)
+    c.part(lambda d: d.rectangle([hx - 2, hy + hr - 1, hx + 2, hy + hr + 3], fill=255), r or SKIN, sep=False)
+    # bochecha corada
+    c.px(hx + 6, hy + 5, '#f08a8a'); c.px(hx + 7, hy + 5, '#f08a8a')
 
 
 def eyes(c, B, color='#1a1426', glow=None, dy=0):
+    """Olhos grandes com brilho (estilo chibi)."""
     hx, hy = B.head
-    for ex in (hx + 1, hx + 4):
-        c.px(ex, hy + dy, color)
-        c.px(ex, hy + dy + 1, color)
+    y0 = hy + dy * K
+    for ex in (hx + 1, hx + 6):
+        c.part(lambda d, ex=ex: d.rectangle([ex, y0 - 1, ex + 2, y0 + 3], fill=255), flat(color), shade=False, sep=False)
+        c.px(ex, y0 - 1, '#ffffff')
+        c.px(ex + 2, y0 + 2, glow or '#6a8aff')
     if glow:
-        c.px(hx + 1, hy + dy, glow); c.px(hx + 4, hy + dy, glow)
+        c.glow(hx + 4, y0 + 1, 5, glow, 70)
+    c.px(hx + 5, y0 + 6, '#7a3a3a')
 
 
 # ---------------------------------------------------------------- armas
@@ -208,7 +214,8 @@ def weapon_scepter(c, hand, ang, flame=('#ff7a2a', '#ffd36b')):
 
 
 # ---------------------------------------------------------------- classes
-BUILD = dict(cx=40, head=6, torso_top=52, hip_y=70, sh_w=9, waist_w=6, arm_up=9, arm_fore=9)
+BUILD = dict(cx=40, head=9, torso_top=60, hip_y=75, sh_w=8, waist_w=6, arm_up=8, arm_fore=8)
+K = BUILD['head'] / 6   # escala dos detalhes da cabeça (desenhados para raio 6)
 
 
 def pauldron(c, B, side, r, trim=GOLD, spikes=0, size=5):
@@ -264,14 +271,14 @@ def draw_hero(cls, action, i, hair=None, layer='full'):
         draw_leg(c, B, 'f', LEG, ramp('#24283e'), knee_r=GOLD)
         # elmo com chifres
         # elmo: casco arredondado, viseira com fenda luminosa, crista e chifres curvos
-        c.part(lambda d: d.polygon([(hx - 6, hy + 5), (hx - 7, hy - 3), (hx - 4, hy - 7), (hx + 2, hy - 8), (hx + 6, hy - 5), (hx + 8, hy + 1), (hx + 7, hy + 5), (hx + 2, hy + 7), (hx - 3, hy + 7)], fill=255), ARM)
-        c.part(lambda d: d.polygon([(hx + 1, hy - 2), (hx + 8, hy - 1), (hx + 8, hy + 4), (hx + 3, hy + 6), (hx + 1, hy + 4)], fill=255), ramp('#4a5480', '#6a78a8', '#262c4a'))
-        c.part(lambda d: d.line([(hx + 2, hy + 1), (hx + 8, hy + 1)], fill=255, width=1), flat('#0e0a12'), shade=False, sep=False)
-        c.px(hx + 5, hy + 1, '#9ae4ff'); c.px(hx + 7, hy + 1, '#9ae4ff')
-        c.part(lambda d: d.polygon([(hx - 4, hy - 7), (hx + 1, hy - 9), (hx + 5, hy - 6), (hx + 1, hy - 7)], fill=255), GOLD, sep=False)
-        c.part(lambda d: d.polygon([(hx - 5, hy - 4), (hx - 10, hy - 9), (hx - 9, hy - 15), (hx - 7, hy - 10), (hx - 3, hy - 7)], fill=255), GOLD, sep=False)
-        c.part(lambda d: d.polygon([(hx + 4, hy - 6), (hx + 6, hy - 12), (hx + 10, hy - 15), (hx + 8, hy - 10), (hx + 7, hy - 5)], fill=255), GOLD, sep=False)
-        c.part(lambda d: d.line([(hx - 6, hy + 4), (hx + 1, hy + 6)], fill=255, width=1), GOLD, sep=False)
+        c.part(lambda d: d.polygon([(hx - 6 * K, hy + 5 * K), (hx - 7 * K, hy - 3 * K), (hx - 4 * K, hy - 7 * K), (hx + 2 * K, hy - 8 * K), (hx + 6 * K, hy - 5 * K), (hx + 8 * K, hy + 1 * K), (hx + 7 * K, hy + 5 * K), (hx + 2 * K, hy + 7 * K), (hx - 3 * K, hy + 7 * K)], fill=255), ARM)
+        c.part(lambda d: d.polygon([(hx + 1 * K, hy - 2 * K), (hx + 8 * K, hy - 1 * K), (hx + 8 * K, hy + 4 * K), (hx + 3 * K, hy + 6 * K), (hx + 1 * K, hy + 4 * K)], fill=255), ramp('#4a5480', '#6a78a8', '#262c4a'))
+        c.part(lambda d: d.line([(hx + 2 * K, hy + 1 * K), (hx + 8 * K, hy + 1 * K)], fill=255, width=1), flat('#0e0a12'), shade=False, sep=False)
+        c.px(hx + 5 * K, hy + 1 * K, '#9ae4ff'); c.px(hx + 7 * K, hy + 1 * K, '#9ae4ff')
+        c.part(lambda d: d.polygon([(hx - 4 * K, hy - 7 * K), (hx + 1 * K, hy - 9 * K), (hx + 5 * K, hy - 6 * K), (hx + 1 * K, hy - 7 * K)], fill=255), GOLD, sep=False)
+        c.part(lambda d: d.polygon([(hx - 5 * K, hy - 4 * K), (hx - 10 * K, hy - 9 * K), (hx - 9 * K, hy - 15 * K), (hx - 7 * K, hy - 10 * K), (hx - 3 * K, hy - 7 * K)], fill=255), GOLD, sep=False)
+        c.part(lambda d: d.polygon([(hx + 4 * K, hy - 6 * K), (hx + 6 * K, hy - 12 * K), (hx + 10 * K, hy - 15 * K), (hx + 8 * K, hy - 10 * K), (hx + 7 * K, hy - 5 * K)], fill=255), GOLD, sep=False)
+        c.part(lambda d: d.line([(hx - 6 * K, hy + 4 * K), (hx + 1 * K, hy + 6 * K)], fill=255, width=1), GOLD, sep=False)
         pauldron(c, B, 'b', ARM, spikes=2, size=5)
         c = front
         if full: weapon_greatsword(c, B.ha_f, P['w'] if P['w'] is not None else 55)
@@ -292,9 +299,9 @@ def draw_hero(cls, action, i, hair=None, layer='full'):
         gem(c, B.cx + 1, B.hip_y - 3, '#5ac8ff')
         # capuz
         head_base(c, B)
-        c.part(lambda d: d.polygon([(hx - 7, hy + 6), (hx - 7, hy - 4), (hx - 2, hy - 11), (hx + 4, hy - 9), (hx + 7, hy - 3), (hx + 7, hy - 1), (hx - 2, hy - 1), (hx - 3, hy + 6)], fill=255), ROBE)
-        c.part(lambda d: d.line([(hx - 2, hy - 10), (hx + 6, hy - 3)], fill=255, width=1), GOLD, sep=False)
-        c.part(lambda d: d.rectangle([hx, hy + 3, hx + 5, hy + 6], fill=255), ramp('#d8d8e8'), sep=False)
+        c.part(lambda d: d.polygon([(hx - 7 * K, hy + 6 * K), (hx - 7 * K, hy - 4 * K), (hx - 2 * K, hy - 11 * K), (hx + 4 * K, hy - 9 * K), (hx + 7 * K, hy - 3 * K), (hx + 7 * K, hy - 1 * K), (hx - 2 * K, hy - 1 * K), (hx - 3 * K, hy + 6 * K)], fill=255), ROBE)
+        c.part(lambda d: d.line([(hx - 2 * K, hy - 10 * K), (hx + 6 * K, hy - 3 * K)], fill=255, width=1), GOLD, sep=False)
+        c.part(lambda d: d.rectangle([hx, hy + 3 * K, hx + 5 * K, hy + 6 * K], fill=255), ramp('#d8d8e8'), sep=False)
         eyes(c, B, glow='#7ad0ff')
         pauldron(c, B, 'b', ROBE, size=4)
         pauldron(c, B, 'f', ROBE, size=5)
@@ -308,7 +315,7 @@ def draw_hero(cls, action, i, hair=None, layer='full'):
         HAIR = hair_ramp(hair or '#f2d36b')
         GRN = ramp('#3f8a3a', '#7ac85a', '#1e4a1e')
         # cabelo longo atrás
-        c.part(lambda d: d.polygon([(hx - 6, hy - 5), (hx + 2, hy - 7), (hx - 1, hy + 10), (hx - 6 - P['bob'], hy + 26), (hx - 11, hy + 22), (hx - 9, hy + 6)], fill=255), HAIR)
+        c.part(lambda d: d.polygon([(hx - 6 * K, hy - 5 * K), (hx + 2 * K, hy - 7 * K), (hx - 1 * K, hy + 10), (hx - 6 * K - P['bob'], hy + 26), (hx - 11 * K, hy + 22), (hx - 9 * K, hy + 6 * K)], fill=255), HAIR)
         draw_leg(c, B, 'b', SKIN, GRN)
         draw_arm(c, B, 'b', SKIN, GRN)
         draw_torso(c, B, GRN)
@@ -318,12 +325,15 @@ def draw_hero(cls, action, i, hair=None, layer='full'):
         c.part(lambda d: d.polygon([(B.cx - 4, t + 1), (B.cx + 1, t + 7), (B.cx + 6, t + 1)], fill=255), GOLD, sep=False)
         draw_leg(c, B, 'f', SKIN, GRN)
         head_base(c, B)
-        c.part(lambda d: d.polygon([(hx - 5, hy - 1), (hx - 11, hy - 6), (hx - 6, hy + 2)], fill=255), SKIN, sep=False)  # orelha
-        c.part(lambda d: d.polygon([(hx - 7, hy - 4), (hx - 4, hy - 8), (hx + 3, hy - 8), (hx + 7, hy - 4), (hx + 7, hy - 1), (hx + 3, hy - 4), (hx - 1, hy - 3), (hx - 4, hy + 3), (hx - 7, hy + 4)], fill=255), HAIR)
-        c.part(lambda d: d.line([(hx - 5, hy - 6), (hx + 6, hy - 6)], fill=255, width=1), GOLD, sep=False)
-        gem(c, hx + 1, hy - 6, '#7aff6a')
+        c.part(lambda d: d.polygon([(hx - 5 * K, hy - 1 * K), (hx - 11 * K, hy - 6 * K), (hx - 6 * K, hy + 2 * K)], fill=255), SKIN, sep=False)  # orelha
+        c.part(lambda d: d.polygon([(hx - 7 * K, hy - 4 * K), (hx - 4 * K, hy - 8 * K), (hx + 3 * K, hy - 8 * K), (hx + 7 * K, hy - 4 * K), (hx + 7 * K, hy - 1 * K), (hx + 3 * K, hy - 4 * K), (hx - 1 * K, hy - 3 * K), (hx - 4 * K, hy + 3 * K), (hx - 7 * K, hy + 4 * K)], fill=255), HAIR)
+        for k in (-3, 1, 5):
+            c.part(lambda d, k=k: d.line([(hx + k * K, hy - 8 * K), (hx + (k - 2) * K, hy - 2 * K)], fill=255, width=1), HAIR, shade=False, sep=False)
+        c.px(hx - 2 * K, hy - 7 * K, '#ffffff')
+        c.part(lambda d: d.line([(hx - 5 * K, hy - 6 * K), (hx + 6 * K, hy - 6 * K)], fill=255, width=1), GOLD, sep=False)
+        gem(c, hx + 1 * K, hy - 6 * K, '#7aff6a')
         eyes(c, B, color='#2a6a2a')
-        c.px(hx + 3, hy + 4, '#c46a6a')
+        c.px(hx + 3 * K, hy + 4 * K, '#c46a6a')
         pauldron(c, B, 'f', GRN, size=4)
         bow_hand = B.ha_f
         c = front
@@ -345,8 +355,8 @@ def draw_hero(cls, action, i, hair=None, layer='full'):
         c.part(lambda d: d.polygon([(B.cx - 6, B.hip_y - 1), (B.cx + 7, B.hip_y - 1), (B.cx + 9, B.hip_y + 7), (B.cx - 8, B.hip_y + 7)], fill=255), ramp('#4a3a8a'))
         draw_leg(c, B, 'f', AR, ramp('#2a2a48'), knee_r=TRIM)
         head_base(c, B)
-        c.part(lambda d: d.polygon([(hx - 7, hy + 2), (hx - 7, hy - 4), (hx - 3, hy - 8), (hx + 5, hy - 7), (hx + 7, hy - 2), (hx + 2, hy - 2), (hx - 2, hy + 3)], fill=255), AR)
-        c.part(lambda d: d.polygon([(hx - 3, hy - 8), (hx - 1, hy - 15), (hx + 2, hy - 7)], fill=255), TRIM, sep=False)
+        c.part(lambda d: d.polygon([(hx - 7 * K, hy + 2 * K), (hx - 7 * K, hy - 4 * K), (hx - 3 * K, hy - 8 * K), (hx + 5 * K, hy - 7 * K), (hx + 7 * K, hy - 2 * K), (hx + 2 * K, hy - 2 * K), (hx - 2 * K, hy + 3 * K)], fill=255), AR)
+        c.part(lambda d: d.polygon([(hx - 3 * K, hy - 8 * K), (hx - 1 * K, hy - 15 * K), (hx + 2 * K, hy - 7 * K)], fill=255), TRIM, sep=False)
         eyes(c, B, color='#3a2a6a', glow=None)
         pauldron(c, B, 'b', AR, trim=TRIM, spikes=1, size=5)
         c = front
@@ -373,11 +383,11 @@ def draw_hero(cls, action, i, hair=None, layer='full'):
         c.part(lambda d: d.rectangle([B.cx - 7, B.hip_y - 3, B.cx + 7, B.hip_y - 1], fill=255), GOLD)
         c.part(lambda d: d.polygon([(B.cx - 7, B.hip_y - 1), (B.cx + 8, B.hip_y - 1), (B.cx + 10, B.hip_y + 9), (B.cx - 9, B.hip_y + 9)], fill=255), WING)
         draw_leg(c, B, 'f', RED, ramp('#3a1010'), knee_r=GOLD)
-        c.part(lambda d: d.rounded_rectangle([hx - 6, hy - 7, hx + 6, hy + 6], radius=4, fill=255), RED)
+        c.part(lambda d: d.rounded_rectangle([hx - 6 * K, hy - 7 * K, hx + 6 * K, hy + 6 * K], radius=4, fill=255), RED)
         for k, h in ((-5, 9), (-1, 12), (3, 10)):
-            c.part(lambda d, k=k, h=h: d.polygon([(hx + k - 1, hy - 6), (hx + k + 1, hy - 6 - h), (hx + k + 3, hy - 6)], fill=255), GOLD, sep=False)
-        c.part(lambda d: d.rectangle([hx, hy - 1, hx + 6, hy + 1], fill=255), flat('#0e0a12'), shade=False, sep=False)
-        c.px(hx + 3, hy, '#ffd36b'); c.px(hx + 5, hy, '#ffd36b')
+            c.part(lambda d, k=k, h=h: d.polygon([(hx + k - 1, hy - 6 * K), (hx + k + 1, hy - 6 * K - h), (hx + k + 3, hy - 6 * K)], fill=255), GOLD, sep=False)
+        c.part(lambda d: d.rectangle([hx, hy - 1 * K, hx + 6 * K, hy + 1 * K], fill=255), flat('#0e0a12'), shade=False, sep=False)
+        c.px(hx + 3 * K, hy, '#ffd36b'); c.px(hx + 5 * K, hy, '#ffd36b')
         pauldron(c, B, 'b', RED, spikes=2, size=5)
         c = front
         if full: weapon_scepter(c, B.ha_f, P['w'] if P['w'] is not None else -80)
@@ -391,7 +401,7 @@ def draw_hero(cls, action, i, hair=None, layer='full'):
         PUR = ramp('#5a2a8a', '#9a5ad8', '#2a1046')
         CAPE = ramp('#2e1a50', '#4a2e7a', '#160a28')
         c.part(lambda d: d.polygon([(B.cx - 7, B.top + 1), (B.cx + 4, B.top + 1), (B.cx + 6, FOOT_Y - 6), (B.cx - 14 - P['bob'], FOOT_Y - 2), (B.cx - 12, B.top + 12)], fill=255), CAPE)
-        c.part(lambda d: d.polygon([(hx - 6, hy - 5), (hx + 3, hy - 7), (hx, hy + 10), (hx - 5, hy + 24), (hx - 11, hy + 20), (hx - 9, hy + 6)], fill=255), HAIR)
+        c.part(lambda d: d.polygon([(hx - 6 * K, hy - 5 * K), (hx + 3 * K, hy - 7 * K), (hx, hy + 10), (hx - 5 * K, hy + 24), (hx - 11 * K, hy + 20), (hx - 9 * K, hy + 6 * K)], fill=255), HAIR)
         draw_leg(c, B, 'b', PUR, ramp('#24122a'))
         draw_arm(c, B, 'b', PUR, SKIN)
         draw_torso(c, B, PUR)
@@ -402,10 +412,10 @@ def draw_hero(cls, action, i, hair=None, layer='full'):
         gem(c, B.cx + 1, t + 6, '#ff7ad9')
         draw_leg(c, B, 'f', PUR, ramp('#24122a'))
         head_base(c, B)
-        c.part(lambda d: d.polygon([(hx - 7, hy - 4), (hx - 4, hy - 8), (hx + 3, hy - 8), (hx + 7, hy - 4), (hx + 7, hy), (hx + 4, hy - 4), (hx, hy - 3), (hx - 3, hy + 4), (hx - 7, hy + 5)], fill=255), HAIR)
-        c.part(lambda d: d.polygon([(hx - 3, hy - 7), (hx, hy - 11), (hx + 3, hy - 7)], fill=255), GOLD, sep=False)
+        c.part(lambda d: d.polygon([(hx - 7 * K, hy - 4 * K), (hx - 4 * K, hy - 8 * K), (hx + 3 * K, hy - 8 * K), (hx + 7 * K, hy - 4 * K), (hx + 7 * K, hy), (hx + 4 * K, hy - 4 * K), (hx, hy - 3 * K), (hx - 3 * K, hy + 4 * K), (hx - 7 * K, hy + 5 * K)], fill=255), HAIR)
+        c.part(lambda d: d.polygon([(hx - 3 * K, hy - 7 * K), (hx, hy - 11 * K), (hx + 3 * K, hy - 7 * K)], fill=255), GOLD, sep=False)
         eyes(c, B, color='#6a1a6a')
-        c.px(hx + 3, hy + 4, '#c46a8a')
+        c.px(hx + 3 * K, hy + 4 * K, '#c46a8a')
         pauldron(c, B, 'f', PUR, size=4)
         c = front
         if full: weapon_staff(c, B.ha_f, P['w'] if P['w'] is not None else -95, '#c05aff', length=30, shaft='#4a2a6a')

@@ -21,6 +21,14 @@ def ramp(base, hi=None, sh=None, light=0.38, dark=0.45):
     return (h + (255,), b + (255,), s + (255,))
 
 
+def ramp5(rmp):
+    """As 5 cores que aparecem numa parte sombreada: realce, base, sombra, meio-escuro, meio-claro."""
+    hi, base, sh = rmp
+    mid_d = tuple(int(base[k] * 0.6 + sh[k] * 0.4) for k in range(3))
+    mid_l = tuple(int(base[k] * 0.6 + hi[k] * 0.4) for k in range(3))
+    return [hi[:3], base[:3], sh[:3], mid_d, mid_l]
+
+
 def flat(color):
     c = hexc(color)
     return (c, c, c)
@@ -81,6 +89,20 @@ class Canvas:
             shd = mask & (~down | ~right | (~right2 & ~down2))
             col[shd] = sh
             col[hil & ~shd] = hi
+        if shade and mask.sum() > 30:
+            # volume: luz no alto à esquerda, sombra embaixo à direita, com pontilhado na transição
+            ys, xs = np.nonzero(mask)
+            y0, y1, x0, x1 = ys.min(), ys.max(), xs.min(), xs.max()
+            yy, xx = np.mgrid[0:self.h, 0:self.w]
+            t = ((xx - x0) / max(1, x1 - x0) * 0.45 + (yy - y0) / max(1, y1 - y0) * 0.55)
+            mid_d = tuple(int(base[k] * 0.6 + sh[k] * 0.4) for k in range(3)) + (base[3],)
+            mid_l = tuple(int(base[k] * 0.6 + hi[k] * 0.4) for k in range(3)) + (base[3],)
+            chk = ((xx + yy) % 2) == 0
+            inner = mask & ~((col[:, :, :3] == np.array(sh[:3], np.uint8)).all(-1) | (col[:, :, :3] == np.array(hi[:3], np.uint8)).all(-1))
+            dark = inner & ((t > 0.72) | ((t > 0.62) & chk))
+            light = inner & ((t < 0.18) | ((t < 0.28) & chk))
+            col[dark] = mid_d
+            col[light] = mid_l
         self.img[mask] = col[mask]
         return mask
 
@@ -98,10 +120,23 @@ class Canvas:
         n[1:, :] |= m[:-1, :]; n[:-1, :] |= m[1:, :]; n[:, 1:] |= m[:, :-1]; n[:, :-1] |= m[:, 1:]
         return n
 
-    def outline(self, color='#0e0a12'):
+    def outline(self, color='#0e0a12', colored=True):
+        """Contorno de 1px. colored=True: cada borda usa uma versão bem escura da cor vizinha (sel-out),
+        o que deixa o sprite mais vivo que o contorno preto."""
         a = self.img[:, :, 3] > 0
         o = self._dilate(a) & ~a
-        self.img[o] = hexc(color)
+        if not colored:
+            self.img[o] = hexc(color)
+            return
+        src = np.zeros_like(self.img)
+        # pega a cor de um vizinho opaco (cima, baixo, esquerda, direita)
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            sh = np.roll(np.roll(self.img, dy, axis=0), dx, axis=1)
+            take = o & (src[:, :, 3] == 0) & (sh[:, :, 3] > 200)
+            src[take] = sh[take]
+        dark = (src[:, :, :3].astype(np.float32) * 0.28 + np.array([10, 6, 20], np.float32) * 0.72).astype(np.uint8)
+        self.img[o, :3] = dark[o]
+        self.img[o, 3] = 255
 
     def glow(self, cx, cy, r, color, strength=110):
         self.glows.append((cx, cy, r, hexc(color)[:3], strength))
