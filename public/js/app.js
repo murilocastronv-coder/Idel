@@ -72,6 +72,7 @@
 
   function renderAuthArea() {
     const area = $('#auth-area');
+    const ns = $('#nav-status'); if (ns) ns.hidden = !(state.me && state.me.account.statusAccess);
     if (state.me) {
       area.innerHTML = `<span class="who">${esc(state.me.account.username)}</span>
         <button class="btn small btn-gold" type="button" id="btn-account">Minha conta</button>

@@ -230,7 +230,13 @@ async function buildStatus() {
     totals, daily, hourly, classes, levels, maps, tz: TZ, generatedAt: Date.now(),
   };
 }
-route('GET', '/api/status', async () => {
+// só as contas desta lista veem o /status (STATUS_USERS=nome1,nome2 no Render para mudar)
+const STATUS_USERS = (process.env.STATUS_USERS || 'murilonv').split(',').map((u) => u.trim().toLowerCase()).filter(Boolean);
+const canSeeStatus = (acc) => !!acc && STATUS_USERS.includes(String(acc.username).toLowerCase());
+route('GET', '/api/status', async (req) => {
+  const acc = await sessionAccount(req);
+  if (!acc) throw new HttpError(401, 'Faça login para continuar.');
+  if (!canSeeStatus(acc)) throw new HttpError(403, 'Acesso restrito.');
   if (!statusCache || Date.now() - statusAt > 30000) { statusCache = await buildStatus(); statusAt = Date.now(); }
   return { ...statusCache, live: { ...statusCache.live, ...liveStats(), peakSinceBoot: peakOnline, uptimeSec: Math.round((Date.now() - STARTED_AT) / 1000) } };
 });
@@ -264,9 +270,10 @@ route('GET', '/api/ranking', async (req, url) => {
 route('GET', '/api/me', async (req) => {
   const acc = await sessionAccount(req);
   if (!acc) return { account: null, characters: [] };
+  const statusAccess = canSeeStatus(acc);
   const { rows } = await db.query(`SELECT id, name, class, appearance, level, resets, zen, str, agi, vit, ene, cmd,
     free_points, map, combat_power, created_at, last_seen_at FROM characters WHERE account_id = $1 ORDER BY last_seen_at DESC NULLS LAST, id`, [acc.id]);
-  return { account: { username: acc.username, email: maskEmail(acc.email), createdAt: acc.created_at, lastLoginAt: acc.last_login_at }, characters: rows };
+  return { account: { username: acc.username, email: maskEmail(acc.email), createdAt: acc.created_at, lastLoginAt: acc.last_login_at, statusAccess }, characters: rows };
 });
 
 function maskEmail(e) {
@@ -523,6 +530,18 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (!url.pathname.startsWith('/api/')) {
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
+    if (/^\/status(\.html|\/)?$/.test(url.pathname)) {
+      let ok = false;
+      try { ok = canSeeStatus(await sessionAccount(req)); } catch (_) { ok = false; }
+      if (!ok) {
+        res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+        return res.end(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Acesso restrito</title><link rel="stylesheet" href="/css/style.css"></head>
+<body style="display:grid;place-items:center;min-height:100vh;text-align:center;padding:16px"><div><h1 style="font-family:var(--display);color:var(--gold)">Acesso restrito</h1>
+<p>Esta página é só para a administração do MU Idle Legends.</p><p><a class="btn btn-gold" href="/">Voltar ao início</a></p></div>
+<script src="/js/i18n-en.js"></script><script src="/js/i18n.js"></script></body></html>`);
+      }
+      res.setHeader('Cache-Control', 'no-store');
+    }
     return serveStatic(req, res, url.pathname);
   }
   try {
