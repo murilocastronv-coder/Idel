@@ -544,6 +544,12 @@ const server = http.createServer(async (req, res) => {
     }
     return serveStatic(req, res, url.pathname);
   }
+  // alguém abriu um endereço /api/... direto no navegador: leva para a página inicial em vez de mostrar JSON
+  if (req.method === 'GET' && req.headers['sec-fetch-mode'] === 'navigate' && req.headers['sec-fetch-dest'] === 'document') {
+    console.warn(`[api nav] ${url.pathname}${url.search} ref=${req.headers.referer || '-'} ua=${(req.headers['user-agent'] || '').slice(0, 90)}`);
+    res.writeHead(302, { Location: '/', 'Cache-Control': 'no-store' });
+    return res.end();
+  }
   try {
     if (req.method !== 'GET') {
       // Proteção CSRF: só aceita chamadas do próprio site com cabeçalho customizado
@@ -561,6 +567,7 @@ const server = http.createServer(async (req, res) => {
       const out = await r.handler(req, url, res, params);
       return sendJson(res, 200, out);
     }
+    console.warn(`[api 404] ${req.method} ${url.pathname} ref=${req.headers.referer || '-'}`);
     throw new HttpError(404, 'Rota não encontrada.');
   } catch (e) {
     if (e instanceof HttpError) {
