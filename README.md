@@ -27,6 +27,23 @@ No painel **Minha conta**, cada herói tem o botão **Entrar no mundo** (`/game.
 - **Progresso offline:** com o AUTO ligado ao sair, o servidor calcula até 8 horas de farm (EXP, Zen, itens, poções gastas) usando só o relógio do servidor, e mostra um relatório ao voltar.
 - **Multiplayer:** todos os jogadores no mesmo mapa se veem em tempo real, com chat global e avisos do boss. Cada conta pode ter só um herói no mundo por vez.
 
+## Sprites em alta resolução
+
+Os personagens, monstros e efeitos são PNG com fundo transparente em `public/assets/sprites/`, descritos em `manifest.json` (tamanho do quadro, pivô nos pés, quadros e FPS de cada ação).
+
+- **Heróis:** as 6 classes em quadros de 96×96, com parado (4), andando (4), atacando (4), levando dano (1) e morrendo (4). Cor do cabelo e tom de pele são trocados no navegador.
+- **Monstros:** geleia, goblin, chefe goblin, aranha, esqueleto e Rei Esqueleto, com as mesmas ações.
+- **Efeitos:** projéteis (fogo, gelo, energia, flecha, sombra, espírito), impactos, explosões em área, meia-lua de espada e cura.
+
+Os sprites são gerados por código em `tools/sprites/` (Python + Pillow), seguindo a prancha de referência do kit MU. Para mudar algo e gerar de novo:
+
+```bash
+pip install pillow numpy
+python3 tools/sprites/build.py
+```
+
+A vitrine ampliada 3× fica em `tools/sprites/preview/herois_3x.png`.
+
 ## Segurança
 
 - Senhas e códigos de recuperação com **scrypt** + sal aleatório (nunca em texto puro).

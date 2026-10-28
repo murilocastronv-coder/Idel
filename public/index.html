@@ -10,14 +10,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=3">
+  <link rel="stylesheet" href="/css/style.css?v=4">
 </head>
 <body>
   <a class="skip" href="#conteudo">Pular para o conteúdo</a>
 
   <header class="topbar">
     <a class="brand" href="#topo" aria-label="MU Idle Legends, início">
-      <canvas id="brand-icon" width="44" height="42" aria-hidden="true"></canvas>
+      <canvas id="brand-icon" width="32" height="32" aria-hidden="true"></canvas>
       <span>MU Idle Legends</span>
     </a>
     <nav class="nav" aria-label="Seções">
@@ -213,7 +213,7 @@
       <summary class="btn">Criar novo herói</summary>
       <form class="form create-grid" id="form-char" novalidate>
         <div class="preview">
-          <canvas id="char-preview" width="132" height="126" aria-label="Prévia do herói"></canvas>
+          <canvas id="char-preview" width="128" height="128" aria-label="Prévia do herói"></canvas>
         </div>
         <div>
           <label>Nome do herói<input name="name" required minlength="3" maxlength="12" pattern="[A-Za-z0-9]{3,12}" autocomplete="off"><small>3 a 12 letras ou números</small></label>
@@ -268,7 +268,8 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="/js/pixel.js?v=3"></script>
-  <script src="/js/app.js?v=3"></script>
+  <script src="/js/pixel.js?v=4"></script>
+  <script src="/js/sprites.js?v=4"></script>
+  <script src="/js/app.js?v=4"></script>
 </body>
 </html>

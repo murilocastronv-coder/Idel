@@ -1,0 +1,748 @@
+{
+ "version": 2,
+ "heroes": {
+  "dark_knight": {
+   "sheet": "heroes/dark_knight.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    40,
+    90
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "hairKeys": null,
+   "defaultHair": null
+  },
+  "dark_wizard": {
+   "sheet": "heroes/dark_wizard.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    40,
+    90
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "hairKeys": null,
+   "defaultHair": null
+  },
+  "fairy_elf": {
+   "sheet": "heroes/fairy_elf.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    40,
+    90
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "hairKeys": [
+    [
+     247,
+     226,
+     154
+    ],
+    [
+     242,
+     211,
+     107
+    ],
+    [
+     141,
+     121,
+     77
+    ]
+   ],
+   "defaultHair": "#f2d36b"
+  },
+  "magic_gladiator": {
+   "sheet": "heroes/magic_gladiator.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    40,
+    90
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "hairKeys": null,
+   "defaultHair": null
+  },
+  "dark_lord": {
+   "sheet": "heroes/dark_lord.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    40,
+    90
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "hairKeys": null,
+   "defaultHair": null
+  },
+  "summoner": {
+   "sheet": "heroes/summoner.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    40,
+    90
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "hairKeys": [
+    [
+     255,
+     161,
+     201
+    ],
+    [
+     255,
+     106,
+     184
+    ],
+    [
+     148,
+     63,
+     119
+    ]
+   ],
+   "defaultHair": "#ff6ab8"
+  }
+ },
+ "monsters": {
+  "slime": {
+   "sheet": "monsters/slime.png",
+   "fw": 48,
+   "fh": 40,
+   "pivot": [
+    22,
+    37
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "scale": 1.0
+  },
+  "goblin": {
+   "sheet": "monsters/goblin.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    40,
+    90
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "scale": 1.0
+  },
+  "goblin_elite": {
+   "sheet": "monsters/goblin_elite.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    40,
+    90
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "scale": 1.35
+  },
+  "spider": {
+   "sheet": "monsters/spider.png",
+   "fw": 64,
+   "fh": 48,
+   "pivot": [
+    30,
+    44
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "scale": 1.0
+  },
+  "skeleton": {
+   "sheet": "monsters/skeleton.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    40,
+    90
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "scale": 1.0
+  },
+  "skeleton_king": {
+   "sheet": "monsters/skeleton_king.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    42,
+    90
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "scale": 1.5
+  }
+ },
+ "effects": {
+  "proj_fire": {
+   "sheet": "effects/proj_fire.png",
+   "fw": 24,
+   "fh": 24,
+   "frames": 4,
+   "pivot": [
+    12,
+    12
+   ]
+  },
+  "proj_ice": {
+   "sheet": "effects/proj_ice.png",
+   "fw": 24,
+   "fh": 24,
+   "frames": 4,
+   "pivot": [
+    12,
+    12
+   ]
+  },
+  "proj_energy": {
+   "sheet": "effects/proj_energy.png",
+   "fw": 24,
+   "fh": 24,
+   "frames": 4,
+   "pivot": [
+    12,
+    12
+   ]
+  },
+  "proj_arrow": {
+   "sheet": "effects/proj_arrow.png",
+   "fw": 24,
+   "fh": 24,
+   "frames": 4,
+   "pivot": [
+    12,
+    12
+   ]
+  },
+  "proj_dark": {
+   "sheet": "effects/proj_dark.png",
+   "fw": 24,
+   "fh": 24,
+   "frames": 4,
+   "pivot": [
+    12,
+    12
+   ]
+  },
+  "proj_spirit": {
+   "sheet": "effects/proj_spirit.png",
+   "fw": 24,
+   "fh": 24,
+   "frames": 4,
+   "pivot": [
+    12,
+    12
+   ]
+  },
+  "impact_fire": {
+   "sheet": "effects/impact_fire.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4,
+   "pivot": [
+    16,
+    16
+   ]
+  },
+  "impact_ice": {
+   "sheet": "effects/impact_ice.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4,
+   "pivot": [
+    16,
+    16
+   ]
+  },
+  "impact_energy": {
+   "sheet": "effects/impact_energy.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4,
+   "pivot": [
+    16,
+    16
+   ]
+  },
+  "impact_arrow": {
+   "sheet": "effects/impact_arrow.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4,
+   "pivot": [
+    16,
+    16
+   ]
+  },
+  "impact_dark": {
+   "sheet": "effects/impact_dark.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4,
+   "pivot": [
+    16,
+    16
+   ]
+  },
+  "impact_spirit": {
+   "sheet": "effects/impact_spirit.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4,
+   "pivot": [
+    16,
+    16
+   ]
+  },
+  "impact_lightning": {
+   "sheet": "effects/impact_lightning.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4,
+   "pivot": [
+    16,
+    16
+   ]
+  },
+  "impact_blood": {
+   "sheet": "effects/impact_blood.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4,
+   "pivot": [
+    16,
+    16
+   ]
+  },
+  "burst_fire": {
+   "sheet": "effects/burst_fire.png",
+   "fw": 64,
+   "fh": 64,
+   "frames": 6,
+   "pivot": [
+    32,
+    48
+   ]
+  },
+  "burst_energy": {
+   "sheet": "effects/burst_energy.png",
+   "fw": 64,
+   "fh": 64,
+   "frames": 6,
+   "pivot": [
+    32,
+    48
+   ]
+  },
+  "burst_dark": {
+   "sheet": "effects/burst_dark.png",
+   "fw": 64,
+   "fh": 64,
+   "frames": 6,
+   "pivot": [
+    32,
+    48
+   ]
+  },
+  "burst_spirit": {
+   "sheet": "effects/burst_spirit.png",
+   "fw": 64,
+   "fh": 64,
+   "frames": 6,
+   "pivot": [
+    32,
+    48
+   ]
+  },
+  "burst_lightning": {
+   "sheet": "effects/burst_lightning.png",
+   "fw": 64,
+   "fh": 64,
+   "frames": 6,
+   "pivot": [
+    32,
+    48
+   ]
+  },
+  "burst_arrow": {
+   "sheet": "effects/burst_arrow.png",
+   "fw": 64,
+   "fh": 64,
+   "frames": 6,
+   "pivot": [
+    32,
+    48
+   ]
+  },
+  "crescent_energy": {
+   "sheet": "effects/crescent_energy.png",
+   "fw": 48,
+   "fh": 48,
+   "frames": 4,
+   "pivot": [
+    20,
+    24
+   ]
+  },
+  "crescent_fire": {
+   "sheet": "effects/crescent_fire.png",
+   "fw": 48,
+   "fh": 48,
+   "frames": 4,
+   "pivot": [
+    20,
+    24
+   ]
+  },
+  "crescent_dark": {
+   "sheet": "effects/crescent_dark.png",
+   "fw": 48,
+   "fh": 48,
+   "frames": 4,
+   "pivot": [
+    20,
+    24
+   ]
+  },
+  "heal": {
+   "sheet": "effects/heal.png",
+   "fw": 32,
+   "fh": 32,
+   "frames": 4,
+   "pivot": [
+    16,
+    28
+   ]
+  }
+ },
+ "skinKeys": [
+  [
+   255,
+   224,
+   192
+  ],
+  [
+   240,
+   196,
+   154
+  ],
+  [
+   196,
+   138,
+   98
+  ]
+ ]
+}

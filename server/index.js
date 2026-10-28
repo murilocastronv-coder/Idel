@@ -356,7 +356,7 @@ route('POST', '/api/recovery-code', async (req) => {
   return { ok: true, recoveryCode: code };
 });
 
-const HAIR_COLORS = 6, SKIN_TONES = 4;
+const HAIR_COLORS = 7, SKIN_TONES = 4;
 route('POST', '/api/characters', async (req) => {
   const acc = await requireAccount(req);
   limit(req, 'char-create', 10, 60 * 60 * 1000, String(acc.id));

@@ -179,11 +179,7 @@
 
   // ---------------- painel da conta e heróis ----------------
   function charCanvas(c, scale) {
-    const cv = document.createElement('canvas');
-    cv.width = PA.GRID_W * scale; cv.height = PA.GRID_H * scale;
-    const cls = state.data.classes[c.class];
-    PA.drawCharacter(cv.getContext('2d'), c.class, cls.palette, c.appearance, 0, 0, scale);
-    return cv;
+    return portrait(c.class, c.appearance, 64, 1);
   }
 
   function renderAccount() {
@@ -245,14 +241,16 @@
         draft[key] = Number(b.dataset.i); syncSwatches(); drawPreview();
       });
     };
-    mk($('#hair-pick'), PA.HAIR, 'hair', 'Cor de cabelo');
-    mk($('#skin-pick'), PA.SKIN, 'skin', 'Tom de pele');
+    mk($('#hair-pick'), Sprites.HAIR, 'hair', 'Cor de cabelo');
+    mk($('#skin-pick'), Sprites.SKIN, 'skin', 'Tom de pele');
     draft.hair = defaultHair(draft.class);
     syncSwatches();
   }
-  function defaultHair(cls) { return Math.max(0, PA.HAIR.indexOf(state.data.classes[cls].palette.hair)); }
+  function defaultHair(cls) { return Sprites.defaultHairIndex(cls); }
   function syncSwatches() {
     $$('#hair-pick .swatch').forEach((b) => b.setAttribute('aria-pressed', Number(b.dataset.i) === draft.hair));
+    // classes de elmo/capuz não mostram o cabelo
+    $('#hair-pick').closest('fieldset').hidden = !Sprites.hasHair(draft.class);
     $$('#skin-pick .swatch').forEach((b) => b.setAttribute('aria-pressed', Number(b.dataset.i) === draft.skin));
   }
   let previewFrame = 0;
@@ -260,7 +258,8 @@
     const cv = $('#char-preview'); const ctx = cv.getContext('2d');
     ctx.clearRect(0, 0, cv.width, cv.height);
     const cls = state.data.classes[draft.class];
-    PA.drawCharacter(ctx, draft.class, cls.palette, { hair: draft.hair, skin: draft.skin }, 0, 0, 6, { bob: previewFrame % 2 === 1 });
+    void cls;
+    Sprites.hero(ctx, draft.class, { hair: draft.hair, skin: draft.skin }, 'idle', performance.now(), cv.width / 2, cv.height - 4, 2, false);
   }
 
   bindForm($('#form-char'), async (f) => {
@@ -342,81 +341,117 @@
   api('GET', '/api/stats').then(renderStats).catch(() => {});
 
   // ---------------- cena animada do topo ----------------
-  const scene = { heroes: [], monsters: [], shots: [], floats: [], last: 0, nextAttack: 0 };
+  const scene = { heroes: [], monsters: [], shots: [], floats: [], fx: [], nextAttack: 0 };
+  const SCENE_FX = {
+    dark_knight: { slash: 'crescent_energy', impact: 'impact_energy' },
+    dark_wizard: { proj: 'proj_energy', impact: 'impact_energy' },
+    fairy_elf: { proj: 'proj_arrow', impact: 'impact_arrow' },
+    magic_gladiator: { slash: 'crescent_dark', impact: 'impact_dark' },
+    dark_lord: { proj: 'proj_fire', impact: 'impact_fire' },
+    summoner: { proj: 'proj_spirit', impact: 'impact_spirit' },
+  };
   function setupScene() {
     const cv = $('#hero-scene');
     const ctx = cv.getContext('2d');
     const classIds = Object.keys(state.data.classes);
+    // a paisagem fica num canvas menor (pixels grandes); heróis e monstros em escala 1 no canvas principal
+    const land = document.createElement('canvas');
+    let landK = 2;
     function layout() {
-      const scale = window.innerWidth < 700 ? 3 : 4;
-      cv.width = Math.ceil(cv.clientWidth / scale);
-      cv.height = Math.ceil(cv.clientHeight / scale);
-      const W = cv.width, H = cv.height, narrow = window.innerWidth < 700;
-      scene.horizon = narrow ? 0.34 : 0.62;
+      const narrow = window.innerWidth < 700;
+      const R = narrow ? 1 : 0.5;          // pixels do canvas por pixel CSS
+      landK = narrow ? 3 : 2;              // ampliação da paisagem
+      cv.width = Math.ceil(cv.clientWidth * R);
+      cv.height = Math.ceil(cv.clientHeight * R);
+      land.width = Math.ceil(cv.width / landK); land.height = Math.ceil(cv.height / landK);
+      const W = cv.width, H = cv.height;
+      scene.horizon = narrow ? 0.36 : 0.6;
       const ground = Math.floor(H * scene.horizon);
-      const startX = narrow ? W * 0.06 : W * 0.46;
-      const span = narrow ? W * 0.52 : W * 0.30;
+      const startX = narrow ? W * 0.1 : W * 0.46;
+      const gap = narrow ? W * 0.16 : Math.max(48, W * 0.085);
       scene.heroes = classIds.map((id, i) => ({
-        id, x: Math.round(startX + (i % 3) * (span / 3) + (i >= 3 ? span / 6 : 0)),
-        y: Math.round(ground - 19 + (i >= 3 ? 8 : -2)), attack: 0,
+        id, x: Math.round(startX + (i % 3) * gap + (i >= 3 ? gap * 0.5 : 0)),
+        y: Math.round(ground + (i >= 3 ? 30 : 8)), atk: -1e9, phase: i * 170,
       }));
-      scene.monsters = [0, 1, 2].map((i) => ({
-        kind: i === 1 ? 'skeleton' : 'slime',
-        x: Math.round((narrow ? W * 0.70 : W * 0.80) + i * 13),
-        y: Math.round(ground - (i === 1 ? 14 : 8) + (i % 2 ? 0 : 7)), hp: 100, max: 100, hurt: 0, dead: 0,
+      const mx = narrow ? W * 0.8 : W * 0.84;
+      scene.monsters = [['slime', -8, 16], ['skeleton', 16, 4], ['goblin', 4, 34]].map(([kind, dx, dy]) => ({
+        kind, x: Math.round(mx + dx), y: Math.round(ground + dy), hp: 100, max: 100, hurt: 0, dead: 0, dieAt: 0,
       }));
-      scene.shots = []; scene.floats = [];
+      scene.shots = []; scene.floats = []; scene.fx = [];
     }
     layout();
     let resizeT; window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(layout, 150); });
+    const H_OF = { slime: 26, skeleton: 52, goblin: 46 };
 
     function step(t) {
       const W = cv.width, H = cv.height;
+      ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, W, H);
-      PA.drawLandscape(ctx, 'town', 'lorencia-hero', W, H, reduceMotion ? 0 : t, scene.horizon);
-      const frame = Math.floor(t / 450) % 2;
-      // ataques automáticos (demonstração do combate idle)
+      const lx = land.getContext('2d');
+      PA.drawLandscape(lx, 'town', 'lorencia-hero', land.width, land.height, reduceMotion ? 0 : t, scene.horizon);
+      ctx.drawImage(land, 0, 0, land.width * landK, land.height * landK);
       if (!reduceMotion && t > scene.nextAttack) {
-        scene.nextAttack = t + 520;
+        scene.nextAttack = t + 480;
         const alive = scene.monsters.filter((m) => !m.dead);
         if (alive.length) {
           const h = scene.heroes[Math.floor(Math.random() * scene.heroes.length)];
           const target = alive[Math.floor(Math.random() * alive.length)];
-          h.attack = t + 250;
-          const cls = state.data.classes[h.id];
-          scene.shots.push({ x: h.x + 16, y: h.y + 9, tx: target.x + 5, ty: target.y + 4, target, color: cls.palette.accent, born: t });
+          h.atk = t;
+          const fx = SCENE_FX[h.id];
+          const tc = [target.x, target.y - H_OF[target.kind] / 2];
+          if (fx.proj) scene.shots.push({ sprite: fx.proj, impact: fx.impact, x: h.x + 10, y: h.y - 28, tx: tc[0], ty: tc[1], target, born: t, dur: 340 });
+          else scene.shots.push({ sprite: null, slash: fx.slash, impact: fx.impact, x: tc[0], y: tc[1], tx: tc[0], ty: tc[1], target, born: t, dur: 120 });
         }
       }
-      scene.heroes.forEach((h) => {
-        const cls = state.data.classes[h.id];
-        PA.drawCharacter(ctx, h.id, cls.palette, undefined, h.x, h.y, 1, { bob: frame === 1, attack: t < h.attack });
-      });
-      scene.monsters.forEach((m) => {
-        if (m.dead) { if (t > m.dead) { m.dead = 0; m.hp = m.max; } return; }
-        PA.drawMonster(ctx, m.kind, m.x, m.y, 1, { bob: frame === 0, hurt: t < m.hurt });
-        ctx.fillStyle = '#0b1020'; ctx.fillRect(m.x, m.y - 4, 14, 3);
-        ctx.fillStyle = m.hp > 40 ? '#6aa84f' : '#c8452c'; ctx.fillRect(m.x + 1, m.y - 3, Math.max(0, Math.round(12 * m.hp / m.max)), 1);
-      });
+      const items = [];
+      scene.heroes.forEach((h) => items.push(['h', h]));
+      scene.monsters.forEach((m) => items.push(['m', m]));
+      items.sort((a, b) => a[1].y - b[1].y);
+      for (const [k, e] of items) {
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(e.x, e.y, k === 'h' ? 10 : 9, 3, 0, 0, Math.PI * 2); ctx.fill();
+        if (k === 'h') {
+          const attacking = t - e.atk < 340;
+          Sprites.hero(ctx, e.id, undefined, attacking ? 'attack' : 'idle', attacking ? t - e.atk : t + e.phase, e.x, e.y, 1, false, { once: attacking });
+        } else {
+          if (e.dead) {
+            if (t > e.dead) { e.dead = 0; e.hp = e.max; e.dieAt = 0; }
+            else if (t - e.dieAt < 700) Sprites.monster(ctx, e.kind, 'death', t - e.dieAt, e.x, e.y, 1, true, { once: true });
+            continue;
+          }
+          Sprites.monster(ctx, e.kind, 'idle', t, e.x, e.y, 1, true, { white: t < e.hurt });
+          const top = e.y - H_OF[e.kind] - 6;
+          ctx.fillStyle = '#0b1020'; ctx.fillRect(e.x - 10, top, 20, 4);
+          ctx.fillStyle = e.hp > 40 ? '#6aa84f' : '#c8452c'; ctx.fillRect(e.x - 9, top + 1, Math.max(0, Math.round(18 * e.hp / e.max)), 2);
+        }
+      }
       scene.shots = scene.shots.filter((s) => {
-        const p = Math.min(1, (t - s.born) / 320);
-        const x = s.x + (s.tx - s.x) * p, y = s.y + (s.ty - s.y) * p - Math.sin(p * Math.PI) * 6;
-        ctx.fillStyle = s.color; ctx.fillRect(Math.round(x), Math.round(y), 3, 3);
-        ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.round(x) + 1, Math.round(y) + 1, 1, 1);
+        const p = Math.min(1, (t - s.born) / s.dur);
+        if (s.sprite) {
+          const x = s.x + (s.tx - s.x) * p, y = s.y + (s.ty - s.y) * p - Math.sin(p * Math.PI) * 8;
+          Sprites.drawEffect(ctx, s.sprite, Math.floor((t - s.born) / 60) % 4, x, y, 1, Math.atan2(s.ty - s.y, s.tx - s.x));
+        }
         if (p >= 1) {
           const dmg = 12 + Math.floor(Math.random() * 30);
           const crit = Math.random() < 0.15;
-          s.target.hp -= crit ? dmg * 2 : dmg; s.target.hurt = t + 120;
-          scene.floats.push({ x: s.tx, y: s.ty - 6, text: String(crit ? dmg * 2 : dmg), crit, born: t });
-          if (s.target.hp <= 0 && !s.target.dead) { s.target.dead = t + 1400; scene.floats.push({ x: s.tx - 4, y: s.ty - 14, text: '+EXP', crit: false, exp: true, born: t }); }
+          s.target.hp -= crit ? dmg * 2 : dmg; s.target.hurt = t + 110;
+          if (s.slash) scene.fx.push({ sprite: s.slash, x: s.tx, y: s.ty, born: t, dur: 240, frames: 4, flip: true });
+          scene.fx.push({ sprite: s.impact, x: s.tx, y: s.ty, born: t, dur: 260, frames: 4 });
+          scene.floats.push({ x: s.tx, y: s.ty - 10, text: String(crit ? dmg * 2 : dmg), crit, born: t });
+          if (s.target.hp <= 0 && !s.target.dead) { s.target.dead = t + 1500; s.target.dieAt = t; scene.floats.push({ x: s.tx, y: s.ty - 22, text: '+EXP', crit: false, exp: true, born: t }); }
           return false;
         }
         return true;
       });
-      ctx.font = '8px "Pixelify Sans", monospace';
-      ctx.textBaseline = 'top';
+      scene.fx = scene.fx.filter((f) => {
+        const p = (t - f.born) / f.dur; if (p >= 1) return false;
+        Sprites.drawEffect(ctx, f.sprite, p * f.frames, f.x, f.y, 1, f.flip ? Math.PI : 0);
+        return true;
+      });
+      ctx.font = '600 10px "Pixelify Sans", monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
       scene.floats = scene.floats.filter((f) => {
         const age = t - f.born; if (age > 800) return false;
-        const yy = Math.round(f.y - age / 60);
+        const yy = Math.round(f.y - age / 40);
         ctx.fillStyle = '#0b1020'; ctx.fillText(f.text, f.x + 1, yy + 1);
         ctx.fillStyle = f.exp ? '#9affd0' : f.crit ? '#ffb02e' : '#ffffff'; ctx.fillText(f.text, f.x, yy);
         return true;
@@ -426,15 +461,20 @@
     requestAnimationFrame(step);
   }
 
+  // retrato recortado (pés em baixo, sem a área vazia do quadro)
+  function portrait(cls, ap, size, scale, action = 'idle', t = 0) {
+    const cv = document.createElement('canvas'); cv.width = size; cv.height = size;
+    Sprites.hero(cv.getContext('2d'), cls, ap, action, t, size / 2, size - 2 * scale, scale, false);
+    return cv;
+  }
+
   // ---------------- galeria de classes ----------------
   function setupClasses() {
     const tabs = $('#class-tabs');
     Object.entries(state.data.classes).forEach(([id, c]) => {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'class-tab'; b.setAttribute('role', 'tab'); b.dataset.id = id;
-      const cv = document.createElement('canvas'); cv.width = PA.GRID_W * 2; cv.height = PA.GRID_H * 2;
-      PA.drawCharacter(cv.getContext('2d'), id, c.palette, undefined, 0, 0, 2);
-      b.appendChild(cv); b.append(c.name);
+      b.appendChild(portrait(id, undefined, 64, 1)); b.append(c.name);
       b.onclick = () => selectClass(id);
       tabs.appendChild(b);
     });
@@ -454,19 +494,22 @@
     const labels = { str: 'Força', agi: 'Agilidade', vit: 'Vitalidade', ene: 'Energia', cmd: 'Comando' };
     const stats = Object.entries(c.base).filter(([k, v]) => k !== 'cmd' || v > 0)
       .map(([k, v]) => `<li><span>${labels[k]}</span><span class="bar"><span style="width:${Math.round(v / 30 * 100)}%"></span></span><span>${v}</span></li>`).join('');
-    $('#class-detail').innerHTML = `<canvas width="${PA.GRID_W * 8}" height="${PA.GRID_H * 8}" id="class-big" aria-label="${esc(c.name)} em pixel art"></canvas>
+    $('#class-detail').innerHTML = `<canvas width="192" height="192" id="class-big" aria-label="${esc(c.name)} em pixel art"></canvas>
       <div><h3 style="margin-top:0">${esc(c.name)}</h3><p class="role">${esc(c.role)}</p><p>${esc(c.desc)}</p>
       <ul class="stats" aria-label="Atributos iniciais">${stats}</ul>
       <h4>Algumas habilidades</h4><ul class="skills">${c.skills.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>`;
-    drawBigClass(false);
+    bigStart = performance.now();
+    drawBigClass();
   }
-  let bigFrame = 0;
-  function drawBigClass(attack) {
+  let bigStart = 0;
+  function drawBigClass() {
     const cv = $('#class-big'); if (!cv) return;
     const ctx = cv.getContext('2d');
     ctx.clearRect(0, 0, cv.width, cv.height);
-    const c = state.data.classes[state.selectedClass];
-    PA.drawCharacter(ctx, state.selectedClass, c.palette, undefined, 0, 0, 8, { bob: bigFrame % 2 === 1, attack, wings: bigFrame % 8 > 3 ? null : null });
+    // ciclo: parado 2,4s → andando 1,6s → atacando 0,8s
+    const t = (performance.now() - bigStart) % 4800;
+    const [act, at] = t < 2400 ? ['idle', t] : t < 4000 ? ['walk', t - 2400] : ['attack', (t - 4000) * 0.45];
+    Sprites.hero(ctx, state.selectedClass, undefined, act, at, 80, 182, 2, false, { once: act === 'attack' });
   }
 
   // ---------------- mapas ----------------
@@ -562,18 +605,18 @@
 
   function brandIcon() {
     const cv = $('#brand-icon');
-    PA.drawCharacter(cv.getContext('2d'), 'dark_knight', state.data.classes.dark_knight.palette, undefined, 0, 0, 2);
+    Sprites.hero(cv.getContext('2d'), 'dark_knight', undefined, 'idle', 0, 16, 54, 1, false);
   }
 
   // Animações leves (prévia e classe em destaque)
   if (!reduceMotion) {
     setInterval(() => {
-      bigFrame++; previewFrame++;
+      previewFrame++;
       if (state.data) {
-        drawBigClass(bigFrame % 6 === 5);
+        drawBigClass();
         if ($('#account-dialog').open && $('#create-char').open) drawPreview();
       }
-    }, 450);
+    }, 100);
   }
 
   // ---------------- início ----------------
@@ -586,6 +629,7 @@
       toast('Não foi possível carregar os dados do jogo. Recarregue a página.');
       return;
     }
+    await Sprites.ready;
     brandIcon(); setupScene(); setupClasses(); setupMaps(); setupItems(); setupCreateForm(); drawPreview();
     loadNews(); loadRanking();
     await loadMe();
