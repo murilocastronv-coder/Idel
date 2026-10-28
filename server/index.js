@@ -50,8 +50,8 @@ function securityHeaders(res) {
   res.setHeader('Referrer-Policy', 'same-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('Content-Security-Policy', [
-    "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src https://fonts.gstatic.com", "img-src 'self' data:", "connect-src 'self' ws: wss:",
+    "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'",
+    "font-src 'self'", "media-src 'self'", "img-src 'self' data:", "connect-src 'self' ws: wss:",
     "frame-ancestors 'none'", "base-uri 'self'", "form-action 'self'",
   ].join('; '));
   if (IS_PROD) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -489,13 +489,14 @@ route('DELETE', '/api/characters/:id', async (req, url, res, params) => {
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
-  '.webmanifest': 'application/manifest+json', '.txt': 'text/plain; charset=utf-8',
+  '.webmanifest': 'application/manifest+json', '.woff': 'font/woff', '.woff2': 'font/woff2', '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.txt': 'text/plain; charset=utf-8',
 };
 function serveStatic(req, res, pathname) {
   let rel;
   try { rel = decodeURIComponent(pathname); } catch (_) { rel = '/'; }
   if (rel === '/' || rel === '') rel = '/index.html';
   if (rel === '/status' || rel === '/status/') rel = '/status.html';
+  if (rel === '/app' || rel === '/app/') rel = '/app.html';
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
   if (!file.startsWith(PUBLIC_DIR + path.sep)) { res.writeHead(403); return res.end(); }
   fs.stat(file, (err, st) => {
@@ -507,9 +508,21 @@ function serveStatic(req, res, pathname) {
     // Sempre revalida com o servidor: depois de um deploy, o navegador pega a versão nova na hora
     const etag = `"${st.size.toString(36)}-${Math.floor(st.mtimeMs).toString(36)}"`;
     if (req.headers['if-none-match'] === etag) { res.writeHead(304, { ETag: etag, 'Cache-Control': 'no-cache' }); return res.end(); }
+    const type = MIME[ext] || 'application/octet-stream';
+    // pedaços do arquivo (Range): necessário para vídeo no iPhone e no app Android
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    if (range && st.size > 0) {
+      let start = range[1] === '' ? Math.max(0, st.size - Number(range[2])) : Number(range[1]);
+      let end = range[1] !== '' && range[2] !== '' ? Math.min(Number(range[2]), st.size - 1) : st.size - 1;
+      if (start > end || start >= st.size) { res.writeHead(416, { 'Content-Range': `bytes */${st.size}` }); return res.end(); }
+      res.writeHead(206, { 'Content-Type': type, 'Content-Length': end - start + 1, 'Content-Range': `bytes ${start}-${end}/${st.size}`, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-cache', ETag: etag });
+      if (req.method === 'HEAD') return res.end();
+      return fs.createReadStream(file, { start, end }).pipe(res);
+    }
     res.writeHead(200, {
-      'Content-Type': MIME[ext] || 'application/octet-stream',
+      'Content-Type': type,
       'Content-Length': st.size,
+      'Accept-Ranges': 'bytes',
       'Cache-Control': 'no-cache',
       ETag: etag,
     });
@@ -535,7 +548,7 @@ const server = http.createServer(async (req, res) => {
       try { ok = canSeeStatus(await sessionAccount(req)); } catch (_) { ok = false; }
       if (!ok) {
         res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-        return res.end(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Acesso restrito</title><link rel="stylesheet" href="/css/style.css"></head>
+        return res.end(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Acesso restrito</title><link rel="stylesheet" href="/css/fonts.css"><link rel="stylesheet" href="/css/style.css"></head>
 <body style="display:grid;place-items:center;min-height:100vh;text-align:center;padding:16px"><div><h1 style="font-family:var(--display);color:var(--gold)">Acesso restrito</h1>
 <p>Esta página é só para a administração do MU Idle Legends.</p><p><a class="btn btn-gold" href="/">Voltar ao início</a></p></div>
 <script src="/js/i18n-en.js"></script><script src="/js/i18n.js"></script></body></html>`);

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>MU Idle Legends — App</title>
+  <meta name="description" content="Jogue MU Idle Legends no celular: crie sua conta, escolha seu herói e entre no mundo.">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+  <link rel="stylesheet" href="/css/fonts.css?v=1">
+  <link rel="stylesheet" href="/css/style.css?v=15">
+  <link rel="stylesheet" href="/css/mobile.css?v=1">
+</head>
+<body class="app-page">
+  <div class="app-bg" aria-hidden="true"><img src="/assets/video/gameplay-poster.jpg" alt=""></div>
+
+  <main class="app-shell">
+    <header class="app-top">
+      <span class="app-online"><i class="dot" id="a-dot"></i><b id="a-online">–</b> <span>online agora</span></span>
+      <button class="lang-switch" type="button" data-lang-switch aria-label="PT / EN"></button>
+    </header>
+
+    <section class="app-video" aria-label="Vídeo do jogo">
+      <video id="a-video" src="/assets/video/gameplay.mp4" poster="/assets/video/gameplay-poster.jpg" autoplay muted loop playsinline preload="auto" aria-label="Vídeo do jogo: o herói luta em Lorencia, Noria, Devias, na Dungeon contra o Rei Esqueleto e em Vulcanus"></video>
+      <div class="app-video-fade"></div>
+      <span class="app-rec"><i></i>Jogo real</span>
+    </section>
+
+    <section class="app-hero">
+      <h1 class="app-logo">MU Idle<br><span>Legends</span></h1>
+      <p class="app-tag">Seu herói luta, evolui e coleta tesouros até quando você está offline.</p>
+      <ul class="app-chips">
+        <li>6 classes</li><li>PvP e duelos</li><li>Bosses</li><li>Joga sozinho offline</li>
+      </ul>
+
+      <!-- visitante -->
+      <div class="app-actions" id="a-guest">
+        <button class="btn btn-gold app-play" type="button" data-open="register">Criar conta e jogar</button>
+        <button class="btn app-secondary" type="button" data-open="login">Já tenho conta · Entrar</button>
+      </div>
+
+      <!-- conectado -->
+      <div class="app-actions" id="a-user" hidden>
+        <p class="app-hello">Olá, <b id="a-name"></b>!</p>
+        <ul class="app-heroes" id="a-heroes"></ul>
+        <a class="btn btn-gold app-play" id="a-play" href="/?herois">Jogar</a>
+        <div class="app-row">
+          <a class="btn app-secondary" href="/?herois">Criar herói</a>
+          <button class="btn app-secondary" type="button" id="a-logout">Sair</button>
+        </div>
+      </div>
+
+      <p class="app-links"><a href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Discord</a> · <a href="/">Site</a> · <a href="/#ranking">Ranking</a></p>
+    </section>
+  </main>
+
+  <!-- janela de conta (sobe de baixo) -->
+  <div class="sheet-back" id="sheet-back" hidden></div>
+  <section class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <button class="sheet-close" type="button" data-close aria-label="Fechar">×</button>
+    <h2 id="sheet-title"></h2>
+
+    <form class="form" data-view="register" novalidate>
+      <label>Nome de usuário<input name="username" autocomplete="username" maxlength="16" required placeholder="4 a 16 caracteres: letras, números ou _"></label>
+      <label>E-mail<input name="email" type="email" autocomplete="email" maxlength="254" required placeholder="Usado só para recuperar a senha"></label>
+      <label>Senha<input name="password" type="password" autocomplete="new-password" maxlength="200" required placeholder="Mínimo 8 caracteres, com letras e números"></label>
+      <label>Repita a senha<input name="password2" type="password" autocomplete="new-password" maxlength="200" required></label>
+      <p class="form-msg" role="alert"></p>
+      <button class="btn btn-gold" type="submit">Criar conta</button>
+      <p class="sheet-alt">Já tem conta? <button type="button" class="link" data-open="login">Entrar</button></p>
+    </form>
+
+    <form class="form" data-view="login" novalidate>
+      <label>Usuário ou e-mail<input name="login" autocomplete="username" maxlength="254" required></label>
+      <label>Senha<input name="password" type="password" autocomplete="current-password" maxlength="200" required></label>
+      <label class="check"><input type="checkbox" name="remember" checked> Manter conectado neste aparelho</label>
+      <p class="form-msg" role="alert"></p>
+      <button class="btn btn-gold" type="submit">Entrar</button>
+      <p class="sheet-alt"><button type="button" class="link" data-open="forgot">Esqueci a senha</button> · <button type="button" class="link" data-open="register">Criar conta</button></p>
+    </form>
+
+    <form class="form" data-view="forgot" novalidate>
+      <p class="muted">Enviaremos um link para criar uma nova senha. Ele vale por 1 hora.</p>
+      <label>E-mail da conta<input name="email" type="email" autocomplete="email" maxlength="254" required></label>
+      <p class="form-msg" role="alert"></p>
+      <button class="btn btn-gold" type="submit">Enviar link</button>
+      <p class="sheet-alt"><button type="button" class="link" data-open="code">Com código de recuperação</button> · <button type="button" class="link" data-open="login">Entrar</button></p>
+    </form>
+
+    <form class="form" data-view="code" novalidate>
+      <p class="muted">Use o código de 16 caracteres que você recebeu ao criar a conta.</p>
+      <label>Nome de usuário<input name="username" autocomplete="username" maxlength="16" required></label>
+      <label>Código de recuperação<input name="code" maxlength="19" required placeholder="XXXX-XXXX-XXXX-XXXX" autocapitalize="characters"></label>
+      <label>Nova senha<input name="password" type="password" autocomplete="new-password" maxlength="200" required></label>
+      <p class="form-msg" role="alert"></p>
+      <button class="btn btn-gold" type="submit">Salvar nova senha</button>
+      <p class="sheet-alt"><button type="button" class="link" data-open="login">Entrar</button></p>
+    </form>
+
+    <div class="form" data-view="saved">
+      <p>Com ele você troca a senha mesmo sem acesso ao e-mail. Ele aparece só agora — anote ou copie.</p>
+      <p class="code-box" id="a-code" data-no-i18n></p>
+      <button class="btn" type="button" id="a-copy">Copiar código</button>
+      <a class="btn btn-gold" href="/?herois">Criar herói e jogar</a>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="/js/i18n-en.js?v=15"></script>
+  <script src="/js/i18n.js?v=15"></script>
+  <script src="/js/mobile.js?v=1"></script>
+</body>
+</html>

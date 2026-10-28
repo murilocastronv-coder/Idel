@@ -21,7 +21,10 @@
     spirit: '#ff7ad9', lightning: '#ffffaa', meteor: '#ff4d1f', slash: '#ffffff', whirl: '#ffffff', heal: '#9affd0', claw: '#ff6060', boss: '#c06bff' };
   const RANGED = new Set(['fire', 'energy', 'ice', 'arrow', 'arrow3', 'dark', 'spirit']);
   
-  if (!charId) { location.href = '/'; return; }
+  // dentro do app Android (ou vindo da página /app) o botão Heróis volta para o app
+  const inApp = () => { try { return /MUIdleApp/.test(navigator.userAgent) || sessionStorage.getItem('mui_app') === '1'; } catch (_) { return /MUIdleApp/.test(navigator.userAgent); } };
+  const backHome = () => (inApp() ? '/app' : '/?herois');
+  if (!charId) { location.href = inApp() ? '/app' : '/'; return; }
 
   // ================= conexão =================
   let ws = null, retry = 0, joined = false, leaving = false;
@@ -75,7 +78,7 @@
       case 'chat': return addChat(m, true);
       case 'chatlog': $('#chat-lines').innerHTML = ''; m.lines.forEach((l) => addChat(l, false)); return;
       case 'kicked': S.kicked = true; centerMsg(esc(m.reason), true); return;
-      case 'left': location.href = '/?herois'; return;
+      case 'left': location.href = backHome(); return;
       case 'error':
         if (!joined) { S.kicked = true; centerMsg(esc(m.error), true); } else feed(m.error, 'warn');
         return;
@@ -1290,7 +1293,7 @@
   $('#btn-ptarget').onclick = cycleTarget;
   $('#btn-pot-hp').onclick = () => send({ type: 'potion', kind: 'hp' });
   $('#btn-pot-mp').onclick = () => send({ type: 'potion', kind: 'mp' });
-  $('#btn-exit').onclick = () => { leaving = true; send({ type: 'leave' }); setTimeout(() => { location.href = '/?herois'; }, 800); };
+  $('#btn-exit').onclick = () => { leaving = true; send({ type: 'leave' }); setTimeout(() => { location.href = backHome(); }, 800); };
   PA.drawIcon($('#btn-pot-hp canvas').getContext('2d'), 'potion_hp', 0, 0, 3, '#fff');
   PA.drawIcon($('#btn-pot-mp canvas').getContext('2d'), 'potion_mp', 0, 0, 3, '#3a7aff');
 
