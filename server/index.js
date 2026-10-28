@@ -163,6 +163,78 @@ route('GET', '/api/health', async () => {
 
 route('GET', '/api/stats', async () => liveStats());
 
+// ---------------- página /status: crescimento do jogo ----------------
+const STARTED_AT = Date.now();
+const TZ = process.env.GAME_TZ || 'America/Sao_Paulo';
+let peakOnline = 0;
+async function sampleStats() {
+  const s = liveStats();
+  peakOnline = Math.max(peakOnline, s.online);
+  const ids = new Set();
+  if (ws) for (const c of ws.clients) if (c.meta.accountId) ids.add(Number(c.meta.accountId));
+  await db.query('INSERT INTO stats_samples (online, in_world, visitors) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING ts', [s.online, s.inWorld, s.visitors]);
+  await markActive([...ids]);
+  await db.query("DELETE FROM stats_samples WHERE ts < now() - interval '120 days' RETURNING ts");
+}
+async function markActive(ids) {
+  const list = ids.filter((n) => Number.isInteger(n) && n > 0);
+  if (!list.length) return;
+  await db.query(`INSERT INTO activity_days (day, account_id)
+    SELECT (now() AT TIME ZONE $1)::date, a FROM unnest(ARRAY[${list.join(',')}]::int[]) AS a
+    ON CONFLICT DO NOTHING RETURNING account_id`, [TZ]);
+}
+
+let statusCache = null, statusAt = 0;
+async function buildStatus() {
+  const q = async (sql, params = [TZ]) => (await db.query(sql, params)).rows;
+  const [totals] = await q(`SELECT
+      (SELECT count(*) FROM accounts)::int AS accounts,
+      (SELECT count(*) FROM characters)::int AS characters,
+      (SELECT count(*) FROM accounts WHERE (created_at AT TIME ZONE $1)::date = (now() AT TIME ZONE $1)::date)::int AS accounts_today,
+      (SELECT count(*) FROM accounts WHERE created_at > now() - interval '7 days')::int AS accounts_7d,
+      (SELECT count(*) FROM accounts WHERE created_at > now() - interval '30 days')::int AS accounts_30d,
+      (SELECT count(*) FROM accounts WHERE created_at > now() - interval '14 days' AND created_at <= now() - interval '7 days')::int AS accounts_prev7d,
+      (SELECT count(*) FROM activity_days WHERE day = (now() AT TIME ZONE $1)::date)::int AS active_today,
+      (SELECT count(DISTINCT account_id) FROM activity_days WHERE day > (now() AT TIME ZONE $1)::date - 7)::int AS active_7d,
+      (SELECT count(DISTINCT account_id) FROM activity_days WHERE day > (now() AT TIME ZONE $1)::date - 30)::int AS active_30d,
+      (SELECT count(DISTINCT account_id) FROM activity_days WHERE day > (now() AT TIME ZONE $1)::date - 14 AND day <= (now() AT TIME ZONE $1)::date - 7)::int AS active_prev7d,
+      (SELECT coalesce(max(online), 0) FROM stats_samples)::int AS peak_online,
+      (SELECT coalesce(max(online), 0) FROM stats_samples WHERE ts > now() - interval '24 hours')::int AS peak_24h,
+      (SELECT coalesce(max(level), 0) FROM characters)::int AS top_level,
+      (SELECT coalesce(sum(kills), 0) FROM characters)::bigint AS monsters_killed,
+      (SELECT coalesce(sum(bosses_killed), 0) FROM characters)::int AS bosses_killed,
+      (SELECT coalesce(sum(pvp_kills), 0) FROM characters)::int AS pvp_kills,
+      (SELECT coalesce(sum(duel_wins), 0) FROM characters)::int AS duels,
+      (SELECT min(created_at) FROM accounts) AS first_account`);
+  const daily = await q(`WITH days AS (
+      SELECT generate_series((now() AT TIME ZONE $1)::date - 29, (now() AT TIME ZONE $1)::date, interval '1 day')::date AS day)
+    SELECT to_char(d.day, 'YYYY-MM-DD') AS day,
+      (SELECT count(*) FROM accounts a WHERE (a.created_at AT TIME ZONE $1)::date = d.day)::int AS new_accounts,
+      (SELECT count(*) FROM characters c WHERE (c.created_at AT TIME ZONE $1)::date = d.day)::int AS new_characters,
+      (SELECT count(*) FROM activity_days x WHERE x.day = d.day)::int AS active,
+      (SELECT coalesce(max(s.online), 0) FROM stats_samples s WHERE (s.ts AT TIME ZONE $1)::date = d.day)::int AS peak_online,
+      (SELECT count(*) FROM accounts a WHERE (a.created_at AT TIME ZONE $1)::date <= d.day)::int AS total_accounts
+    FROM days d ORDER BY d.day`);
+  const hourly = await q(`SELECT to_char(date_trunc('hour', ts AT TIME ZONE $1), 'YYYY-MM-DD"T"HH24') AS hour,
+      max(online)::int AS online, max(in_world)::int AS in_world
+    FROM stats_samples WHERE ts > now() - interval '48 hours' GROUP BY 1 ORDER BY 1`);
+  const classes = await q('SELECT class, count(*)::int AS n FROM characters GROUP BY class ORDER BY n DESC', []);
+  const levels = await q(`SELECT CASE WHEN level < 10 THEN '1–9' WHEN level < 25 THEN '10–24' WHEN level < 50 THEN '25–49'
+      WHEN level < 100 THEN '50–99' ELSE '100+' END AS band, min(level)::int AS lo, count(*)::int AS n
+    FROM characters GROUP BY 1 ORDER BY lo`, []);
+  const maps = [];
+  if (world) for (const m of world.maps.values()) if (m.players.size) maps.push({ id: m.id, name: m.def.name, players: m.players.size });
+  maps.sort((a, b) => b.players - a.players);
+  return {
+    live: { ...liveStats(), peakSinceBoot: peakOnline, uptimeSec: Math.round((Date.now() - STARTED_AT) / 1000) },
+    totals, daily, hourly, classes, levels, maps, tz: TZ, generatedAt: Date.now(),
+  };
+}
+route('GET', '/api/status', async () => {
+  if (!statusCache || Date.now() - statusAt > 30000) { statusCache = await buildStatus(); statusAt = Date.now(); }
+  return { ...statusCache, live: { ...statusCache.live, ...liveStats(), peakSinceBoot: peakOnline, uptimeSec: Math.round((Date.now() - STARTED_AT) / 1000) } };
+});
+
 route('GET', '/api/gamedata', async () => ({
   classes: game.CLASSES, maps: game.MAPS, rarities: game.RARITIES, items: game.ITEMS, limits: game.LIMITS,
   world: Object.entries(game.WORLD).map(([id, w]) => ({ id, name: w.name, theme: w.theme, minLevel: w.minLevel, safe: !!w.safe, pvp: !!w.pvp,
@@ -246,6 +318,7 @@ route('POST', '/api/login', async (req, url, res) => {
     throw new HttpError(401, 'Usuário ou senha incorretos.');
   }
   await db.query('UPDATE accounts SET last_login_at = now() WHERE id = $1 RETURNING id', [acc.id]);
+  markActive([Number(acc.id)]).catch(() => {});
   await createSession(res, req, acc.id, !!body.remember);
   await audit(acc.id, 'login', req);
   return { ok: true, username: acc.username };
@@ -415,6 +488,7 @@ function serveStatic(req, res, pathname) {
   let rel;
   try { rel = decodeURIComponent(pathname); } catch (_) { rel = '/'; }
   if (rel === '/' || rel === '') rel = '/index.html';
+  if (rel === '/status' || rel === '/status/') rel = '/status.html';
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
   if (!file.startsWith(PUBLIC_DIR + path.sep)) { res.writeHead(403); return res.end(); }
   fs.stat(file, (err, st) => {
@@ -504,6 +578,7 @@ ws.on('connection', (client) => {
       client.send({ type: 'log', kind: 'warn', text: 'Erro no servidor ao processar a ação.' });
     });
     if (data.type === 'join' || data.type === 'leave') pushStats();
+    if (data.type === 'join' && client.meta.accountId) markActive([Number(client.meta.accountId)]).catch(() => {});
   });
   pushStats();
 });
@@ -519,6 +594,9 @@ setInterval(() => {
   await db.migrate();
   await refreshCounts();
   world = new World();
+  // amostra a cada 5 minutos (e logo após iniciar)
+  setTimeout(() => sampleStats().catch((e) => console.error('[status]', e.message)), 20000).unref();
+  setInterval(() => sampleStats().catch((e) => console.error('[status]', e.message)), 5 * 60 * 1000).unref();
   server.listen(PORT, () => console.log(`[server] MU Idle Legends ouvindo na porta ${PORT}`));
 })().catch((e) => { console.error('[server] falha ao iniciar:', e); process.exit(1); });
 
