@@ -13,6 +13,7 @@ import heroes  # noqa: E402
 import monsters  # noqa: E402
 import effects  # noqa: E402
 import equipment  # noqa: E402
+import wings  # noqa: E402
 from pixelkit import hexc, ramp5  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
@@ -54,7 +55,7 @@ def main():
     os.makedirs(os.path.join(OUT, 'monsters'), exist_ok=True)
     os.makedirs(os.path.join(OUT, 'effects'), exist_ok=True)
     os.makedirs(PREVIEW, exist_ok=True)
-    manifest = {'version': 4, 'heroes': {}, 'monsters': {}, 'effects': {},
+    manifest = {'version': 5, 'heroes': {}, 'monsters': {}, 'effects': {},
                 'skinKeys': [list(c) for c in ramp5(heroes.SKIN)]}
     pivot = (heroes.BUILD['cx'], heroes.FOOT_Y)
 
@@ -107,6 +108,32 @@ def main():
         big.save(os.path.join(OUT, path), optimize=True)
         manifest['weapons']['classes'][cls] = {'sheet': path, 'list': wl}
         print('  equipamento', cls)
+
+    # asas e capas: uma folha por item, com um bloco por classe (carregada só quando alguém usa)
+    manifest['wings'] = {'classes': CLASSES, 'rowsPerClass': len(ACTIONS), 'sheets': {}, 'glow': wings.GLOW,
+                         'fw': wings.WFW, 'fh': wings.WFH, 'pivot': list(wings.PIVOT)}
+    for base in wings.STYLES:
+        blocks = []
+        for cls in CLASSES:
+            img, _ = sheet(lambda a, i, cls=cls, base=base: wings.draw_wings(cls, base, a, i), wings.WFW, wings.WFH, wings.PIVOT)
+            blocks.append(img)
+        big = Image.new('RGBA', (blocks[0].width, sum(b.height for b in blocks)), (0, 0, 0, 0))
+        y = 0
+        for b in blocks:
+            big.alpha_composite(b, (0, y)); y += b.height
+        path = f'equip/wings_{base}.png'
+        big.save(os.path.join(OUT, path), optimize=True)
+        manifest['wings']['sheets'][base] = path
+        if wings.STYLES[base]['kind'] == 'cape':
+            blocks = [sheet(lambda a, i, cls=cls, base=base: wings.draw_wings(cls, base, a, i, layer='over'), wings.WFW, wings.WFH, wings.PIVOT)[0] for cls in CLASSES]
+            big = Image.new('RGBA', (blocks[0].width, sum(b.height for b in blocks)), (0, 0, 0, 0))
+            y = 0
+            for b in blocks:
+                big.alpha_composite(b, (0, y)); y += b.height
+            path = f'equip/wings_{base}_over.png'
+            big.save(os.path.join(OUT, path), optimize=True)
+            manifest['wings'].setdefault('over', {})[base] = path
+    print('  asas e capas:', len(wings.STYLES))
 
     mons = {
         'slime': (monsters.slime, 48, 40, (22, 37), False, 1.0),

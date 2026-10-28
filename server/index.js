@@ -20,6 +20,9 @@ const ADMIN = require('./admin');
 const game = require('./gamedata');
 const { WSServer } = require('./ws');
 const { World } = require('./world');
+const CHAOS = require('./chaos');
+const DROPS = require('./drops');
+const CMDS = require('./commands');
 
 const PORT = Number(process.env.PORT || 3000);
 const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
@@ -325,8 +328,58 @@ route('POST', '/api/admin/action', async (req) => {
     } else throw new Error('Ação desconhecida.');
   } catch (e) { if (e instanceof HttpError) throw e; throw new HttpError(400, e.message); }
   await audit(acc.id, 'admin_' + a, req, { char: c.name, base: body.base, rarity: body.rarity, level: body.level, n: body.n });
+  CMDS.log({ accountId: acc.id, name: acc.username, role: 'superadmin' }, 'panel:' + a, { id: c.id, name: c.name }, { base: body.base, rarity: body.rarity, level: body.level, n: body.n, qty: body.qty }, null, null, 'ok', msg, null);
   return { ok: true, message: msg, char: await adminTarget(c.name) };
 });
+// ---- Chaos Machine, drops e regras de administração (só o Super ADM) ----
+const bad = (fn) => async (...a) => { try { return await fn(...a); } catch (e) { if (e instanceof HttpError) throw e; throw new HttpError(400, e.message); } };
+route('GET', '/api/admin/chaos', async (req, url) => {
+  await requireAdmin(req);
+  return { ...CHAOS.adminView(), history: await CHAOS.history(60, url.searchParams.get('name') || '') };
+});
+route('POST', '/api/admin/chaos', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 64 * 1024);
+  const config = await CHAOS.saveConfig(body.config || {});
+  CMDS.log({ accountId: acc.id, name: acc.username, role: 'superadmin' }, 'panel:chaos', null, {}, null, config, 'ok', 'Receitas da Chaos Machine salvas', null);
+  return { ok: true, message: 'Chaos Machine salva.', ...CHAOS.adminView() };
+}));
+route('GET', '/api/admin/drops', async (req) => {
+  await requireAdmin(req);
+  return DROPS.adminView();
+});
+route('GET', '/api/admin/drops/log', async (req, url) => {
+  await requireAdmin(req);
+  return { log: await DROPS.history(150, url.searchParams.get('name') || '') };
+});
+route('POST', '/api/admin/drops', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 32 * 1024);
+  const who = { accountId: acc.id, name: acc.username, role: 'superadmin' };
+  let message = 'Salvo.';
+  switch (body.op) {
+    case 'config': await DROPS.saveConfig(body.config || {}); message = 'Configuração de drop salva.'; break;
+    case 'rule': await DROPS.saveRule(body.rule || {}); message = body.rule && body.rule.id ? 'Regra atualizada.' : 'Regra criada.'; break;
+    case 'deleteRule': await DROPS.deleteRule(body.id); message = 'Regra removida.'; break;
+    case 'event': await DROPS.saveEvent(body.event || {}); message = 'Evento iniciado.'; break;
+    case 'stopEvent': await DROPS.stopEvent(body.id); message = 'Evento encerrado.'; break;
+    case 'simulate': return { ok: true, sim: DROPS.simulate(String(body.monster), String(body.map || ''), body.n, body.level, !!body.events) };
+    default: throw new HttpError(400, 'Operação inválida.');
+  }
+  CMDS.log(who, 'panel:drops:' + body.op, null, body, null, null, 'ok', message, null);
+  return { ok: true, message, ...DROPS.adminView() };
+}));
+route('GET', '/api/admin/rules', async (req, url) => {
+  await requireAdmin(req);
+  return { rules: CMDS.cfg(), help: CMDS.help(), roles: CMDS.ROLES, log: await CMDS.history(120, url.searchParams.get('name') || '') };
+});
+route('POST', '/api/admin/rules', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 16 * 1024);
+  const rules = await CMDS.saveConfig(body.rules || {});
+  CMDS.log({ accountId: acc.id, name: acc.username, role: 'superadmin' }, 'panel:rules', null, {}, null, rules, 'ok', 'Regras de reset e limites salvas', null);
+  return { ok: true, message: 'Regras salvas.', rules };
+}));
 route('POST', '/api/admin/vip', async (req) => {
   const acc = await requireAdmin(req);
   const body = await readJson(req);
@@ -362,13 +415,13 @@ route('GET', '/api/news', async () => {
 route('GET', '/api/ranking', async (req, url) => {
   const orders = {
     level: 'level DESC, exp DESC, resets DESC',
-    resets: 'resets DESC, level DESC, exp DESC',
+    resets: 'master_resets DESC, resets DESC, level DESC, exp DESC',
     power: 'combat_power DESC, level DESC',
     bosses: 'bosses_killed DESC, level DESC',
     pvp: 'pvp_kills DESC, duel_wins DESC, level DESC',
   };
   const by = orders[url.searchParams.get('by')] ? url.searchParams.get('by') : 'resets';
-  const { rows } = await db.query(`SELECT name, class, level, resets, combat_power, bosses_killed, pvp_kills, duel_wins
+  const { rows } = await db.query(`SELECT name, class, level, resets, master_resets, combat_power, bosses_killed, pvp_kills, duel_wins
     FROM characters ORDER BY ${orders[by]}, id ASC LIMIT 50`);
   return { by, ranking: rows };
 });
@@ -757,6 +810,7 @@ setInterval(() => {
   await refreshCounts();
   await VIP.loadPrices();
   world = new World();
+  await world.init();
   // amostra a cada 5 minutos (e logo após iniciar)
   setTimeout(() => sampleStats().catch((e) => console.error('[status]', e.message)), 20000).unref();
   setInterval(() => sampleStats().catch((e) => console.error('[status]', e.message)), 5 * 60 * 1000).unref();

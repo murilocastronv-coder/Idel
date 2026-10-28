@@ -9,6 +9,7 @@
   const charId = new URLSearchParams(location.search).get('c');
 
   const S = {
+    gitems: new Map(),
     data: null, char: null, me: null, map: null, ground: null,
     players: new Map(), monsters: new Map(), fx: [], floats: [], clickMark: null,
     boss: null, chatUnread: 0, panel: null, selItem: null, rarFilter: 'all', youId: null,
@@ -16,7 +17,8 @@
   const RAR = { common: '#c8c8c8', uncommon: '#5fd35f', rare: '#4aa3ff', epic: '#b45cff', legendary: '#ffb02e', ancestral: '#ff4d4d' };
   const RAR_NAME = { common: 'Comum', uncommon: 'Incomum', rare: 'Raro', epic: 'Épico', legendary: 'Lendário', ancestral: 'Ancestral' };
   const RAR_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancestral'];
-  const SLOT_NAME = { weapon: 'Arma', helm: 'Elmo', armor: 'Armadura', gloves: 'Luvas', boots: 'Botas', ring: 'Anel' };
+  const SLOT_NAME = { weapon: 'Arma', helm: 'Elmo', armor: 'Armadura', gloves: 'Luvas', boots: 'Botas', ring: 'Anel', wings: 'Asas' };
+  const ACCENT = (it) => it.ic || RAR[it.rarity];
   const FX_COLOR = { fire: '#ff7a3d', energy: '#59c7ff', ice: '#bff0ff', arrow: '#efe4c8', arrow3: '#efe4c8', dark: '#c06bff',
     spirit: '#ff7ad9', lightning: '#ffffaa', meteor: '#ff4d1f', slash: '#ffffff', whirl: '#ffffff', heal: '#9affd0', claw: '#ff6060', boss: '#c06bff' };
   const RANGED = new Set(['fire', 'energy', 'ice', 'arrow', 'arrow3', 'dark', 'spirit']);
@@ -69,9 +71,16 @@
       case 'drop': {
         const it = m.item;
         if (m.x !== null && m.x !== undefined) S.drops.push({ x: m.x, y: m.y, dx: (Math.random() - 0.5) * 24, item: it, t0: performance.now() });
-        feed(`Item: ${it.name}${it.plus ? ' +' + it.plus : ''} (${RAR_NAME[it.rarity]})`, 'drop', RAR[it.rarity]);
+        const n = m.gain || 1;
+        if (it.stack) feed(`Item: ${it.name} ×${n}${m.src ? ` — ${m.src}` : ''}`, 'drop', ACCENT(it));
+        else feed(`Item: ${it.name}${it.plus ? ' +' + it.plus : ''} (${RAR_NAME[it.rarity]})${m.src ? ` — ${m.src}` : ''}`, 'drop', RAR[it.rarity]);
         return;
       }
+      case 'gadd': S.gitems.set(m.g.gid, { ...m.g, t0: performance.now() }); return;
+      case 'gdel': S.gitems.delete(m.gid); return;
+      case 'chaosInfo': CH.info = m; if (S.panel === 'chaos') renderChaos(); return;
+      case 'chaosResult': return chaosResult(m);
+      case 'cmdres': return cmdResult(m);
       case 'log': return feed(m.text, m.kind === 'warn' ? 'warn' : m.kind === 'quest' ? 'quest' : m.kind === 'pvp' ? 'pvp' : '');
       case 'quests': S.quests = m; $('#quest-badge').hidden = !m.claimable; if (S.panel === 'quests') renderQuests(); return;
       case 'offline': return showOffline(m);
@@ -95,6 +104,7 @@
     S.players = new Map(m.players.map((p) => [p.id, { info: p, x: 0, y: 0, rx: null }]));
     S.players.set(m.you, keep && keep.info ? { ...keep, rx: null } : { info: null, x: 0, y: 0, rx: null });
     S.fx = []; S.floats = []; S.drops = []; S.dangers = []; S.parts = [];
+    S.gitems = new Map((m.ground || []).map((g) => [g.gid, { ...g, t0: performance.now() }]));
     S.enterAt = performance.now(); S.camInit = false;
     const wInfo = S.data && S.data.world.find((w) => w.id === m.map);
     const ban = $('#map-banner');
@@ -656,10 +666,30 @@
   // ---------- itens caindo no chão ----------
   const iconCache = new Map();
   function itemIcon(item) {
-    const k = item.icon + item.rarity;
+    const k = item.icon + item.rarity + (item.ic || '');
     let c = iconCache.get(k);
-    if (!c) { c = document.createElement('canvas'); c.width = 48; c.height = 48; PA.drawIcon(c.getContext('2d'), item.icon, 6, 6, 3, RAR[item.rarity]); iconCache.set(k, c); }
+    if (!c) { c = document.createElement('canvas'); c.width = 48; c.height = 48; PA.drawIcon(c.getContext('2d'), item.icon, 6, 6, 3, item.ic || RAR[item.rarity] || '#c8c8c8'); iconCache.set(k, c); }
     return c;
+  }
+  // itens no chão (materiais com dono e tempo)
+  function drawGroundItems(now) {
+    if (!S.gitems || !S.gitems.size) return;
+    for (const g of S.gitems.values()) {
+      const left = g.ttl - (now - g.t0);
+      if (left <= 0) { S.gitems.delete(g.gid); continue; }
+      const mine = g.owner === S.youId;
+      const [sx, sy] = toScreen(g.x, g.y);
+      if (sx < -40 || sy < -40 || sx > cv.width + 40 || sy > cv.height + 40) continue;
+      const bob = Math.sin(now / 260 + g.x) * 2 * dpr;
+      const col = g.base === 'zen' ? '#ffd36b' : (g.ic || RAR[g.rarity] || '#fff');
+      ctx.globalAlpha = (mine ? 1 : 0.55) * (left < 8000 ? 0.5 + 0.5 * Math.abs(Math.sin(now / 180)) : 1);
+      ctx.fillStyle = col; ctx.globalAlpha *= 0.35; ctx.beginPath(); ctx.ellipse(sx, sy + 3 * dpr, 9 * dpr, 3 * dpr, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = (mine ? 1 : 0.55) * (left < 8000 ? 0.5 + 0.5 * Math.abs(Math.sin(now / 180)) : 1);
+      const s = 12 * dpr;
+      ctx.drawImage(itemIcon({ icon: g.icon, rarity: g.rarity, ic: g.base === 'zen' ? '#ffd36b' : g.ic }), sx - s, sy - s * 1.7 + bob, s * 2, s * 2);
+      ctx.globalAlpha = 1;
+      label(`${g.name}${g.qty > 1 ? ' ×' + fmt.format(g.qty) : ''}${mine ? '' : ` (${g.ownerName})`}`, sx, sy - s * 1.8 + bob, mine ? col : '#9a9aa8', 9);
+    }
   }
   function drawDrops(now, me) {
     S.drops = (S.drops || []).filter((d) => {
@@ -730,6 +760,7 @@
       ctx.drawImage(S.ground, sx * GS, sy * GS, sw * GS, sh * GS, (sx - camX) * zoom, (sy - camY) * zoom, sw * zoom, sh * zoom);
       drawDangers(now);
       drawClickMark(now);
+      drawGroundItems(now);
       drawEntities(now, me);
       drawDrops(now, me);
       drawFx(now);
@@ -789,6 +820,18 @@
       if (kind === 'n') {
         const [x, y] = toScreen(e.x, e.y);
         shadowAt(x, y, 9 * zoom);
+        if (e.kind === 'chaos') {
+          // Chaos Goblin com o brilho da Chaos Machine
+          ctx.save(); ctx.globalCompositeOperation = 'lighter';
+          const r = 26 * zoom * (1 + 0.08 * Math.sin(now / 220));
+          const gr = ctx.createRadialGradient(x, y - 14 * zoom, 0, x, y - 14 * zoom, r);
+          gr.addColorStop(0, 'rgba(170,90,255,.45)'); gr.addColorStop(1, 'rgba(170,90,255,0)');
+          ctx.fillStyle = gr; ctx.fillRect(x - r, y - 14 * zoom - r, r * 2, r * 2); ctx.restore();
+          Sprites.monster(ctx, 'goblin', 'idle', now, x, y, sc * 1.05, false, { tint: '#8a3aff' });
+          label(e.name, x, y - HERO_H * sc - 4 * dpr, '#d8b0ff');
+          label('Chaos Machine', x, y - HERO_H * sc - 17 * dpr, '#ff9ad8', 10);
+          continue;
+        }
         Sprites.hero(ctx, 'dark_wizard', { hair: 1, skin: 1 }, 'idle', now, x, y, sc, true);
         label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffd36b');
         label('Loja', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
@@ -959,9 +1002,19 @@
     if (!S.map || !S.me || S.me.dead) return;
     if (S.panel && window.innerWidth < 700) closePanel();
     const wx = camX + ev.clientX * dpr / zoom, wy = camY + ev.clientY * dpr / zoom;
-    // NPC da loja
+    // itens no chão
+    if (S.gitems && S.gitems.size) {
+      let best = null, bd = 16;
+      for (const g of S.gitems.values()) { const d = Math.hypot(g.x - wx, g.y - 10 - wy); if (d < bd) { bd = d; best = g; } }
+      if (best) {
+        if (best.owner === S.youId) send({ type: 'pickup', gid: best.gid });
+        else feed(`Este item é de ${best.ownerName}.`, 'warn');
+        return;
+      }
+    }
+    // NPCs (loja e Chaos Goblin)
     for (const n of S.map.npcs || []) {
-      if (Math.hypot(n.x - wx, n.y - 10 - wy) < 16) { openPanel('shop'); return; }
+      if (Math.hypot(n.x - wx, n.y - 10 - wy) < 16) { openPanel(n.kind === 'chaos' ? 'chaos' : 'shop'); return; }
     }
     // tocar num jogador abre o cartão (atacar / duelo)
     let pl = null, pd = 14;
@@ -1050,10 +1103,11 @@
     $('#me-name').textContent = c.name;
     const meP = S.players.get(S.youId) || { rx: null };
     meP.info = { id: c.id, name: c.name, cls: c.cls, ap: c.ap, level: c.level, weaponRarity: (c.items.find((i) => i.equipped && i.slot === 'weapon') || {}).rarity, vip: c.vip ? c.vip.tier : 0,
-      eq: (() => { const o = { w: null }; for (const i of c.items) { if (!i.equipped) continue; if (i.slot === 'weapon') { o.w = i.base; o.wr = i.rarity; o.wp = i.plus || 0; } else if (i.set && Sprites.ARMOR.includes(i.slot)) o[i.slot] = i.set; } return o; })() };
+      eq: (() => { const o = { w: null }; for (const i of c.items) { if (!i.equipped) continue; if (i.slot === 'weapon') { o.w = i.base; o.wr = i.rarity; o.wp = i.plus || 0; } else if (i.slot === 'wings') o.wings = i.base; else if (i.set && Sprites.ARMOR.includes(i.slot)) o[i.slot] = i.set; } return o; })() };
     S.players.set(S.youId || c.id, meP);
     renderSkills();
-    if (S.panel && S.panel !== 'rank') renderPanel(S.panel);
+    if (S.panel === 'chaos') { clearTimeout(CH.t); CH.t = setTimeout(() => send({ type: 'chaosInfo' }), 250); }
+    if (S.panel && S.panel !== 'rank' && S.panel !== 'chaos') renderPanel(S.panel);
   }
 
   // nome completo no computador, primeira palavra no celular
@@ -1125,6 +1179,7 @@
     else if (name === 'config') renderConfig();
     else if (name === 'quests') renderQuests();
     else if (name === 'rank') renderRank();
+    else if (name === 'chaos') { renderChaos(); send({ type: 'chaosInfo' }); }
     else if (name === 'admin') { if (!ADM.open) { ADM.open = true; renderAdmin(); } }
   }
   $$('.menu [data-panel]').forEach((b) => { b.onclick = () => openPanel(b.dataset.panel); });
@@ -1133,7 +1188,7 @@
 
   function iconCanvas(it) {
     const c = document.createElement('canvas'); c.width = 48; c.height = 48;
-    PA.drawIcon(c.getContext('2d'), it.icon, 3, 3, 3, RAR[it.rarity]);
+    PA.drawIcon(c.getContext('2d'), it.icon, 3, 3, 3, ACCENT(it));
     return c;
   }
   function slotButton(it, onClick) {
@@ -1145,6 +1200,7 @@
     b.setAttribute('aria-label', `${it.name}${it.plus ? ' +' + it.plus : ''}, ${RAR_NAME[it.rarity]}`);
     b.appendChild(iconCanvas(it));
     if (it.plus) b.insertAdjacentHTML('beforeend', `<span class="plus">+${it.plus}</span>`);
+    if (it.stack) b.insertAdjacentHTML('beforeend', `<span class="qty">${it.qty > 999 ? '999+' : it.qty}</span>`);
     b.onclick = onClick;
     return b;
   }
@@ -1219,6 +1275,8 @@
     if (st.dmg) parts.push(`Dano ${st.dmg[0]}–${st.dmg[1]}`);
     if (st.def) parts.push(`Defesa +${st.def}`);
     if (st.hp) parts.push(`Vida +${st.hp}`);
+    if (st.wdmg) parts.push(`Dano +${st.wdmg}%`);
+    if (st.absorb) parts.push(`Absorve ${st.absorb}% do dano`);
     return parts.join(' · ');
   }
   function renderItemDetail() {
@@ -1236,15 +1294,29 @@
       cmp = `<p>${a > b ? '<span style="color:#a8e08a">Melhor</span>' : a < b ? '<span class="bad">Pior</span>' : 'Igual'} que o equipado (${esc(statLine(cur.stats))})</p>`;
     }
     const set = it.set && S.data.sets[it.set] ? `<p class="muted">Conjunto ${esc(S.data.sets[it.set].name)} — ${esc(S.data.sets[it.set].bonus)}</p>` : '';
+    if (it.slot === 'material') {
+      box.innerHTML = `<h3 style="color:${ACCENT(it)}">${esc(it.name)} ×${fmt.format(it.qty)}</h3>
+        <p style="color:${RAR[it.rarity]}">Material · empilha até ${fmt.format(it.stack)}</p>
+        ${it.desc ? `<p>${esc(it.desc)}</p>` : ''}
+        <div class="row"><button class="btn small btn-gold" type="button" data-go="chaos">Abrir a Chaos Machine</button>
+          <button class="btn small btn-ghost" type="button" data-act="sell">Vender ${it.qty > 1 ? 'todas ' : ''}por ${fmt.format(it.value)} Zen</button></div>`;
+      $('[data-go]', box).onclick = () => openPanel('chaos');
+      $('[data-act]', box).onclick = () => { S.selItem = null; send({ type: 'sell', id: it.id }); };
+      return;
+    }
+    const wingOk = !it.classes || it.classes.includes(S.char.cls);
+    const catTxt = it.cat === 'cape' ? `Capa do Dark Lord · nível ${it.tier}` : it.cat === 'wings' ? `Asa de nível ${it.tier}` : SLOT_NAME[it.slot];
     box.innerHTML = `<h3 style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}</h3>
-      <p style="color:${RAR[it.rarity]}">${RAR_NAME[it.rarity]} · ${SLOT_NAME[it.slot]}</p>
+      <p style="color:${RAR[it.rarity]}">${RAR_NAME[it.rarity]} · ${catTxt}</p>
       <p>${esc(statLine(it.stats))}</p>
       <p class="${lvlOk ? '' : 'bad'}">Requer nível ${it.req}</p>
+      ${it.classes ? `<p class="${wingOk ? 'muted' : 'bad'}">Classes: ${it.classes.map((k) => esc(S.data.classes[k] ? S.data.classes[k].name : k)).join(', ')}</p>` : ''}
+      ${it.chaos ? '<p style="color:#d8b0ff">Arma do Caos: base para criar asas e a capa do Dark Lord na Chaos Machine (o + e a raridade aumentam a chance).</p>' : ''}
       ${usable ? '' : `<p class="bad">${esc(cls.name)} não usa esta arma.</p>`}
       ${cmp}${set}
       <div class="row">${it.equipped
         ? '<button class="btn small" type="button" data-act="unequip">Desequipar</button>'
-        : `<button class="btn small btn-gold" type="button" data-act="equip" ${lvlOk && usable ? '' : 'disabled'}>Equipar</button>
+        : `<button class="btn small btn-gold" type="button" data-act="equip" ${lvlOk && usable && wingOk ? '' : 'disabled'}>Equipar</button>
            <button class="btn small btn-ghost" type="button" data-act="sell">Vender por ${fmt.format(it.value)} Zen</button>`}</div>`;
     $$('[data-act]', box).forEach((b) => {
       b.onclick = () => {
@@ -1296,6 +1368,7 @@
         <div><span>Vida</span><br>${fmt.format(c.maxHp)}</div><div><span>Mana</span><br>${fmt.format(c.maxMp)}</div>
         <div><span>Ataque a cada</span><br>${(c.atkMs / 1000).toFixed(2)}s</div><div><span>Crítico</span><br>${Math.round(c.crit * 100)}%</div>
         <div><span>Poder de combate</span><br>${fmt.format(c.power)}</div><div><span>Monstros derrotados</span><br>${fmt.format(c.kills)}</div>
+        ${c.absorb ? `<div><span>Absorção (asa/capa)</span><br>${c.absorb}%</div>` : ''}${c.masterResets ? `<div><span>Master Reset</span><br>${c.masterResets}</div>` : ''}
       </div>
       ${c.fullSet ? '<p style="color:#a8e08a">Bônus de conjunto completo ativo: +10% defesa, +5% dano.</p>' : ''}
       <p>PvP: <b>${c.pvp.kills}</b> vitórias · ${c.pvp.deaths} derrotas · duelos ${c.pvp.duelW}V/${c.pvp.duelL}D${c.pvp.pk ? ` · ${c.pvp.pk}× PK` : ''}</p>
@@ -1404,6 +1477,7 @@
       <section class="adm-sec"><h3>Personagem</h3>
         <div class="adm-row"><input id="adm-name" maxlength="16" value="${esc(S.char.name)}" aria-label="Nome do personagem"><button class="btn small" type="button" id="adm-find">Buscar</button><button class="btn small" type="button" id="adm-me">Eu</button></div>
         <div id="adm-char" class="adm-char"></div>
+        <p class="muted small">Também dá para usar comandos no Chat: digite <code>/ajuda</code>.</p>
       </section>
       <section class="adm-sec"><h3>Ações rápidas</h3>
         <div class="adm-grid">
@@ -1472,6 +1546,12 @@
     };
     $('#adm-vip-give').onclick = () => vip(Number($('#adm-vip-days').value));
     $('#adm-vip-del').onclick = () => vip(0);
+    // Chaos Machine, drops, comandos e histórico (admin-tools.js)
+    if (window.MUAdminTools) {
+      const box = document.createElement('div');
+      body.appendChild(box);
+      MUAdminTools.mount(box, { api: admApi, classes: S.data.classes, sendCmd, openChat: () => { closePanel(); openPanel('chat'); } });
+    }
     find();
   }
 
@@ -1530,9 +1610,130 @@
   $('#chat-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const inp = e.target.text;
-    if (inp.value.trim()) send({ type: 'chat', text: inp.value });
+    const v = inp.value.trim();
+    if (v.startsWith('/')) { sendCmd(v); chatSys(v, 'cmd'); }
+    else if (v) send({ type: 'chat', text: inp.value });
     inp.value = '';
   });
+  function sendCmd(text) { send({ type: 'cmd', text, nonce: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) }); }
+  function chatSys(text, cls) {
+    const li = document.createElement('li');
+    li.className = 'sys ' + (cls || ''); li.textContent = text;
+    const ul = $('#chat-lines'); ul.appendChild(li);
+    while (ul.children.length > 120) ul.firstChild.remove();
+    ul.scrollTop = ul.scrollHeight;
+    return li;
+  }
+  // resposta dos comandos de administração (só quem enviou recebe)
+  function cmdResult(m) {
+    m.lines.forEach((l, i) => chatSys(l, m.ok ? (i ? 'cmdres' : 'cmdres ok') : 'cmdres err'));
+    if (m.confirm) {
+      const li = chatSys('', 'cmdres');
+      li.innerHTML = `<button class="btn small btn-danger" type="button">Confirmar</button> <button class="btn small" type="button">Cancelar</button>`;
+      const [yes, no] = $$('button', li);
+      yes.onclick = () => { sendCmd('/confirm ' + m.confirm.code); li.remove(); };
+      no.onclick = () => { sendCmd('/cancel ' + m.confirm.code); li.remove(); };
+      setTimeout(() => li.remove(), m.confirm.secs * 1000);
+    }
+    if (S.panel !== 'chat') feed(m.lines[0], m.ok ? 'quest' : 'warn');
+  }
+
+  // ================= Chaos Machine =================
+  const CH = { info: null, tab: 'wing1', sel: {}, busy: false, t: 0 };
+  const FAIL_TXT = { lose_all: 'Se falhar: perde o item principal, os materiais e o Zen.', keep_main: 'Se falhar: o item principal volta para a bolsa; perde os materiais e o Zen.', keep_items: 'Se falhar: só o Zen é cobrado; os itens voltam.' };
+  function chaosIcon(it, size = 40) {
+    const c = document.createElement('canvas'); c.width = 48; c.height = 48; c.style.width = c.style.height = size + 'px';
+    PA.drawIcon(c.getContext('2d'), it.icon, 3, 3, 3, it.ic || RAR[it.rarity] || '#c8c8c8');
+    return c;
+  }
+  function renderChaos() {
+    const body = $('#chaos-body');
+    const I = CH.info;
+    if (!I) { body.innerHTML = '<p class="muted">Ligando a Chaos Machine…</p>'; return; }
+    const tabs = $('#chaos-tabs');
+    tabs.innerHTML = I.recipes.map((r) => `<button type="button" role="tab" data-r="${r.id}" class="${CH.tab === r.id ? 'on' : ''}" aria-selected="${CH.tab === r.id}">${esc(r.name)}</button>`).join('');
+    $$('button', tabs).forEach((b) => { b.onclick = () => { CH.tab = b.dataset.r; renderChaos(); }; });
+    const r = I.recipes.find((x) => x.id === CH.tab) || I.recipes[0];
+    const okCands = r.candidates.filter((c) => c.ok);
+    let selId = CH.sel[r.id];
+    if (!okCands.some((c) => c.item.id === selId)) selId = CH.sel[r.id] = okCands[0] ? okCands[0].item.id : null;
+    const sel = r.candidates.find((c) => c.item.id === selId) || null;
+    const missing = [];
+    if (!r.enabled) missing.push('Receita desativada no momento.');
+    if (!r.classOk) missing.push(r.classes.length === 1 && r.classes[0] === 'dark_lord' ? 'Só o Dark Lord faz esta receita.' : 'Sua classe não faz esta receita.');
+    if (r.noResults) missing.push('Nenhuma asa de nível 1 serve para a sua classe (o Dark Lord usa a Capa).');
+    if (!sel) missing.push(r.candidates.length ? 'Nenhum item principal válido na bolsa.' : `Falta o item principal: ${r.main.bases.map((b) => b.name).join(' ou ')}.`);
+    r.materials.forEach((m) => { if (m.have < m.qty) missing.push(`Falta ${m.qty - m.have}× ${m.name}.`); });
+    if (I.zen < r.zen) missing.push(`Faltam ${fmt.format(r.zen - I.zen)} Zen.`);
+    if (I.npcRequired && !I.atNpc) missing.push('Vá até o Chaos Goblin em Lorencia.');
+    const res = sel && sel.result ? r.results.filter((x) => x.base === sel.result) : r.results;
+    const src = I.sources || { list: {} };
+    body.innerHTML = `
+      ${I.npcRequired && !I.atNpc ? `<p class="chaos-warn">A Chaos Machine fica com o Chaos Goblin, em Lorencia. <button class="btn small" type="button" id="chaos-go">Ir para Lorencia</button></p>` : ''}
+      <div class="chaos-machine" id="chaos-machine">
+        <div class="chaos-slot main ${sel ? 'filled' : ''}" id="chaos-main" title="Item principal"></div>
+        <span class="chaos-plus">+</span>
+        ${r.materials.map((m) => `<div class="chaos-slot ${m.have >= m.qty ? 'filled' : 'need'}" data-mat="${m.item}"><b class="${m.have >= m.qty ? '' : 'bad'}">${m.have}/${m.qty}</b></div>`).join('<span class="chaos-plus">+</span>')}
+        <span class="chaos-plus">+</span>
+        <div class="chaos-zen ${I.zen >= r.zen ? '' : 'bad'}"><b>${fmt.format(r.zen)}</b><small>Zen</small></div>
+        <span class="chaos-plus">=</span>
+        <div class="chaos-results" id="chaos-res"></div>
+      </div>
+      <div class="chaos-rate"><span>Chance de sucesso</span><b id="chaos-chance">${sel ? sel.chance + '%' : '—'}</b><small>máximo desta receita: ${r.maxChance}%</small></div>
+      <p class="muted small">${esc(FAIL_TXT[r.onFail])}</p>
+      <h4>${r.mode === 'evolve' ? 'Escolha o item para evoluir' : 'Escolha a Arma do Caos'}</h4>
+      <p class="muted small"><span>Aceita: ${r.main.bases.map((b) => esc(b.name)).join(', ')}${r.main.minPlus ? ` (+${r.main.minPlus} ou mais)` : ''}.</span> <span>O + e a raridade aumentam a chance.</span></p>
+      <div class="chaos-cands" id="chaos-cands">${r.candidates.length ? '' : '<p class="muted">Nenhum na bolsa.</p>'}</div>
+      ${missing.length ? `<ul class="chaos-missing">${missing.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+      <button class="btn btn-gold chaos-go" type="button" id="chaos-do" ${missing.length || CH.busy ? 'disabled' : ''}>${r.mode === 'evolve' ? 'Evoluir' : 'Combinar'}${sel ? ` (${sel.chance}%)` : ''}</button>
+      <details class="chaos-src"><summary>Onde conseguir os materiais</summary>
+        <ul>${[...new Set([...r.materials.map((m) => m.item), ...(r.mode === 'random' ? r.main.bases.map((b) => b.base) : [])])].map((k) => {
+    const nm = (r.materials.find((m) => m.item === k) || r.main.bases.find((b) => b.base === k) || { name: k }).name;
+    return `<li><b>${esc(nm)}</b>: ${(src.list[k] || []).map((x) => `<span>${esc(x)}</span>`).join(' · ') || '<span>criado na Chaos Machine</span>'}</li>`; }).join('')}
+          ${r.mode === 'evolve' ? `<li><b>${esc(r.main.bases.map((b) => b.name).join(' / '))}</b>: <span>${r.id === 'cape2' ? 'crie na aba "Criar Capa do Dark Lord"' : 'crie na aba "Criar Asa Nível 1"'}</span></li>` : ''}</ul>
+      </details>`;
+    const mainBox = $('#chaos-main');
+    if (sel) { mainBox.appendChild(chaosIcon(sel.item)); if (sel.item.plus) mainBox.insertAdjacentHTML('beforeend', `<span class="plus">+${sel.item.plus}</span>`); }
+    else mainBox.innerHTML = '<small>?</small>';
+    $$('[data-mat]', body).forEach((el) => { const m = r.materials.find((x) => x.item === el.dataset.mat); el.prepend(chaosIcon(m, 32)); el.title = m.name; });
+    const resBox = $('#chaos-res');
+    res.slice(0, 5).forEach((x) => { const d = document.createElement('div'); d.className = 'chaos-out'; d.title = x.name; d.appendChild(chaosIcon(x, 34)); d.insertAdjacentHTML('beforeend', `<small>${esc(x.name)}</small>`); resBox.appendChild(d); });
+    if (!res.length) resBox.innerHTML = '<small class="muted">—</small>';
+    const cands = $('#chaos-cands');
+    r.candidates.forEach((c) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chaos-cand' + (c.item.id === selId ? ' sel' : '') + (c.ok ? '' : ' off');
+      b.appendChild(chaosIcon(c.item, 30));
+      b.insertAdjacentHTML('beforeend', `<span><b style="color:${RAR[c.item.rarity]}">${esc(c.item.name)}${c.item.plus ? ' +' + c.item.plus : ''}</b><small>${c.ok ? `${c.chance}% de chance` : esc(c.why)}</small></span>`);
+      if (c.ok) b.onclick = () => { CH.sel[r.id] = c.item.id; renderChaos(); };
+      else b.disabled = true;
+      cands.appendChild(b);
+    });
+    const go = $('#chaos-go'); if (go) go.onclick = () => send({ type: 'teleport', map: 'lorencia' });
+    $('#chaos-do').onclick = () => {
+      if (CH.busy || !sel) return;
+      CH.busy = true; $('#chaos-do').disabled = true;
+      $('#chaos-machine').classList.add('spin');
+      send({ type: 'chaos', recipe: r.id, main: sel.item.id });
+    };
+  }
+  function chaosResult(m) {
+    const show = () => {
+      CH.busy = false;
+      const mach = $('#chaos-machine'); if (mach) mach.classList.remove('spin');
+      const box = $('#chaos-result');
+      if (!m.ok) { feed(m.text, 'warn'); if (S.panel === 'chaos') renderChaos(); return; }
+      box.innerHTML = '';
+      box.className = 'chaos-result ' + (m.success ? 'win' : 'lose');
+      if (m.item) box.appendChild(chaosIcon(m.item, 64));
+      box.insertAdjacentHTML('beforeend', `<b>${m.success ? 'Sucesso!' : 'Falhou'}</b><p>${esc(m.text)}</p>${m.lost && m.lost.length ? `<small>Perdeu: ${m.lost.map(esc).join(', ')}</small>` : ''}${m.kept ? '<small>O item principal voltou para a bolsa.</small>' : ''}<button class="btn small" type="button">OK</button>`);
+      box.hidden = false;
+      $('button', box).onclick = () => { box.hidden = true; };
+      if (window.Sfx) { if (m.success) Sfx.levelUp(); else Sfx.warn(); }
+    };
+    // a máquina gira um pouco antes de mostrar o resultado
+    if (CH.busy) setTimeout(show, 900); else show();
+  }
 
   // ================= relatório offline =================
   function showOffline(r) {
@@ -1543,7 +1744,7 @@
         <dt>Níveis</dt><dd>${r.levels ? '+' + r.levels : '—'}</dd><dt>Zen</dt><dd>+${fmt.format(r.zen)}</dd>
         <dt>Poções usadas</dt><dd>${fmt.format(r.potsUsed)}</dd></dl>
       ${r.died ? '<p class="bad" style="color:#ff9a7a">As poções de vida acabaram e o herói caiu. Compre mais na loja de Lorencia.</p>' : ''}
-      ${r.items.length ? `<p>Itens encontrados:</p><ul>${r.items.map((i) => `<li style="color:${RAR[i.rarity]}">${esc(i.name)}${i.plus ? ' +' + i.plus : ''}</li>`).join('')}</ul>` : ''}`;
+      ${r.items.length ? `<p>Itens encontrados:</p><ul>${r.items.map((i) => `<li style="color:${ACCENT(i)}">${esc(i.name)}${i.plus ? ' +' + i.plus : ''}${i.qty > 1 ? ' ×' + fmt.format(i.qty) : ''}</li>`).join('')}</ul>` : ''}`;
     const d = $('#offline-dialog');
     d.showModal();
   }

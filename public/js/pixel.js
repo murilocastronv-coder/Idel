@@ -229,9 +229,14 @@
     potion_hp: ['....hh......', '....WW......', '...W..W.....', '..WRRRRW....', '.WRRRRRRW...', '.WRRWRRRW...', '.WRRRRRRW...', '.WRRRRRRW...', '..WRRRRW....', '...WWWW.....', '............', '............'],
     potion_mp: ['....hh......', '....WW......', '...W..W.....', '..WAAAAW....', '.WAAAAAAW...', '.WAAWAAAW...', '.WAAAAAAW...', '.WAAAAAAW...', '..WAAAAW....', '...WWWW.....', '............', '............'],
     necklace: ['GG........GG', '.G........G.', '.GG......GG.', '..G......G..', '..GG....GG..', '...GG..GG...', '....GAAG....', '....AWWA....', '....AWWA....', '.....AA.....', '............', '............'],
+    jewel_chaos: ['....KKKK....', '...KPPOOK...', '..KPPWOOYK..', '.KPPWPOOYYK.', '.KPPPPOOYYK.', '.KBBBPRRYYK.', '.KBBBBRRRRK.', '..KBBBRRRK..', '...KBBRRK...', '....KBRK....', '.....KK.....', '............'],
+    feather: ['..........W.', '.........WA.', '........WAA.', '.......WAAA.', '......WAAAw.', '.....WAAAw..', '....WAAAw...', '...WAAAw....', '..WAAw......', '.hAw........', '.h..........', 'h...........'],
+    cape: ['...GGGGGG...', '..GAAAAAAG..', '..GAAAAAAG..', '.GAAAwAAAAG.', '.GAAAwAAAAG.', '.GAAAwAAAAAG', 'GAAAAwAAAAAG', 'GAAAAwAAAAAG', 'GAAAAAAAAAAG', 'GAAAAAAAAAAG', '.GGG.GG.GGG.', '............'],
+    zen: ['............', '....GGGG....', '...GggggG...', '...GggggG...', '....GGGG....', '..GGGG.GGGG.', '.GggggGggggG', '.GggggGggggG', '..GGGGGGGG..', '.GggggggggG.', '..GGGGGGGG..', '............'],
   };
   function drawIcon(ctx, icon, x, y, scale, accent) {
-    const pal = { W: '#e8edf5', w: '#9aa3b5', G: '#c99a2e', g: '#e8b84a', h: '#7a4a22', R: icon === 'potion_hp' ? '#d0302a' : '#7a1e1e', K: '#1b1b2a', A: icon === 'potion_mp' ? '#3a7aff' : accent, s: '#efe4c8' };
+    const pal = { W: '#e8edf5', w: '#9aa3b5', G: '#c99a2e', g: '#e8b84a', h: '#7a4a22', R: icon === 'potion_hp' || icon === 'jewel_chaos' ? '#d0302a' : '#7a1e1e', K: '#1b1b2a', A: icon === 'potion_mp' ? '#3a7aff' : accent, s: '#efe4c8',
+      P: '#9a4aff', O: '#ff8a2a', Y: '#ffe08a', B: '#3a7aff' };
     const rows = ICONS[icon] || ICONS.jewel;
     const grid = rows.map((r) => Array.from(r.padEnd(12, '.')).map((k) => (k === '.' ? null : pal[k] || null)));
     drawGrid(ctx, grid, x, y, scale, false);

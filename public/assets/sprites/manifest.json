@@ -1,5 +1,5 @@
 {
- "version": 4,
+ "version": 5,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",
@@ -1037,6 +1037,48 @@
      "default_sum"
     ]
    }
+  }
+ },
+ "wings": {
+  "classes": [
+   "dark_knight",
+   "dark_wizard",
+   "fairy_elf",
+   "magic_gladiator",
+   "dark_lord",
+   "summoner"
+  ],
+  "rowsPerClass": 5,
+  "sheets": {
+   "wings_satan": "equip/wings_wings_satan.png",
+   "wings_heaven": "equip/wings_wings_heaven.png",
+   "wings_elf": "equip/wings_wings_elf.png",
+   "wings_curse": "equip/wings_wings_curse.png",
+   "wings_dragon": "equip/wings_wings_dragon.png",
+   "wings_soul": "equip/wings_wings_soul.png",
+   "wings_spirit": "equip/wings_wings_spirit.png",
+   "wings_darkness": "equip/wings_wings_darkness.png",
+   "wings_despair": "equip/wings_wings_despair.png",
+   "cape_lord": "equip/wings_cape_lord.png",
+   "cape_emperor": "equip/wings_cape_emperor.png"
+  },
+  "glow": {
+   "wings_dragon": "#ff6a2a",
+   "wings_soul": "#7ad0ff",
+   "wings_spirit": "#ffe08a",
+   "wings_darkness": "#a04aff",
+   "wings_despair": "#ff6ab8",
+   "cape_emperor": "#ff5a3a"
+  },
+  "fw": 144,
+  "fh": 120,
+  "pivot": [
+   88,
+   112
+  ],
+  "over": {
+   "cape_lord": "equip/wings_cape_lord_over.png",
+   "cape_emperor": "equip/wings_cape_emperor_over.png"
   }
  }
 }

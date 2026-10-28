@@ -158,7 +158,7 @@ const MONSTERS = {
 // Mapas abertos agora (os outros aparecem na galeria como "em breve")
 const WORLD = {
   lorencia: { name: 'Lorencia', theme: 'town', w: 800, h: 560, safe: true, minLevel: 1, spawn: [400, 300],
-    npcs: [{ id: 'shop', name: 'Mercadora Pasi', x: 470, y: 250 }], groups: [] },
+    npcs: [{ id: 'shop', name: 'Mercadora Pasi', x: 470, y: 250, kind: 'shop' }, { id: 'chaos', name: 'Chaos Goblin', x: 335, y: 240, kind: 'chaos' }], groups: [] },
   noria: { name: 'Noria', theme: 'noria', w: 1200, h: 800, minLevel: 1, spawn: [120, 400],
     groups: [{ type: 'slime', count: 14 }, { type: 'goblin', count: 7 }, { type: 'goblin_elite', count: 1 }] },
   devias: { name: 'Devias', theme: 'snow', w: 1200, h: 800, minLevel: 10, spawn: [120, 400],
@@ -358,7 +358,36 @@ const ITEM_BASES = {
 
   ring_life: { name: 'Anel da Vida', slot: 'ring', icon: 'ring', req: 6, hp: 40 },
   ring_ice: { name: 'Anel de Gelo', slot: 'ring', icon: 'ring', req: 20, hp: 100 },
+
+  // ---------- Chaos Machine ----------
+  // special = não entra no sorteio comum de drops (só pela tabela de drop configurável ou pela Chaos Machine)
+  // materiais empilham (stack) e não ocupam mais de um lugar na bolsa
+  jewel_of_chaos: { name: 'Jewel of Chaos', slot: 'material', icon: 'jewel_chaos', req: 1, stack: 999, rarity: 'rare', value: 1500, special: true,
+    desc: 'Joia usada na Chaos Machine para criar e evoluir asas e capas.' },
+  loch_feather: { name: "Loch's Feather", slot: 'material', icon: 'feather', ic: '#ffb43a', req: 1, stack: 999, rarity: 'epic', value: 9000, special: true,
+    desc: 'Pena rara. Necessária para evoluir asas para o nível 2 e para evoluir a capa do Dark Lord.' },
+  // armas do Caos: usadas como base das receitas (o + e a raridade aumentam a chance)
+  chaos_dragon_axe: { name: 'Chaos Dragon Axe', slot: 'weapon', kind: 'sword', icon: 'sword', req: 30, dmg: [30, 44], special: true, chaos: true },
+  chaos_nature_bow: { name: 'Chaos Nature Bow', slot: 'weapon', kind: 'bow', icon: 'bow', req: 30, dmg: [28, 41], special: true, chaos: true },
+  chaos_lightning_staff: { name: 'Chaos Lightning Staff', slot: 'weapon', kind: 'staff', icon: 'staff', req: 30, dmg: [28, 41], special: true, chaos: true },
+  // asas de nível 1 (wdmg = % de dano a mais; absorb = % do dano recebido que a asa absorve)
+  wings_satan: { name: 'Wings of Satan', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#d0342a', req: 40, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true, classes: ['dark_knight', 'magic_gladiator'] },
+  wings_heaven: { name: 'Wings of Heaven', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#e8f4ff', req: 40, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true, classes: ['dark_wizard', 'magic_gladiator'] },
+  wings_elf: { name: 'Wings of Elf', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#8aff6a', req: 40, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true, classes: ['fairy_elf'] },
+  wings_curse: { name: 'Wings of Curse', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#b05aff', req: 40, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true, classes: ['summoner'] },
+  // asas de nível 2
+  wings_dragon: { name: 'Wings of Dragon', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#ff5a2a', req: 100, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['dark_knight'] },
+  wings_soul: { name: 'Wings of Soul', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#5ac8ff', req: 100, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['dark_wizard'] },
+  wings_spirit: { name: 'Wings of Spirit', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#ffe08a', req: 100, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['fairy_elf'] },
+  wings_darkness: { name: 'Wings of Darkness', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#8a4aff', req: 100, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['magic_gladiator'] },
+  wings_despair: { name: 'Wings of Despair', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#ff6ab8', req: 100, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['summoner'] },
+  // capas do Dark Lord (ocupam o lugar das asas, mas são equipamento só do Dark Lord)
+  cape_lord: { name: 'Cape of Lord', slot: 'wings', cat: 'cape', tier: 1, icon: 'cape', ic: '#9a4aff', req: 60, def: 18, wdmg: 20, absorb: 18, rarity: 'legendary', value: 150000, special: true, classes: ['dark_lord'] },
+  cape_emperor: { name: 'Cape of Emperor', slot: 'wings', cat: 'cape', tier: 2, icon: 'cape', ic: '#ff3a3a', req: 130, def: 34, wdmg: 39, absorb: 30, rarity: 'ancestral', value: 1500000, special: true, classes: ['dark_lord'] },
 };
+
+// asa de nível 1 -> asa de nível 2 (o Magic Gladiator transforma Satan/Heaven em Darkness)
+const WING_EVOLVE = { wings_satan: 'wings_dragon', wings_heaven: 'wings_soul', wings_elf: 'wings_spirit', wings_curse: 'wings_despair' };
 
 const SETS = {
   leather: { name: 'Couro', bonus: 'Conjunto completo: +10% defesa e +5% dano' },
@@ -383,10 +412,11 @@ const SHOP = {
 };
 
 const INVENTORY_SIZE = 40;
+const MAX_STACK = 999;
 
 module.exports = {
   CLASSES, MAPS, RARITIES, ITEMS, LIMITS,
   MONSTERS, WORLD, SKILLS, POINTS_PER_LEVEL, AUTO_STATS, CLASS_WEAPONS, ITEM_BASES, SETS,
-  RARITY_MULT, RARITY_WEIGHTS, SHOP, INVENTORY_SIZE, GAME_MODE, DAILY_POOL, LOGIN_REWARDS, ACHIEVEMENTS,
+  RARITY_MULT, RARITY_WEIGHTS, SHOP, INVENTORY_SIZE, MAX_STACK, WING_EVOLVE, GAME_MODE, DAILY_POOL, LOGIN_REWARDS, ACHIEVEMENTS,
 };
 

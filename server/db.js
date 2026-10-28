@@ -38,6 +38,22 @@ async function query(text, params) {
   return pool.query(text, params);
 }
 
+// Transação: tudo ou nada. fn recebe q(text, params). Usado onde itens, Zen e registros mudam juntos.
+async function tx(fn) {
+  const client = await pool.connect();
+  let done = false;
+  try {
+    await client.query('BEGIN');
+    const out = await fn((text, params) => client.query(text, params));
+    await client.query('COMMIT');
+    done = true;
+    return out;
+  } finally {
+    if (!done) await client.query('ROLLBACK').catch(() => {});
+    client.release();
+  }
+}
+
 async function migrate() {
   if (SCHEMA !== 'public') await pool.query(`CREATE SCHEMA IF NOT EXISTS ${SCHEMA}`);
   console.log(`[db] usando o schema "${SCHEMA}"`);
@@ -56,4 +72,4 @@ async function migrate() {
   }
 }
 
-module.exports = { pool, query, migrate };
+module.exports = { pool, query, tx, migrate };

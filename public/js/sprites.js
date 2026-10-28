@@ -155,8 +155,22 @@
       const path = set && E.classes[cls] && E.classes[cls][set];
       if (path) blit(opts.white ? recolored('L:' + path, img(path), meta, false, null, true) : img(path), E.pieces.indexOf(name));
     };
+    // asas/capa: folha própria (quadro maior), um bloco por classe; nível 2 brilha
+    const WG = S.manifest.wings, wk = eq.wings, wblk = WG && wk ? WG.classes.indexOf(cls) : -1;
+    const wing = (path, glow) => {
+      if (!path || wblk < 0) return;
+      const im = opts.white ? recolored('L:' + path, img(path), meta, false, null, true) : img(path);
+      if (!im) return;
+      const sx = f * WG.fw, sy = (wblk * WG.rowsPerClass + row) * WG.fh;
+      const dx = -Math.round(WG.pivot[0] * scale), dy = -Math.round(WG.pivot[1] * scale), w = Math.round(WG.fw * scale), h = Math.round(WG.fh * scale);
+      if (glow && !opts.white) { ctx.save(); ctx.shadowColor = glow; ctx.shadowBlur = 7 * scale; ctx.drawImage(im, sx, sy, WG.fw, WG.fh, dx, dy, w, h); ctx.restore(); }
+      else ctx.drawImage(im, sx, sy, WG.fw, WG.fh, dx, dy, w, h);
+    };
+    if (wk && WG) wing(WG.sheets[wk], WG.glow && WG.glow[wk]);
     blit(back, 0);
-    piece('boots'); piece('armor_mid'); piece('gloves_mid'); piece('helm');
+    piece('boots'); piece('armor_mid'); piece('gloves_mid');
+    if (wk && WG && WG.over) wing(WG.over[wk], null);
+    piece('helm');
     const wb = eq.w === undefined ? S.manifest.weapons.defaults[cls] : eq.w;
     const wi = W && wb ? W.list.indexOf(wb) : -1;
     if (wi >= 0) {

@@ -5,7 +5,7 @@ from html.parser import HTMLParser
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 JS = ['public/js/app.js', 'public/js/game.js', 'public/js/sprites.js', 'public/js/mobile.js', 'public/js/status.js', 'server/index.js', 'server/world.js', 'server/vip.js',
-      'server/quests.js', 'server/gamedata.js', 'server/mailer.js']
+      'server/quests.js', 'server/gamedata.js', 'server/mailer.js', 'server/chaos.js', 'server/drops.js']
 HTML = ['public/index.html', 'public/game.html', 'public/app.html', 'public/status.html']
 
 def norm(s):

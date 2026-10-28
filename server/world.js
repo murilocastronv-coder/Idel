@@ -6,6 +6,9 @@ const G = require('./gamedata');
 const Q = require('./quests');
 const VIP = require('./vip');
 const ADMIN = require('./admin');
+const CHAOS = require('./chaos');
+const DROPS = require('./drops');
+const CMDS = require('./commands');
 
 const TICK_MS = 100;
 const SAVE_EVERY_MS = 20000;
@@ -31,9 +34,15 @@ function expToNext(level) { return Math.floor(100 * Math.pow(level, 2.1) + 200);
 const XP = () => G.GAME_MODE.expRate;
 
 // ------------------------------------------------------------------ itens
+const WING_PLUS = 1; // cada +1 numa asa/capa: +1% de dano, +1% de absorção e +2 de defesa
 function itemStats(it) {
   const b = G.ITEM_BASES[it.base];
   if (!b) return {};
+  if (b.slot === 'wings') {
+    const pl = it.plus || 0;
+    return { def: b.def + pl * 2, wdmg: b.wdmg + pl * WING_PLUS, absorb: Math.min(60, b.absorb + pl * WING_PLUS) };
+  }
+  if (b.slot === 'material') return {};
   const m = (G.RARITY_MULT[it.rarity] || 1) * (1 + (it.plus || 0) * 0.06);
   const out = {};
   if (b.dmg) out.dmg = [Math.round(b.dmg[0] * m), Math.round(b.dmg[1] * m)];
@@ -43,15 +52,19 @@ function itemStats(it) {
 }
 function itemScore(it) {
   const s = itemStats(it);
-  return (s.dmg ? (s.dmg[0] + s.dmg[1]) : 0) + (s.def || 0) * 2 + (s.hp || 0) / 4;
+  return (s.dmg ? (s.dmg[0] + s.dmg[1]) : 0) + (s.def || 0) * 2 + (s.hp || 0) / 4 + (s.wdmg || 0) * 6 + (s.absorb || 0) * 6;
 }
 function itemValue(it) {
   const b = G.ITEM_BASES[it.base];
-  return Math.round((20 + (b ? b.req : 1) * 12) * (RARITY_ORDER.indexOf(it.rarity) + 1) * (1 + (it.plus || 0) * 0.2));
+  const q = Math.max(1, Number(it.qty) || 1);
+  if (b && b.value) return Math.round(b.value * (1 + (it.plus || 0) * 0.2)) * q;
+  return Math.round((20 + (b ? b.req : 1) * 12) * (RARITY_ORDER.indexOf(it.rarity) + 1) * (1 + (it.plus || 0) * 0.2)) * q;
 }
 function canUse(p, it) {
   const b = G.ITEM_BASES[it.base];
   if (!b) return 'Item desconhecido.';
+  if (b.slot === 'material') return 'Este item é um material: use na Chaos Machine, com o Chaos Goblin em Lorencia.';
+  if (b.classes && !b.classes.includes(p.cls)) return b.cat === 'cape' ? 'Só o Dark Lord usa capas.' : 'Sua classe não usa estas asas.';
   if (p.level < b.req) return `Requer nível ${b.req}.`;
   if (b.slot === 'weapon' && !G.CLASS_WEAPONS[p.cls].includes(b.kind)) return 'Sua classe não usa esta arma.';
   return null;
@@ -63,31 +76,39 @@ function rollRarity(table) {
   for (const k of RARITY_ORDER) { r -= w[k]; if (r <= 0) return k; }
   return 'common';
 }
-function rollItem(level, table) {
-  let pool = Object.entries(G.ITEM_BASES).filter(([, b]) => b.req <= level + 3 && b.req >= level - 16);
-  if (!pool.length) pool = Object.entries(G.ITEM_BASES).filter(([, b]) => b.req <= Math.max(1, level + 3));
-  const [base] = pool[Math.floor(Math.random() * pool.length)];
+function rollPlus(table) {
   // +1 a +3 também ficou mais raro (6% dos drops; boss 12%), e +3 é o mais difícil
   const pr = Math.random(), plusChance = table === 'boss' ? 0.12 : 0.06;
-  const plus = pr < plusChance * 0.12 ? 3 : pr < plusChance * 0.4 ? 2 : pr < plusChance ? 1 : 0;
-  return { base, rarity: rollRarity(table), plus };
+  return pr < plusChance * 0.12 ? 3 : pr < plusChance * 0.4 ? 2 : pr < plusChance ? 1 : 0;
 }
-// o que aparece no corpo do herói: arma (item exato) e conjunto de cada peça de armadura
+const RANDOM_POOL = () => Object.entries(G.ITEM_BASES).filter(([, b]) => !b.special);
+function rollItem(level, table) {
+  const all = RANDOM_POOL();
+  let pool = all.filter(([, b]) => b.req <= level + 3 && b.req >= level - 16);
+  if (!pool.length) pool = all.filter(([, b]) => b.req <= Math.max(1, level + 3));
+  const [base] = pool[Math.floor(Math.random() * pool.length)];
+  return { base, rarity: rollRarity(table), plus: rollPlus(table) };
+}
+// o que aparece no corpo do herói: arma (item exato), conjunto de cada peça de armadura e asa/capa
 function gearVisual(items) {
   const out = { w: null };
   for (const it of items) {
     const b = G.ITEM_BASES[it.base];
     if (!b) continue;
     if (b.slot === 'weapon') { out.w = it.base; out.wr = it.rarity; out.wp = it.plus || 0; }
+    else if (b.slot === 'wings') out.wings = it.base;
     else if (['helm', 'armor', 'gloves', 'boots'].includes(b.slot) && b.set) out[b.slot] = b.set;
   }
   return out;
 }
 function publicItem(it) {
   const b = G.ITEM_BASES[it.base] || {};
-  return { id: String(it.id), base: it.base, name: b.name, slot: b.slot, icon: b.icon, kind: b.kind, req: b.req, set: b.set,
+  return { id: String(it.id), base: it.base, name: b.name, slot: b.slot, icon: b.icon, ic: b.ic || null, kind: b.kind, req: b.req, set: b.set,
+    cat: b.cat || (b.slot === 'material' ? 'material' : null), tier: b.tier || 0, classes: b.classes || null, chaos: !!b.chaos, desc: b.desc || null,
+    qty: Math.max(1, Number(it.qty) || 1), stack: b.stack || 0,
     rarity: it.rarity, plus: it.plus, equipped: !!it.equipped, stats: itemStats(it), value: itemValue(it) };
 }
+function bagUsed(p) { return p.items.filter((i) => !i.equipped).length; }
 
 function skillDesc(s) {
   if (s.heal) return `Cura ${Math.round(s.heal * 100)}% da vida`;
@@ -126,6 +147,11 @@ class Player {
     this.pkUntil = 0; this.duel = null; this.duelInvite = null;
     this.vipRow = { vip1_until: row.vip1_until, vip2_until: row.vip2_until };
     this.isAdmin = !!row.is_admin_user;
+    this.role = this.isAdmin ? 'superadmin' : (row.acc_role || 'player');
+    this.mutedUntil = row.muted_until ? new Date(row.muted_until).getTime() : 0;
+    this.masterResets = row.master_resets || 0;
+    this.bonusPoints = row.bonus_points || 0;
+    this.crafting = false;
     this.onlineAcc = 0;
     this.questsDirty = false;
     this.map = null;
@@ -145,13 +171,14 @@ class Player {
   recalc() {
     const s = this.stats, c = this.cls, lv = this.level;
     const eq = this.equipped();
-    let wdmg = [1, 2], def = 0, hpBonus = 0;
+    let wdmg = [1, 2], def = 0, hpBonus = 0, wingDmg = 0, absorb = 0;
     const setCount = {};
     for (const it of eq) {
       const st = itemStats(it);
       if (st.dmg) wdmg = st.dmg;
       def += st.def || 0;
       hpBonus += st.hp || 0;
+      wingDmg += st.wdmg || 0; absorb += st.absorb || 0;
       const b = G.ITEM_BASES[it.base];
       if (b && b.set) setCount[b.set] = (setCount[b.set] || 0) + 1;
     }
@@ -165,7 +192,8 @@ class Player {
       case 'dark_lord': base = [s.str / 7 + s.cmd / 10, s.str / 5 + s.cmd / 8]; break;
       default: base = [s.ene / 6, s.ene / 4];
     }
-    const dmgMul = fullSet ? 1.05 : 1;
+    const dmgMul = (fullSet ? 1.05 : 1) * (1 + wingDmg / 100);
+    this.absorb = Math.min(0.6, absorb / 100);
     this.dmgMin = Math.max(1, Math.round((base[0] + wdmg[0]) * dmgMul));
     this.dmgMax = Math.max(this.dmgMin + 1, Math.round((base[1] + wdmg[1]) * dmgMul));
     this.def = Math.round((s.agi / 4 + def) * (fullSet ? 1.1 : 1));
@@ -192,7 +220,7 @@ class Player {
     const v = this.vip();
     return {
       vip: { tier: v.tier, plan: v.plan, name: v.name, until: v.until, vip1Until: v.vip1Until, vip2Until: v.vip2Until },
-      admin: this.isAdmin,
+      admin: this.isAdmin, role: this.role, masterResets: this.masterResets, absorb: Math.round((this.absorb || 0) * 100),
       type: 'char', id: this.id, name: this.name, cls: this.cls, ap: this.ap, level: this.level, resets: this.resets,
       stats: this.stats, free: this.free, zen: this.zen, pots: this.pots, settings: this.settings,
       dmg: [this.dmgMin, this.dmgMax], def: this.def, maxHp: this.maxHp, maxMp: this.maxMp, atkMs: this.atkMs,
@@ -245,6 +273,79 @@ class World {
     this.timer = setInterval(() => this.tick(), TICK_MS);
     this.saver = setInterval(() => this.saveDirty(), 5000);
     this.lastTick = Date.now();
+    this.charLocks = new Map();   // trava por personagem (entrada no mundo x comandos de administração)
+    this.lastQueues = new Map();  // última fila de gravação de quem acabou de sair
+  }
+
+  async init() {
+    const helpers = { publicItem, bagUsed, itemValue, rollRarity, rollPlus };
+    await CHAOS.init(helpers);
+    await DROPS.init(helpers);
+    CMDS.init(this, expToNext);
+    this.commands = CMDS;
+  }
+
+  // ficha de um personagem que não está no mundo (para comandos de administração)
+  async loadShadow(charId) {
+    const { rows } = await db.query(`SELECT c.*, a.username AS acc_username, a.email AS acc_email, a.vip1_until, a.vip2_until, a.role AS acc_role, a.muted_until
+      FROM characters c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1`, [charId]);
+    if (!rows[0]) throw new Error('Personagem não encontrado.');
+    rows[0].is_admin_user = ADMIN.isAdmin({ username: rows[0].acc_username, email: rows[0].acc_email });
+    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty FROM items WHERE character_id = $1 ORDER BY id', [charId])).rows;
+    const p = new Player(rows[0], null, items);
+    p.room = 1;
+    return p;
+  }
+
+  // grava a progressão de uma ficha offline (sem mexer em mapa/posição)
+  async persistProgress(p) {
+    p.recalc();
+    await db.query(`UPDATE characters SET level=$2, exp=$3, zen=$4, str=$5, agi=$6, vit=$7, ene=$8, cmd=$9, free_points=$10,
+      resets=$11, master_resets=$12, bonus_points=$13, combat_power=$14, settings=$15 WHERE id=$1 RETURNING id`,
+    [p.charId, p.level, Math.round(p.exp), Math.round(p.zen), p.stats.str, p.stats.agi, p.stats.vit, p.stats.ene, p.stats.cmd, p.free,
+      p.resets, p.masterResets, p.bonusPoints, p.power, JSON.stringify(p.settings)]);
+  }
+
+  // muda um personagem com segurança: online = na fila dele; offline = carregado, alterado e gravado, tudo com a trava
+  editChar(charId, fn) {
+    return this.withCharLock(charId, async () => {
+      const live = this.players.get(String(charId));
+      if (live) {
+        const job = live.queue.then(async () => {
+          const r = await fn(live, true);
+          live.recalc(); live.hp = Math.min(live.hp, live.maxHp); live.dirty = true;
+          await this.persist(live);
+          live.send(live.charState());
+          if (live.map) for (const o of live.map.players.values()) if (o !== live) o.send({ type: 'pj', ...this.pinfo(live) });
+          return r;
+        });
+        live.queue = job.catch(() => {});
+        return job;
+      }
+      const lastQ = this.lastQueues.get(String(charId));
+      if (lastQ) await lastQ.catch(() => {});
+      const p = await this.loadShadow(charId);
+      const r = await fn(p, false);
+      await this.persistProgress(p);
+      return r;
+    });
+  }
+
+  // depois de mudar nível/reset de quem está online: volta para Lorencia se o mapa não for mais permitido
+  adminMoved(p) {
+    if (p.map && G.WORLD[p.map.id].minLevel > p.level) { this.enterMap(p, 'lorencia'); p.send({ type: 'log', kind: 'info', text: 'Seu nível mudou: você voltou para Lorencia.' }); }
+    p.send({ type: 'log', kind: 'quest', text: 'A administração ajustou seu personagem.' });
+  }
+
+  // executa fn com o personagem travado: ninguém entra no mundo com ele nem outro comando mexe ao mesmo tempo
+  withCharLock(charId, fn) {
+    const key = String(charId);
+    const prev = this.charLocks.get(key) || Promise.resolve();
+    const next = prev.catch(() => {}).then(fn);
+    const tail = next.catch(() => {});
+    this.charLocks.set(key, tail);
+    tail.then(() => { if (this.charLocks.get(key) === tail) this.charLocks.delete(key); });
+    return next;
   }
 
   online() { return this.players.size; }
@@ -271,8 +372,14 @@ class World {
   async join(client, charId, room) {
     if (!client.meta.accountId) return client.send({ type: 'error', error: 'Faça login para entrar no mundo.' });
     if (!/^\d{1,18}$/.test(String(charId))) return client.send({ type: 'error', error: 'Personagem inválido.' });
+    return this.withCharLock(charId, () => this.joinLocked(client, charId, room));
+  }
+
+  async joinLocked(client, charId, room) {
+    const lastQ = this.lastQueues.get(String(charId));
+    if (lastQ) await lastQ.catch(() => {});
     const { rows } = await db.query(`SELECT c.*, EXTRACT(EPOCH FROM (now() - c.last_seen_at))::int AS offline_secs,
-        a.username AS acc_username, a.email AS acc_email, a.vip1_until, a.vip2_until
+        a.username AS acc_username, a.email AS acc_email, a.vip1_until, a.vip2_until, a.role AS acc_role, a.muted_until
       FROM characters c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1 AND c.account_id = $2`, [charId, client.meta.accountId]);
     const row = rows[0];
     if (row) row.is_admin_user = ADMIN.isAdmin({ username: row.acc_username, email: row.acc_email });
@@ -287,7 +394,7 @@ class World {
     }
     if (client.player) await this.leave(client.player);
 
-    const items = (await db.query('SELECT id, base, rarity, plus, equipped FROM items WHERE character_id = $1 ORDER BY id', [row.id])).rows;
+    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty FROM items WHERE character_id = $1 ORDER BY id', [row.id])).rows;
     const p = new Player(row, client, items);
     p.room = Math.min(ROOMS, Math.max(1, Math.round(Number(room)) || 1));
     client.player = p;
@@ -313,7 +420,7 @@ class World {
       fairy_elf: 'short_bow', dark_lord: 'small_scepter', summoner: 'spirit_book' }[p.cls];
     for (const base of [weapon, 'leather_armor']) {
       const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, equipped) VALUES ($1, $2, 'common', TRUE)
-        RETURNING id, base, rarity, plus, equipped`, [p.charId, base]);
+        RETURNING id, base, rarity, plus, equipped, qty`, [p.charId, base]);
       p.items.push(rows[0]);
     }
     p.pots.hp += 30; p.pots.mp += 15;
@@ -331,7 +438,10 @@ class World {
       for (const o of p.map.players.values()) o.send({ type: 'pl', id: p.id });
     }
     if (p.client && p.client.player === p) p.client.player = null;
-    await this.save(p);
+    const q = this.save(p);
+    this.lastQueues.set(p.charId, q);
+    q.finally(() => { if (this.lastQueues.get(p.charId) === q) this.lastQueues.delete(p.charId); });
+    await q;
   }
 
   disconnect(client) {
@@ -354,6 +464,7 @@ class World {
     p.send({
       type: 'enter', map: mapId, room: m.room, rooms: ROOMS, name: m.def.name, theme: m.def.theme, w: m.def.w, h: m.def.h, safe: !!m.def.safe,
       npcs: m.def.npcs || [],
+      ground: m.ground ? [...m.ground.values()].map((g) => DROPS.publicGround(g)) : [],
       monsters: m.monsters.map((mo) => ({ id: mo.id, type: mo.type, name: mo.T.name, sprite: mo.T.sprite, tint: mo.T.tint || null,
         size: mo.T.size, scale: mo.T.scale || 1, level: mo.T.level, maxHp: mo.T.hp, boss: !!mo.T.boss, elite: !!mo.T.elite })),
       players: [...m.players.values()].filter((o) => o !== p).map((o) => this.pinfo(o)),
@@ -414,6 +525,17 @@ class World {
       case 'duelAnswer': return this.duelAnswer(p, String(msg.id), !!msg.accept);
       case 'pvp': return this.setPvp(p, !!msg.on, Date.now());
       case 'room': return this.switchRoom(p, msg.room);
+      case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS])));
+      case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
+      case 'pickup': {
+        if (p.dead || !p.map || !p.map.ground) return undefined;
+        const g = p.map.ground.get(String(msg.gid));
+        if (!g) return undefined;
+        if (g.owner !== p.charId) return p.send({ type: 'log', kind: 'warn', text: `Este item é de ${g.ownerName}.` });
+        p.moveTo = { x: g.x, y: g.y }; p.target = null; p.pickTarget = g.gid;
+        return undefined;
+      }
+      case 'cmd': return this.commands ? this.commands.run(p, String(msg.text || ''), msg.nonce) : undefined;
       case 'duelQuit': if (p.duel) this.endDuel(p.duel.with, p, 'quit'); return undefined;
       case 'leave': return this.leave(p).then(() => client.send({ type: 'left' }));
       default: return undefined;
@@ -567,7 +689,10 @@ class World {
   chatMsg(p, text) {
     const t = String(text || '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, 120);
     if (!t) return;
+    // comandos nunca vão para o chat público
+    if (t.startsWith('/')) return this.commands ? this.commands.run(p, t) : undefined;
     const now = Date.now();
+    if (p.mutedUntil > now) return p.send({ type: 'log', kind: 'warn', text: `Você está silenciado no chat por mais ${Math.ceil((p.mutedUntil - now) / 60000)} min.` });
     if (p.lastChat && now - p.lastChat < 1200) return p.send({ type: 'log', kind: 'warn', text: 'Calma: espere um pouco para enviar outra mensagem.' });
     p.lastChat = now;
     const line = { from: p.name, cls: p.cls, text: t, t: now };
@@ -619,6 +744,14 @@ class World {
       const r = await this.addItem(p, it, true);
       if (r) found.push(r);
     }
+    const mats = DROPS.offline(this, p, def, row.last_farm_map, kills);
+    const matCount = {};
+    for (const d of mats) {
+      const before = p.zen;
+      await DROPS.deliver(this, p, d, { offline: true, source: def.name, mapId: row.last_farm_map, tier: 'normal' });
+      if (p.zen === before) matCount[d.item] = (matCount[d.item] || 0) + d.qty;
+    }
+    for (const [k, q] of Object.entries(matCount)) found.push({ id: 'm' + k, base: k, rarity: G.ITEM_BASES[k].rarity || 'common', plus: 0, equipped: false, qty: q });
     if (died) { p.deaths++; p.lastFarm = row.last_farm_map; }
     p.recalc();
     p.hp = p.maxHp; p.mp = p.maxMp;
@@ -630,19 +763,64 @@ class World {
   // Adiciona um item (drop). Itens abaixo da raridade mínima ou sem espaço viram Zen.
   async addItem(p, it, silent) {
     const minIdx = RARITY_ORDER.indexOf(p.settings.lootMin);
-    if (RARITY_ORDER.indexOf(it.rarity) < minIdx || p.items.length >= G.INVENTORY_SIZE) {
+    if (RARITY_ORDER.indexOf(it.rarity) < minIdx || bagUsed(p) >= G.INVENTORY_SIZE) {
       const v = itemValue(it);
       p.zen += v; p.dirty = true;
       if (!silent) p.send({ type: 'log', kind: 'zen', text: `${G.ITEM_BASES[it.base].name} vendido automaticamente: +${v} Zen` });
       return null;
     }
     const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus) VALUES ($1,$2,$3,$4)
-      RETURNING id, base, rarity, plus, equipped`, [p.charId, it.base, it.rarity, it.plus]);
+      RETURNING id, base, rarity, plus, equipped, qty`, [p.charId, it.base, it.rarity, it.plus]);
     p.items.push(rows[0]);
     this.quest(p, 'loot', 1);
     if (['legendary', 'ancestral'].includes(it.rarity)) { p.quests.life = p.quests.life || {}; p.quests.life.legendary = (p.quests.life.legendary || 0) + 1; this.achieve(p); }
     if (!silent) {
       p.send({ type: 'drop', item: publicItem(rows[0]), x: it.pos ? it.pos[0] : null, y: it.pos ? it.pos[1] : null });
+      p.send(p.charState());
+    }
+    return rows[0];
+  }
+
+  // material empilhável: completa as pilhas que já existem e cria novas se precisar. Devolve quanto entrou.
+  async giveMaterial(p, base, qty, opts = {}) {
+    let left = Math.max(0, Math.round(qty));
+    let got = 0;
+    let last = null;
+    for (const st of p.items.filter((i) => i.base === base && !i.equipped).sort((a, b) => Number(a.id) - Number(b.id))) {
+      if (left <= 0) break;
+      const room = G.MAX_STACK - (Number(st.qty) || 1);
+      if (room <= 0) continue;
+      const n = Math.min(room, left);
+      const { rows } = await db.query('UPDATE items SET qty = qty + $3 WHERE id = $1 AND character_id = $2 AND qty + $3 <= $4 RETURNING qty', [st.id, p.charId, n, G.MAX_STACK]);
+      if (!rows[0]) continue;
+      st.qty = Number(rows[0].qty); left -= n; got += n; last = st;
+    }
+    while (left > 0 && bagUsed(p) < G.INVENTORY_SIZE) {
+      const n = Math.min(G.MAX_STACK, left);
+      const b = G.ITEM_BASES[base];
+      const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus, qty) VALUES ($1,$2,$3,0,$4)
+        RETURNING id, base, rarity, plus, equipped, qty`, [p.charId, base, b.rarity || 'common', n]);
+      p.items.push(rows[0]); left -= n; got += n; last = rows[0];
+    }
+    if (got) {
+      p.dirty = true;
+      if (!opts.silent && p.client) {
+        p.send({ type: 'drop', item: publicItem(last), gain: got, src: opts.src || null, x: opts.x ?? null, y: opts.y ?? null });
+        p.send(p.charState());
+      }
+    }
+    return got;
+  }
+
+  // item comum de drop especial (arma do Caos): vai para a bolsa se houver lugar. Devolve a linha ou null.
+  async giveItemRow(p, it, opts = {}) {
+    if (bagUsed(p) >= G.INVENTORY_SIZE) return null;
+    const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus) VALUES ($1,$2,$3,$4)
+      RETURNING id, base, rarity, plus, equipped, qty`, [p.charId, it.base, it.rarity, it.plus || 0]);
+    p.items.push(rows[0]);
+    p.dirty = true;
+    if (!opts.silent && p.client) {
+      p.send({ type: 'drop', item: publicItem(rows[0]), gain: 1, src: opts.src || null, x: opts.x ?? null, y: opts.y ?? null });
       p.send(p.charState());
     }
     return rows[0];
@@ -692,31 +870,28 @@ class World {
     return out;
   }
 
-  // itens escolhidos pelo administrador (vão para a bolsa, sem virar Zen)
+  // itens escolhidos pelo administrador (vão para a bolsa, sem virar Zen); materiais empilham
   async adminGiveItems(charId, list) {
     const clean = [];
     for (const it of list) {
-      if (!G.ITEM_BASES[it.base]) throw new Error('Item desconhecido.');
+      const b = G.ITEM_BASES[it.base];
+      if (!b) throw new Error('Item desconhecido.');
       if (!RARITY_ORDER.includes(it.rarity)) throw new Error('Raridade inválida.');
-      clean.push({ base: it.base, rarity: it.rarity, plus: clamp(Math.round(Number(it.plus) || 0), 0, 15) });
+      const fixed = b.stack || b.slot === 'wings';
+      clean.push({ base: it.base, rarity: fixed ? (b.rarity || 'common') : it.rarity, plus: b.stack ? 0 : clamp(Math.round(Number(it.plus) || 0), 0, 15) });
     }
-    const p = this.players.get(String(charId));
-    const used = p ? p.items.filter((i) => !i.equipped).length
-      : (await db.query('SELECT count(*)::int AS n FROM items WHERE character_id = $1 AND NOT equipped', [charId])).rows[0].n;
-    if (used + clean.length > G.INVENTORY_SIZE) throw new Error(`Bolsa sem espaço: ${G.INVENTORY_SIZE - used} lugar(es) livre(s).`);
-    const added = [];
-    for (const it of clean) {
-      const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus) VALUES ($1,$2,$3,$4)
-        RETURNING id, base, rarity, plus, equipped`, [charId, it.base, it.rarity, it.plus]);
-      added.push(rows[0]);
-      if (p) p.items.push(rows[0]);
-    }
-    if (p) {
-      for (const r of added) p.send({ type: 'drop', item: publicItem(r), x: null, y: null });
-      p.send(p.charState());
-      p.send({ type: 'log', kind: 'quest', text: `O administrador enviou ${added.length} item(ns) para a sua bolsa.` });
-    }
-    return added.map(publicItem);
+    return this.editChar(charId, async (p) => {
+      const stacks = {}, rows = [];
+      for (const it of clean) if (G.ITEM_BASES[it.base].stack) stacks[it.base] = (stacks[it.base] || 0) + 1; else rows.push(it);
+      const newStacks = Object.keys(stacks).filter((k) => !p.items.some((i) => i.base === k && !i.equipped && (Number(i.qty) || 1) + stacks[k] <= G.MAX_STACK)).length;
+      const free = G.INVENTORY_SIZE - bagUsed(p);
+      if (rows.length + newStacks > free) throw new Error(`Bolsa sem espaço: ${free} lugar(es) livre(s).`);
+      const added = [];
+      for (const [k, n] of Object.entries(stacks)) { await this.giveMaterial(p, k, n, { silent: true }); added.push({ id: 'x', base: k, rarity: G.ITEM_BASES[k].rarity, plus: 0, qty: n }); }
+      for (const it of rows) { const r = await this.giveItemRow(p, it, { silent: true }); if (r) added.push(r); }
+      p.send({ type: 'log', kind: 'quest', text: `O administrador enviou ${clean.length} item(ns) para a sua bolsa.` });
+      return added.map(publicItem);
+    });
   }
 
   // melhor equipamento da classe: arma mais forte, conjunto do Dragão e anel, todos ancestrais +15
@@ -731,60 +906,36 @@ class World {
 
   async adminSetLevel(charId, level) {
     level = clamp(Math.round(Number(level) || 1), 1, G.LIMITS.maxLevel);
-    const p = this.players.get(String(charId));
-    if (p) {
-      return p.run(async () => {
-        while (p.level < level) this.levelUp(p, true);
-        if (p.level > level) p.level = level;
-        p.exp = 0; p.recalc(); p.hp = p.maxHp; p.mp = p.maxMp; p.dirty = true;
-        p.send(p.charState());
-        if (p.map) for (const o of p.map.players.values()) o.send({ type: 'pj', ...this.pinfo(p) });
-        p.send({ type: 'log', kind: 'quest', text: `O administrador ajustou seu nível para ${p.level}.` });
-        return p.level;
-      });
-    }
-    const { rows } = await db.query('SELECT level, class FROM characters WHERE id = $1', [charId]);
-    if (!rows[0]) throw new Error('Personagem não encontrado.');
-    const gain = Math.max(0, level - rows[0].level) * (G.POINTS_PER_LEVEL[rows[0].class] || 5);
-    await db.query('UPDATE characters SET level = $2, exp = 0, free_points = free_points + $3 WHERE id = $1 RETURNING id', [charId, level, gain]);
-    return level;
+    return this.editChar(charId, async (p, online) => {
+      while (p.level < level) this.levelUp(p, true);
+      if (p.level > level) p.level = level;
+      p.exp = 0; p.recalc(); p.hp = p.maxHp; p.mp = p.maxMp;
+      if (online) p.send({ type: 'log', kind: 'quest', text: `O administrador ajustou seu nível para ${p.level}.` });
+      return p.level;
+    });
   }
 
   // atributos no máximo (32.767 em cada, como no MU)
   async adminMaxStats(charId) {
     const MAX = 32767;
-    const p = this.players.get(String(charId));
-    if (p) {
-      return p.run(async () => {
-        for (const k of ['str', 'agi', 'vit', 'ene']) p.stats[k] = MAX;
-        if (p.cls === 'dark_lord') p.stats.cmd = MAX;
-        p.free = 0; p.recalc(); p.hp = p.maxHp; p.mp = p.maxMp; p.dirty = true;
-        p.send(p.charState());
-        p.send({ type: 'log', kind: 'quest', text: 'O administrador colocou seus atributos no máximo.' });
-        return true;
-      });
-    }
-    await db.query(`UPDATE characters SET str = $2, agi = $2, vit = $2, ene = $2,
-      cmd = CASE WHEN class = 'dark_lord' THEN $2 ELSE cmd END, free_points = 0 WHERE id = $1 RETURNING id`, [charId, MAX]);
-    return true;
+    return this.editChar(charId, async (p, online) => {
+      for (const k of ['str', 'agi', 'vit', 'ene']) p.stats[k] = MAX;
+      if (p.cls === 'dark_lord') p.stats.cmd = MAX;
+      p.free = 0; p.recalc(); p.hp = p.maxHp; p.mp = p.maxMp;
+      if (online) p.send({ type: 'log', kind: 'quest', text: 'O administrador colocou seus atributos no máximo.' });
+      return true;
+    });
   }
 
   async adminAdd(charId, what, n) {
     n = Math.round(Number(n) || 0);
     if (!n || Math.abs(n) > 2e9) throw new Error('Quantidade inválida.');
-    const col = { points: 'free_points', zen: 'zen' }[what];
-    if (!col) throw new Error('Opção inválida.');
-    const p = this.players.get(String(charId));
-    if (p) {
-      return p.run(async () => {
-        if (what === 'points') p.free = Math.max(0, p.free + n);
-        else p.zen = Math.max(0, p.zen + n);
-        p.dirty = true; p.send(p.charState());
-        return true;
-      });
-    }
-    await db.query(`UPDATE characters SET ${col} = GREATEST(0, ${col} + $2) WHERE id = $1 RETURNING id`, [charId, n]);
-    return true;
+    if (!['points', 'zen'].includes(what)) throw new Error('Opção inválida.');
+    return this.editChar(charId, async (p) => {
+      if (what === 'points') { const before = p.free; p.free = Math.max(0, p.free + n); p.bonusPoints = Math.max(0, p.bonusPoints + (p.free - before)); }
+      else p.zen = Math.max(0, p.zen + n);
+      return true;
+    });
   }
 
   // ---------- PvP ----------
@@ -815,7 +966,7 @@ class World {
     const bd = a.buffs.dmg && a.buffs.dmg.until > now ? a.buffs.dmg.mult : 1;
     const db = v.buffs.def && v.buffs.def.until > now ? v.buffs.def.mult : 1;
     const raw = rand(a.dmgMin, a.dmgMax) * mult * bd * (crit ? 1.5 : 1);
-    const d = Math.max(1, Math.round((raw - v.def * db / 2) * PVP_SCALE));
+    const d = Math.max(1, Math.round((raw - v.def * db / 2) * PVP_SCALE * (1 - (v.absorb || 0))));
     v.hp -= d;
     v.pvpHitAt = now; a.pvpAtkAt = now;
     v.flip = a.x < v.x;
@@ -912,10 +1063,10 @@ class World {
     if (reward.item) {
       const it = rollItem(Math.max(1, p.level), 'normal');
       it.rarity = reward.item;
-      if (p.items.length >= G.INVENTORY_SIZE) { const v = itemValue(it) * 2; p.zen += v; parts.push(`${v} Zen (bolsa cheia)`); }
+      if (bagUsed(p) >= G.INVENTORY_SIZE) { const v = itemValue(it) * 2; p.zen += v; parts.push(`${v} Zen (bolsa cheia)`); }
       else {
         const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus) VALUES ($1,$2,$3,$4)
-          RETURNING id, base, rarity, plus, equipped`, [p.charId, it.base, it.rarity, it.plus]);
+          RETURNING id, base, rarity, plus, equipped, qty`, [p.charId, it.base, it.rarity, it.plus]);
         p.items.push(rows[0]);
         p.send({ type: 'drop', item: publicItem(rows[0]) });
         parts.push(G.ITEM_BASES[it.base].name);
@@ -1022,7 +1173,9 @@ class World {
     const p = killer;
     const pk = p.perks();
     const exp = Math.round(m.T.exp * XP() * pk.exp), zen = Math.round(randi(m.T.zen[0], m.T.zen[1]) * pk.zen);
-    p.exp += exp; p.zen += zen; p.kills++;
+    p.exp += exp; p.kills++;
+    if (DROPS.cfg().zenDelivery === 'ground') DROPS.spawnGround(map, p, { base: 'zen', qty: zen, source: m.T.name }, m.x, m.y);
+    else p.zen += zen;
     this.quest(p, 'kill', 1); this.quest(p, 'zen', zen);
     if (m.T.elite) this.quest(p, 'elite', 1);
     if (p.kills % 50 === 0 || p.kills === 100) this.achieve(p);
@@ -1034,6 +1187,7 @@ class World {
       it.pos = [Math.round(m.x), Math.round(m.y)];
       p.run(() => this.addItem(p, it));
     }
+    DROPS.onKill(this, p, m, map);
     m.contrib.clear();
   }
 
@@ -1053,6 +1207,8 @@ class World {
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
       const rolls = i === 0 ? 2 : (share >= 0.1 && Math.random() < 0.5 ? 1 : 0);
       for (let r = 0; r < rolls; r++) { const it = rollItem(m.T.level, 'boss'); it.pos = [Math.round(m.x + rand(-20, 20)), Math.round(m.y + rand(-10, 10))]; p.run(() => this.addItem(p, it)); }
+      // materiais do boss: cada herói que causou pelo menos 10% do dano sorteia uma vez (a morte é processada uma vez só)
+      if (i === 0 || share >= 0.1) DROPS.onKill(this, p, m, map);
       p.dirty = true;
       p.lastSave = 0; // salva no próximo ciclo
     });
@@ -1063,7 +1219,7 @@ class World {
 
   hurtPlayer(m, p, now) {
     const db = p.buffs.def && p.buffs.def.until > now ? p.buffs.def.mult : 1;
-    const d = Math.max(1, Math.round(m.T.dmg * rand(0.85, 1.15) - p.def * db / 2));
+    const d = Math.max(1, Math.round((m.T.dmg * rand(0.85, 1.15) - p.def * db / 2) * (1 - (p.absorb || 0))));
     p.hp -= d;
     p.map.emit({ k: 'h', a: m.id, t: p.id, d, fx: m.T.boss ? 'boss' : 'claw' });
     if (p.hp <= 0) this.killPlayer(p, now, m);
@@ -1089,6 +1245,7 @@ class World {
     const dt = Math.min(0.25, (now - this.lastTick) / 1000);
     this.lastTick = now;
     for (const map of this.maps.values()) {
+      if (map.ground && map.ground.size) DROPS.expire(map, now);
       if (!map.players.size && !map.events.length) {
         // sem jogadores: só cuida de renascimentos
         for (const m of map.monsters) if (m.dead && now >= m.respawnAt) this.respawnMonster(map, m);
@@ -1127,7 +1284,7 @@ class World {
         for (const p of map.players.values()) {
           if (p.dead || Math.hypot(p.x - sl.x, p.y - sl.y) > sl.r) continue;
           const db = p.buffs.def && p.buffs.def.until > now ? p.buffs.def.mult : 1;
-          const d = Math.max(1, Math.round(m.T.dmg * 2.4 * rand(0.9, 1.1) - p.def * db / 2));
+          const d = Math.max(1, Math.round((m.T.dmg * 2.4 * rand(0.9, 1.1) - p.def * db / 2) * (1 - (p.absorb || 0))));
           p.hp -= d;
           map.emit({ k: 'h', a: m.id, t: p.id, d, fx: 'boss', aoe: 1 });
           if (p.hp <= 0) this.killPlayer(p, now, m);
@@ -1201,6 +1358,16 @@ class World {
       else if (p.mp < p.maxMp * p.settings.potMp) this.usePotion(p, 'mp', now);
     }
 
+    // itens no chão: recolhe o que é seu ao chegar perto; no modo automático vai buscar
+    if (map.ground && map.ground.size) {
+      const range = DROPS.cfg().pickupRange;
+      const near = DROPS.ownedNear(p, map, range);
+      if (near) { DROPS.pickup(this, p, near); if (p.pickTarget === near.gid) { p.pickTarget = null; p.moveTo = null; } }
+      else if (p.auto && !p.moveTo && !(p.target && p.target.isPlayer) && !(map.def.safe && !p.duel)) {
+        const far = DROPS.ownedNear(p, map, 320);
+        if (far && !(p.target && p.target.target === p && dist(p, p.target) < 60)) { this.stepToward(p, far, PLAYER_SPEED * dt); return; }
+      }
+    }
     // movimento manual tem prioridade
     if (p.moveTo) { this.stepToward(p, p.moveTo, PLAYER_SPEED * dt); if (dist(p, p.moveTo) < 2) p.moveTo = null; return; }
     if (map.def.safe && !p.duel) return;
@@ -1288,11 +1455,13 @@ class World {
       const map = p.dead ? 'lorencia' : (p.map ? p.map.id : 'lorencia');
       await db.query(`UPDATE characters SET level=$2, exp=$3, zen=$4, str=$5, agi=$6, vit=$7, ene=$8, cmd=$9, free_points=$10,
         map=$11, pos_x=$12, pos_y=$13, hp=$14, mp=$15, pot_hp=$16, pot_mp=$17, settings=$18, kills=$19, deaths=$20,
-        bosses_killed=$21, combat_power=$22, last_farm_map=$23, auto_on=$24, quests=$25, pvp_kills=$26, pvp_deaths=$27, duel_wins=$28, duel_losses=$29, pk_count=$30, last_seen_at=now()
+        bosses_killed=$21, combat_power=$22, last_farm_map=$23, auto_on=$24, quests=$25, pvp_kills=$26, pvp_deaths=$27, duel_wins=$28, duel_losses=$29, pk_count=$30,
+        resets=$31, master_resets=$32, bonus_points=$33, last_seen_at=now()
         WHERE id=$1 RETURNING id`,
       [p.charId, p.level, Math.round(p.exp), Math.round(p.zen), p.stats.str, p.stats.agi, p.stats.vit, p.stats.ene, p.stats.cmd, p.free,
         map, p.dead ? 0 : Math.round(p.x), p.dead ? 0 : Math.round(p.y), Math.max(1, Math.round(p.hp)), Math.round(p.mp),
-        p.pots.hp, p.pots.mp, JSON.stringify(p.settings), p.kills, p.deaths, p.bossesKilled, p.power, p.lastFarm, p.auto, JSON.stringify(p.quests || {}), p.pvp.kills, p.pvp.deaths, p.pvp.duelW, p.pvp.duelL, p.pvp.pk]);
+        p.pots.hp, p.pots.mp, JSON.stringify(p.settings), p.kills, p.deaths, p.bossesKilled, p.power, p.lastFarm, p.auto, JSON.stringify(p.quests || {}), p.pvp.kills, p.pvp.deaths, p.pvp.duelW, p.pvp.duelL, p.pvp.pk,
+        p.resets, p.masterResets, p.bonusPoints]);
       p.dirty = false; p.lastSave = Date.now();
     }
   }
