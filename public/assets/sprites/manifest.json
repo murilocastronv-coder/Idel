@@ -1,5 +1,5 @@
 {
- "version": 2,
+ "version": 3,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",
@@ -37,7 +37,11 @@
     }
    },
    "hairKeys": null,
-   "defaultHair": null
+   "defaultHair": null,
+   "layers": {
+    "back": "equip/dark_knight_back.png",
+    "front": "equip/dark_knight_front.png"
+   }
   },
   "dark_wizard": {
    "sheet": "heroes/dark_wizard.png",
@@ -75,7 +79,11 @@
     }
    },
    "hairKeys": null,
-   "defaultHair": null
+   "defaultHair": null,
+   "layers": {
+    "back": "equip/dark_wizard_back.png",
+    "front": "equip/dark_wizard_front.png"
+   }
   },
   "fairy_elf": {
    "sheet": "heroes/fairy_elf.png",
@@ -129,7 +137,11 @@
      77
     ]
    ],
-   "defaultHair": "#f2d36b"
+   "defaultHair": "#f2d36b",
+   "layers": {
+    "back": "equip/fairy_elf_back.png",
+    "front": "equip/fairy_elf_front.png"
+   }
   },
   "magic_gladiator": {
    "sheet": "heroes/magic_gladiator.png",
@@ -167,7 +179,11 @@
     }
    },
    "hairKeys": null,
-   "defaultHair": null
+   "defaultHair": null,
+   "layers": {
+    "back": "equip/magic_gladiator_back.png",
+    "front": "equip/magic_gladiator_front.png"
+   }
   },
   "dark_lord": {
    "sheet": "heroes/dark_lord.png",
@@ -205,7 +221,11 @@
     }
    },
    "hairKeys": null,
-   "defaultHair": null
+   "defaultHair": null,
+   "layers": {
+    "back": "equip/dark_lord_back.png",
+    "front": "equip/dark_lord_front.png"
+   }
   },
   "summoner": {
    "sheet": "heroes/summoner.png",
@@ -259,7 +279,11 @@
      119
     ]
    ],
-   "defaultHair": "#ff6ab8"
+   "defaultHair": "#ff6ab8",
+   "layers": {
+    "back": "equip/summoner_back.png",
+    "front": "equip/summoner_front.png"
+   }
   }
  },
  "monsters": {
@@ -818,5 +842,129 @@
    138,
    98
   ]
- ]
+ ],
+ "equip": {
+  "sets": [
+   "leather",
+   "bronze",
+   "scale",
+   "dragon"
+  ],
+  "pieces": [
+   "boots",
+   "armor_mid",
+   "gloves_mid",
+   "helm",
+   "armor_front",
+   "gloves_front"
+  ],
+  "rowsPerPiece": 5,
+  "classes": {
+   "dark_knight": {
+    "leather": "equip/dark_knight_leather.png",
+    "bronze": "equip/dark_knight_bronze.png",
+    "scale": "equip/dark_knight_scale.png",
+    "dragon": "equip/dark_knight_dragon.png"
+   },
+   "dark_wizard": {
+    "leather": "equip/dark_wizard_leather.png",
+    "bronze": "equip/dark_wizard_bronze.png",
+    "scale": "equip/dark_wizard_scale.png",
+    "dragon": "equip/dark_wizard_dragon.png"
+   },
+   "fairy_elf": {
+    "leather": "equip/fairy_elf_leather.png",
+    "bronze": "equip/fairy_elf_bronze.png",
+    "scale": "equip/fairy_elf_scale.png",
+    "dragon": "equip/fairy_elf_dragon.png"
+   },
+   "magic_gladiator": {
+    "leather": "equip/magic_gladiator_leather.png",
+    "bronze": "equip/magic_gladiator_bronze.png",
+    "scale": "equip/magic_gladiator_scale.png",
+    "dragon": "equip/magic_gladiator_dragon.png"
+   },
+   "dark_lord": {
+    "leather": "equip/dark_lord_leather.png",
+    "bronze": "equip/dark_lord_bronze.png",
+    "scale": "equip/dark_lord_scale.png",
+    "dragon": "equip/dark_lord_dragon.png"
+   },
+   "summoner": {
+    "leather": "equip/summoner_leather.png",
+    "bronze": "equip/summoner_bronze.png",
+    "scale": "equip/summoner_scale.png",
+    "dragon": "equip/summoner_dragon.png"
+   }
+  }
+ },
+ "weapons": {
+  "defaults": {
+   "dark_knight": "default_dk",
+   "dark_wizard": "thunder_staff",
+   "fairy_elf": "default_elf",
+   "magic_gladiator": "default_mg",
+   "dark_lord": "lord_scepter",
+   "summoner": "default_sum"
+  },
+  "classes": {
+   "dark_knight": {
+    "sheet": "equip/dark_knight_weapons.png",
+    "list": [
+     "short_sword",
+     "kris",
+     "broad_blade",
+     "legion_sword",
+     "default_dk"
+    ]
+   },
+   "dark_wizard": {
+    "sheet": "equip/dark_wizard_weapons.png",
+    "list": [
+     "skull_staff",
+     "serpent_staff",
+     "thunder_staff"
+    ]
+   },
+   "fairy_elf": {
+    "sheet": "equip/fairy_elf_weapons.png",
+    "list": [
+     "short_bow",
+     "elven_bow",
+     "silver_bow",
+     "default_elf"
+    ]
+   },
+   "magic_gladiator": {
+    "sheet": "equip/magic_gladiator_weapons.png",
+    "list": [
+     "short_sword",
+     "kris",
+     "broad_blade",
+     "legion_sword",
+     "skull_staff",
+     "serpent_staff",
+     "thunder_staff",
+     "default_mg"
+    ]
+   },
+   "dark_lord": {
+    "sheet": "equip/dark_lord_weapons.png",
+    "list": [
+     "small_scepter",
+     "lord_scepter",
+     "great_scepter"
+    ]
+   },
+   "summoner": {
+    "sheet": "equip/summoner_weapons.png",
+    "list": [
+     "spirit_book",
+     "curse_book",
+     "souls_book",
+     "default_sum"
+    ]
+   }
+  }
+ }
 }

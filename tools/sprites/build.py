@@ -12,6 +12,7 @@ sys.path.insert(0, HERE)
 import heroes  # noqa: E402
 import monsters  # noqa: E402
 import effects  # noqa: E402
+import equipment  # noqa: E402
 from pixelkit import hexc  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
@@ -53,7 +54,7 @@ def main():
     os.makedirs(os.path.join(OUT, 'monsters'), exist_ok=True)
     os.makedirs(os.path.join(OUT, 'effects'), exist_ok=True)
     os.makedirs(PREVIEW, exist_ok=True)
-    manifest = {'version': 2, 'heroes': {}, 'monsters': {}, 'effects': {},
+    manifest = {'version': 3, 'heroes': {}, 'monsters': {}, 'effects': {},
                 'skinKeys': [rgb(c) for c in heroes.SKIN]}
     pivot = (heroes.BUILD['cx'], heroes.FOOT_Y)
 
@@ -66,6 +67,46 @@ def main():
             hk = [rgb(c) for c in heroes.hair_ramp(heroes.HAIR_DEFAULT[cls])]
         manifest['heroes'][cls] = {'sheet': path, 'fw': heroes.FW, 'fh': heroes.FH, 'pivot': list(pivot), 'actions': meta,
                                    'hairKeys': hk, 'defaultHair': heroes.HAIR_DEFAULT.get(cls)}
+
+    # camadas do herói (corpo / braço da frente), peças de armadura e armas — equipamento visível
+    os.makedirs(os.path.join(OUT, 'equip'), exist_ok=True)
+    manifest['equip'] = {'sets': list(equipment.SETS), 'pieces': equipment.PIECES, 'rowsPerPiece': len(ACTIONS), 'classes': {}}
+    manifest['weapons'] = {'defaults': equipment.DEFAULT_WEAPON, 'classes': {}}
+    for cls in CLASSES:
+        layers = {}
+        for L in ('back', 'front'):
+            img, _ = sheet(lambda a, i, cls=cls, L=L: heroes.draw_hero(cls, a, i, layer=L), heroes.FW, heroes.FH, pivot)
+            path = f'equip/{cls}_{L}.png'
+            img.save(os.path.join(OUT, path))
+            layers[L] = path
+        manifest['heroes'][cls]['layers'] = layers
+        sets = {}
+        for set_name in equipment.SETS:
+            blocks = []
+            for piece in equipment.PIECES:
+                img, _ = sheet(lambda a, i, cls=cls, piece=piece, set_name=set_name: equipment.draw_equip(cls, piece, set_name, a, i), heroes.FW, heroes.FH, pivot)
+                blocks.append(img)
+            big = Image.new('RGBA', (blocks[0].width, sum(b.height for b in blocks)), (0, 0, 0, 0))
+            y = 0
+            for b in blocks:
+                big.alpha_composite(b, (0, y)); y += b.height
+            path = f'equip/{cls}_{set_name}.png'
+            big.save(os.path.join(OUT, path), optimize=True)
+            sets[set_name] = path
+        manifest['equip']['classes'][cls] = sets
+        wl = equipment.CLASS_WEAPONS[cls]
+        blocks = []
+        for base in wl:
+            img, _ = sheet(lambda a, i, cls=cls, base=base: equipment.draw_weapon(cls, base, a, i), heroes.FW, heroes.FH, pivot)
+            blocks.append(img)
+        big = Image.new('RGBA', (blocks[0].width, sum(b.height for b in blocks)), (0, 0, 0, 0))
+        y = 0
+        for b in blocks:
+            big.alpha_composite(b, (0, y)); y += b.height
+        path = f'equip/{cls}_weapons.png'
+        big.save(os.path.join(OUT, path), optimize=True)
+        manifest['weapons']['classes'][cls] = {'sheet': path, 'list': wl}
+        print('  equipamento', cls)
 
     mons = {
         'slime': (monsters.slime, 48, 40, (22, 37), False, 1.0),

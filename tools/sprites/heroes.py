@@ -221,13 +221,28 @@ def gem(c, x, y, color):
     c.part(lambda d: d.rectangle([x - 1, y - 1, x + 1, y + 1], fill=255), ramp(color, '#ffffff'), sep=False)
 
 
-def draw_hero(cls, action, i, hair=None):
-    """Desenha um quadro. Retorna Canvas."""
+class NullCanvas:
+    """Canvas que ignora tudo (usado para separar o herói em camadas)."""
+    def part(self, *a, **k): return None
+    def px(self, *a, **k): pass
+    def line(self, *a, **k): pass
+    def glow(self, *a, **k): pass
+
+
+NULL = NullCanvas()
+
+
+def draw_hero(cls, action, i, hair=None, layer='full'):
+    """Desenha um quadro. layer: 'full' (com arma padrão), 'back' (corpo, sem arma e sem o braço da frente)
+    ou 'front' (só o braço/ombro da frente). Retorna Canvas."""
     kind = {'dark_knight': 'melee', 'magic_gladiator': 'melee', 'dark_lord': 'melee', 'fairy_elf': 'bow'}.get(cls, 'caster')
     if cls == 'dark_lord' and action == 'attack':
         kind = 'caster'
     P = pose_for(action, i, kind)
-    c = Canvas(FW, FH)
+    real = Canvas(FW, FH)
+    c = real if layer in ('full', 'back') else NULL
+    front = real if layer in ('full', 'front') else NULL
+    full = layer == 'full'
     B = Body(P, BUILD)
     hx, hy = B.head
     flash = P['flash']
@@ -255,7 +270,8 @@ def draw_hero(cls, action, i, hair=None):
         c.part(lambda d: d.polygon([(hx + 4, hy - 6), (hx + 6, hy - 12), (hx + 10, hy - 15), (hx + 8, hy - 10), (hx + 7, hy - 5)], fill=255), GOLD, sep=False)
         c.part(lambda d: d.line([(hx - 6, hy + 4), (hx + 1, hy + 6)], fill=255, width=1), GOLD, sep=False)
         pauldron(c, B, 'b', ARM, spikes=2, size=5)
-        weapon_greatsword(c, B.ha_f, P['w'] if P['w'] is not None else 55)
+        c = front
+        if full: weapon_greatsword(c, B.ha_f, P['w'] if P['w'] is not None else 55)
         pauldron(c, B, 'f', ARM, spikes=3, size=6)
         draw_arm(c, B, 'f', ARM, ramp('#2a2e44'))
 
@@ -279,7 +295,8 @@ def draw_hero(cls, action, i, hair=None):
         eyes(c, B, glow='#7ad0ff')
         pauldron(c, B, 'b', ROBE, size=4)
         pauldron(c, B, 'f', ROBE, size=5)
-        weapon_staff(c, B.ha_f, P['w'] if P['w'] is not None else -95, '#4a9aff')
+        c = front
+        if full: weapon_staff(c, B.ha_f, P['w'] if P['w'] is not None else -95, '#4a9aff')
         draw_arm(c, B, 'f', ROBE, SKIN)
         if flash:
             c.glow(B.ha_b[0] + 3, B.ha_b[1], 5 + flash * 2, '#7ad0ff', 150)
@@ -306,7 +323,8 @@ def draw_hero(cls, action, i, hair=None):
         c.px(hx + 3, hy + 4, '#c46a6a')
         pauldron(c, B, 'f', GRN, size=4)
         bow_hand = B.ha_f
-        weapon_bow(c, bow_hand, P.get('draw', 0) == 1)
+        c = front
+        if full: weapon_bow(c, bow_hand, P.get('draw', 0) == 1)
         draw_arm(c, B, 'f', SKIN, GRN)
         if flash:
             c.glow(bow_hand[0] + 14, bow_hand[1], 6, '#7aff6a', 150)
@@ -328,7 +346,8 @@ def draw_hero(cls, action, i, hair=None):
         c.part(lambda d: d.polygon([(hx - 3, hy - 8), (hx - 1, hy - 15), (hx + 2, hy - 7)], fill=255), TRIM, sep=False)
         eyes(c, B, color='#3a2a6a', glow=None)
         pauldron(c, B, 'b', AR, trim=TRIM, spikes=1, size=5)
-        weapon_spearblade(c, B.ha_f, P['w'] if P['w'] is not None else -60)
+        c = front
+        if full: weapon_spearblade(c, B.ha_f, P['w'] if P['w'] is not None else -60)
         pauldron(c, B, 'f', AR, trim=TRIM, spikes=2, size=6)
         draw_arm(c, B, 'f', AR, ramp('#2a2a48'))
 
@@ -357,7 +376,8 @@ def draw_hero(cls, action, i, hair=None):
         c.part(lambda d: d.rectangle([hx, hy - 1, hx + 6, hy + 1], fill=255), flat('#0e0a12'), shade=False, sep=False)
         c.px(hx + 3, hy, '#ffd36b'); c.px(hx + 5, hy, '#ffd36b')
         pauldron(c, B, 'b', RED, spikes=2, size=5)
-        weapon_scepter(c, B.ha_f, P['w'] if P['w'] is not None else -80)
+        c = front
+        if full: weapon_scepter(c, B.ha_f, P['w'] if P['w'] is not None else -80)
         pauldron(c, B, 'f', RED, spikes=3, size=6)
         draw_arm(c, B, 'f', RED, ramp('#3a1010'))
         if flash:
@@ -384,14 +404,15 @@ def draw_hero(cls, action, i, hair=None):
         eyes(c, B, color='#6a1a6a')
         c.px(hx + 3, hy + 4, '#c46a8a')
         pauldron(c, B, 'f', PUR, size=4)
-        weapon_staff(c, B.ha_f, P['w'] if P['w'] is not None else -95, '#c05aff', length=30, shaft='#4a2a6a')
+        c = front
+        if full: weapon_staff(c, B.ha_f, P['w'] if P['w'] is not None else -95, '#c05aff', length=30, shaft='#4a2a6a')
         draw_arm(c, B, 'f', PUR, SKIN)
         if flash:
             c.glow(B.ha_b[0] + 3, B.ha_b[1], 5 + flash * 2, '#ff7ad9', 150)
 
-    c.outline()
-    c.apply_glows()
-    return c
+    real.outline()
+    real.apply_glows()
+    return real
 
 
 HAIR_DEFAULT = {'fairy_elf': '#f2d36b', 'summoner': '#ff6ab8'}

@@ -731,7 +731,8 @@
           ctx.globalAlpha = 0.35 + 0.15 * Math.sin(now / 200); ctx.fillStyle = RAR[rar];
           ctx.beginPath(); ctx.ellipse(x, y, 13 * zoom, 4 * zoom, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
         }
-        Sprites.hero(ctx, info.cls, info.ap, act, t, x, y, sc, e.flip, { once });
+        const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : undefined;
+        Sprites.hero(ctx, info.cls, info.ap, act, t, x, y, sc, e.flip, { once, equip: eq });
         if (e.dead) continue;
         const top = y - HERO_H * sc - 4 * dpr;
         hpBar(x, top, 16 * zoom, e.hpShow / e.maxHp, isMe ? '#6aa84f' : (e.flags & 1) ? '#ff5a4a' : '#4aa3ff');
@@ -942,7 +943,8 @@
     const c = S.char;
     $('#me-name').textContent = c.name;
     const meP = S.players.get(S.youId) || { rx: null };
-    meP.info = { id: c.id, name: c.name, cls: c.cls, ap: c.ap, level: c.level, weaponRarity: (c.items.find((i) => i.equipped && i.slot === 'weapon') || {}).rarity, vip: c.vip ? c.vip.tier : 0 };
+    meP.info = { id: c.id, name: c.name, cls: c.cls, ap: c.ap, level: c.level, weaponRarity: (c.items.find((i) => i.equipped && i.slot === 'weapon') || {}).rarity, vip: c.vip ? c.vip.tier : 0,
+      eq: (() => { const o = { w: null }; for (const i of c.items) { if (!i.equipped) continue; if (i.slot === 'weapon') { o.w = i.base; o.wr = i.rarity; o.wp = i.plus || 0; } else if (i.set && Sprites.ARMOR.includes(i.slot)) o[i.slot] = i.set; } return o; })() };
     S.players.set(S.youId || c.id, meP);
     renderSkills();
     if (S.panel) renderPanel(S.panel);

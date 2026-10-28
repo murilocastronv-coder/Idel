@@ -68,6 +68,17 @@ function rollItem(level, table) {
   const [base] = pool[Math.floor(Math.random() * pool.length)];
   return { base, rarity: rollRarity(table), plus: Math.random() < 0.15 ? randi(1, 3) : 0 };
 }
+// o que aparece no corpo do herói: arma (item exato) e conjunto de cada peça de armadura
+function gearVisual(items) {
+  const out = { w: null };
+  for (const it of items) {
+    const b = G.ITEM_BASES[it.base];
+    if (!b) continue;
+    if (b.slot === 'weapon') { out.w = it.base; out.wr = it.rarity; out.wp = it.plus || 0; }
+    else if (['helm', 'armor', 'gloves', 'boots'].includes(b.slot) && b.set) out[b.slot] = b.set;
+  }
+  return out;
+}
 function publicItem(it) {
   const b = G.ITEM_BASES[it.base] || {};
   return { id: String(it.id), base: it.base, name: b.name, slot: b.slot, icon: b.icon, kind: b.kind, req: b.req, set: b.set,
@@ -331,7 +342,7 @@ class World {
 
   pinfo(p) {
     const w = p.equipped().find((i) => G.ITEM_BASES[i.base] && G.ITEM_BASES[i.base].slot === 'weapon');
-    return { id: p.id, name: p.name, cls: p.cls, ap: p.ap, level: p.level, weaponRarity: w ? w.rarity : 'common', vip: p.vip().tier };
+    return { id: p.id, name: p.name, cls: p.cls, ap: p.ap, level: p.level, weaponRarity: w ? w.rarity : 'common', vip: p.vip().tier, eq: gearVisual(p.equipped()) };
   }
 
   // ---------- mensagens do navegador ----------

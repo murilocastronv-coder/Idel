@@ -30,13 +30,14 @@
 
   // Folha com cabelo/pele trocados, e versão branca (piscada de dano)
   function sheet(group, name, ap, white) {
-    const key = `${group}:${name}:${ap ? ap.hair : '-'}:${ap ? ap.skin : '-'}:${white ? 1 : 0}`;
+    return recolored(group + ':' + name, S.imgs[group + ':' + name], S.manifest[group][name], group === 'heroes', ap, white);
+  }
+  function recolored(imgKey, im, meta, isHero, ap, white) {
+    const key = `${imgKey}:${ap ? ap.hair : '-'}:${ap ? ap.skin : '-'}:${white ? 1 : 0}`;
     let c = S.cache.get(key);
     if (c) return c;
-    const im = S.imgs[group + ':' + name];
     if (!im) return null;
-    const meta = S.manifest[group][name];
-    const recolor = group === 'heroes' && ap && (ap.hair !== undefined || ap.skin !== undefined);
+    const recolor = isHero && ap && (ap.hair !== undefined || ap.skin !== undefined);
     if (!recolor && !white) { S.cache.set(key, im); return im; }
     c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
     const g = c.getContext('2d');
@@ -92,6 +93,56 @@
     return true;
   }
 
+  // ---------- equipamento visível (camadas carregadas sob demanda) ----------
+  const lazy = new Map();
+  function img(path) {
+    let e = lazy.get(path);
+    if (!e) {
+      e = { im: null };
+      lazy.set(path, e);
+      loadImg(BASE + path + '?v=' + S.manifest.version).then((im) => { e.im = im; }).catch(() => {});
+    }
+    return e.im;
+  }
+  const ARMOR = ['helm', 'armor', 'gloves', 'boots'];
+  // eq: { w: base da arma, wg: cor do brilho da arma, helm/armor/gloves/boots: conjunto }
+  function heroEquip(ctx, cls, ap, action, t, x, y, scale, flip, opts = {}, eq = {}) {
+    if (!S.manifest || !S.manifest.equip) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts);
+    const meta = S.manifest.heroes[cls];
+    if (!meta || !meta.layers) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts);
+    const back = recolored('L:' + meta.layers.back, img(meta.layers.back), meta, true, ap, opts.white);
+    const front = recolored('L:' + meta.layers.front, img(meta.layers.front), meta, true, ap, opts.white);
+    if (!back || !front) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts); // ainda carregando
+    const E = S.manifest.equip, W = S.manifest.weapons.classes[cls];
+    const [row, f] = frameOf(meta, action, t, opts.once);
+    const fw = meta.fw, fh = meta.fh, rp = E.rowsPerPiece;
+    const px = meta.pivot[0] * scale, py = meta.pivot[1] * scale, dw = Math.round(fw * scale), dh = Math.round(fh * scale);
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.translate(Math.round(x), Math.round(y));
+    if (flip) ctx.scale(-1, 1);
+    if (opts.alpha !== undefined) ctx.globalAlpha = opts.alpha;
+    const blit = (im, block) => { if (im) ctx.drawImage(im, f * fw, (block * rp + row) * fh, fw, fh, -Math.round(px), -Math.round(py), dw, dh); };
+    const piece = (name) => {
+      const set = eq[name.split('_')[0]];
+      const path = set && E.classes[cls] && E.classes[cls][set];
+      if (path) blit(opts.white ? recolored('L:' + path, img(path), meta, false, null, true) : img(path), E.pieces.indexOf(name));
+    };
+    blit(back, 0);
+    piece('boots'); piece('armor_mid'); piece('gloves_mid'); piece('helm');
+    const wb = eq.w === undefined ? S.manifest.weapons.defaults[cls] : eq.w;
+    const wi = W && wb ? W.list.indexOf(wb) : -1;
+    if (wi >= 0) {
+      const wim = opts.white ? recolored('L:' + W.sheet, img(W.sheet), meta, false, null, true) : img(W.sheet);
+      if (eq.wg && !opts.white) { ctx.save(); ctx.shadowColor = eq.wg; ctx.shadowBlur = 10 * scale; blit(wim, wi); ctx.restore(); }
+      else blit(wim, wi);
+    }
+    blit(front, 0);
+    piece('armor_front'); piece('gloves_front');
+    ctx.restore();
+    return true;
+  }
+
   function drawEffect(ctx, name, frame, x, y, scale, angle = 0, alpha = 1) {
     if (!S.manifest) return false;
     const meta = S.manifest.effects[name];
@@ -117,7 +168,8 @@
 
   window.Sprites = {
     ready, HAIR, SKIN, defaultHairIndex, hasHair, drawEffect,
-    hero: (ctx, cls, ap, action, t, x, y, scale, flip, opts) => draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts),
+    hero: (ctx, cls, ap, action, t, x, y, scale, flip, opts) => (opts && opts.equip ? heroEquip(ctx, cls, ap, action, t, x, y, scale, flip, opts, opts.equip) : draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts)),
+    ARMOR,
     monster: (ctx, name, action, t, x, y, scale, flip, opts) => draw(ctx, 'monsters', name, null, action, t, x, y, scale, flip, { ...opts, useScale: true }),
     meta: (group, name) => S.manifest && S.manifest[group][name],
     frames: (group, name, action) => { const m = S.manifest && S.manifest[group][name]; return m ? (m.actions[action] || m.actions.idle) : null; },
