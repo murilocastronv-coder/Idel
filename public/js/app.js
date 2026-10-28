@@ -551,7 +551,12 @@
   $$('#ranking .tab').forEach((t) => { t.onclick = () => loadRanking(t.dataset.by); });
 
   // ---------------- botões do topo ----------------
-  $('#btn-play').onclick = () => (state.me ? openAccount() : openAuth('login', 'Entre na sua conta para jogar. Ainda não tem? Use “Criar conta”.'));
+  $('#btn-play').onclick = () => {
+    if (!state.me) return openAuth('login', 'Entre na sua conta para jogar. Ainda não tem? Use “Criar conta”.');
+    // um herói só: vai direto para o mundo
+    if (state.me.characters.length === 1) { location.href = `/game.html?c=${encodeURIComponent(state.me.characters[0].id)}`; return; }
+    openAccount();
+  };
   $('#btn-hero-register').onclick = () => (state.me ? openAccount() : openAuth('register'));
   $('#btn-hero-ranking').onclick = () => $('#ranking').scrollIntoView();
 

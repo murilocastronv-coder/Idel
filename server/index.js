@@ -422,10 +422,14 @@ function serveStatic(req, res, pathname) {
       return res.end('<h1>404</h1><p><a href="/">Voltar ao MU Idle Legends</a></p>');
     }
     const ext = path.extname(file);
+    // Sempre revalida com o servidor: depois de um deploy, o navegador pega a versão nova na hora
+    const etag = `"${st.size.toString(36)}-${Math.floor(st.mtimeMs).toString(36)}"`;
+    if (req.headers['if-none-match'] === etag) { res.writeHead(304, { ETag: etag, 'Cache-Control': 'no-cache' }); return res.end(); }
     res.writeHead(200, {
       'Content-Type': MIME[ext] || 'application/octet-stream',
       'Content-Length': st.size,
-      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600',
+      'Cache-Control': 'no-cache',
+      ETag: etag,
     });
     if (req.method === 'HEAD') return res.end();
     fs.createReadStream(file).pipe(res);
