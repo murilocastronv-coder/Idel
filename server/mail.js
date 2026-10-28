@@ -2,24 +2,41 @@
 // Envio de e-mail via API HTTP da Resend (https://resend.com) — sem dependências.
 // Sem RESEND_API_KEY, o link é registrado no log do servidor (útil em desenvolvimento).
 
+const TEST_FROM = 'MU Idle Legends <onboarding@resend.dev>';
+async function post(key, payload) {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.text().catch(() => '');
+  return { ok: res.ok, status: res.status, body };
+}
+
 async function sendMail({ to, subject, html, text }) {
   const key = process.env.RESEND_API_KEY;
-  const from = process.env.MAIL_FROM || 'MU Idle Legends <onboarding@resend.dev>';
+  const from = process.env.MAIL_FROM || TEST_FROM;
   if (!key) {
     console.log(`[mail] (RESEND_API_KEY ausente) E-mail para ${to}: ${subject}\n${text}`);
     return { delivered: false };
   }
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to: [to], subject, html, text }),
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    console.error(`[mail] falha ao enviar (${res.status}): ${body.slice(0, 300)}`);
+  try {
+    let r = await post(key, { from, to: [to], subject, html, text });
+    // domínio do remetente ainda não verificado na Resend: tenta o remetente de teste
+    if (!r.ok && from !== TEST_FROM && /domain|verif/i.test(r.body)) {
+      console.error(`[mail] remetente ${from} recusado (${r.status}): verifique o domínio em resend.com/domains. Tentando ${TEST_FROM}.`);
+      r = await post(key, { from: TEST_FROM, to: [to], subject, html, text });
+    }
+    if (!r.ok) {
+      console.error(`[mail] falha ao enviar (${r.status}): ${r.body.slice(0, 300)}`);
+      return { delivered: false };
+    }
+    console.log(`[mail] enviado: ${subject}`);
+    return { delivered: true };
+  } catch (e) {
+    console.error('[mail] erro de rede ao enviar:', e.message);
     return { delivered: false };
   }
-  return { delivered: true };
 }
 
 function resetEmail(username, link) {
