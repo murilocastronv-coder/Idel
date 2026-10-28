@@ -342,7 +342,9 @@ class World {
         if (String(msg.id).startsWith('p')) {
           const o = p.map.players.get(String(msg.id));
           if (o && this.hostile(p, o)) { p.target = o; p.moveTo = null; }
-          else p.send({ type: 'log', kind: 'warn', text: 'Você só pode atacar jogadores em Vulcanus (zona PvP) ou num duelo.' });
+          else if (o && !p.map.def.safe && !p.settings.pvpOn) p.send({ type: 'log', kind: 'warn', text: 'Ligue o botão PvP para atacar jogadores.' });
+          else if (o && !p.map.def.safe) p.send({ type: 'log', kind: 'warn', text: `${o.name} está com o PvP desligado.` });
+          else p.send({ type: 'log', kind: 'warn', text: 'Na cidade não há PvP. Desafie para um duelo ou vá para fora da cidade.' });
           return;
         }
         if (p.map.def.safe) return;
@@ -364,6 +366,7 @@ class World {
       case 'claim': return p.run(() => this.claim(p, String(msg.kind), String(msg.id || '')));
       case 'duel': return this.duelRequest(p, String(msg.id));
       case 'duelAnswer': return this.duelAnswer(p, String(msg.id), !!msg.accept);
+      case 'pvp': return this.setPvp(p, !!msg.on, Date.now());
       case 'duelQuit': if (p.duel) this.endDuel(p.duel.with, p, 'quit'); return undefined;
       case 'leave': return this.leave(p).then(() => client.send({ type: 'left' }));
       default: return undefined;
@@ -598,7 +601,24 @@ class World {
   hostile(a, b) {
     if (!b || !b.isPlayer || a === b || a.dead || b.dead || !a.map || a.map !== b.map) return false;
     if (a.duel && a.duel.with === b) return true;
-    return !!a.map.def.pvp && !a.map.def.safe;
+    if (a.map.def.safe) return false;
+    if (a.map.def.pvp) return true;
+    // nos outros mapas de caça: luta quem ligou o modo PvP (os dois)
+    return !!a.settings.pvpOn && !!b.settings.pvpOn;
+  }
+
+  setPvp(p, on, now) {
+    if (on === !!p.settings.pvpOn) return;
+    const lastFight = Math.max(p.pvpHitAt || 0, p.pvpAtkAt || 0);
+    if (!on && now - lastFight < 10000) {
+      const s = Math.ceil((10000 - (now - lastFight)) / 1000);
+      return p.send({ type: 'log', kind: 'warn', text: `Em combate PvP: espere ${s}s para desligar.` });
+    }
+    p.settings.pvpOn = on; p.dirty = true;
+    if (!on && p.target && p.target.isPlayer && !this.hostile(p, p.target)) p.target = null;
+    p.send({ type: 'log', kind: on ? 'pvp' : 'info', text: on
+      ? 'Modo PvP LIGADO: fora da cidade você pode atacar e ser atacado por quem também está com PvP ligado. Em Vulcanus o PvP é sempre aberto.'
+      : 'Modo PvP desligado.' });
   }
 
   damagePlayer(a, v, mult, crit, now) {
@@ -607,7 +627,7 @@ class World {
     const raw = rand(a.dmgMin, a.dmgMax) * mult * bd * (crit ? 1.5 : 1);
     const d = Math.max(1, Math.round((raw - v.def * db / 2) * PVP_SCALE));
     v.hp -= d;
-    v.pvpHitAt = now;
+    v.pvpHitAt = now; a.pvpAtkAt = now;
     v.flip = a.x < v.x;
     // revida automaticamente quem está atacando
     if (v.auto && (!v.target || !v.target.isPlayer)) v.target = a;
@@ -996,7 +1016,7 @@ class World {
     // escolhe alvo
     if (p.target && (p.target.isPlayer ? !this.hostile(p, p.target) : (p.target.dead || !map.monsters.includes(p.target)))) p.target = null;
     if (!p.target && p.auto && p.duel) p.target = p.duel.with;
-    if (!p.target && p.auto && map.def.pvp && p.settings.pvpAuto) {
+    if (!p.target && p.auto && p.settings.pvpAuto && (map.def.pvp || p.settings.pvpOn)) {
       let best = null, bd = 170;
       for (const o of map.players.values()) { if (!this.hostile(p, o)) continue; const d = dist(p, o); if (d < bd) { bd = d; best = o; } }
       p.target = best;
@@ -1044,7 +1064,7 @@ class World {
   broadcast(map, now) {
     const P = [...map.players.values()].map((p) => [p.id, Math.round(p.x), Math.round(p.y), Math.round(p.hp), p.maxHp, p.dead ? 1 : 0, p.flip ? 1 : 0,
       (p.buffs.dmg && p.buffs.dmg.until > now ? 1 : 0) + (p.buffs.def && p.buffs.def.until > now ? 2 : 0),
-      (p.pkUntil > now ? 1 : 0) + (p.duel ? 2 : 0)]);
+      (p.pkUntil > now ? 1 : 0) + (p.duel ? 2 : 0) + (p.settings.pvpOn ? 4 : 0)]);
     const M = map.monsters.map((m) => [m.id, Math.round(m.x), Math.round(m.y), Math.max(0, Math.round(m.hp)), m.dead ? 1 : 0, m.flip ? 1 : 0]);
     const ev = map.events; map.events = [];
     let boss = null;
@@ -1060,7 +1080,7 @@ class World {
       for (const [k, v] of Object.entries(p.cds)) if (v > now) cds[k] = v - now;
       p.send({ type: 's', P, M, ev, boss, me: {
         hp: Math.round(p.hp), mp: Math.round(p.mp), maxHp: p.maxHp, maxMp: p.maxMp, level: p.level,
-        exp: Math.round(p.exp), next: expToNext(p.level), zen: p.zen, pots: p.pots, auto: p.auto, free: p.free,
+        exp: Math.round(p.exp), next: expToNext(p.level), zen: p.zen, pots: p.pots, auto: p.auto, free: p.free, pvpOn: !!p.settings.pvpOn,
         target: p.target ? p.target.id : null, cds, dead: p.dead, respawnIn: p.dead ? Math.max(0, p.respawnAt - now) : 0,
         returnIn: p.returnAt ? Math.max(0, p.returnAt - now) : 0,
       } });

@@ -133,3 +133,22 @@ Chamadas que alteram dados exigem o cabeçalho `X-Requested-With: mui` e a mesma
 ## Próximas etapas
 
 Grupos e guildas, PvP na arena, mercado entre jogadores, asas e montarias, mais mapas e habilidades (meta de 15 por classe), resets e missões diárias.
+
+## PvP
+
+- **Botão PvP** (barra de ações): ligado, você ataca e pode ser atacado fora da cidade por quem também ligou. Quem lutou nos últimos 10 s não consegue desligar.
+- **Botão Alvo**: alterna entre os jogadores inimigos mais próximos. Tocar num inimigo ataca na hora; tocar em outro jogador abre o cartão de duelo.
+- **Vulcanus** (nível 10+) é PvP sempre aberto. **Duelos** valem em qualquer mapa, inclusive na cidade.
+
+## Idiomas (PT / EN)
+
+O jogo é escrito em português e traduzido para inglês no navegador por `public/js/i18n.js`, usando o dicionário `public/js/i18n-en.js`.
+O botão PT/EN fica no topo do site e no painel Idle do jogo (a escolha fica salva; `?lang=en` também funciona).
+
+Ao criar textos novos:
+
+```bash
+python3 tools/i18n/extract.py   # coleta os textos do projeto
+# adicione as traduções em tools/i18n/en.py (frases com variáveis usam {0}, {1}...)
+python3 tools/i18n/build.py     # lista o que falta e gera public/js/i18n-en.js
+```

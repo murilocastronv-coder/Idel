@@ -6,7 +6,7 @@
   const PA = window.PixelArt;
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const state = { data: null, me: null, selectedClass: 'dark_knight', selectedItem: 0, rankBy: 'resets' };
-  const fmt = new Intl.NumberFormat('pt-BR');
+  const fmt = new Intl.NumberFormat(window.I18N ? I18N.locale : 'pt-BR');
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -185,7 +185,7 @@
   function renderAccount() {
     const me = state.me;
     if (!me || !state.data) return;
-    const created = new Date(me.account.createdAt).toLocaleDateString('pt-BR');
+    const created = new Date(me.account.createdAt).toLocaleDateString(window.I18N ? I18N.locale : 'pt-BR');
     $('#account-meta').textContent = `${me.account.username} · ${me.account.email} · conta criada em ${created}`;
     const list = $('#char-list');
     list.innerHTML = '';
@@ -578,7 +578,7 @@
     try {
       const { news } = await api('GET', '/api/news');
       const kinds = { news: 'Notícia', event: 'Evento', update: 'Atualização' };
-      ul.innerHTML = news.length ? news.map((n) => `<li class="${esc(n.kind)}"><time datetime="${esc(n.published_at)}">${kinds[n.kind] || ''} · ${new Date(n.published_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</time>
+      ul.innerHTML = news.length ? news.map((n) => `<li class="${esc(n.kind)}"><time datetime="${esc(n.published_at)}">${kinds[n.kind] || ''} · ${new Date(n.published_at).toLocaleDateString(window.I18N ? I18N.locale : 'pt-BR', { day: '2-digit', month: 'long' })}</time>
         <h3>${esc(n.title)}</h3><p>${esc(n.body)}</p></li>`).join('') : '<li class="muted">Nenhuma notícia por enquanto.</li>';
     } catch (e) { ul.innerHTML = `<li class="muted">Não foi possível carregar as notícias. ${esc(e.message)}</li>`; }
   }

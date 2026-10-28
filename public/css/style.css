@@ -332,3 +332,9 @@ details[open] > summary { margin-bottom: 14px; }
 .mode-badge { display: inline-block; margin: -8px 0 20px; font: 500 15px var(--display); color: #ffe0d8; background: rgba(90, 10, 10, .8); border: 2px solid var(--edge); box-shadow: inset 0 0 0 1px var(--ember); padding: 5px 10px; }
 .mode-badge b { color: #ffb0a0; }
 @media (max-width: 480px) { .mode-badge { font-size: 13px; } }
+
+/* seletor de idioma PT/EN */
+.lang-switch { display: inline-flex; gap: 0; padding: 0; border: 3px solid var(--edge, #2a3352); background: #0b1020; cursor: pointer; font: 700 13px/1 monospace; }
+.lang-switch span { padding: 6px 8px; color: #8a93ad; }
+.lang-switch span.on { background: var(--gold, #e8b84a); color: #1a1206; }
+.lang-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0 0; }

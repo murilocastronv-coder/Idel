@@ -4,7 +4,7 @@
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
   const PA = window.PixelArt;
-  const fmt = new Intl.NumberFormat('pt-BR');
+  const fmt = new Intl.NumberFormat(window.I18N ? I18N.locale : 'pt-BR');
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const charId = new URLSearchParams(location.search).get('c');
 
@@ -113,7 +113,7 @@
       let p = S.players.get(id);
       if (!p) { p = { info: null, rx: null }; S.players.set(id, p); }
       if (p.dead && !dead) p.dyingAt = 0;
-      Object.assign(p, { x, y, hp, maxHp, dead: !!dead, flip: !!flip, buff: buff || 0, flags: flags || 0 });
+      Object.assign(p, { id, x, y, hp, maxHp, dead: !!dead, flip: !!flip, buff: buff || 0, flags: flags || 0 });
       if (p.rx === null) { p.rx = x; p.ry = y; }
     }
     for (const [id, x, y, hp, dead, flip] of m.M) {
@@ -732,8 +732,10 @@
         if (e.dead) continue;
         const top = y - HERO_H * sc - 4 * dpr;
         hpBar(x, top, 16 * zoom, e.hpShow / e.maxHp, isMe ? '#6aa84f' : (e.flags & 1) ? '#ff5a4a' : '#4aa3ff');
-        const pk = e.flags & 1, inDuel = e.flags & 2;
-        label(`${pk ? '[PK] ' : ''}${info.name} ${info.level}`, x, top - 4 * dpr, pk ? '#ff6a5a' : inDuel ? '#ffb02e' : isMe ? '#ffd36b' : '#bfe0ff', 11);
+        const pk = e.flags & 1, inDuel = e.flags & 2, pvpOn = e.flags & 4;
+        const enemy = !isMe && hostileTo(e);
+        if (enemy && e.id !== myTarget) { ctx.strokeStyle = `rgba(255,70,60,${0.35 + 0.2 * Math.sin(now / 200)})`; ctx.lineWidth = dpr * 1.5; ctx.beginPath(); ctx.ellipse(x, y, 11 * zoom, 3.6 * zoom, 0, 0, Math.PI * 2); ctx.stroke(); }
+        label(`${pk ? '[PK] ' : ''}${pvpOn ? '⚔ ' : ''}${info.name} ${info.level}`, x, top - 4 * dpr, pk ? '#ff6a5a' : inDuel ? '#ffb02e' : isMe ? '#ffd36b' : enemy ? '#ff9a6a' : '#bfe0ff', 11);
       }
     }
   }
@@ -816,6 +818,30 @@
     mmx.strokeRect(camX * sx, camY * sy, cv.width / zoom * sx, cv.height / zoom * sy);
   }
 
+  // ================= PvP no cliente (só para a interface; o servidor decide) =================
+  function hostileTo(p) {
+    if (!S.me || !p || !p.info || p.dead || p.id === S.youId) return false;
+    if (S.duel && S.duel.with === p.id) return true;
+    if (!S.map || S.map.safe) return false;
+    const pvpMap = S.data.world.find((w) => w.id === S.map.map && w.pvp);
+    if (pvpMap) return true;
+    return !!S.me.pvpOn && !!(p.flags & 4);
+  }
+  function hostileList() {
+    const me = S.players.get(S.youId); if (!me) return [];
+    const out = [];
+    S.players.forEach((p, id) => { p.id = id; if (hostileTo(p)) out.push(p); });
+    return out.sort((a, b) => Math.hypot(a.rx - me.rx, a.ry - me.ry) - Math.hypot(b.rx - me.rx, b.ry - me.ry));
+  }
+  function cycleTarget() {
+    const list = hostileList();
+    if (!list.length) { feed('Nenhum jogador inimigo por perto.', 'warn'); return; }
+    const cur = list.findIndex((p) => p.id === (S.me && S.me.target));
+    const next = list[(cur + 1) % list.length];
+    send({ type: 'target', id: next.id });
+    S.clickMark = { x: next.rx, y: next.ry, t0: performance.now() };
+  }
+
   // ================= toque / clique no mapa =================
   cv.addEventListener('pointerdown', (ev) => {
     ev.preventDefault(); // sem destaque/seleção do navegador ao tocar no mapa
@@ -833,7 +859,12 @@
       const d = Math.hypot(p.rx - wx, p.ry - 14 - wy);
       if (d < pd) { pd = d; pl = p; }
     });
-    if (pl) { openPlayerCard(pl); return; }
+    if (pl) {
+      // inimigo: ataca na hora; outros: abre o cartão (duelo)
+      const pid = [...S.players.entries()].find(([, v]) => v === pl)[0]; pl.id = pid;
+      if (hostileTo(pl)) { send({ type: 'target', id: pid }); S.clickMark = { x: pl.rx, y: pl.ry, t0: performance.now() }; return; }
+      openPlayerCard(pl); return;
+    }
     let best = null, bd = 18;
     S.monsters.forEach((m) => {
       if (m.dead) return;
@@ -865,6 +896,13 @@
     ab.setAttribute('aria-pressed', me.auto);
     $('#auto-state').textContent = me.auto ? (S.map && S.map.safe ? 'na cidade' : 'lutando') : 'desligado';
     $('#pts-badge').hidden = !(me.free > 0);
+    const pb = $('#btn-pvp');
+    pb.setAttribute('aria-pressed', !!me.pvpOn);
+    const pvpMapNow = S.map && S.data.world.find((w) => w.id === S.map.map && w.pvp);
+    $('#pvp-state').textContent = pvpMapNow ? 'zona PvP' : me.pvpOn ? (S.map && S.map.safe ? 'na cidade' : 'ligado') : 'desligado';
+    const hl = hostileList();
+    $('#btn-ptarget').hidden = !(me.pvpOn || pvpMapNow || S.duel);
+    $('#ptarget-n').textContent = hl.length ? `${hl.length} perto` : 'nenhum';
     // recargas
     $$('#skills .act.skill[data-id]').forEach((b) => {
       const cd = me.cds[b.dataset.id] || 0, total = Number(b.dataset.cd) || 1;
@@ -907,7 +945,7 @@
   }
 
   // nome completo no computador, primeira palavra no celular
-  const skLabel = (n) => `<span class="sk-full">${esc(n)}</span><span class="sk-short">${esc(n.split(' ')[0])}</span>`;
+  const skLabel = (n) => { const nm = window.I18N ? I18N.t(n) : n; return `<span class="sk-full">${esc(nm)}</span><span class="sk-short">${esc(nm.split(' ')[0])}</span>`; };
   function renderSkills() {
     const box = $('#skills');
     box.innerHTML = '';
@@ -1133,7 +1171,7 @@
       <div class="cfg-row"><label for="cfg-loot">Guardar itens a partir de</label>
         <select id="cfg-loot">${RAR_ORDER.map((r) => `<option value="${r}" ${st.lootMin === r ? 'selected' : ''}>${RAR_NAME[r]}</option>`).join('')}</select>
         <small class="muted">Itens abaixo disso viram Zen na hora.</small></div>
-      <label class="cfg-check"><input type="checkbox" id="cfg-pvp" ${st.pvpAuto ? 'checked' : ''}> Atacar jogadores automaticamente em Vulcanus (zona PvP)</label>
+      <label class="cfg-check"><input type="checkbox" id="cfg-pvp" ${st.pvpAuto ? 'checked' : ''}> Atacar jogadores inimigos automaticamente (Vulcanus ou PvP ligado)</label>
       <div class="cfg-row"><label for="cfg-quality">Qualidade gráfica</label>
         <select id="cfg-quality"><option value="baixa">Baixa (celular fraco)</option><option value="media">Média</option><option value="alta">Alta</option></select></div>
       <div class="cfg-row"><label for="cfg-vol">Volume <b id="cfg-vol-v"></b></label><input type="range" id="cfg-vol" min="0" max="100" step="5"></div>
@@ -1204,16 +1242,15 @@
     const card = $('#pcard');
     const info = p.info;
     const cls = S.data.classes[info.cls];
-    const pvpMap = S.data.world.find((w) => w.id === S.map.map && w.pvp);
-    const myDuel = S.duel && S.duel.with === info.id;
-    const canAttack = (pvpMap || myDuel) && !S.map.safe || myDuel;
+    p.id = info.id;
+    const canAttack = hostileTo(p);
     card.innerHTML = `<button class="close" type="button" aria-label="Fechar">×</button>
       <b>${(p.flags & 1) ? '<span style="color:#ff6a5a">[PK]</span> ' : ''}${esc(info.name)}</b><small>${esc(cls.name)} · Nível ${info.level}</small>
       <div class="row">
         <button class="btn small ${canAttack ? 'btn-danger' : ''}" type="button" data-act="attack" ${canAttack ? '' : 'disabled'}>Atacar</button>
         <button class="btn small btn-gold" type="button" data-act="duel" ${S.duel ? 'disabled' : ''}>Desafiar para duelo</button>
       </div>
-      ${canAttack ? '' : '<small class="muted">Atacar só em Vulcanus (zona PvP) ou em duelo.</small>'}`;
+      ${canAttack ? '' : `<small class="muted">${S.map.safe ? 'Na cidade não há PvP: desafie para um duelo.' : !S.me.pvpOn ? 'Ligue o botão PvP para atacar.' : 'Este jogador está com o PvP desligado.'}</small>`}`;
     card.hidden = false;
     card.querySelector('.close').onclick = () => { card.hidden = true; };
     card.querySelector('[data-act="attack"]').onclick = () => { send({ type: 'target', id: info.id }); card.hidden = true; };
@@ -1249,6 +1286,8 @@
 
   // ================= botões =================
   $('#btn-auto').onclick = () => send({ type: 'auto', on: !(S.me && S.me.auto) });
+  $('#btn-pvp').onclick = () => send({ type: 'pvp', on: !(S.me && S.me.pvpOn) });
+  $('#btn-ptarget').onclick = cycleTarget;
   $('#btn-pot-hp').onclick = () => send({ type: 'potion', kind: 'hp' });
   $('#btn-pot-mp').onclick = () => send({ type: 'potion', kind: 'mp' });
   $('#btn-exit').onclick = () => { leaving = true; send({ type: 'leave' }); setTimeout(() => { location.href = '/?herois'; }, 800); };
