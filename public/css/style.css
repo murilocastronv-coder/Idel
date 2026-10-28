@@ -182,7 +182,7 @@ h4 { font-size: 18px; }
 .chip.is-on { border-color: var(--gold); color: var(--gold); }
 .map-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
 .map-card { background: var(--stone); border: 3px solid var(--edge); box-shadow: 4px 4px 0 var(--edge); }
-.map-card canvas { width: 100%; aspect-ratio: 96 / 54; height: auto; border-bottom: 3px solid var(--edge); }
+.map-card img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; height: auto; border-bottom: 3px solid var(--edge); background: var(--night); }
 .map-card .info { padding: 8px 10px 10px; }
 .map-card h3 { font-size: 18px; margin: 0; }
 .map-card p { margin: 0; font-size: 14px; color: var(--bone-dim); display: flex; justify-content: space-between; gap: 6px; }

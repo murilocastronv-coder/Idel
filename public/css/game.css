@@ -116,7 +116,7 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 
 .tp-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .tp-list li { display: grid; grid-template-columns: 72px 1fr auto; gap: 10px; align-items: center; background: var(--night-2); border: 2px solid var(--edge); padding: 6px; }
-.tp-list canvas { width: 72px; height: 40px; border: 2px solid var(--edge); }
+.tp-list img { display: block; width: 72px; height: 54px; object-fit: cover; border: 2px solid var(--edge); }
 .tp-list b { font-family: var(--display); display: block; }
 .tp-list small { color: var(--bone-dim); display: block; font-size: 13px; }
 .tp-list li.here { border-color: var(--gold-dim); }

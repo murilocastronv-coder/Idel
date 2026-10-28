@@ -19,7 +19,7 @@ Primeira etapa do MMORPG Idle 2D em pixel art: a página inicial completa, com c
 
 No painel **Minha conta**, cada herói tem o botão **Entrar no mundo** (`/game.html?c=ID`).
 
-- **Mapas abertos:** Lorencia (cidade, loja, zona segura), Campos de Lorencia (nível 1), Bosque Encantado (nível 10) e Dungeon (nível 25) com o boss **Rei Esqueleto**, que volta 10 minutos depois de derrotado.
+- **Mapas abertos:** Lorencia (cidade, loja, zona segura), Noria (nível 1), Devias (nível 10) e Dungeon (nível 25) com o boss **Rei Esqueleto**, que volta 10 minutos depois de derrotado. A galeria mostra as 29 regiões do atlas (`public/assets/maps/`).
 - **Combate automático (AUTO):** o herói procura o monstro mais próximo, anda até ele, ataca, usa as habilidades ligadas e toma poções sozinho nos limites configurados. Também dá para tocar no chão para andar e tocar num monstro para atacá-lo.
 - **Servidor como autoridade:** movimento, dano, EXP, Zen, drops, compra e venda são calculados no servidor; o navegador só envia intenções.
 - **Progressão:** EXP cada vez mais difícil, pontos por nível (manual ou automático), morte com renascimento em Lorencia e volta automática ao farm.

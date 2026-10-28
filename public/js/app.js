@@ -519,10 +519,9 @@
     state.data.maps.forEach((m) => {
       const li = document.createElement('li');
       li.className = 'map-card'; li.dataset.level = m.level;
-      const cv = document.createElement('canvas'); cv.width = 96; cv.height = 54;
-      cv.setAttribute('aria-hidden', 'true');
-      PA.drawLandscape(cv.getContext('2d'), m.theme, m.id, 96, 54, 0);
-      li.appendChild(cv);
+      const img = document.createElement('img');
+      img.src = `/assets/maps/${m.id}.jpg`; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
+      li.appendChild(img);
       const tag = [m.playable ? '<span class="tag-open">Aberto agora</span>' : '', m.pvp ? '<span class="tag-pvp">PvP</span>' : m.safe ? '<span class="tag-safe">Zona segura</span>' : ''].filter(Boolean).join(' · ');
       li.insertAdjacentHTML('beforeend', `<div class="info"><h3>${esc(m.name)}</h3>
         <p><span>${esc(m.type)}</span><span class="lvl">Nv. ${m.level}+</span></p>${tag ? `<p>${tag}</p>` : ''}</div>`);

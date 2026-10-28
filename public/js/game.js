@@ -167,6 +167,9 @@
     grass: { base: '#5b8a3c', a: '#6a9a48', b: '#4a7530', blade: '#7ab456' },
     forest: { base: '#2f5a26', a: '#3b6b2a', b: '#244a1e', blade: '#4a8a36' },
     cave: { base: '#3a3240', a: '#463c4c', b: '#2c2632', blade: '#524658' },
+    noria: { base: '#3f7a32', a: '#4a8a3a', b: '#336a2a', blade: '#6ab84e' },
+    snow: { base: '#e8eef6', a: '#f4f8fc', b: '#d4dee8', blade: '#c8d4e2' },
+    dungeon: { base: '#2e2830', a: '#36303a', b: '#262028', blade: '#3e3644' },
   };
   function buildGround(m) {
     const W = m.w * GS, H = m.h * GS;
@@ -229,6 +232,12 @@
       for (let x = 0; x < W; x += 20) for (let y = H - 80; y < H; y += 12) px(x + ((y / 12) % 2) * 10, y, 19, 11, r() < 0.5 ? '#6a6a78' : '#5a5a66');
       for (let x = 0; x < W; x += 32) { px(x, H - 96, 20, 16, '#6a6a78'); px(x, H - 96, 20, 3, '#8a8a98'); }
       for (let i = 0; i < 12; i++) tree(r() * W, 400 + r() * (H - 560), 1);
+      // rio a leste
+      for (let y = 0; y < H - 80; y += 2) {
+        const xc = W - 70 + Math.sin(y / 70) * 20;
+        px(xc - 52, y, 104, 2, '#4a7a3a'); px(xc - 46, y, 92, 2, '#8a7a5a'); px(xc - 40, y, 80, 2, '#1a4a8a'); px(xc - 30, y, 54, 2, '#2a6ab8');
+        if (r() < 0.12) px(xc - 20 + r() * 30, y, 8, 1, '#9ad8ff');
+      }
       // barraca da loja
       const sx = 470 * GS, sy = 250 * GS;
       shadow(sx, sy, 70);
@@ -237,40 +246,102 @@
       for (let i = 0; i < 120; i += 10) disc(sx - 57 + i, sy - 72, 5, i % 20 ? '#f0e6cc' : '#c8452c');
       px(sx - 62, sy - 24, 124, 16, '#6a4a2a'); px(sx - 62, sy - 24, 124, 4, '#9a7a52');
       for (let k = 0; k < 5; k++) { disc(sx - 40 + k * 20, sy - 30, 5, ['#d0302a', '#3a7aff', '#d0302a', '#3a7aff', '#e8b84a'][k]); px(sx - 41 + k * 20, sy - 33, 2, 2, '#ffffff'); }
-    } else if (m.theme === 'grass') {
-      for (let x = 0; x < W; x += 2) {
-        const yc = H / 2 + Math.sin(x / 180) * 120;
-        px(x, yc - 18, 2, 36, '#9a7a4a'); px(x, yc - 18, 2, 2, '#7a5a34'); px(x, yc + 16, 2, 2, '#7a5a34');
-        if (r() < 0.15) px(x, yc - 10 + r() * 20, 2, 2, '#b89a6a');
+    } else if (m.theme === 'noria') {
+      // floresta élfica: lagos azuis, árvores coloridas, cogumelos e cristais
+      for (let i = 0; i < 9; i++) {
+        const x = r() * W, y = r() * H, rad = 40 + r() * 60;
+        disc(x, y, rad + 6, '#2a5a2a'); disc(x, y, rad, '#1a5a8a'); disc(x - rad * 0.2, y - rad * 0.2, rad * 0.7, '#2a7ab8');
+        for (let k = 0; k < 12; k++) px(x - rad * 0.6 + r() * rad * 1.2, y - rad * 0.5 + r() * rad, 6, 1, '#9ad8ff');
       }
-      for (let i = 0; i < 320; i++) flower(r() * W, r() * H, ['#ffd36b', '#ff7ad9', '#ffffff', '#9ac8ff'][i % 4]);
+      for (let x = 0; x < W; x += 2) {
+        const yc = H * 0.55 + Math.sin(x / 210) * 140;
+        px(x, yc - 16, 2, 32, '#8a6a3a'); px(x, yc - 16, 2, 2, '#6a4a24'); if (r() < 0.1) px(x, yc - 8 + r() * 16, 2, 2, '#c8a86a');
+      }
+      for (let i = 0; i < 260; i++) flower(r() * W, r() * H, ['#ff7ad9', '#c06bff', '#ffd36b', '#9ac8ff'][i % 4]);
       const items = [];
-      for (let i = 0; i < 40; i++) items.push(['t', r() * W, r() * H]);
-      for (let i = 0; i < 25; i++) items.push(['r', r() * W, r() * H]);
-      items.sort((a, b) => a[2] - b[2]).forEach(([k, x, y]) => (k === 't' ? tree(x, y, 1) : rock(x, y, 1)));
-    } else if (m.theme === 'forest') {
-      for (let i = 0; i < 60; i++) { const x = r() * W, y = r() * H; disc(x, y, 6 + r() * 8, '#244a1e'); }
+      for (let i = 0; i < 70; i++) items.push(['t', r() * W, r() * H, r() < 0.25]);
+      for (let i = 0; i < 18; i++) items.push(['c', r() * W, r() * H]);
+      items.sort((a, b) => a[2] - b[2]).forEach(([k, x, y, pink]) => {
+        if (k === 'c') {
+          shadow(x + 2, y + 2, 10);
+          g.fillStyle = '#5a2a9a'; g.beginPath(); g.moveTo(x, y - 30); g.lineTo(x + 7, y); g.lineTo(x - 7, y); g.fill();
+          px(x - 2, y - 26, 3, 20, '#c06bff'); px(x - 1, y - 24, 1, 12, '#f0d8ff');
+          const grd = g.createRadialGradient(x, y - 14, 1, x, y - 14, 26); grd.addColorStop(0, 'rgba(192,107,255,.35)'); grd.addColorStop(1, 'rgba(192,107,255,0)');
+          g.fillStyle = grd; g.fillRect(x - 26, y - 40, 52, 52);
+        } else if (pink) {
+          shadow(x + 4, y + 2, 16);
+          px(x - 4, y - 18, 8, 20, '#5a3a1c'); px(x - 3, y - 18, 2, 20, '#7a5230');
+          disc(x, y - 30, 17, '#6a1a5a'); disc(x, y - 30, 15, '#c8458a'); disc(x - 4, y - 34, 9, '#ff7ad9'); disc(x - 6, y - 37, 4, '#ffd0ec');
+        } else tree(x, y, 1);
+      });
+      for (let i = 0; i < 50; i++) { const x = r() * W, y = r() * H; px(x - 1, y - 4, 3, 6, '#e8e0d0'); disc(x, y - 6, 5, '#3a7ad8'); disc(x - 1, y - 7, 3, '#7ab8ff'); px(x - 2, y - 8, 2, 2, '#ffffff'); }
+    } else if (m.theme === 'snow') {
+      // Devias: neve, gelo, pinheiros nevados e cristais de gelo
+      for (let i = 0; i < W * H / 900; i++) px(r() * W, r() * H, 2 + r() * 6, 1, r() < 0.5 ? '#dfe8f4' : '#ffffff');
+      for (let i = 0; i < 8; i++) {
+        const x = r() * W, y = r() * H, rad = 40 + r() * 50;
+        disc(x, y, rad + 4, '#9ab8d8'); disc(x, y, rad, '#b8d8f0'); disc(x - rad * 0.25, y - rad * 0.25, rad * 0.5, '#e0f2ff');
+        for (let k = 0; k < 6; k++) px(x - rad * 0.6 + r() * rad, y - rad * 0.4 + r() * rad * 0.8, 10, 1, '#ffffff');
+      }
+      for (let x = 0; x < W; x += 2) { const yc = H * 0.5 + Math.sin(x / 160) * 120; px(x, yc - 14, 2, 28, '#c8d4e4'); if (r() < 0.2) px(x, yc - 6 + r() * 12, 2, 2, '#a8b8cc'); }
+      const pine = (x, y, s) => {
+        shadow(x + 3, y + 2, 14 * s);
+        px(x - 2 * s, y - 8 * s, 4 * s, 10 * s, '#4a2e18');
+        for (let k = 0; k < 4; k++) {
+          const ww = (16 - k * 3) * s, yy = y - 8 * s - k * 9 * s;
+          for (let j = 0; j < 10 * s; j++) { const w2 = ww * (j / (10 * s)); px(x - w2, yy - 10 * s + j, w2 * 2, 1, j < 3 * s ? '#ffffff' : (j % 3 ? '#1e4a3a' : '#2a5a48')); }
+        }
+        px(x - 1, y - 48 * s, 2, 4, '#ffffff');
+      };
+      const crystal = (x, y) => {
+        shadow(x + 2, y + 2, 12);
+        for (const [dx, h, wd] of [[-6, 22, 5], [0, 34, 7], [7, 18, 5]]) {
+          g.fillStyle = '#3a8ad8'; g.beginPath(); g.moveTo(x + dx, y - h); g.lineTo(x + dx + wd, y); g.lineTo(x + dx - wd, y); g.fill();
+          px(x + dx - 1, y - h + 6, 2, h - 8, '#bff0ff');
+        }
+        const grd = g.createRadialGradient(x, y - 16, 1, x, y - 16, 30); grd.addColorStop(0, 'rgba(160,220,255,.35)'); grd.addColorStop(1, 'rgba(160,220,255,0)');
+        g.fillStyle = grd; g.fillRect(x - 30, y - 46, 60, 60);
+      };
       const items = [];
-      for (let i = 0; i < 90; i++) items.push([r() * W, r() * H, r() < 0.3 ? 1.4 : 1]);
-      items.sort((a, b) => a[1] - b[1]).forEach(([x, y, s]) => tree(x, y, s, true));
-      for (let i = 0; i < 60; i++) { const x = r() * W, y = r() * H; px(x - 1, y - 4, 3, 6, '#e8e0d0'); disc(x, y - 6, 5, '#a8281e'); disc(x - 1, y - 7, 3, '#e8483a'); px(x - 2, y - 8, 2, 2, '#ffffff'); px(x + 2, y - 6, 1, 1, '#ffffff'); }
-      for (let i = 0; i < 70; i++) { const x = r() * W, y = r() * H; px(x, y, 2, 2, '#9affd0'); px(x - 1, y + 1, 4, 1, 'rgba(154,255,208,.4)'); }
-    } else if (m.theme === 'cave') {
-      for (let y = 0; y < H; y += 32) for (let x = (y / 32 % 2) * 16; x < W; x += 32) { px(x, y, 31, 1, '#2c2632'); px(x, y, 1, 31, '#2c2632'); if (r() < 0.2) px(x + 6 + r() * 16, y + 8 + r() * 16, 8, 1, '#241e2a'); }
-      for (let i = 0; i < 70; i++) {
-        const x = r() * W, y = r() * H, hgt = 24 + r() * 20;
+      for (let i = 0; i < 60; i++) items.push(['p', r() * W, r() * H, r() < 0.3 ? 1.3 : 1]);
+      for (let i = 0; i < 22; i++) items.push(['c', r() * W, r() * H]);
+      for (let i = 0; i < 18; i++) items.push(['r', r() * W, r() * H]);
+      items.sort((a, b) => a[2] - b[2]).forEach(([k, x, y, s]) => (k === 'p' ? pine(x, y, s) : k === 'c' ? crystal(x, y) : rock(x, y, 1)));
+      for (let i = 0; i < 400; i++) px(r() * W, r() * H, 1, 1, '#ffffff');
+    } else if (m.theme === 'dungeon') {
+      // pedra escura com fendas de lava, pilares, ossos e tochas
+      for (let y = 0; y < H; y += 32) for (let x = (y / 32 % 2) * 16; x < W; x += 32) {
+        px(x, y, 31, 31, ['#2e2830', '#342c36', '#28222a'][(r() * 3) | 0]); px(x, y, 31, 2, '#40363e'); px(x, y + 29, 31, 2, '#1c181e');
+        if (r() < 0.15) px(x + 6 + r() * 16, y + 8 + r() * 16, 8, 1, '#1c181e');
+      }
+      const lava = (x0, y0, len) => {
+        let x = x0, y = y0;
+        for (let k = 0; k < len; k++) {
+          px(x - 3, y - 3, 7, 7, '#5a1408'); px(x - 2, y - 2, 5, 5, '#d8401a'); px(x - 1, y - 1, 3, 3, '#ffb02e');
+          x += 3 + r() * 3; y += (r() - 0.5) * 8;
+        }
+      };
+      for (let i = 0; i < 26; i++) lava(r() * W, r() * H, 20 + r() * 40);
+      for (let i = 0; i < 6; i++) {
+        const x = r() * W, y = r() * H, rad = 26 + r() * 30;
+        disc(x, y, rad + 4, '#3a0a04'); disc(x, y, rad, '#c8301a'); disc(x - rad * 0.2, y - rad * 0.2, rad * 0.65, '#ff7a2a'); disc(x - rad * 0.35, y - rad * 0.35, rad * 0.3, '#ffd36b');
+        const grd = g.createRadialGradient(x, y, 2, x, y, rad * 2.2); grd.addColorStop(0, 'rgba(255,120,40,.3)'); grd.addColorStop(1, 'rgba(255,120,40,0)');
+        g.fillStyle = grd; g.fillRect(x - rad * 2.2, y - rad * 2.2, rad * 4.4, rad * 4.4);
+      }
+      for (let i = 0; i < 50; i++) {
+        const x = r() * W, y = r() * H, hgt = 28 + r() * 22;
         shadow(x + 4, y + 2, 16);
-        px(x - 12, y - hgt, 24, hgt, '#241e2a'); px(x - 10, y - hgt, 20, hgt, '#3a3044'); px(x - 10, y - hgt, 5, hgt, '#4a3e52'); px(x - 8, y - hgt - 4, 14, 4, '#4a3e52');
+        px(x - 12, y - hgt, 24, hgt, '#1c181e'); px(x - 10, y - hgt, 20, hgt, '#3a3240'); px(x - 10, y - hgt, 5, hgt, '#4e4454');
+        px(x - 13, y - hgt - 6, 26, 6, '#4e4454'); px(x - 13, y - hgt - 6, 26, 2, '#6a5e70');
       }
       for (let i = 0; i < 60; i++) { const x = r() * W, y = r() * H; px(x, y, 12, 3, '#d8cfb4'); px(x, y, 12, 1, '#fffbe8'); disc(x - 1, y + 1, 2, '#d8cfb4'); disc(x + 12, y + 1, 2, '#d8cfb4'); }
-      for (let i = 0; i < 6; i++) { const x = r() * W, y = r() * H; disc(x, y, 7, '#d8cfb4'); px(x - 3, y - 2, 2, 3, '#1b1b2a'); px(x + 1, y - 2, 2, 3, '#1b1b2a'); px(x - 2, y + 4, 5, 3, '#d8cfb4'); }
-      for (let x = 0; x < W; x += 8) { const h = 20 + (r() * 28 | 0); px(x, 0, 8, h, '#1c1626'); px(x + 2, h, 4, 4, '#1c1626'); px(x + 3, h + 4, 2, 4, '#1c1626'); }
-      if (m.map === 'dungeon') {
-        px(1720, 640, 360, 320, '#1e1828');
-        for (let x = 1720; x < 2080; x += 20) for (let y = 640; y < 960; y += 20) { px(x + 1, y + 1, 18, 18, r() < 0.3 ? '#3a2e48' : '#2a2236'); px(x + 1, y + 1, 18, 1, '#4a3e5a'); }
-        px(1740, 760, 320, 80, '#4a1a4a'); px(1740, 760, 320, 4, '#e8b84a'); px(1740, 836, 320, 4, '#e8b84a');
-      }
-      for (let i = 0; i < 20; i++) torch(r() * W, r() * H);
+      for (let i = 0; i < 8; i++) { const x = r() * W, y = r() * H; disc(x, y, 7, '#d8cfb4'); px(x - 3, y - 2, 2, 3, '#1b1b2a'); px(x + 1, y - 2, 2, 3, '#1b1b2a'); px(x - 2, y + 4, 5, 3, '#d8cfb4'); }
+      for (let x = 0; x < W; x += 8) { const h = 20 + (r() * 28 | 0); px(x, 0, 8, h, '#140e14'); px(x + 2, h, 4, 4, '#140e14'); }
+      // sala do boss
+      px(1720, 640, 360, 320, '#1a1218');
+      for (let x = 1720; x < 2080; x += 20) for (let y = 640; y < 960; y += 20) { px(x + 1, y + 1, 18, 18, r() < 0.3 ? '#3a1a22' : '#2a161c'); px(x + 1, y + 1, 18, 1, '#4a2a32'); }
+      px(1740, 760, 320, 80, '#5a0a1a'); px(1740, 760, 320, 4, '#e8b84a'); px(1740, 836, 320, 4, '#e8b84a');
+      for (let i = 0; i < 24; i++) torch(r() * W, r() * H);
     }
     return c;
   }
@@ -433,7 +504,7 @@
         Sprites.drawEffect(ctx, f.sprite, p * 4, x, y, sc * 1.4, left ? Math.PI : 0, 1 - p * 0.3);
       } else if (f.kind === 'burst') {
         const [x, y] = toScreen(f.x, f.y);
-        Sprites.drawEffect(ctx, f.sprite, p * 6, x, y, zoom * f.r / 26);
+        Sprites.drawEffect(ctx, f.sprite, p * 6, x, y, zoom * f.r / 44, 0, 0.85);
       } else if (f.kind === 'heal') {
         const [x, y] = toScreen(f.at.rx, f.at.ry);
         Sprites.drawEffect(ctx, 'heal', p * 4, x, y, sc * 1.4);
@@ -709,9 +780,9 @@
       const li = document.createElement('li');
       const here = S.map && S.map.map === w.id;
       if (here) li.className = 'here';
-      const c = document.createElement('canvas'); c.width = 96; c.height = 54;
-      PA.drawLandscape(c.getContext('2d'), w.theme, w.id, 96, 54, 0);
-      li.appendChild(c);
+      const img = document.createElement('img');
+      img.src = `/assets/maps/${w.id}.jpg`; img.alt = '';
+      li.appendChild(img);
       const info = document.createElement('div');
       info.innerHTML = `<b>${esc(w.name)}</b><small>${w.safe ? 'Cidade · zona segura · loja' : `Nível ${w.minLevel}+ · ${esc(w.monsters.join(', '))}`}</small>`;
       li.appendChild(info);
