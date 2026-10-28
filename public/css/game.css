@@ -230,3 +230,34 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .lang-switch span { padding: 6px 8px; color: #8a93ad; }
 .lang-switch span.on { background: var(--gold, #e8b84a); color: #1a1206; }
 .lang-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0 0; }
+
+/* celular: barra de ações compacta em 2 linhas, colada no menu de baixo */
+@media (max-width: 600px) {
+  .bottom { gap: 4px; padding: 0 6px max(4px, env(safe-area-inset-bottom)); }
+  .actions {
+    display: grid; gap: 4px; width: 100%; max-width: 460px; margin: 0 auto;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-areas: "auto pvp tgt hp mp" "sk sk sk sk sk";
+  }
+  #btn-auto { grid-area: auto; } #btn-pvp { grid-area: pvp; } #btn-ptarget { grid-area: tgt; }
+  #btn-pot-hp { grid-area: hp; } #btn-pot-mp { grid-area: mp; }
+  .actions .act { min-width: 0; width: auto; height: 44px; padding: 0 2px; }
+  .actions .act b { font-size: 13px; }
+  .actions .act small { font-size: 9px; }
+  .act.pot canvas { width: 22px; height: 22px; }
+  .skills { grid-area: sk; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+  .act.skill { width: auto; height: 40px; font-size: 9px; line-height: 1.05; letter-spacing: 0; }
+  .act.skill .mana { font-size: 8px; }
+  .sk-full { display: block; } .sk-short { display: none; }
+  .menu { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; width: 100%; max-width: 460px; margin: 0 auto; }
+  .menu button { padding: 6px 2px; font-size: 12px; min-width: 0; }
+}
+@media (max-width: 600px) {
+  /* nome do mapa embaixo do minimapa, sem cobrir o painel do herói */
+  .hud-map { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; max-width: 42vw; }
+  #minimap { order: 0; margin-top: 0; }
+  .hud-map .map-name { order: 1; font-size: 11px; padding: 2px 5px; max-width: 100%; white-space: normal; text-align: right; line-height: 1.15; }
+  .hud-map .mode-tag { order: 2; margin-top: 0; font-size: 10px; }
+  .boss-bar { bottom: 196px; }
+}
+.act[hidden] { display: none !important; }
