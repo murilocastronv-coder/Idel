@@ -74,11 +74,33 @@
     return [a.row, f];
   }
 
+  // monstro com cor própria: mantém o sombreado (modo "color") e escurece cores escuras
+  function tinted(group, name, color) {
+    const key = `${group}:${name}:tint:${color}`;
+    let c = S.cache.get(key);
+    if (c) return c;
+    const im = S.imgs[group + ':' + name];
+    if (!im) return null;
+    c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+    const g = c.getContext('2d');
+    g.drawImage(im, 0, 0);
+    g.globalCompositeOperation = 'color';
+    g.fillStyle = color; g.fillRect(0, 0, c.width, c.height);
+    const [r, gg, b] = hex(color);
+    const lum = (0.299 * r + 0.587 * gg + 0.114 * b) / 255;
+    if (lum < 0.35) { g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.55; g.fillRect(0, 0, c.width, c.height); g.globalAlpha = 1; }
+    if (lum > 0.85) { g.globalCompositeOperation = 'screen'; g.globalAlpha = 0.35; g.fillRect(0, 0, c.width, c.height); g.globalAlpha = 1; }
+    g.globalCompositeOperation = 'destination-in';
+    g.drawImage(im, 0, 0);
+    S.cache.set(key, c);
+    return c;
+  }
+
   function draw(ctx, group, name, ap, action, t, x, y, scale, flip, opts = {}) {
     if (!S.manifest) return false;
     const meta = S.manifest[group][name];
     if (!meta) return false;
-    const img = sheet(group, name, ap, opts.white);
+    const img = opts.tint && !opts.white ? tinted(group, name, opts.tint) : sheet(group, name, ap, opts.white);
     if (!img) return false;
     const [row, f] = frameOf(meta, action, t, opts.once);
     const sc = scale * (opts.useScale && meta.scale ? meta.scale : 1);

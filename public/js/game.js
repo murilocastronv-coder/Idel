@@ -215,6 +215,12 @@
     snow: { base: '#e8eef6', a: '#f4f8fc', b: '#d4dee8', blade: '#c8d4e2' },
     dungeon: { base: '#2e2830', a: '#36303a', b: '#262028', blade: '#3e3644' },
     lava: { base: '#2a1e1c', a: '#322420', b: '#221816', blade: '#3e2c26' },
+    water: { base: '#1e5a6a', a: '#246a7a', b: '#184a58', blade: '#3a8a8a' },
+    tower: { base: '#2a2238', a: '#322a42', b: '#221c2e', blade: '#3e3450' },
+    desert: { base: '#d8b070', a: '#e4c088', b: '#c89c5a', blade: '#b88a4a' },
+    sky: { base: '#a8c8e8', a: '#bcd8f4', b: '#94b4d8', blade: '#d8ecff' },
+    darkforest: { base: '#1a2e1c', a: '#203822', b: '#142416', blade: '#2a4a2c' },
+    void: { base: '#1a1024', a: '#22162e', b: '#140c1c', blade: '#2e1e3e' },
   };
   // Monta o chão (pintado uma vez) + objetos altos separados (balançam e entram na ordem de profundidade) + luzes
   function buildGround(m) {
@@ -393,6 +399,87 @@
       }
       for (let i = 0; i < (lavaMap ? 10 : 24); i++) torch(r() * W, r() * H);
     }
+    else if (m.theme === 'water') {
+      // Atlans: areia do fundo do mar, corais, colunas afundadas, algas e brilho da água
+      for (let i = 0; i < W * H / 1500; i++) px(r() * W, r() * H, 3 + r() * 10, 1, r() < 0.5 ? '#2e7a86' : '#164450');
+      for (let i = 0; i < 14; i++) { const x = r() * W, y = r() * H, rad = 30 + r() * 50; disc(x, y, rad, '#2a7a7a'); disc(x - rad * 0.2, y - rad * 0.2, rad * 0.6, '#3a9a8a'); light(x, y, rad * 2, '80,220,255', 0.08); }
+      const coral = (x, y, col) => prop(x, y, 30, 34, 15, 30, (ax, ay) => {
+        for (let k = 0; k < 5; k++) { const dx = (k - 2) * 4, h = 10 + r() * 16; px(ax + dx - 1, ay - h, 3, h, col); disc(ax + dx, ay - h, 3, col); px(ax + dx, ay - h - 2, 1, 2, '#ffffff'); }
+      }, 0.8);
+      for (let i = 0; i < 70; i++) coral(r() * W, r() * H, ['#ff7aa0', '#ffb04a', '#c06bff', '#5affd0'][i % 4]);
+      for (let i = 0; i < 22; i++) {
+        const x = r() * W, y = r() * H, hgt = 40 + r() * 30, broken = r() < 0.5;
+        prop(x, y, 26, hgt + 10, 13, hgt + 6, (ax, ay) => {
+          const hh = broken ? hgt * 0.55 : hgt;
+          px(ax - 9, ay - hh, 18, hh, '#6a8a8a'); px(ax - 9, ay - hh, 5, hh, '#9ababa'); for (let k = 4; k < hh; k += 6) px(ax - 9, ay - k, 18, 1, '#4a6a6a');
+          px(ax - 11, ay - hh - 4, 22, 5, '#8aaaaa'); px(ax - 6, ay - hh + 6, 4, 8, '#3a8a5a');
+        });
+      }
+      for (let i = 0; i < 26; i++) crystal(r() * W, r() * H, ['#2ab8d8', '#bff8ff'], '90,230,255');
+      for (let i = 0; i < 120; i++) { const x = r() * W, y = r() * H; for (let k = 0; k < 10; k++) px(x + Math.sin(k / 2) * 2, y - k * 2, 2, 2, '#2a8a4a'); }
+    } else if (m.theme === 'tower') {
+      // Lost Tower: piso de pedra roxa, runas, cristais e tochas mágicas
+      for (let y = 0; y < H; y += 32) for (let x = (y / 32 % 2) * 16; x < W; x += 32) {
+        px(x, y, 31, 31, ['#2e2640', '#362e4a', '#28203a'][(r() * 3) | 0]); px(x, y, 31, 2, '#423a58'); px(x, y + 29, 31, 2, '#1a1426');
+      }
+      for (let i = 0; i < 30; i++) { const x = r() * W, y = r() * H, rad = 18 + r() * 14; for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; px(x + Math.cos(a) * rad, y + Math.sin(a) * rad * 0.5, 2, 2, '#b05aff'); } light(x, y, rad * 3, '180,90,255', 0.15); }
+      for (let i = 0; i < 40; i++) {
+        const x = r() * W, y = r() * H, hgt = Math.round(36 + r() * 24);
+        prop(x, y, 30, hgt + 12, 15, hgt + 8, (ax, ay) => {
+          px(ax - 12, ay - hgt, 24, hgt, '#1c1628'); px(ax - 10, ay - hgt, 20, hgt, '#3e3256'); px(ax - 10, ay - hgt, 5, hgt, '#54467a');
+          px(ax - 13, ay - hgt - 6, 26, 6, '#54467a'); px(ax - 2, ay - hgt + 8, 4, 4, '#d08aff');
+        });
+      }
+      for (let i = 0; i < 18; i++) crystal(r() * W, r() * H, ['#7a3ac0', '#f0d8ff'], '192,107,255');
+      for (let i = 0; i < 20; i++) torch(r() * W, r() * H);
+    } else if (m.theme === 'desert') {
+      // Tarkan: dunas, rachaduras, cactos, ossos e pedras
+      for (let k = 0; k < 40; k++) { const y0 = r() * H, amp = 10 + r() * 20; for (let x = 0; x < W; x += 2) { const y = y0 + Math.sin(x / (60 + k * 3)) * amp; px(x, y, 2, 2, '#c08848'); px(x, y - 2, 2, 1, '#f0d098'); } }
+      for (let i = 0; i < 40; i++) { let x = r() * W, y = r() * H; for (let k = 0; k < 12; k++) { px(x, y, 2, 1, '#a07040'); x += 3; y += (r() - 0.5) * 6; } }
+      const cactus = (x, y, s) => prop(x, y, Math.ceil(30 * s), Math.ceil(46 * s), Math.ceil(15 * s), Math.ceil(42 * s), (ax, ay) => {
+        px(ax - 3 * s, ay - 38 * s, 6 * s, 38 * s, '#3a7a3a'); px(ax - 3 * s, ay - 38 * s, 2 * s, 38 * s, '#5aa04a');
+        px(ax - 10 * s, ay - 26 * s, 7 * s, 4 * s, '#3a7a3a'); px(ax - 10 * s, ay - 34 * s, 4 * s, 10 * s, '#3a7a3a');
+        px(ax + 3 * s, ay - 20 * s, 7 * s, 4 * s, '#3a7a3a'); px(ax + 6 * s, ay - 28 * s, 4 * s, 10 * s, '#3a7a3a');
+        for (let k = 0; k < 8; k++) px(ax - 3 * s + r() * 6 * s, ay - 36 * s + r() * 30 * s, 1, 1, '#e8f0c0');
+      }, 0.3);
+      for (let i = 0; i < 46; i++) cactus(r() * W, r() * H, r() < 0.3 ? 1.3 : 1);
+      for (let i = 0; i < 30; i++) rock(r() * W, r() * H, 1 + r());
+      for (let i = 0; i < 40; i++) { const x = r() * W, y = r() * H; px(x, y, 14, 3, '#efe4c8'); disc(x - 1, y + 1, 2, '#efe4c8'); disc(x + 14, y + 1, 2, '#efe4c8'); }
+      for (let i = 0; i < 6; i++) { const x = r() * W, y = r() * H; disc(x, y, 14, '#efe4c8'); px(x - 6, y - 3, 4, 5, '#3a2a1a'); px(x + 2, y - 3, 4, 5, '#3a2a1a'); }
+    } else if (m.theme === 'sky') {
+      // Icarus: ilhas no céu (nuvens), caminhos de mármore, colunas e penas
+      for (let i = 0; i < 70; i++) { const x = r() * W, y = r() * H, rad = 30 + r() * 70; disc(x, y, rad, '#d8ecff'); disc(x - rad * 0.3, y - rad * 0.2, rad * 0.6, '#ffffff'); }
+      for (let x = 0; x < W; x += 2) { const yc = H * 0.5 + Math.sin(x / 200) * 150; px(x, yc - 18, 2, 36, '#e8e4dc'); if ((x / 2) % 16 === 0) px(x, yc - 18, 2, 36, '#c8c4bc'); }
+      for (let i = 0; i < 30; i++) {
+        const x = r() * W, y = r() * H, hgt = Math.round(44 + r() * 26);
+        prop(x, y, 26, hgt + 12, 13, hgt + 8, (ax, ay) => {
+          px(ax - 8, ay - hgt, 16, hgt, '#d8d4cc'); px(ax - 8, ay - hgt, 4, hgt, '#ffffff'); for (let k = 0; k < 16; k += 4) px(ax - 8 + k, ay - hgt, 1, hgt, '#bcb8b0');
+          px(ax - 11, ay - hgt - 5, 22, 5, '#f0ece4'); px(ax - 11, ay - 4, 22, 4, '#c8c4bc');
+        });
+      }
+      for (let i = 0; i < 20; i++) crystal(r() * W, r() * H, ['#e8b84a', '#fff2a8'], '255,220,140');
+    } else if (m.theme === 'darkforest') {
+      // Aida: floresta sombria, cogumelos que brilham, névoa e raízes
+      for (let i = 0; i < W * H / 1200; i++) px(r() * W, r() * H, 4 + r() * 10, 2, r() < 0.5 ? '#264a2a' : '#0e1c10');
+      for (let i = 0; i < 60; i++) { const x = r() * W, y = r() * H; px(x - 1, y - 5, 3, 6, '#d8d0c0'); disc(x, y - 7, 5, '#3affb0'); disc(x - 1, y - 8, 3, '#bfffe8'); light(x, y - 6, 40, '80,255,180', 0.2); }
+      for (let i = 0; i < 90; i++) tree(r() * W, r() * H, r() < 0.3 ? 1.4 : 1.1, true);
+      for (let i = 0; i < 16; i++) crystal(r() * W, r() * H, ['#2a8a5a', '#bfffd8'], '90,255,170');
+    } else if (m.theme === 'void') {
+      // Kalima: terra do vazio, rachaduras roxas, obeliscos e cristais escuros
+      for (let i = 0; i < W * H / 1400; i++) px(r() * W, r() * H, 3 + r() * 12, 2, r() < 0.5 ? '#2a1a3a' : '#0a0610');
+      for (let i = 0; i < 46; i++) {
+        let x = r() * W, y = r() * H;
+        for (let k = 0; k < 30; k++) { px(x - 2, y - 2, 5, 5, '#3a0a5a'); px(x - 1, y - 1, 3, 3, '#a02aff'); px(x, y, 1, 1, '#ff8ae8'); if (k % 10 === 0) light(x, y, 50, '170,60,255', 0.2); x += 3 + r() * 3; y += (r() - 0.5) * 8; }
+      }
+      for (let i = 0; i < 34; i++) {
+        const x = r() * W, y = r() * H, hgt = Math.round(40 + r() * 30);
+        prop(x, y, 28, hgt + 10, 14, hgt + 6, (ax, ay) => {
+          g.fillStyle = '#0e0818'; g.beginPath(); g.moveTo(ax - 9, ay); g.lineTo(ax - 4, ay - hgt); g.lineTo(ax + 4, ay - hgt); g.lineTo(ax + 9, ay); g.fill();
+          px(ax - 2, ay - hgt + 10, 4, hgt - 20, '#5a1a8a'); px(ax - 1, ay - hgt + 14, 2, 6, '#ff8ae8');
+        });
+      }
+      for (let i = 0; i < 24; i++) crystal(r() * W, r() * H, ['#5a1a8a', '#ff8ae8'], '220,90,255');
+    }
     props.sort((a, b) => a.y - b.y);
     return { canvas: c, props, lights };
   }
@@ -430,7 +517,7 @@
   let quality = (() => { try { return qStore && qStore.getItem('mui_quality'); } catch (_) { return null; } })() || (window.innerWidth < 700 ? 'media' : 'alta');
   if (!QUALITY[quality]) quality = 'media';
   function setQuality(q) { if (!QUALITY[q]) return; quality = q; try { if (qStore) qStore.setItem('mui_quality', q); } catch (_) { /* sem armazenamento */ } S.parts = []; }
-  const DARKNESS = { dungeon: 0.62, lava: 0.4 };
+  const DARKNESS = { dungeon: 0.62, lava: 0.4, water: 0.3, tower: 0.55, darkforest: 0.5, void: 0.58 };
 
   // ---------- partículas do ambiente (com limite fixo, reaproveitadas) ----------
   S.parts = [];
@@ -449,6 +536,14 @@
       case 'dungeon': Object.assign(p, Math.random() < 0.5
         ? { kind: 'ember', vx: (Math.random() - 0.5) * 4, vy: -6 - Math.random() * 8, life: 4, col: '#ff9a3a', s: 2 }
         : { kind: 'dust', vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3, life: 6, col: '#8a7a8a', s: 1 }); break;
+      case 'water': Object.assign(p, { kind: 'spark', y: camY + vh + 4, vx: (Math.random() - 0.5) * 4, vy: -10 - Math.random() * 14, life: 6, col: ['#bff8ff', '#7ae0ff'][(Math.random() * 2) | 0], s: Math.random() < 0.3 ? 3 : 2 }); break;
+      case 'tower': Object.assign(p, { kind: 'spark', vx: (Math.random() - 0.5) * 5, vy: -4 - Math.random() * 6, life: 4, col: ['#d08aff', '#ffffff'][(Math.random() * 2) | 0], s: 2 }); break;
+      case 'desert': Object.assign(p, { kind: 'dust', x: camX - 6, vx: 40 + Math.random() * 30, vy: (Math.random() - 0.5) * 6, life: 8, col: '#e8c890', s: 2 }); break;
+      case 'sky': Object.assign(p, Math.random() < 0.6
+        ? { kind: 'dust', x: camX - 6, vx: 18 + Math.random() * 12, vy: (Math.random() - 0.5) * 4, life: 10, col: '#ffffff', s: 3 }
+        : { kind: 'leaf', y: camY - 4, vx: 6, vy: 10 + Math.random() * 8, life: 10, col: '#fff2a8', s: 2 }); break;
+      case 'darkforest': Object.assign(p, { kind: 'spark', vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 6, life: 4 + Math.random() * 3, col: ['#c8ff6a', '#6affb8'][(Math.random() * 2) | 0], s: 2 }); break;
+      case 'void': Object.assign(p, { kind: 'ember', y: camY + vh + 4, vx: (Math.random() - 0.5) * 6, vy: -12 - Math.random() * 16, life: 5, col: ['#a02aff', '#ff8ae8', '#5a1a8a'][(Math.random() * 3) | 0], s: 2 }); break;
       default: return null;
     }
     return p;
@@ -696,7 +791,7 @@
         const name = monSprite(e);
         const meta = Sprites.meta('monsters', name);
         const ms = meta ? meta.scale : 1;
-        const h = (MON_H[name] || 40) * ms * sc;
+        const h = (MON_H[name] || 40) * ms * sc * (e.scale || 1);
         const w = Math.max(10 * zoom, h * 0.45);
         if (e.boss && !e.dead) {
           // aura do boss (vermelha quando enfurecido)
@@ -711,7 +806,7 @@
         if (e.id === myTarget && !e.dead) { ctx.strokeStyle = '#ffd36b'; ctx.lineWidth = dpr * 2; ctx.beginPath(); ctx.ellipse(x, y, w, w * 0.34, 0, 0, Math.PI * 2); ctx.stroke(); }
         shadowAt(x, y, w * 0.8);
         const hurt = now < (e.hurtUntil || 0) && !e.dyingAt;
-        Sprites.monster(ctx, name, act, t, x, y, sc, !e.flip, { once, white: hurt && (now - e.hurtUntil) > -90 });
+        Sprites.monster(ctx, name, act, t, x, y, sc * (e.scale || 1), !e.flip, { once, white: hurt && (now - e.hurtUntil) > -90, tint: e.tint && e.tint[0] === '#' ? e.tint : null });
         if (e.dead) continue;
         const top = y - h - 6 * dpr;
         hpBar(x, top, Math.max(28 * dpr, w * 1.6), e.hpShow / e.maxHp, e.boss ? '#c06bff' : e.elite ? '#ffb02e' : '#e0473a');

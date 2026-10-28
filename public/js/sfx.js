@@ -113,12 +113,16 @@
       if (theme === 'snow') loopNoise(700, 'bandpass', 0.18, 0.12);
       else if (theme === 'lava') { loopNoise(160, 'lowpass', 0.35, 0.3); }
       else if (theme === 'dungeon') { loopNoise(220, 'lowpass', 0.18, 0.05); }
+      else if (theme === 'water') { loopNoise(300, 'lowpass', 0.3, 0.2); }
+      else if (theme === 'desert' || theme === 'sky') { loopNoise(theme === 'sky' ? 1200 : 600, 'bandpass', 0.2, 0.15); }
+      else if (theme === 'tower' || theme === 'void') { loopNoise(140, 'lowpass', 0.22, 0.07); }
+      else if (theme === 'darkforest') { loopNoise(900, 'bandpass', 0.06, 0.1); }
       else loopNoise(1800, 'bandpass', 0.05, 0.08);
       // detalhes aleatórios: pássaros, gotas, estalos
       ambTimer = setInterval(() => {
         if (muted || document.hidden) return;
-        if (theme === 'town' || theme === 'noria') { if (Math.random() < 0.5) { const f = 2200 + Math.random() * 1400; tone(f, 0.06, { type: 'sine', gain: 0.025, slide: 1.3, bus: ambBus }); tone(f * 1.1, 0.06, { type: 'sine', gain: 0.02, delay: 0.09, slide: 0.9, bus: ambBus }); } }
-        else if (theme === 'dungeon') { if (Math.random() < 0.4) tone(1600 + Math.random() * 600, 0.08, { type: 'sine', gain: 0.03, slide: 0.5, bus: ambBus }); }
+        if (theme === 'town' || theme === 'noria' || theme === 'darkforest') { if (Math.random() < 0.5) { const f = 2200 + Math.random() * 1400; tone(f, 0.06, { type: 'sine', gain: 0.025, slide: 1.3, bus: ambBus }); tone(f * 1.1, 0.06, { type: 'sine', gain: 0.02, delay: 0.09, slide: 0.9, bus: ambBus }); } }
+        else if (theme === 'dungeon' || theme === 'tower' || theme === 'void') { if (Math.random() < 0.4) tone(1600 + Math.random() * 600, 0.08, { type: 'sine', gain: 0.03, slide: 0.5, bus: ambBus }); }
         else if (theme === 'lava') { if (Math.random() < 0.6) noise(0.08, { gain: 0.05, freq: 2500, type: 'highpass' }); }
       }, 1800);
     },

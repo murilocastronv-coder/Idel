@@ -355,7 +355,7 @@ class World {
       type: 'enter', map: mapId, room: m.room, rooms: ROOMS, name: m.def.name, theme: m.def.theme, w: m.def.w, h: m.def.h, safe: !!m.def.safe,
       npcs: m.def.npcs || [],
       monsters: m.monsters.map((mo) => ({ id: mo.id, type: mo.type, name: mo.T.name, sprite: mo.T.sprite, tint: mo.T.tint || null,
-        size: mo.T.size, level: mo.T.level, maxHp: mo.T.hp, boss: !!mo.T.boss, elite: !!mo.T.elite })),
+        size: mo.T.size, scale: mo.T.scale || 1, level: mo.T.level, maxHp: mo.T.hp, boss: !!mo.T.boss, elite: !!mo.T.elite })),
       players: [...m.players.values()].filter((o) => o !== p).map((o) => this.pinfo(o)),
       you: p.id,
     });

@@ -86,6 +86,21 @@ WEAPONS = {
     'small_scepter': ('scepter', dict(flame=('#ffb02e', '#ffe08a'))),
     'lord_scepter': ('scepter', dict(flame=('#ff7a2a', '#ffd36b'))),
     'great_scepter': ('scepter', dict(flame=('#c05aff', '#ffb0ff'))),
+    'storm_blade': ('sword', dict(length=27, width=6, blade=ramp('#9ab0ff', '#ffffff', '#3a4aa8'), edge='#e0f4ff', guard=ramp('#9ae4ff', '#ffffff', '#3a7ab8'), glow='#7ad0ff')),
+    'phoenix_sword': ('sword', dict(length=30, width=7, blade=ramp('#ffb04a', '#fff2a8', '#a84a08'), edge='#fff2a8', guard=GOLD, grip='#5a1a04', glow='#ff9a2a')),
+    'abyss_sword': ('sword', dict(length=32, width=7, blade=ramp('#6a3aa8', '#d0a0ff', '#1e0a38'), edge='#ff8ae8', guard=ramp('#c06bff', '#f0d0ff', '#5a2a8a'), grip='#1e0a38', glow='#c06bff', wavy=True)),
+    'storm_staff': ('staff', dict(orb='#9ae4ff', shaft='#3a3a9a', length=33)),
+    'phoenix_staff': ('staff', dict(orb='#ff9a2a', shaft='#d86a1a', length=34)),
+    'abyss_staff': ('staff', dict(orb='#ff4ad8', shaft='#2a1240', length=35)),
+    'storm_bow': ('bow', dict(color='#5a6ad8', arrow_glow='#9ae4ff')),
+    'phoenix_bow': ('bow', dict(color='#e08a2a', arrow_glow='#ffd36b')),
+    'abyss_bow': ('bow', dict(color='#5a2a8a', arrow_glow='#ff4ad8')),
+    'storm_scepter': ('scepter', dict(flame=('#7ad0ff', '#ffffff'))),
+    'phoenix_scepter': ('scepter', dict(flame=('#ff5a1a', '#fff2a8'))),
+    'abyss_scepter': ('scepter', dict(flame=('#a02aff', '#ff8ae8'))),
+    'storm_book': ('book', dict(color='#3a3a9a', glow='#9ae4ff')),
+    'phoenix_book': ('book', dict(color='#c84a10', glow='#ffd36b')),
+    'abyss_book': ('book', dict(color='#1e0a38', glow='#ff4ad8')),
     # livros
     'spirit_book': ('book', dict(color='#2a5ab8', glow='#7ad0ff')),
     'curse_book': ('book', dict(color='#6a1a5a', glow='#ff5ad8')),
@@ -94,13 +109,15 @@ WEAPONS = {
 # arma "padrão" de cada classe (usada em retratos e na página inicial)
 DEFAULT_WEAPON = {'dark_knight': 'default_dk', 'dark_wizard': 'thunder_staff', 'fairy_elf': 'default_elf',
                   'magic_gladiator': 'default_mg', 'dark_lord': 'lord_scepter', 'summoner': 'default_sum'}
+SWORDS = ['short_sword', 'kris', 'broad_blade', 'legion_sword', 'storm_blade', 'phoenix_sword', 'abyss_sword']
+STAVES = ['skull_staff', 'serpent_staff', 'thunder_staff', 'storm_staff', 'phoenix_staff', 'abyss_staff']
 CLASS_WEAPONS = {
-    'dark_knight': ['short_sword', 'kris', 'broad_blade', 'legion_sword', 'default_dk'],
-    'magic_gladiator': ['short_sword', 'kris', 'broad_blade', 'legion_sword', 'skull_staff', 'serpent_staff', 'thunder_staff', 'default_mg'],
-    'dark_wizard': ['skull_staff', 'serpent_staff', 'thunder_staff'],
-    'fairy_elf': ['short_bow', 'elven_bow', 'silver_bow', 'default_elf'],
-    'dark_lord': ['small_scepter', 'lord_scepter', 'great_scepter'],
-    'summoner': ['spirit_book', 'curse_book', 'souls_book', 'default_sum'],
+    'dark_knight': SWORDS + ['default_dk'],
+    'magic_gladiator': SWORDS + STAVES + ['default_mg'],
+    'dark_wizard': STAVES,
+    'fairy_elf': ['short_bow', 'elven_bow', 'silver_bow', 'storm_bow', 'phoenix_bow', 'abyss_bow', 'default_elf'],
+    'dark_lord': ['small_scepter', 'lord_scepter', 'great_scepter', 'storm_scepter', 'phoenix_scepter', 'abyss_scepter'],
+    'summoner': ['spirit_book', 'curse_book', 'souls_book', 'storm_book', 'phoenix_book', 'abyss_book', 'default_sum'],
 }
 
 
@@ -141,6 +158,9 @@ SETS = {
     'bronze': dict(main=ramp('#b8743a', '#f0b070', '#6a3a12'), trim=GOLD, dark=ramp('#6a3a12'), eye=None, spikes=1, pad=4),
     'scale': dict(main=ramp('#3f7a8a', '#8ac8d8', '#1a3a48'), trim=SILVER, dark=ramp('#1a3a48'), eye='#9ae4ff', spikes=1, pad=4),
     'dragon': dict(main=ramp('#8a1a1a', '#e04a3a', '#3a0808'), trim=GOLD, dark=ramp('#2a0606'), eye='#ffb02e', spikes=2, pad=5),
+    'storm': dict(main=ramp('#3a3a9a', '#7a8aff', '#16164a'), trim=ramp('#9ae4ff', '#ffffff', '#3a7ab8'), dark=ramp('#16164a'), eye='#9ae4ff', spikes=1, pad=5, shape='scale', aura='#7ad0ff'),
+    'phoenix': dict(main=ramp('#d86a1a', '#ffb04a', '#7a2a08'), trim=GOLD, dark=ramp('#5a1a04'), eye='#fff2a8', spikes=2, pad=5, shape='dragon', aura='#ff9a2a'),
+    'abyss': dict(main=ramp('#2a1240', '#6a3aa8', '#0e0618'), trim=ramp('#c06bff', '#f0d0ff', '#5a2a8a'), dark=ramp('#0e0618'), eye='#ff4ad8', spikes=3, pad=5, shape='dragon', aura='#c06bff'),
 }
 PIECES = ['boots', 'armor_mid', 'gloves_mid', 'helm', 'armor_front', 'gloves_front']
 
@@ -218,12 +238,15 @@ def boot(c, B, side, st):
 def draw_equip(cls, piece, set_name, action, i):
     P, B = body_for(cls, action, i)
     st = SETS[set_name]
+    shape = st.get('shape', set_name)
     c = Canvas(FW, FH)
     if piece == 'helm':
-        helm(c, B, st, set_name)
+        helm(c, B, st, shape)
     elif piece == 'armor_mid':
         pauldron(c, B, 'b', st['main'], trim=st['trim'], spikes=max(0, st['spikes'] - 1), size=st['pad'] - 1)
-        chest(c, B, st, set_name)
+        chest(c, B, st, shape)
+        if st.get('aura'):
+            c.glow(B.cx, B.top + 8, 9, st['aura'], 60)
     elif piece == 'armor_front':
         # ombreira da frente um pouco abaixo do ombro, para não cobrir o rosto
         B.sh_f = (B.sh_f[0] - 1, B.sh_f[1] + 2)

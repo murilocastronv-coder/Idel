@@ -28,9 +28,11 @@ def pose_for(action, i, kind):
         p['ff'] = (step, [0, 2, 0, 0][i])
         p['bf'] = (-step, [0, 0, 0, 2][i])
         p['bob'] = [0, 1, 0, 1][i]
-        p['ua_f'] = 75 - step * 2
-        p['ua_b'] = 100 + step * 3
-        p['fa_b'] = 95 + step * 3
+        p['ua_f'] = 80 - step * 4
+        p['fa_f'] = 70 - step * 3
+        p['ua_b'] = 100 + step * 4
+        p['fa_b'] = 95 + step * 4
+        p['lean'] = 1
     elif action == 'attack':
         if kind == 'melee':
             p['ua_f'], p['fa_f'], p['w'] = [(-130, -150, -150), (-40, -20, -40), (35, 40, 45), (60, 55, 65)][i]
@@ -73,9 +75,10 @@ class Body:
         self.cx = cx
         top = b['torso_top'] + bob
         self.top = top
-        self.head = (cx + 1 + pose['lean'] * 0.5, top - b['head'] - 1)
-        self.sh_f = (cx + b['sh_w'] - 2 + pose['lean'] * 0.5, top + 3)
-        self.sh_b = (cx - b['sh_w'] + 2 + pose['lean'] * 0.5, top + 3)
+        # cabeça acima dos ombros (com pescoço); ombro da frente fica embaixo da cabeça, não na frente do rosto
+        self.head = (cx + 1 + pose['lean'] * 0.6, top - b['head'] - 3 + pose.get('nod', 0))
+        self.sh_f = (cx + b['sh_w'] - 5 + pose['lean'] * 0.5, top + 4)
+        self.sh_b = (cx - b['sh_w'] + 3 + pose['lean'] * 0.5, top + 4)
         self.hip_f = (cx + 3, self.hip_y)
         self.hip_b = (cx - 3, self.hip_y)
         self.foot_f = (cx + 3 + pose['ff'][0], FOOT_Y - pose['ff'][1])
@@ -124,7 +127,7 @@ def head_base(c, B, r=None):
     hr = B.b['head']
     c.part(lambda d: d.rounded_rectangle([hx - hr, hy - hr, hx + hr, hy + hr + 1], radius=4, fill=255), r or SKIN)
     # pescoço
-    c.part(lambda d: d.rectangle([hx - 2, hy + hr, hx + 2, hy + hr + 3], fill=255), r or SKIN, sep=False)
+    c.part(lambda d: d.rectangle([hx - 2, hy + hr, hx + 2, hy + hr + 5], fill=255), r or SKIN, sep=False)
 
 
 def eyes(c, B, color='#1a1426', glow=None, dy=0):
@@ -272,7 +275,7 @@ def draw_hero(cls, action, i, hair=None, layer='full'):
         pauldron(c, B, 'b', ARM, spikes=2, size=5)
         c = front
         if full: weapon_greatsword(c, B.ha_f, P['w'] if P['w'] is not None else 55)
-        pauldron(c, B, 'f', ARM, spikes=3, size=6)
+        pauldron(c, B, 'f', ARM, spikes=2, size=5)
         draw_arm(c, B, 'f', ARM, ramp('#2a2e44'))
 
     elif cls == 'dark_wizard':
@@ -348,7 +351,7 @@ def draw_hero(cls, action, i, hair=None, layer='full'):
         pauldron(c, B, 'b', AR, trim=TRIM, spikes=1, size=5)
         c = front
         if full: weapon_spearblade(c, B.ha_f, P['w'] if P['w'] is not None else -60)
-        pauldron(c, B, 'f', AR, trim=TRIM, spikes=2, size=6)
+        pauldron(c, B, 'f', AR, trim=TRIM, spikes=1, size=5)
         draw_arm(c, B, 'f', AR, ramp('#2a2a48'))
 
     elif cls == 'dark_lord':
@@ -378,7 +381,7 @@ def draw_hero(cls, action, i, hair=None, layer='full'):
         pauldron(c, B, 'b', RED, spikes=2, size=5)
         c = front
         if full: weapon_scepter(c, B.ha_f, P['w'] if P['w'] is not None else -80)
-        pauldron(c, B, 'f', RED, spikes=3, size=6)
+        pauldron(c, B, 'f', RED, spikes=2, size=5)
         draw_arm(c, B, 'f', RED, ramp('#3a1010'))
         if flash:
             c.glow(B.ha_b[0] + 3, B.ha_b[1], 5 + flash * 2, '#ff7a2a', 150)
