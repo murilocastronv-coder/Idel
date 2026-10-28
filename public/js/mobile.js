@@ -7,6 +7,7 @@
   const fmt = new Intl.NumberFormat(window.I18N ? I18N.locale : 'pt-BR');
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const CLASS = { dark_knight: 'Dark Knight', dark_wizard: 'Dark Wizard', fairy_elf: 'Fairy Elf', magic_gladiator: 'Magic Gladiator', dark_lord: 'Dark Lord', summoner: 'Summoner' };
+  if (/MUIdleApp/.test(navigator.userAgent)) document.querySelectorAll('[data-hide-in-app]').forEach((e) => e.remove());
   let me = null;
   try { sessionStorage.setItem('mui_app', '1'); } catch (_) { /* ok */ }
 

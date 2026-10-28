@@ -339,3 +339,6 @@ details[open] > summary { margin-bottom: 14px; }
 .lang-switch span.on { background: var(--gold, #e8b84a); color: #1a1206; }
 .lang-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0 0; }
 .nav a[hidden] { display: none; }
+
+.btn-apk { background: #2f7d32; border-color: #1b4d1e; color: #fff; text-decoration: none; }
+.btn-apk:hover { background: #3a9440; }

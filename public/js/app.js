@@ -6,6 +6,7 @@
   const PA = window.PixelArt;
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const state = { data: null, me: null, selectedClass: 'dark_knight', selectedItem: 0, rankBy: 'resets' };
+  if (/MUIdleApp/.test(navigator.userAgent)) document.querySelectorAll('[data-hide-in-app]').forEach((e) => e.remove());
   const fmt = new Intl.NumberFormat(window.I18N ? I18N.locale : 'pt-BR');
 
   function esc(s) {

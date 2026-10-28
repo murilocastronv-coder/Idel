@@ -592,6 +592,8 @@ EN = {
 "Jogar com": "Play as",
 "Criar meu primeiro herói": "Create my first hero",
 "Site": "Website",
+"Baixar app Android": "Download Android app",
+"Baixar app Android (APK)": "Download Android app (APK)",
 "Erro": "Error",
 "Acesso restrito": "Restricted access",
 "Acesso restrito.": "Restricted access.",
