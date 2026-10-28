@@ -17,9 +17,17 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
+// Schema próprio do jogo: permite dividir um banco com outros projetos sem conflito.
+const SCHEMA = process.env.PG_SCHEMA || 'public';
+if (!/^[a-z_][a-z0-9_]{0,62}$/.test(SCHEMA)) {
+  console.error('[db] PG_SCHEMA inválido. Use letras minúsculas, números e _.');
+  process.exit(1);
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: sslOption(),
+  options: `-c search_path=${SCHEMA}`,
   max: Number(process.env.PG_POOL_MAX || 10),
   idleTimeoutMillis: 30000,
 });
@@ -31,6 +39,8 @@ async function query(text, params) {
 }
 
 async function migrate() {
+  if (SCHEMA !== 'public') await pool.query(`CREATE SCHEMA IF NOT EXISTS ${SCHEMA}`);
+  console.log(`[db] usando o schema "${SCHEMA}"`);
   await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
     name TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   const dir = path.join(__dirname, 'migrations');

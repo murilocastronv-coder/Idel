@@ -34,6 +34,8 @@ cp .env.example .env        # edite DATABASE_URL
 npm start                   # cria as tabelas sozinho e abre em http://localhost:3000
 ```
 
+Com `PG_SCHEMA=muidle`, todas as tabelas do jogo ficam no schema `muidle`, então o mesmo banco pode ser dividido com outros projetos sem conflito.
+
 As migrações em `server/migrations/` são aplicadas automaticamente ao iniciar (ou com `npm run migrate`).
 Sem serviço de e-mail configurado, o link de "esqueci a senha" aparece no terminal do servidor.
 
