@@ -738,7 +738,8 @@
         const pk = e.flags & 1, inDuel = e.flags & 2, pvpOn = e.flags & 4;
         const enemy = !isMe && hostileTo(e);
         if (enemy && e.id !== myTarget) { ctx.strokeStyle = `rgba(255,70,60,${0.35 + 0.2 * Math.sin(now / 200)})`; ctx.lineWidth = dpr * 1.5; ctx.beginPath(); ctx.ellipse(x, y, 11 * zoom, 3.6 * zoom, 0, 0, Math.PI * 2); ctx.stroke(); }
-        label(`${pk ? '[PK] ' : ''}${pvpOn ? '⚔ ' : ''}${info.name} ${info.level}`, x, top - 4 * dpr, pk ? '#ff6a5a' : inDuel ? '#ffb02e' : isMe ? '#ffd36b' : enemy ? '#ff9a6a' : '#bfe0ff', 11);
+        const vipT = info.vip || 0;
+        label(`${pk ? '[PK] ' : ''}${pvpOn ? '⚔ ' : ''}${vipT === 2 ? '◆ ' : vipT === 1 ? '★ ' : ''}${info.name} ${info.level}`, x, top - 4 * dpr, pk ? '#ff6a5a' : inDuel ? '#ffb02e' : enemy ? '#ff9a6a' : vipT === 2 ? '#7fe3ff' : vipT === 1 || isMe ? '#ffd36b' : '#bfe0ff', 11);
       }
     }
   }
@@ -941,7 +942,7 @@
     const c = S.char;
     $('#me-name').textContent = c.name;
     const meP = S.players.get(S.youId) || { rx: null };
-    meP.info = { id: c.id, name: c.name, cls: c.cls, ap: c.ap, level: c.level, weaponRarity: (c.items.find((i) => i.equipped && i.slot === 'weapon') || {}).rarity };
+    meP.info = { id: c.id, name: c.name, cls: c.cls, ap: c.ap, level: c.level, weaponRarity: (c.items.find((i) => i.equipped && i.slot === 'weapon') || {}).rarity, vip: c.vip ? c.vip.tier : 0 };
     S.players.set(S.youId || c.id, meP);
     renderSkills();
     if (S.panel) renderPanel(S.panel);
@@ -1002,6 +1003,7 @@
   }
   function closePanel() {
     if (!S.panel) return;
+    if (S.panel === 'admin') ADM.open = false;
     $(`#panel-${S.panel}`).hidden = true;
     S.panel = null;
     $$('.menu [data-panel]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
@@ -1014,6 +1016,7 @@
     else if (name === 'shop') renderShop();
     else if (name === 'config') renderConfig();
     else if (name === 'quests') renderQuests();
+    else if (name === 'admin') { if (!ADM.open) { ADM.open = true; renderAdmin(); } }
   }
   $$('.menu [data-panel]').forEach((b) => { b.onclick = () => openPanel(b.dataset.panel); });
   $$('.panel [data-close]').forEach((b) => { b.onclick = closePanel; });
@@ -1146,25 +1149,149 @@
     }
   }
 
+  // ---------- VIP ----------
+  const brl = new Intl.NumberFormat(window.I18N ? I18N.locale : 'pt-BR', { style: 'currency', currency: 'BRL' });
+  const dateFmt = (t) => new Date(t).toLocaleDateString(window.I18N ? I18N.locale : 'pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  function vipHtml() {
+    const V = S.data.vip; if (!V) return '';
+    const me = S.char.vip || {};
+    const mine = me.tier ? `<p class="vip-mine">Seu VIP: <b style="color:${me.tier === 2 ? '#7fe3ff' : '#ffd36b'}">${esc(me.name)}</b> até ${dateFmt(me.until)}</p>` : '<p class="muted">Você ainda não tem VIP.</p>';
+    return `<div class="vip-box"><h3>VIP</h3>${mine}<div class="vip-plans">${V.plans.map((p) => `
+      <div class="vip-plan t${p.tier}"><b style="color:${p.color}">${p.tier === 2 ? '◆' : '★'} ${esc(p.name)}</b>
+        <ul>${p.perks.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+        <div class="row">${V.days.map((d) => `<button class="btn small ${d === 30 ? 'btn-gold' : ''}" type="button" data-vip="${p.id}" data-days="${d}" ${V.enabled ? '' : 'disabled'}>${d} dias · ${brl.format(p.prices[d] / 100)}</button>`).join('')}</div>
+      </div>`).join('')}</div>${V.enabled ? '<p class="muted small">Pagamento seguro pelo Stripe. O VIP vale para todos os heróis da conta e soma dias se você renovar.</p>' : '<p class="muted small">Pagamentos em breve.</p>'}</div>`;
+  }
+  async function buyVip(plan, days, btn) {
+    btn.disabled = true;
+    try {
+      const r = await fetch('/api/vip/checkout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'mui' },
+        body: JSON.stringify({ plan, days, back: `/game.html?c=${encodeURIComponent(charId)}` }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.url) throw new Error(j.error || 'Não foi possível abrir o pagamento. Tente de novo.');
+      location.href = j.url;
+    } catch (e) { feed(e.message, 'warn'); btn.disabled = false; }
+  }
+  function bindVip(root) { $$('[data-vip]', root).forEach((b) => { b.onclick = () => buyVip(b.dataset.vip, Number(b.dataset.days), b); }); }
+
   function renderShop() {
     const body = $('#shop-body');
     if (!S.map || !S.map.safe) {
-      body.innerHTML = '<p>A Mercadora Pasi fica na praça de Lorencia.</p><button class="btn btn-gold" type="button" id="go-town">Teleportar para Lorencia</button>';
+      body.innerHTML = vipHtml() + '<p>A Mercadora Pasi fica na praça de Lorencia.</p><button class="btn btn-gold" type="button" id="go-town">Teleportar para Lorencia</button>';
       $('#go-town').onclick = () => { send({ type: 'teleport', map: 'lorencia' }); };
+      bindVip(body);
       return;
     }
-    body.innerHTML = `<p>Seu Zen: <b>${fmt.format(S.char.zen)}</b></p>` + Object.entries(S.data.shop).map(([id, s]) => `
+    body.innerHTML = vipHtml() + `<p>Seu Zen: <b>${fmt.format(S.char.zen)}</b></p>` + Object.entries(S.data.shop).map(([id, s]) => `
       <div class="shop-item"><canvas width="36" height="36" data-icon="${id === 'pot_hp' ? 'potion_hp' : 'potion_mp'}"></canvas>
         <div><b>${esc(s.name)}</b> — ${s.price} Zen<br><small class="muted">${esc(s.desc)} · você tem ${fmt.format(id === 'pot_hp' ? S.char.pots.hp : S.char.pots.mp)}</small></div>
         <div class="row">${[10, 50, 100].map((q) => `<button class="btn small" type="button" data-buy="${id}" data-q="${q}" ${S.char.zen < q * s.price ? 'disabled' : ''}>${q}× · ${fmt.format(q * s.price)}</button>`).join('')}</div>
       </div>`).join('') + '<p class="muted">Para vender itens, abra a Bolsa e toque no item.</p>';
     $$('#shop-body canvas[data-icon]').forEach((c) => PA.drawIcon(c.getContext('2d'), c.dataset.icon, 0, 0, 3, '#3a7aff'));
     $$('#shop-body [data-buy]').forEach((b) => { b.onclick = () => send({ type: 'buy', item: b.dataset.buy, qty: Number(b.dataset.q) }); });
+    bindVip(body);
+  }
+
+  // ---------- painel do administrador (o servidor confere a conta em toda ação) ----------
+  async function admApi(method, url, body) {
+    const r = await fetch(url, { method, credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'mui' }, body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `Erro ${r.status}`);
+    return j;
+  }
+  const ADM = { data: null, target: null };
+  const SLOT_PT = { weapon: 'Arma', helm: 'Elmo', armor: 'Armadura', gloves: 'Luvas', boots: 'Botas', ring: 'Anel' };
+  function admMsg(text, bad) { const m = $('#adm-msg'); if (m) { m.textContent = text; m.className = 'adm-msg ' + (bad ? 'bad' : 'ok'); } }
+  async function renderAdmin() {
+    const body = $('#admin-body');
+    if (!S.char.admin) { body.innerHTML = '<p>Acesso restrito.</p>'; return; }
+    body.innerHTML = '<p class="muted">Carregando…</p>';
+    try { ADM.data = await admApi('GET', '/api/admin/overview'); } catch (e) { body.innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+    const D = ADM.data;
+    const bySlot = {};
+    D.items.forEach((it) => { (bySlot[it.slot] = bySlot[it.slot] || []).push(it); });
+    const opts = Object.entries(bySlot).map(([slot, list]) => `<optgroup label="${esc(SLOT_PT[slot] || slot)}">${list.sort((a, b) => b.req - a.req).map((it) => `<option value="${it.id}">${esc(it.name)} (nv. ${it.req})</option>`).join('')}</optgroup>`).join('');
+    const rar = D.rarities.map((r) => `<option value="${r}" ${r === 'ancestral' ? 'selected' : ''}>${esc(RAR_NAME[r] || r)}</option>`).join('');
+    const st = D.stripe;
+    body.innerHTML = `
+      <p class="adm-msg" id="adm-msg" role="status"></p>
+      <section class="adm-sec"><h3>Personagem</h3>
+        <div class="adm-row"><input id="adm-name" maxlength="16" value="${esc(S.char.name)}" aria-label="Nome do personagem"><button class="btn small" type="button" id="adm-find">Buscar</button><button class="btn small" type="button" id="adm-me">Eu</button></div>
+        <div id="adm-char" class="adm-char"></div>
+      </section>
+      <section class="adm-sec"><h3>Ações rápidas</h3>
+        <div class="adm-grid">
+          <button class="btn btn-gold" type="button" data-adm="kit">Melhor equipamento (ancestral +15)</button>
+          <button class="btn btn-gold" type="button" data-adm="maxlevel">Nível máximo (${D.maxLevel})</button>
+          <button class="btn btn-gold" type="button" data-adm="maxstats">Atributos no máximo</button>
+        </div>
+        <div class="adm-row"><label>Nível <input type="number" id="adm-level" min="1" max="${D.maxLevel}" value="100"></label><button class="btn small" type="button" data-adm="level">Definir nível</button></div>
+        <div class="adm-row"><label>Pontos <input type="number" id="adm-points" value="1000"></label><button class="btn small" type="button" data-adm="points">Dar pontos</button></div>
+        <div class="adm-row"><label>Zen <input type="number" id="adm-zen" value="1000000"></label><button class="btn small" type="button" data-adm="zen">Dar Zen</button></div>
+      </section>
+      <section class="adm-sec"><h3>Dar item</h3>
+        <div class="adm-row"><select id="adm-item" aria-label="Item">${opts}</select></div>
+        <div class="adm-row"><select id="adm-rar" aria-label="Raridade">${rar}</select>
+          <label>+<input type="number" id="adm-plus" min="0" max="15" value="15"></label>
+          <label>Qtd <input type="number" id="adm-qty" min="1" max="10" value="1"></label>
+          <button class="btn small btn-gold" type="button" data-adm="item">Dar item</button></div>
+      </section>
+      <section class="adm-sec"><h3>VIP</h3>
+        <p class="muted small">Stripe: chave ${st.key ? '✔' : '✘'} · webhook ${st.webhook ? '✔' : '✘'} · modo <b>${esc(st.mode)}</b><br>Endereço do webhook: <code>${esc(st.url)}</code><br>Vendas: ${D.revenue.count} · ${brl.format(D.revenue.cents / 100)}</p>
+        <div class="adm-prices">${D.plans.map((p) => `<div><b style="color:${p.color}">${esc(p.name)}</b>${D.days.map((d) => `<label>${d} dias R$ <input type="number" step="0.01" min="1" data-price="${p.id}" data-d="${d}" value="${(p.prices[d] / 100).toFixed(2)}"></label>`).join('')}<ul class="small">${p.perks.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div>
+        <button class="btn small" type="button" id="adm-save-prices">Salvar preços</button>
+        <h4>Dar ou remover VIP</h4>
+        <div class="adm-row"><input id="adm-vip-user" placeholder="Nome de usuário da conta" maxlength="32" aria-label="Nome de usuário da conta">
+          <select id="adm-vip-plan" aria-label="Plano">${D.plans.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select>
+          <label>Dias <input type="number" id="adm-vip-days" min="1" max="3650" value="30"></label></div>
+        <div class="adm-row"><button class="btn small btn-gold" type="button" id="adm-vip-give">Dar VIP</button><button class="btn small" type="button" id="adm-vip-del">Remover VIP</button></div>
+        <h4>VIPs ativos (${D.vips.length})</h4>
+        <ul class="adm-list">${D.vips.map((v) => `<li><b>${esc(v.username)}</b> · ${esc(v.name)} até ${dateFmt(v.until)}</li>`).join('') || '<li class="muted">Nenhum ainda.</li>'}</ul>
+        <h4>Últimos pagamentos</h4>
+        <ul class="adm-list">${D.payments.map((p) => `<li>${dateFmt(p.created_at)} · <b>${esc(p.username || '?')}</b> · ${esc((D.plans.find((x) => x.id === p.plan) || {}).name || p.plan)} ${p.days} dias · ${p.provider === 'admin' ? esc(p.note || 'dado pelo ADM') : brl.format(p.amount_cents / 100)}</li>`).join('') || '<li class="muted">Nenhum ainda.</li>'}</ul>
+      </section>`;
+    const name = () => $('#adm-name').value.trim();
+    const showChar = (c) => {
+      ADM.target = c;
+      $('#adm-char').innerHTML = c ? `<b>${esc(c.name)}</b> · ${esc(S.data.classes[c.cls] ? S.data.classes[c.cls].name : c.cls)} · Nível ${c.level} · conta <b>${esc(c.account)}</b> · ${c.online ? 'online' : 'offline'}<br>
+        <small>Força ${fmt.format(c.stats.str)} · Agilidade ${fmt.format(c.stats.agi)} · Vitalidade ${fmt.format(c.stats.vit)} · Energia ${fmt.format(c.stats.ene)} · pontos livres ${fmt.format(c.free)} · ${fmt.format(c.zen)} Zen · bolsa ${c.bag}/${S.char.invMax}${c.vip && c.vip.tier ? ` · ${esc(c.vip.name)} até ${dateFmt(c.vip.until)}` : ''}</small>` : '';
+      if (c) $('#adm-vip-user').value = c.account;
+    };
+    const find = async () => { try { showChar((await admApi('POST', '/api/admin/char', { name: name() })).char); admMsg(''); } catch (e) { showChar(null); admMsg(e.message, true); } };
+    $('#adm-find').onclick = find;
+    $('#adm-me').onclick = () => { $('#adm-name').value = S.char.name; find(); };
+    $('#adm-name').onkeydown = (e) => { if (e.key === 'Enter') find(); };
+    $$('[data-adm]', body).forEach((b) => {
+      b.onclick = async () => {
+        const a = b.dataset.adm;
+        const req = { name: name(), action: a === 'maxlevel' ? 'level' : a };
+        if (a === 'maxlevel') req.level = 'max';
+        if (a === 'level') req.level = Number($('#adm-level').value);
+        if (a === 'points') req.n = Number($('#adm-points').value);
+        if (a === 'zen') req.n = Number($('#adm-zen').value);
+        if (a === 'item') Object.assign(req, { base: $('#adm-item').value, rarity: $('#adm-rar').value, plus: Number($('#adm-plus').value), qty: Number($('#adm-qty').value) });
+        b.disabled = true;
+        try { const r = await admApi('POST', '/api/admin/action', req); admMsg(r.message); showChar(r.char); } catch (e) { admMsg(e.message, true); }
+        b.disabled = false;
+      };
+    });
+    $('#adm-save-prices').onclick = async () => {
+      const prices = {};
+      $$('[data-price]', body).forEach((i) => { (prices[i.dataset.price] = prices[i.dataset.price] || {})[i.dataset.d] = Math.round(Number(i.value) * 100); });
+      try { const r = await admApi('POST', '/api/admin/vip-prices', { prices }); admMsg(r.message); S.data.vip.plans = r.plans; } catch (e) { admMsg(e.message, true); }
+    };
+    const vip = async (days) => {
+      try { const r = await admApi('POST', '/api/admin/vip', { username: $('#adm-vip-user').value.trim(), plan: $('#adm-vip-plan').value, days }); admMsg(r.message); setTimeout(() => { if (S.panel === 'admin') renderAdmin(); }, 900); }
+      catch (e) { admMsg(e.message, true); }
+    };
+    $('#adm-vip-give').onclick = () => vip(Number($('#adm-vip-days').value));
+    $('#adm-vip-del').onclick = () => vip(0);
+    find();
   }
 
   function renderConfig() {
     const st = S.char.settings;
-    $('#config-body').innerHTML = `
+    $('#config-body').innerHTML = (S.char.admin ? '<button class="btn btn-gold adm-open" type="button" id="open-admin">Painel do administrador</button>' : '') + `
       <div class="cfg-row"><label for="cfg-hp">Usar poção de vida abaixo de <b id="cfg-hp-v">${Math.round(st.potHp * 100)}%</b></label>
         <input type="range" id="cfg-hp" min="0" max="90" step="5" value="${Math.round(st.potHp * 100)}"></div>
       <div class="cfg-row"><label for="cfg-mp">Usar poção de mana abaixo de <b id="cfg-mp-v">${Math.round(st.potMp * 100)}%</b></label>
@@ -1198,6 +1325,7 @@
       $('#cfg-vol').oninput = (e) => { Sfx.setVolume(Number(e.target.value) / 100); $('#cfg-vol-v').textContent = e.target.value + '%'; };
       $('#cfg-mute').checked = Sfx.muted; $('#cfg-mute').onchange = (e) => Sfx.setMuted(e.target.checked);
     }
+    const oa = $('#open-admin'); if (oa) oa.onclick = () => openPanel('admin');
   }
 
   // ================= chat =================
@@ -1306,5 +1434,14 @@
       await Sprites.ready;
     } catch (_) { centerMsg('Não foi possível carregar o jogo. Verifique a internet.', true); return; }
     connect();
+    // voltando do pagamento do Stripe
+    const vipQ = new URLSearchParams(location.search).get('vip');
+    if (vipQ) {
+      history.replaceState(null, '', `/game.html?c=${encodeURIComponent(charId)}`);
+      setTimeout(() => {
+        if (vipQ === 'ok') { alertBanner('Pagamento recebido! Seu VIP é ativado em instantes.'); feed('Pagamento recebido! Seu VIP é ativado em instantes.', 'quest'); }
+        else feed('Pagamento cancelado. Nada foi cobrado.', 'warn');
+      }, 2500);
+    }
   })();
 })();

@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=1">
   <link rel="stylesheet" href="/css/style.css?v=14">
-  <link rel="stylesheet" href="/css/game.css?v=16">
+  <link rel="stylesheet" href="/css/game.css?v=17">
 </head>
 <body class="game">
   <canvas id="world" aria-label="Mapa do jogo"></canvas>
@@ -104,6 +104,11 @@
     <p class="discord-row"><a class="btn-discord" href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Entrar no Discord</a></p>
   </section>
 
+  <section class="panel window panel-wide" id="panel-admin" hidden aria-labelledby="admin-title">
+    <header><h2 id="admin-title">Painel do administrador</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <div id="admin-body"></div>
+  </section>
+
   <section class="panel window" id="panel-chat" hidden aria-labelledby="chat-title">
     <header><h2 id="chat-title">Chat global</h2><a class="discord-mini" href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Discord</a><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
     <ul class="chat-lines" id="chat-lines"></ul>
@@ -119,13 +124,13 @@
     <div class="row"><button class="btn btn-gold" type="button" data-close>Continuar</button></div>
   </dialog>
 
-  <script src="/js/i18n-en.js?v=16"></script>
+  <script src="/js/i18n-en.js?v=17"></script>
 
-  <script src="/js/i18n.js?v=16"></script>
+  <script src="/js/i18n.js?v=17"></script>
 
   <script src="/js/pixel.js?v=13"></script>
   <script src="/js/sprites.js?v=13"></script>
   <script src="/js/sfx.js?v=13"></script>
-  <script src="/js/game.js?v=13"></script>
+  <script src="/js/game.js?v=17"></script>
 </body>
 </html>

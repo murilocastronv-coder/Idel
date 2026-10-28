@@ -261,3 +261,37 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
   .boss-bar { bottom: 196px; }
 }
 .act[hidden] { display: none !important; }
+
+/* VIP na loja */
+.vip-box { border: 2px solid var(--gold-dim); background: linear-gradient(160deg, rgba(232, 184, 74, .1), rgba(11, 16, 32, .4)); padding: 10px; margin-bottom: 12px; }
+.vip-box h3 { margin: 0 0 4px; font: 700 18px var(--display); color: var(--gold); }
+.vip-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin: 6px 0; }
+.vip-plan { background: var(--night); border: 2px solid var(--edge); padding: 8px; }
+.vip-plan.t2 { box-shadow: inset 0 0 0 1px #3a8fb0; }
+.vip-plan.t1 { box-shadow: inset 0 0 0 1px var(--gold-dim); }
+.vip-plan b { font: 700 16px var(--display); }
+.vip-plan ul { margin: 4px 0 8px; padding-left: 18px; font-size: 14px; }
+.vip-plan .row { display: grid; gap: 6px; }
+.vip-mine { margin: 0 0 4px; }
+.small { font-size: 13px; }
+
+/* painel do administrador */
+.panel.panel-wide { width: min(760px, 96vw); }
+.adm-open { width: 100%; margin-bottom: 10px; }
+.adm-sec { border-top: 2px solid var(--edge); padding: 8px 0; }
+.adm-sec h3 { margin: 0 0 6px; font: 700 16px var(--display); color: var(--gold); }
+.adm-sec h4 { margin: 10px 0 4px; font: 600 14px var(--display); }
+.adm-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+.adm-row input, .adm-row select, .adm-prices input { background: #0b1020; color: var(--bone); border: 2px solid var(--stone-2); padding: 6px 8px; font: 15px var(--body); min-width: 0; }
+.adm-row input[type=number] { width: 110px; }
+.adm-row select { max-width: 100%; }
+#adm-item { width: 100%; }
+.adm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px; margin-bottom: 6px; }
+.adm-char { font-size: 15px; background: var(--night); border: 2px solid var(--edge); padding: 6px 8px; min-height: 1.4em; }
+.adm-msg { min-height: 1.3em; margin: 0 0 6px; font-weight: 600; }
+.adm-msg.ok { color: #a8e08a; } .adm-msg.bad, .bad { color: #ff8a70; }
+.adm-prices { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin: 6px 0; }
+.adm-prices > div { background: var(--night); border: 2px solid var(--edge); padding: 8px; display: grid; gap: 4px; }
+.adm-prices input { width: 100px; }
+.adm-list { list-style: none; margin: 0; padding: 0; font-size: 14px; display: grid; gap: 2px; max-height: 180px; overflow: auto; }
+.adm-sec code { font-size: 12px; word-break: break-all; }

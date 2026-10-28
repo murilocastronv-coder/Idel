@@ -15,6 +15,8 @@ const path = require('path');
 const db = require('./db');
 const sec = require('./security');
 const mail = require('./mail');
+const VIP = require('./vip');
+const ADMIN = require('./admin');
 const game = require('./gamedata');
 const { WSServer } = require('./ws');
 const { World } = require('./world');
@@ -117,7 +119,7 @@ function clearCookie(res, req) {
 async function sessionAccount(req) {
   const token = parseCookies(req)[COOKIE];
   if (!token || token.length > 100) return null;
-  const { rows } = await db.query(`SELECT a.id, a.username, a.email, a.created_at, a.last_login_at, a.is_admin
+  const { rows } = await db.query(`SELECT a.id, a.username, a.email, a.created_at, a.last_login_at, a.is_admin, a.vip1_until, a.vip2_until
     FROM sessions s JOIN accounts a ON a.id = s.account_id
     WHERE s.token_hash = $1 AND s.expires_at > now()`, [sec.sha256(token)]);
   return rows[0] || null;
@@ -246,7 +248,110 @@ route('GET', '/api/gamedata', async () => ({
   world: Object.entries(game.WORLD).map(([id, w]) => ({ id, name: w.name, theme: w.theme, minLevel: w.minLevel, safe: !!w.safe, pvp: !!w.pvp,
     monsters: [...w.groups.map((g) => game.MONSTERS[g.type].name), ...(w.boss ? [game.MONSTERS[w.boss.type].name + ' (boss)'] : [])] })),
   shop: game.SHOP, sets: game.SETS,
+  vip: { plans: VIP.publicPlans(), days: VIP.DAYS, currency: VIP.CURRENCY, enabled: VIP.enabled() },
 }));
+
+// ---------------- VIP (compra) e administração ----------------
+route('POST', '/api/vip/checkout', async (req) => {
+  const acc = await requireAccount(req);
+  limit(req, 'vip-checkout', 10, 60 * 1000);
+  const body = await readJson(req);
+  const days = Number(body.days);
+  let r;
+  try { r = await VIP.createCheckout({ account: acc, planId: String(body.plan || ''), days, baseUrl: publicUrl(req), back: body.back }); }
+  catch (e) { throw new HttpError(e.status || 500, e.message); }
+  await audit(acc.id, 'vip_checkout', req, { plan: body.plan, days });
+  return { ok: true, url: r.url };
+});
+
+async function requireAdmin(req) {
+  const acc = await requireAccount(req);
+  if (!ADMIN.isAdmin(acc)) throw new HttpError(403, 'Acesso restrito.');
+  return acc;
+}
+async function adminTarget(name) {
+  const c = await world.adminChar(name);
+  if (!c) throw new HttpError(404, 'Personagem não encontrado.');
+  return c;
+}
+route('GET', '/api/admin/overview', async (req) => {
+  await requireAdmin(req);
+  const vips = (await db.query(`SELECT username, vip1_until, vip2_until FROM accounts
+    WHERE vip1_until > now() OR vip2_until > now() ORDER BY GREATEST(COALESCE(vip2_until, 'epoch'), COALESCE(vip1_until, 'epoch')) DESC LIMIT 100`)).rows
+    .map((r) => ({ username: r.username, ...VIP.status(r) }));
+  const pays = (await db.query(`SELECT p.provider, p.plan, p.days, p.amount_cents, p.currency, p.note, p.created_at, a.username
+    FROM payments p LEFT JOIN accounts a ON a.id = p.account_id ORDER BY p.id DESC LIMIT 30`)).rows;
+  const sum = (await db.query(`SELECT COALESCE(sum(amount_cents), 0)::bigint AS total, count(*)::int AS n FROM payments WHERE provider = 'stripe'`)).rows[0];
+  return {
+    plans: VIP.publicPlans(), days: VIP.DAYS,
+    stripe: { key: !!process.env.STRIPE_SECRET_KEY, webhook: !!process.env.STRIPE_WEBHOOK_SECRET, url: `${publicUrl(req)}/api/stripe-webhook`,
+      mode: /^(sk|rk)_test_/.test(process.env.STRIPE_SECRET_KEY || '') ? 'teste' : process.env.STRIPE_SECRET_KEY ? 'real' : 'desligado' },
+    vips, payments: pays, revenue: { cents: Number(sum.total), count: sum.n },
+    items: Object.entries(game.ITEM_BASES).map(([id, b]) => ({ id, name: b.name, slot: b.slot, kind: b.kind || null, req: b.req })),
+    rarities: ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancestral'], maxLevel: game.LIMITS.maxLevel,
+  };
+});
+route('POST', '/api/admin/char', async (req) => {
+  await requireAdmin(req);
+  const body = await readJson(req);
+  return { ok: true, char: await adminTarget(body.name) };
+});
+route('POST', '/api/admin/action', async (req) => {
+  const acc = await requireAdmin(req);
+  limit(req, 'admin', 120, 60 * 1000);
+  const body = await readJson(req, 20 * 1024);
+  const c = await adminTarget(body.name);
+  const a = String(body.action || '');
+  let msg;
+  try {
+    if (a === 'item') {
+      const qty = Math.max(1, Math.min(10, Math.round(Number(body.qty) || 1)));
+      const list = Array.from({ length: qty }, () => ({ base: String(body.base), rarity: String(body.rarity), plus: body.plus }));
+      const got = await world.adminGiveItems(c.id, list);
+      msg = `${got.length}× ${got[0].name} enviado(s) para ${c.name}.`;
+    } else if (a === 'kit') {
+      const got = await world.adminGiveItems(c.id, world.bestKit(c.cls));
+      msg = `Melhor equipamento (${got.length} itens ancestrais +15) enviado para ${c.name}.`;
+    } else if (a === 'level') {
+      const lv = await world.adminSetLevel(c.id, body.level === 'max' ? game.LIMITS.maxLevel : body.level);
+      msg = `${c.name} agora está no nível ${lv || body.level}.`;
+    } else if (a === 'maxstats') {
+      await world.adminMaxStats(c.id);
+      msg = `Atributos de ${c.name} no máximo.`;
+    } else if (a === 'points' || a === 'zen') {
+      await world.adminAdd(c.id, a, body.n);
+      msg = a === 'zen' ? `Zen de ${c.name} ajustado.` : `Pontos de ${c.name} ajustados.`;
+    } else throw new Error('Ação desconhecida.');
+  } catch (e) { if (e instanceof HttpError) throw e; throw new HttpError(400, e.message); }
+  await audit(acc.id, 'admin_' + a, req, { char: c.name, base: body.base, rarity: body.rarity, level: body.level, n: body.n });
+  return { ok: true, message: msg, char: await adminTarget(c.name) };
+});
+route('POST', '/api/admin/vip', async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req);
+  const { rows } = await db.query('SELECT id, username FROM accounts WHERE lower(username) = lower($1)', [String(body.username || '').trim()]);
+  if (!rows[0]) throw new HttpError(404, 'Conta não encontrada.');
+  const days = Math.round(Number(body.days) || 0);
+  if (days > 3650 || days < 0) throw new HttpError(400, 'Dias inválidos.');
+  let r;
+  try { r = await VIP.grant(rows[0].id, String(body.plan), days); } catch (e) { throw new HttpError(400, e.message); }
+  if (days > 0) {
+    await db.query(`INSERT INTO payments (provider, account_id, plan, days, amount_cents, note) VALUES ('admin', $1, $2, $3, 0, $4) RETURNING id`,
+      [rows[0].id, String(body.plan), days, `dado por ${acc.username}`]);
+  }
+  await audit(acc.id, 'admin_vip', req, { to: rows[0].username, plan: body.plan, days });
+  world.refreshVip(rows[0].id).catch(() => {});
+  const st = VIP.status(r);
+  return { ok: true, message: days > 0 ? `${VIP.PLANS[body.plan].name}: +${days} dias para ${rows[0].username}.` : `${VIP.PLANS[body.plan].name} removido de ${rows[0].username}.`, vip: st };
+});
+route('POST', '/api/admin/vip-prices', async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req);
+  let plans;
+  try { plans = await VIP.savePrices(body.prices); } catch (e) { throw new HttpError(400, e.message); }
+  await audit(acc.id, 'admin_vip_prices', req, body.prices);
+  return { ok: true, message: 'Preços dos VIPs salvos.', plans };
+});
 
 route('GET', '/api/news', async () => {
   const { rows } = await db.query('SELECT id, kind, title, body, published_at FROM news ORDER BY published_at DESC LIMIT 10');
@@ -273,7 +378,7 @@ route('GET', '/api/me', async (req) => {
   const statusAccess = canSeeStatus(acc);
   const { rows } = await db.query(`SELECT id, name, class, appearance, level, resets, zen, str, agi, vit, ene, cmd,
     free_points, map, combat_power, created_at, last_seen_at FROM characters WHERE account_id = $1 ORDER BY last_seen_at DESC NULLS LAST, id`, [acc.id]);
-  return { account: { username: acc.username, email: maskEmail(acc.email), createdAt: acc.created_at, lastLoginAt: acc.last_login_at, statusAccess }, characters: rows };
+  return { account: { username: acc.username, email: maskEmail(acc.email), createdAt: acc.created_at, lastLoginAt: acc.last_login_at, statusAccess, admin: ADMIN.isAdmin(acc), vip: VIP.status(acc) }, characters: rows };
 });
 
 function maskEmail(e) {
@@ -559,6 +664,20 @@ const server = http.createServer(async (req, res) => {
     }
     return serveStatic(req, res, url.pathname);
   }
+  if (req.method === 'POST' && url.pathname === '/api/stripe-webhook') {
+    try {
+      const raw = await new Promise((ok, bad) => {
+        const ch = []; let n = 0;
+        req.on('data', (d) => { n += d.length; if (n > 512 * 1024) { bad(new Error('grande')); req.destroy(); } else ch.push(d); });
+        req.on('end', () => ok(Buffer.concat(ch))); req.on('error', bad);
+      });
+      const r = await VIP.webhook(raw, req.headers['stripe-signature'], (accId) => { if (world) world.refreshVip(accId).catch(() => {}); });
+      return sendJson(res, r.code, r.body);
+    } catch (e) {
+      console.error('[vip] webhook:', e.message);
+      return sendJson(res, 500, { error: 'server' }); // 500: o Stripe tenta de novo
+    }
+  }
   // alguém abriu um endereço /api/... direto no navegador: leva para a página inicial em vez de mostrar JSON
   if (req.method === 'GET' && req.headers['sec-fetch-mode'] === 'navigate' && req.headers['sec-fetch-dest'] === 'document') {
     console.warn(`[api nav] ${url.pathname}${url.search} ref=${req.headers.referer || '-'} ua=${(req.headers['user-agent'] || '').slice(0, 90)}`);
@@ -635,6 +754,7 @@ setInterval(() => {
 (async () => {
   await db.migrate();
   await refreshCounts();
+  await VIP.loadPrices();
   world = new World();
   // amostra a cada 5 minutos (e logo após iniciar)
   setTimeout(() => sampleStats().catch((e) => console.error('[status]', e.message)), 20000).unref();
