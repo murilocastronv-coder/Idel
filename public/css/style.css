@@ -278,6 +278,14 @@ details[open] > summary { margin-bottom: 14px; }
 .char-card b { font: 600 18px var(--display); display: block; }
 .char-card span { color: var(--bone-dim); font-size: 14px; display: block; }
 .char-card .btn { margin-top: 6px; }
+.char-card { cursor: pointer; position: relative; }
+.char-card:hover, .char-card.sel, .char-card:focus-visible { border-color: var(--gold, #e8b84a); outline: none; }
+.char-card.last { border-color: var(--gold, #e8b84a); box-shadow: 0 0 0 2px rgba(232, 184, 74, .25); }
+.last-tag { font-style: normal; font-size: 11px; color: #1a1206; background: var(--gold, #e8b84a); padding: 1px 6px; display: inline-block; margin-bottom: 3px; }
+.btn-discord { background: #5865f2; border-color: #3c45a5; color: #fff; text-decoration: none; }
+.btn-discord:hover { background: #6d78f5; }
+.nav-discord { color: #a5adff !important; }
+.discord-note a { color: #a5adff; }
 .char-empty { color: var(--bone-dim); }
 
 .create-grid { grid-template-columns: 150px 1fr; gap: 18px; align-items: start; }

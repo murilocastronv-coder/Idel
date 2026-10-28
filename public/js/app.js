@@ -193,13 +193,16 @@
       list.innerHTML = '<li class="char-empty">Você ainda não tem heróis. Crie o primeiro abaixo.</li>';
       $('#create-char').open = true;
     }
-    me.characters.forEach((c) => {
+    me.characters.forEach((c, idx) => {
       const li = document.createElement('li');
-      li.className = 'char-card';
+      li.className = 'char-card' + (idx === 0 && me.characters.length > 1 && c.last_seen_at && new Date(c.last_seen_at) - new Date(c.created_at) > 2000 ? ' last' : '');
+      li.tabIndex = 0;
+      li.onclick = (ev) => { if (ev.target.closest('a,button')) return; $$('#char-list .char-card').forEach((x) => x.classList.remove('sel')); li.classList.add('sel'); };
+      li.ondblclick = () => { location.href = `/game.html?c=${encodeURIComponent(c.id)}`; };
       li.appendChild(charCanvas(c, 3));
       const info = document.createElement('div');
       const mapName = (state.data.maps.find((m) => m.id === c.map) || {}).name || c.map;
-      info.innerHTML = `<b>${esc(c.name)}</b><span>${esc(state.data.classes[c.class].name)} · Nv. ${c.level}${c.resets ? ` · ${c.resets} resets` : ''}</span>
+      info.innerHTML = `${li.classList.contains('last') ? '<em class="last-tag">Último jogado</em>' : ''}<b>${esc(c.name)}</b><span>${esc(state.data.classes[c.class].name)} · Nv. ${c.level}${c.resets ? ` · ${c.resets} resets` : ''}</span>
         <span>${esc(mapName)} · ${fmt.format(c.zen)} Zen</span>`;
       const play = document.createElement('a');
       play.className = 'btn small btn-gold'; play.textContent = 'Entrar no mundo';
@@ -217,7 +220,7 @@
     $('#create-char').hidden = full;
     $('#world-note').textContent = full
       ? `Você atingiu o limite de ${state.data.limits.maxCharactersPerAccount} heróis por conta.`
-      : 'Toque em “Entrar no mundo” para jogar. Ligue o AUTO e seu herói luta sozinho, até offline.';
+      : (me.characters.length ? 'Escolha um herói e toque em “Entrar no mundo”, ou crie outro herói abaixo.' : 'Crie seu primeiro herói para entrar no mundo.');
   }
 
   async function openAccount() {
@@ -596,8 +599,7 @@
   // ---------------- botões do topo ----------------
   $('#btn-play').onclick = () => {
     if (!state.me) return openAuth('login', 'Entre na sua conta para jogar. Ainda não tem? Use “Criar conta”.');
-    // um herói só: vai direto para o mundo
-    if (state.me.characters.length === 1) { location.href = `/game.html?c=${encodeURIComponent(state.me.characters[0].id)}`; return; }
+    // sempre abre a seleção de heróis (dá para escolher ou criar outro)
     openAccount();
   };
   $('#btn-hero-register').onclick = () => (state.me ? openAccount() : openAuth('register'));
@@ -633,6 +635,11 @@
     brandIcon(); setupScene(); setupClasses(); setupMaps(); setupItems(); setupCreateForm(); drawPreview();
     loadNews(); loadRanking();
     await loadMe();
+    // voltando do jogo pelo botão "Trocar herói": abre a seleção
+    if (/[?&]herois\b/.test(location.search)) {
+      history.replaceState(null, '', '/');
+      if (state.me) openAccount();
+    }
     checkResetLink();
     window.addEventListener('hashchange', checkResetLink);
   })();

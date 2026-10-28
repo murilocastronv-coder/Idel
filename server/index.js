@@ -193,7 +193,7 @@ route('GET', '/api/me', async (req) => {
   const acc = await sessionAccount(req);
   if (!acc) return { account: null, characters: [] };
   const { rows } = await db.query(`SELECT id, name, class, appearance, level, resets, zen, str, agi, vit, ene, cmd,
-    free_points, map, combat_power, created_at FROM characters WHERE account_id = $1 ORDER BY id`, [acc.id]);
+    free_points, map, combat_power, created_at, last_seen_at FROM characters WHERE account_id = $1 ORDER BY last_seen_at DESC NULLS LAST, id`, [acc.id]);
   return { account: { username: acc.username, email: maskEmail(acc.email), createdAt: acc.created_at, lastLoginAt: acc.last_login_at }, characters: rows };
 });
 

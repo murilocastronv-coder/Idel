@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=10">
+  <link rel="stylesheet" href="/css/style.css?v=11">
 </head>
 <body>
   <a class="skip" href="#conteudo">Pular para o conteúdo</a>
@@ -26,6 +26,7 @@
       <a href="#equipamentos">Equipamentos</a>
       <a href="#noticias">Notícias</a>
       <a href="#ranking">Ranking</a>
+      <a class="nav-discord" href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Discord</a>
     </nav>
     <div class="auth-area" id="auth-area">
       <!-- preenchido por app.js -->
@@ -43,6 +44,7 @@
           <button class="btn btn-gold" id="btn-play" type="button">Jogar</button>
           <button class="btn" id="btn-hero-register" type="button">Criar conta</button>
           <button class="btn btn-ghost" id="btn-hero-ranking" type="button">Ver ranking</button>
+          <a class="btn btn-discord" href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Entrar no Discord</a>
         </div>
       </div>
     </section>
@@ -127,6 +129,7 @@
   </main>
 
   <footer class="footer">
+    <p><a class="btn btn-discord" href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Comunidade no Discord</a></p>
     <p>MU Idle Legends é um projeto de fã independente com arte original. Não é afiliado a nenhuma empresa ou marca.</p>
   </footer>
 
@@ -205,11 +208,11 @@
   <!-- Painel da conta -->
   <dialog class="window dialog dialog-wide" id="account-dialog" aria-labelledby="account-title">
     <button class="close" type="button" data-close aria-label="Fechar">×</button>
-    <h2 id="account-title">Minha conta</h2>
+    <h2 id="account-title">Selecione seu herói</h2>
     <p class="muted" id="account-meta"></p>
-    <h3>Seus heróis</h3>
     <ul class="char-list" id="char-list"></ul>
-    <p class="note" id="world-note">Toque em “Entrar no mundo” para jogar. Ligue o AUTO e seu herói luta sozinho, até offline.</p>
+    <p class="note" id="world-note">Escolha um herói e toque em “Entrar no mundo”.</p>
+    <p class="note discord-note">Encontre grupo, tire dúvidas e veja novidades no <a href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Discord do MU Idle Legends</a>.</p>
 
     <details class="create-char" id="create-char">
       <summary class="btn">Criar novo herói</summary>
@@ -270,8 +273,8 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="/js/pixel.js?v=10"></script>
-  <script src="/js/sprites.js?v=10"></script>
-  <script src="/js/app.js?v=10"></script>
+  <script src="/js/pixel.js?v=11"></script>
+  <script src="/js/sprites.js?v=11"></script>
+  <script src="/js/app.js?v=11"></script>
 </body>
 </html>

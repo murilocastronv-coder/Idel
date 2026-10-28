@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
   <link rel="stylesheet" href="/css/style.css?v=10">
-  <link rel="stylesheet" href="/css/game.css?v=11">
+  <link rel="stylesheet" href="/css/game.css?v=12">
 </head>
 <body class="game">
   <canvas id="world" aria-label="Mapa do jogo"></canvas>
@@ -60,7 +60,7 @@
       <button type="button" data-panel="quests">Missões<i class="badge" id="quest-badge" hidden></i></button>
       <button type="button" data-panel="config">Idle</button>
       <button type="button" data-panel="chat">Chat<i class="badge" id="chat-badge" hidden></i></button>
-      <button type="button" id="btn-exit">Sair</button>
+      <button type="button" id="btn-exit" title="Voltar à seleção de heróis">Heróis</button>
     </nav>
     <div class="xpbar"><span id="xp-fill"></span><em id="xp-text">EXP 0%</em></div>
   </div>
@@ -100,10 +100,11 @@
   <section class="panel window" id="panel-config" hidden aria-labelledby="config-title">
     <header><h2 id="config-title">Configurar o modo idle</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
     <div id="config-body"></div>
+    <p class="discord-row"><a class="btn-discord" href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Entrar no Discord</a></p>
   </section>
 
   <section class="panel window" id="panel-chat" hidden aria-labelledby="chat-title">
-    <header><h2 id="chat-title">Chat global</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <header><h2 id="chat-title">Chat global</h2><a class="discord-mini" href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Discord</a><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
     <ul class="chat-lines" id="chat-lines"></ul>
     <form class="chat-form" id="chat-form" autocomplete="off">
       <input name="text" maxlength="120" placeholder="Escreva para todos…" aria-label="Mensagem">
@@ -120,6 +121,6 @@
   <script src="/js/pixel.js?v=10"></script>
   <script src="/js/sprites.js?v=10"></script>
   <script src="/js/sfx.js?v=10"></script>
-  <script src="/js/game.js?v=11"></script>
+  <script src="/js/game.js?v=12"></script>
 </body>
 </html>
