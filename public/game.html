@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=7">
-  <link rel="stylesheet" href="/css/game.css?v=7">
+  <link rel="stylesheet" href="/css/style.css?v=9">
+  <link rel="stylesheet" href="/css/game.css?v=9">
 </head>
 <body class="game">
   <canvas id="world" aria-label="Mapa do jogo"></canvas>
@@ -26,6 +26,7 @@
   <!-- HUD superior direito -->
   <div class="hud-map">
     <div class="map-name"><i class="dot" id="g-conn"></i><span id="map-name">Conectando…</span></div>
+    <div class="mode-tag">Hard XP</div>
     <canvas id="minimap" width="120" height="80" aria-label="Minimapa"></canvas>
   </div>
 
@@ -51,6 +52,7 @@
       <button type="button" data-panel="hero">Herói<i class="badge" id="pts-badge" hidden></i></button>
       <button type="button" data-panel="maps">Mapas</button>
       <button type="button" data-panel="shop" id="btn-shop">Loja</button>
+      <button type="button" data-panel="quests">Missões<i class="badge" id="quest-badge" hidden></i></button>
       <button type="button" data-panel="config">Idle</button>
       <button type="button" data-panel="chat">Chat<i class="badge" id="chat-badge" hidden></i></button>
       <button type="button" id="btn-exit">Sair</button>
@@ -85,6 +87,11 @@
     <div id="shop-body"></div>
   </section>
 
+  <section class="panel window" id="panel-quests" hidden aria-labelledby="quests-title">
+    <header><h2 id="quests-title">Missões e prêmios</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <div id="quests-body"></div>
+  </section>
+
   <section class="panel window" id="panel-config" hidden aria-labelledby="config-title">
     <header><h2 id="config-title">Configurar o modo idle</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
     <div id="config-body"></div>
@@ -105,8 +112,8 @@
     <div class="row"><button class="btn btn-gold" type="button" data-close>Continuar</button></div>
   </dialog>
 
-  <script src="/js/pixel.js?v=7"></script>
-  <script src="/js/sprites.js?v=7"></script>
-  <script src="/js/game.js?v=7"></script>
+  <script src="/js/pixel.js?v=9"></script>
+  <script src="/js/sprites.js?v=9"></script>
+  <script src="/js/game.js?v=9"></script>
 </body>
 </html>

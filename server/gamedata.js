@@ -129,40 +129,91 @@ const WORLD = {
     groups: [{ type: 'skeleton', count: 14 }], boss: { type: 'skeleton_king', x: 950, y: 400 } },
 };
 
-// Habilidades usadas no combate automático (basic + 2 especiais + extras)
+// Habilidades: ataque básico + 4 poderes por classe (níveis 1, 5, 15 e 30).
+// mult = multiplicador de dano; aoe = raio; buff = reforço temporário (dmg ou def).
 const SKILLS = {
   dark_knight: [
     { id: 'basic', name: 'Golpe', mult: 1, mana: 0, cd: 0, range: 26, fx: 'slash' },
     { id: 'uppercut', name: 'Corte Ascendente', mult: 1.8, mana: 8, cd: 3000, range: 28, fx: 'slash', lvl: 1 },
     { id: 'whirl', name: 'Golpe Giratório', mult: 1.3, mana: 14, cd: 6000, range: 28, aoe: 52, self: true, fx: 'whirl', lvl: 5 },
+    { id: 'warcry', name: 'Grito de Guerra', buff: 'dmg', bmult: 1.25, dur: 20000, mana: 20, cd: 40000, fx: 'buff_dmg', lvl: 15 },
+    { id: 'thunder', name: 'Lâmina Trovejante', mult: 2.6, mana: 26, cd: 8000, range: 30, aoe: 40, fx: 'lightning', lvl: 30 },
   ],
   dark_wizard: [
     { id: 'basic', name: 'Bola de Energia', mult: 1, mana: 0, cd: 0, range: 130, fx: 'energy' },
     { id: 'fireball', name: 'Bola de Fogo', mult: 1.9, mana: 10, cd: 2500, range: 140, fx: 'fire', lvl: 1 },
     { id: 'meteor', name: 'Meteoro', mult: 1.4, mana: 18, cd: 6000, range: 140, aoe: 56, fx: 'meteor', lvl: 5 },
+    { id: 'manashield', name: 'Escudo de Mana', buff: 'def', bmult: 1.5, dur: 20000, mana: 22, cd: 40000, fx: 'buff_def', lvl: 15 },
+    { id: 'lightning', name: 'Relâmpago', mult: 2.6, mana: 28, cd: 8000, range: 150, aoe: 50, fx: 'lightning', lvl: 30 },
   ],
   fairy_elf: [
     { id: 'basic', name: 'Flecha', mult: 1, mana: 0, cd: 0, range: 135, fx: 'arrow' },
     { id: 'icearrow', name: 'Flecha de Gelo', mult: 1.7, mana: 8, cd: 3000, range: 140, fx: 'ice', lvl: 1 },
     { id: 'triple', name: 'Flecha Tripla', mult: 1.2, mana: 14, cd: 5000, range: 140, aoe: 44, fx: 'arrow3', lvl: 5 },
-    { id: 'heal', name: 'Cura', heal: 0.25, mana: 20, cd: 10000, fx: 'heal', lvl: 8 },
+    { id: 'heal', name: 'Cura', heal: 0.25, mana: 20, cd: 10000, fx: 'heal', lvl: 15 },
+    { id: 'rain', name: 'Chuva de Flechas', mult: 1.9, mana: 26, cd: 9000, range: 150, aoe: 70, fx: 'arrow3', lvl: 30 },
   ],
   magic_gladiator: [
     { id: 'basic', name: 'Golpe', mult: 1, mana: 0, cd: 0, range: 26, fx: 'slash' },
     { id: 'fireblade', name: 'Lâmina de Fogo', mult: 1.9, mana: 10, cd: 3000, range: 28, fx: 'fire', lvl: 1 },
     { id: 'arcane', name: 'Explosão Arcana', mult: 1.4, mana: 18, cd: 6000, range: 120, aoe: 54, fx: 'meteor', lvl: 5 },
+    { id: 'double', name: 'Golpe Duplo', mult: 2.4, mana: 16, cd: 5000, range: 30, fx: 'slash', lvl: 15 },
+    { id: 'fury', name: 'Fúria Elemental', mult: 2.0, mana: 28, cd: 9000, range: 120, aoe: 64, fx: 'dark', lvl: 30 },
   ],
   dark_lord: [
     { id: 'basic', name: 'Golpe de Cetro', mult: 1, mana: 0, cd: 0, range: 34, fx: 'slash' },
     { id: 'darkfire', name: 'Fogo Sombrio', mult: 1.8, mana: 10, cd: 3000, range: 120, fx: 'dark', lvl: 1 },
     { id: 'storm', name: 'Tempestade Negra', mult: 1.4, mana: 18, cd: 6000, range: 120, aoe: 56, fx: 'lightning', lvl: 5 },
+    { id: 'aura', name: 'Aura do Senhor', buff: 'dmg', bmult: 1.25, dur: 20000, mana: 20, cd: 40000, fx: 'buff_dmg', lvl: 15 },
+    { id: 'imperial', name: 'Explosão Imperial', mult: 2.6, mana: 28, cd: 8000, range: 120, aoe: 50, fx: 'meteor', lvl: 30 },
   ],
   summoner: [
     { id: 'basic', name: 'Espírito', mult: 1, mana: 0, cd: 0, range: 130, fx: 'spirit' },
     { id: 'chain', name: 'Corrente Etérea', mult: 1.8, mana: 10, cd: 3000, range: 135, fx: 'dark', lvl: 1 },
     { id: 'souls', name: 'Chamado das Almas', mult: 1.4, mana: 18, cd: 6000, range: 135, aoe: 56, fx: 'spirit', lvl: 5 },
+    { id: 'weakness', name: 'Maldição da Fraqueza', mult: 2.3, mana: 16, cd: 5000, range: 140, fx: 'dark', lvl: 15 },
+    { id: 'spiritstorm', name: 'Tempestade de Espíritos', mult: 2.0, mana: 28, cd: 9000, range: 140, aoe: 66, fx: 'spirit', lvl: 30 },
   ],
 };
+
+// Modo do servidor. Hard XP: curva pesada e perda de EXP ao morrer.
+const GAME_MODE = {
+  name: 'Hard XP',
+  expRate: Number(process.env.EXP_RATE || 1),
+  deathExpLoss: 0.03,
+};
+
+// Missões diárias: 3 por dia, sorteadas por personagem. goal = base + per × nível.
+const DAILY_POOL = [
+  { id: 'kill', text: 'Derrote {n} monstros', base: 40, per: 2, reward: { zen: 1500, pot_hp: 10 } },
+  { id: 'zen', text: 'Ganhe {n} Zen em combate', base: 1500, per: 120, reward: { pot_hp: 15, pot_mp: 10 } },
+  { id: 'potion', text: 'Use {n} poções', base: 10, per: 0, reward: { zen: 1200 } },
+  { id: 'skill', text: 'Use poderes {n} vezes', base: 40, per: 1, reward: { zen: 2000 } },
+  { id: 'loot', text: 'Encontre {n} itens', base: 3, per: 0, reward: { item: 'rare' } },
+  { id: 'online', text: 'Jogue {n} minutos', base: 20, per: 0, reward: { zen: 2500, pot_mp: 10 } },
+  { id: 'elite', text: 'Derrote {n} chefes ou elites', base: 2, per: 0, reward: { item: 'rare', zen: 3000 }, minLevel: 10 },
+];
+
+// Prêmio por dias seguidos de login (o 7º é o melhor; depois recomeça)
+const LOGIN_REWARDS = [
+  { zen: 2000 }, { pot_hp: 25 }, { zen: 5000 }, { pot_mp: 30 }, { item: 'rare' }, { zen: 12000 }, { item: 'epic', zen: 10000 },
+];
+
+const ACHIEVEMENTS = [
+  { id: 'lv5', text: 'Alcance o nível 5', stat: 'level', goal: 5, reward: { zen: 1000 } },
+  { id: 'lv10', text: 'Alcance o nível 10', stat: 'level', goal: 10, reward: { zen: 3000, pot_hp: 20 } },
+  { id: 'lv25', text: 'Alcance o nível 25', stat: 'level', goal: 25, reward: { zen: 10000, item: 'rare' } },
+  { id: 'lv50', text: 'Alcance o nível 50', stat: 'level', goal: 50, reward: { zen: 30000, item: 'epic' } },
+  { id: 'lv100', text: 'Alcance o nível 100', stat: 'level', goal: 100, reward: { zen: 100000, item: 'legendary' } },
+  { id: 'k100', text: 'Derrote 100 monstros', stat: 'kills', goal: 100, reward: { zen: 1500 } },
+  { id: 'k1000', text: 'Derrote 1.000 monstros', stat: 'kills', goal: 1000, reward: { zen: 8000, pot_hp: 50 } },
+  { id: 'k10000', text: 'Derrote 10.000 monstros', stat: 'kills', goal: 10000, reward: { zen: 50000, item: 'epic' } },
+  { id: 'boss1', text: 'Derrote o Rei Esqueleto', stat: 'bosses', goal: 1, reward: { zen: 20000, item: 'epic' } },
+  { id: 'boss10', text: 'Derrote 10 bosses', stat: 'bosses', goal: 10, reward: { zen: 100000, item: 'legendary' } },
+  { id: 'legend', text: 'Encontre um item lendário ou ancestral', stat: 'legendary', goal: 1, reward: { zen: 25000 } },
+  { id: 'rich', text: 'Tenha 100.000 Zen', stat: 'zen', goal: 100000, reward: { pot_hp: 100, pot_mp: 100 } },
+  { id: 'streak7', text: 'Entre 7 dias seguidos', stat: 'streak', goal: 7, reward: { item: 'epic' } },
+];
 
 const POINTS_PER_LEVEL = { dark_knight: 5, dark_wizard: 5, fairy_elf: 5, magic_gladiator: 7, dark_lord: 7, summoner: 5 };
 // Distribuição automática de pontos (pode ser desligada pelo jogador)
@@ -243,6 +294,6 @@ const INVENTORY_SIZE = 40;
 module.exports = {
   CLASSES, MAPS, RARITIES, ITEMS, LIMITS,
   MONSTERS, WORLD, SKILLS, POINTS_PER_LEVEL, AUTO_STATS, CLASS_WEAPONS, ITEM_BASES, SETS,
-  RARITY_MULT, RARITY_WEIGHTS, SHOP, INVENTORY_SIZE,
+  RARITY_MULT, RARITY_WEIGHTS, SHOP, INVENTORY_SIZE, GAME_MODE, DAILY_POOL, LOGIN_REWARDS, ACHIEVEMENTS,
 };
 

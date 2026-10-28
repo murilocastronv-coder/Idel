@@ -320,3 +320,7 @@ details[open] > summary { margin-bottom: 14px; }
 .char-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .char-acts .btn { margin-top: 0; }
 .tag-open { color: var(--gold); }
+
+.mode-badge { display: inline-block; margin: -8px 0 20px; font: 500 15px var(--display); color: #ffe0d8; background: rgba(90, 10, 10, .8); border: 2px solid var(--edge); box-shadow: inset 0 0 0 1px var(--ember); padding: 5px 10px; }
+.mode-badge b { color: #ffb0a0; }
+@media (max-width: 480px) { .mode-badge { font-size: 13px; } }

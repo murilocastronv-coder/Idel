@@ -27,6 +27,14 @@ No painel **Minha conta**, cada herói tem o botão **Entrar no mundo** (`/game.
 - **Progresso offline:** com o AUTO ligado ao sair, o servidor calcula até 8 horas de farm (EXP, Zen, itens, poções gastas) usando só o relógio do servidor, e mostra um relatório ao voltar.
 - **Multiplayer:** todos os jogadores no mesmo mapa se veem em tempo real, com chat global e avisos do boss. Cada conta pode ter só um herói no mundo por vez.
 
+## Poderes, missões e Hard XP
+
+- **4 poderes por classe**, liberados nos níveis 1, 5, 15 e 30: golpes fortes, magias em área, um reforço (mais dano ou defesa por 20 s) ou cura. O AUTO usa reforço primeiro e depois o poder mais forte disponível; cada poder pode ser ligado ou desligado na barra.
+- **Prêmio de login:** sequência de 7 dias (zera se faltar um dia).
+- **Missões diárias:** 3 por dia por personagem, renovam à meia-noite (fuso `GAME_TZ`, padrão `America/Sao_Paulo`).
+- **Conquistas:** nível, monstros, bosses, item lendário, Zen e 7 dias seguidos.
+- **Servidor Hard XP:** curva `100 × nível^2,1 + 200` e perda de 3% da EXP do nível ao morrer. `EXP_RATE` multiplica a EXP (padrão 1).
+
 ## Sprites em alta resolução
 
 Os personagens, monstros e efeitos são PNG com fundo transparente em `public/assets/sprites/`, descritos em `manifest.json` (tamanho do quadro, pivô nos pés, quadros e FPS de cada ação).

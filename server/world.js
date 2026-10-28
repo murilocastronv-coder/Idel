@@ -3,6 +3,7 @@
 // combate, EXP, Zen, drops e inventário. O navegador só envia intenções.
 const db = require('./db');
 const G = require('./gamedata');
+const Q = require('./quests');
 
 const TICK_MS = 100;
 const SAVE_EVERY_MS = 20000;
@@ -19,7 +20,9 @@ const randi = (a, b) => Math.floor(rand(a, b + 1));
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-function expToNext(level) { return Math.floor(60 * Math.pow(level, 1.7) + 40); }
+// Hard XP: curva pesada (nível 2 = 300 EXP, nível 10 ≈ 12.800, nível 25 ≈ 86.500)
+function expToNext(level) { return Math.floor(100 * Math.pow(level, 2.1) + 200); }
+const XP = () => G.GAME_MODE.expRate;
 
 // ------------------------------------------------------------------ itens
 function itemStats(it) {
@@ -66,6 +69,12 @@ function publicItem(it) {
     rarity: it.rarity, plus: it.plus, equipped: !!it.equipped, stats: itemStats(it), value: itemValue(it) };
 }
 
+function skillDesc(s) {
+  if (s.heal) return `Cura ${Math.round(s.heal * 100)}% da vida`;
+  if (s.buff) return `${s.buff === 'dmg' ? 'Dano' : 'Defesa'} +${Math.round((s.bmult - 1) * 100)}% por ${s.dur / 1000}s`;
+  return `${Math.round(s.mult * 100)}% de dano${s.aoe ? ' em área' : ''}`;
+}
+
 // ------------------------------------------------------------------ jogador
 class Player {
   constructor(row, client, items) {
@@ -90,6 +99,10 @@ class Player {
     this.lastFarm = row.last_farm_map;
     this.auto = !!row.auto_on;
     this.items = items;
+    this.quests = row.quests || {};
+    this.buffs = {};
+    this.onlineAcc = 0;
+    this.questsDirty = false;
     this.map = null;
     this.x = 0; this.y = 0; this.flip = false;
     this.cds = {};
@@ -155,8 +168,9 @@ class Player {
       dmg: [this.dmgMin, this.dmgMax], def: this.def, maxHp: this.maxHp, maxMp: this.maxMp, atkMs: this.atkMs,
       crit: this.crit, power: this.power, fullSet: this.fullSet, kills: this.kills, deaths: this.deaths,
       items: this.items.map(publicItem), invMax: G.INVENTORY_SIZE,
-      skills: this.skills().map((s) => ({ id: s.id, name: s.name, mana: s.mana, cd: s.cd, fx: s.fx, on: this.skillOn(s.id) })),
-      allSkills: G.SKILLS[this.cls].map((s) => ({ id: s.id, name: s.name, lvl: s.lvl || 1 })),
+      skills: this.skills().map((s) => ({ id: s.id, name: s.name, mana: s.mana, cd: s.cd, fx: s.fx, buff: s.buff || null, heal: !!s.heal, aoe: !!s.aoe, on: this.skillOn(s.id) })),
+      mode: G.GAME_MODE.name, deathLoss: G.GAME_MODE.deathExpLoss,
+      allSkills: G.SKILLS[this.cls].filter((s) => s.id !== 'basic').map((s) => ({ id: s.id, name: s.name, lvl: s.lvl || 1, mana: s.mana, cd: s.cd, desc: skillDesc(s) })),
     };
   }
 }
@@ -230,12 +244,15 @@ class World {
 
     if (!row.starter_given) await this.giveStarter(p);
     const report = await this.offlineProgress(p, row);
+    Q.normalize(p);
+    Q.checkAchievements(p);
 
     let mapId = G.WORLD[row.map] ? row.map : 'lorencia';
     if (G.WORLD[mapId].minLevel > p.level) mapId = 'lorencia';
     this.enterMap(p, mapId, row.map === mapId && row.pos_x > 0 ? [row.pos_x, row.pos_y] : null);
     p.send(p.charState());
     p.send({ type: 'chatlog', lines: this.chat.slice(-30) });
+    p.send(Q.state(p));
     if (report) p.send({ type: 'offline', ...report });
     p.dirty = true;
   }
@@ -330,6 +347,7 @@ class World {
       case 'sell': return p.run(() => this.sell(p, String(msg.id)));
       case 'autoequip': return p.run(() => this.autoEquip(p));
       case 'chat': return this.chatMsg(p, msg.text);
+      case 'claim': return p.run(() => this.claim(p, String(msg.kind), String(msg.id || '')));
       case 'leave': return this.leave(p).then(() => client.send({ type: 'left' }));
       default: return undefined;
     }
@@ -500,8 +518,8 @@ class World {
       }
       elapsed += killTime / 0.6; // eficiência offline de 60%
       if (elapsed > secs) break;
-      kills++; exp += mExp; zen += mZen;
-      p.exp += mExp;
+      kills++; exp += mExp * XP(); zen += mZen;
+      p.exp += mExp * XP();
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p, true); levels++; }
       if (kills > 50000) break;
     }
@@ -535,6 +553,8 @@ class World {
     const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus) VALUES ($1,$2,$3,$4)
       RETURNING id, base, rarity, plus, equipped`, [p.charId, it.base, it.rarity, it.plus]);
     p.items.push(rows[0]);
+    this.quest(p, 'loot', 1);
+    if (['legendary', 'ancestral'].includes(it.rarity)) { p.quests.life = p.quests.life || {}; p.quests.life.legendary = (p.quests.life.legendary || 0) + 1; this.achieve(p); }
     if (!silent) {
       p.send({ type: 'drop', item: publicItem(rows[0]) });
       p.send(p.charState());
@@ -547,12 +567,72 @@ class World {
     p.free += G.POINTS_PER_LEVEL[p.cls];
     if (p.settings.autoStats) this.autoDistribute(p); else p.recalc();
     p.hp = p.maxHp; p.mp = p.maxMp;
+    if (p.quests && p.quests.ach) this.achieve(p, silent);
     if (!silent && p.map) {
       p.map.emit({ k: 'lv', t: p.id });
       for (const o of p.map.players.values()) o.send({ type: 'pj', ...this.pinfo(p) });
       p.send(p.charState());
       if (p.level % 10 === 0) this.system(`${p.name} alcançou o nível ${p.level}!`);
     }
+  }
+
+  // ---------- missões ----------
+  quest(p, kind, amount) {
+    if (!p.quests || !p.quests.daily) return;
+    const done = Q.track(p, kind, amount);
+    if (done.length || kind === 'kill' || kind === 'loot' || kind === 'elite' || kind === 'online') p.questsDirty = true;
+    for (const m of done) p.send({ type: 'log', kind: 'quest', text: 'Missão diária concluída! Abra Missões para pegar o prêmio.' });
+    if (kind === 'zen' && Math.random() < 0.05) p.questsDirty = true;
+  }
+
+  achieve(p, silent) {
+    if (!p.quests || !p.quests.ach) return;
+    const done = Q.checkAchievements(p);
+    if (done.length) p.questsDirty = true;
+    if (!silent) for (const a of done) p.send({ type: 'log', kind: 'quest', text: `Conquista: ${a.text}! Pegue o prêmio em Missões.` });
+  }
+
+  async grant(p, reward, label) {
+    const parts = [];
+    if (reward.zen) { p.zen += reward.zen; parts.push(`${reward.zen.toLocaleString('pt-BR')} Zen`); }
+    if (reward.pot_hp) { p.pots.hp += reward.pot_hp; parts.push(`${reward.pot_hp} poções de vida`); }
+    if (reward.pot_mp) { p.pots.mp += reward.pot_mp; parts.push(`${reward.pot_mp} poções de mana`); }
+    if (reward.item) {
+      const it = rollItem(Math.max(1, p.level), 'normal');
+      it.rarity = reward.item;
+      if (p.items.length >= G.INVENTORY_SIZE) { const v = itemValue(it) * 2; p.zen += v; parts.push(`${v} Zen (bolsa cheia)`); }
+      else {
+        const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus) VALUES ($1,$2,$3,$4)
+          RETURNING id, base, rarity, plus, equipped`, [p.charId, it.base, it.rarity, it.plus]);
+        p.items.push(rows[0]);
+        p.send({ type: 'drop', item: publicItem(rows[0]) });
+        parts.push(G.ITEM_BASES[it.base].name);
+      }
+    }
+    p.send({ type: 'log', kind: 'quest', text: `${label}: ${parts.join(' + ')}` });
+  }
+
+  async claim(p, kind, id) {
+    const q = p.quests;
+    if (kind === 'daily') {
+      const m = (q.daily.list || []).find((x) => x.id === id);
+      if (!m || m.claimed || m.prog < m.goal) return;
+      m.claimed = true;
+      await this.grant(p, G.DAILY_POOL.find((d) => d.id === id).reward, 'Prêmio da missão');
+    } else if (kind === 'login') {
+      if (q.login.claimed) return;
+      q.login.claimed = true;
+      const idx = ((q.login.streak || 1) - 1) % G.LOGIN_REWARDS.length;
+      await this.grant(p, G.LOGIN_REWARDS[idx], `Prêmio do dia ${idx + 1}`);
+      Q.checkAchievements(p);
+    } else if (kind === 'ach') {
+      if (q.ach[id] !== 'done') return;
+      q.ach[id] = 'claimed';
+      await this.grant(p, G.ACHIEVEMENTS.find((a) => a.id === id).reward, 'Prêmio da conquista');
+    } else return;
+    await this.persist(p);
+    p.send(p.charState());
+    p.send(Q.state(p));
   }
 
   // ---------- combate ----------
@@ -563,13 +643,15 @@ class World {
     if (kind === 'mp' && p.mp >= p.maxMp) return;
     p.pots[kind]--;
     p.nextPot = now + POTION_CD_MS;
+    this.quest(p, 'potion', 1);
     if (kind === 'hp') { const v = Math.round(p.maxHp * 0.35); p.hp = Math.min(p.maxHp, p.hp + v); p.map.emit({ k: 'heal', t: p.id, d: v }); }
     else p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * 0.5));
     p.dirty = true;
   }
 
   damageMonster(p, m, mult, crit, now) {
-    const raw = rand(p.dmgMin, p.dmgMax) * mult * (crit ? 1.5 : 1);
+    const bd = p.buffs.dmg && p.buffs.dmg.until > now ? p.buffs.dmg.mult : 1;
+    const raw = rand(p.dmgMin, p.dmgMax) * mult * bd * (crit ? 1.5 : 1);
     const d = Math.max(1, Math.round(raw - m.T.def / 2));
     m.hp -= d;
     m.flip = p.x > m.x;
@@ -588,8 +670,16 @@ class World {
       map.emit({ k: 'heal', t: p.id, d: v, fx: 'heal' });
       return;
     }
+    if (sk.buff) {
+      p.mp -= sk.mana; p.cds[sk.id] = now + sk.cd;
+      p.buffs[sk.buff] = { mult: sk.bmult, until: now + sk.dur };
+      map.emit({ k: 'buff', t: p.id, b: sk.buff });
+      this.quest(p, 'skill', 1);
+      return;
+    }
     p.mp -= sk.mana;
     if (sk.cd) p.cds[sk.id] = now + sk.cd;
+    if (sk.id !== 'basic') this.quest(p, 'skill', 1);
     p.nextAtk = now + p.atkMs;
     p.flip = target.x < p.x;
     const crit = Math.random() < p.crit;
@@ -612,8 +702,11 @@ class World {
     map.emit({ k: 'die', t: m.id });
     if (m.T.boss) return this.bossRewards(m, map, killer);
     const p = killer;
-    const exp = m.T.exp, zen = randi(m.T.zen[0], m.T.zen[1]);
+    const exp = Math.round(m.T.exp * XP()), zen = randi(m.T.zen[0], m.T.zen[1]);
     p.exp += exp; p.zen += zen; p.kills++;
+    this.quest(p, 'kill', 1); this.quest(p, 'zen', zen);
+    if (m.T.elite) this.quest(p, 'elite', 1);
+    if (p.kills % 50 === 0 || p.kills === 100) this.achieve(p);
     p.send({ type: 'reward', exp, zen, mon: m.T.name });
     while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
     p.dirty = true;
@@ -631,9 +724,10 @@ class World {
       const p = this.players.get(charId);
       if (!p || p.map !== map) return;
       const share = dmg / total;
-      const exp = Math.round(m.T.exp * Math.max(0.1, share));
+      const exp = Math.round(m.T.exp * XP() * Math.max(0.1, share));
       const zen = Math.round(randi(m.T.zen[0], m.T.zen[1]) * Math.max(0.1, share));
       p.exp += exp; p.zen += zen; p.bossesKilled++;
+      this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
       p.send({ type: 'reward', exp, zen, mon: m.T.name, share: Math.round(share * 100) });
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
       const rolls = i === 0 ? 2 : (share >= 0.1 && Math.random() < 0.5 ? 1 : 0);
@@ -647,7 +741,8 @@ class World {
   }
 
   hurtPlayer(m, p, now) {
-    const d = Math.max(1, Math.round(m.T.dmg * rand(0.85, 1.15) - p.def / 2));
+    const db = p.buffs.def && p.buffs.def.until > now ? p.buffs.def.mult : 1;
+    const d = Math.max(1, Math.round(m.T.dmg * rand(0.85, 1.15) - p.def * db / 2));
     p.hp -= d;
     p.map.emit({ k: 'h', a: m.id, t: p.id, d, fx: m.T.boss ? 'boss' : 'claw' });
     if (p.hp <= 0) this.killPlayer(p, now, m);
@@ -658,7 +753,11 @@ class World {
     p.respawnAt = now + RESPAWN_MS;
     p.target = null; p.moveTo = null;
     p.map.emit({ k: 'pdie', t: p.id });
-    p.send({ type: 'log', kind: 'warn', text: `Você foi derrotado por ${by.T.name}. Voltando para Lorencia…` });
+    // Hard XP: morrer custa uma parte da EXP do nível atual
+    const loss = Math.min(p.exp, Math.floor(expToNext(p.level) * G.GAME_MODE.deathExpLoss));
+    p.exp -= loss;
+    p.buffs = {};
+    p.send({ type: 'log', kind: 'warn', text: `Você foi derrotado por ${by.T.name}${loss ? ` e perdeu ${loss.toLocaleString('pt-BR')} de EXP` : ''}. Voltando para Lorencia…` });
     p.dirty = true;
   }
 
@@ -726,6 +825,14 @@ class World {
       }
       return;
     }
+    // minutos jogados (missão diária) e virada do dia
+    p.onlineAcc += dt;
+    if (p.onlineAcc >= 60) {
+      p.onlineAcc -= 60;
+      this.quest(p, 'online', 1);
+      if (Q.normalize(p)) { this.achieve(p); p.questsDirty = true; p.send({ type: 'log', kind: 'info', text: 'Novo dia: missões diárias renovadas e prêmio de login liberado!' }); }
+    }
+    if (p.questsDirty && (!p.lastQuestSend || now - p.lastQuestSend > 1500)) { p.questsDirty = false; p.lastQuestSend = now; p.send(Q.state(p)); }
     // regeneração: rápida na cidade, lenta no campo
     const regen = map.def.safe ? 0.08 : 0.004;
     p.hp = Math.min(p.maxHp, p.hp + p.maxHp * regen * dt);
@@ -766,7 +873,12 @@ class World {
     const heal = skills.find((s) => s.heal && p.skillOn(s.id));
     if (heal && p.hp < p.maxHp * 0.6 && p.mp >= heal.mana && !(p.cds[heal.id] > now)) { this.attack(p, heal, t, now); return; }
     let sk = null;
-    if (p.auto) sk = skills.find((s) => s.id !== 'basic' && !s.heal && p.skillOn(s.id) && p.mp >= s.mana && !(p.cds[s.id] > now));
+    if (p.auto) {
+      const buff = skills.find((s) => s.buff && p.skillOn(s.id) && p.mp >= s.mana && !(p.cds[s.id] > now) && !(p.buffs[s.buff] && p.buffs[s.buff].until > now));
+      if (buff && dist(p, t) < 160) { this.attack(p, buff, t, now); return; }
+      sk = skills.filter((s) => s.id !== 'basic' && !s.heal && !s.buff && p.skillOn(s.id) && p.mp >= s.mana && !(p.cds[s.id] > now))
+        .sort((a, b) => (b.mult * (b.aoe ? 1.3 : 1)) - (a.mult * (a.aoe ? 1.3 : 1)))[0] || null;
+    }
     if (!sk) sk = skills[0];
     const d = dist(p, t);
     const reach = sk.range + 8 * t.T.size;
@@ -784,7 +896,8 @@ class World {
   }
 
   broadcast(map, now) {
-    const P = [...map.players.values()].map((p) => [p.id, Math.round(p.x), Math.round(p.y), Math.round(p.hp), p.maxHp, p.dead ? 1 : 0, p.flip ? 1 : 0]);
+    const P = [...map.players.values()].map((p) => [p.id, Math.round(p.x), Math.round(p.y), Math.round(p.hp), p.maxHp, p.dead ? 1 : 0, p.flip ? 1 : 0,
+      (p.buffs.dmg && p.buffs.dmg.until > now ? 1 : 0) + (p.buffs.def && p.buffs.def.until > now ? 2 : 0)]);
     const M = map.monsters.map((m) => [m.id, Math.round(m.x), Math.round(m.y), Math.max(0, Math.round(m.hp)), m.dead ? 1 : 0, m.flip ? 1 : 0]);
     const ev = map.events; map.events = [];
     let boss = null;
@@ -816,11 +929,11 @@ class World {
       const map = p.dead ? 'lorencia' : (p.map ? p.map.id : 'lorencia');
       await db.query(`UPDATE characters SET level=$2, exp=$3, zen=$4, str=$5, agi=$6, vit=$7, ene=$8, cmd=$9, free_points=$10,
         map=$11, pos_x=$12, pos_y=$13, hp=$14, mp=$15, pot_hp=$16, pot_mp=$17, settings=$18, kills=$19, deaths=$20,
-        bosses_killed=$21, combat_power=$22, last_farm_map=$23, auto_on=$24, last_seen_at=now()
+        bosses_killed=$21, combat_power=$22, last_farm_map=$23, auto_on=$24, quests=$25, last_seen_at=now()
         WHERE id=$1 RETURNING id`,
       [p.charId, p.level, Math.round(p.exp), Math.round(p.zen), p.stats.str, p.stats.agi, p.stats.vit, p.stats.ene, p.stats.cmd, p.free,
         map, p.dead ? 0 : Math.round(p.x), p.dead ? 0 : Math.round(p.y), Math.max(1, Math.round(p.hp)), Math.round(p.mp),
-        p.pots.hp, p.pots.mp, JSON.stringify(p.settings), p.kills, p.deaths, p.bossesKilled, p.power, p.lastFarm, p.auto]);
+        p.pots.hp, p.pots.mp, JSON.stringify(p.settings), p.kills, p.deaths, p.bossesKilled, p.power, p.lastFarm, p.auto, JSON.stringify(p.quests || {})]);
       p.dirty = false; p.lastSave = Date.now();
     }
   }

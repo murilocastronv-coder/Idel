@@ -149,3 +149,40 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
   .menu button { padding: 7px 7px; font-size: 12px; min-width: 0; }
   #minimap { width: 96px; height: 64px; }
 }
+
+/* poderes, missões e modo */
+.act.skill.locked { opacity: .5; cursor: default; }
+.act.skill.locked .mana { color: var(--gold); }
+.act.skill.buff { box-shadow: inset 0 0 0 1px #ffb02e, 2px 2px 0 var(--edge); }
+.feed .quest { border-color: var(--gold); color: #ffe39a; }
+.mode-tag { display: inline-block; margin-top: 4px; font: 600 11px var(--display); color: #ffb0a0; background: rgba(90, 10, 10, .85); border: 2px solid var(--edge); padding: 1px 6px; }
+.mode-note { font-size: 14px; color: #ffb0a0; border-left: 3px solid var(--ember); padding-left: 8px; }
+.skills-list { padding-left: 18px; display: grid; gap: 4px; font-size: 15px; }
+.login-days { list-style: none; padding: 0; margin: 0 0 8px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.login-days li { background: var(--night); border: 2px solid var(--edge); padding: 4px; text-align: center; font-size: 11px; display: grid; gap: 2px; }
+.login-days li b { font: 600 12px var(--display); }
+.login-days li.got { opacity: .55; }
+.login-days li.now { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.qlist { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.qlist li { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; background: var(--night-2); border: 2px solid var(--edge); padding: 6px 8px; }
+.qlist li.claimed { opacity: .6; }
+.qlist b { font-size: 15px; display: block; }
+.qlist small { color: var(--bone-dim); display: block; font-size: 13px; }
+.qbar { position: relative; height: 12px; background: #0b1020; border: 2px solid var(--edge); margin-top: 4px; }
+.qbar span { position: absolute; inset: 0 auto 0 0; background: linear-gradient(#ffd36b, #c99a2e); }
+.qbar em { position: absolute; inset: -1px 0 0; font: 500 9px/12px var(--display); font-style: normal; text-align: center; color: #fff; text-shadow: 1px 1px 0 #000; }
+.q-done { font: 500 13px var(--display); color: #a8e08a; }
+@media (max-width: 420px) {
+  .actions { gap: 4px; }
+  .act.auto { min-width: 54px; }
+  .act.skill { width: 46px; font-size: 8px; }
+  .act.pot { min-width: 42px; }
+  .skills { gap: 4px; }
+  .login-days li small { font-size: 9px; }
+}
+
+.sk-short { display: none; }
+@media (max-width: 520px) {
+  .sk-full { display: none; }
+  .sk-short { display: block; font-size: 10px; }
+}

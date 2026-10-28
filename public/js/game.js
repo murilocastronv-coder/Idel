@@ -65,7 +65,8 @@
         feed(`Item: ${it.name}${it.plus ? ' +' + it.plus : ''} (${RAR_NAME[it.rarity]})`, 'drop', RAR[it.rarity]);
         return;
       }
-      case 'log': return feed(m.text, m.kind === 'warn' ? 'warn' : '');
+      case 'log': return feed(m.text, m.kind === 'warn' ? 'warn' : m.kind === 'quest' ? 'quest' : '');
+      case 'quests': S.quests = m; $('#quest-badge').hidden = !m.claimable; if (S.panel === 'quests') renderQuests(); return;
       case 'offline': return showOffline(m);
       case 'chat': return addChat(m, true);
       case 'chatlog': $('#chat-lines').innerHTML = ''; m.lines.forEach((l) => addChat(l, false)); return;
@@ -96,11 +97,11 @@
 
   function onSnap(m) {
     const now = performance.now();
-    for (const [id, x, y, hp, maxHp, dead, flip] of m.P) {
+    for (const [id, x, y, hp, maxHp, dead, flip, buff] of m.P) {
       let p = S.players.get(id);
       if (!p) { p = { info: null, rx: null }; S.players.set(id, p); }
       if (p.dead && !dead) p.dyingAt = 0;
-      Object.assign(p, { x, y, hp, maxHp, dead: !!dead, flip: !!flip });
+      Object.assign(p, { x, y, hp, maxHp, dead: !!dead, flip: !!flip, buff: buff || 0 });
       if (p.rx === null) { p.rx = x; p.ry = y; }
     }
     for (const [id, x, y, hp, dead, flip] of m.M) {
@@ -144,6 +145,12 @@
     } else if (ev.k === 'aoe') {
       S.fx.push({ kind: 'burst', x: ev.x, y: ev.y, r: ev.r, sprite: BURST[ev.fx] || 'burst_energy', t0: now, dur: 460 });
       const a = ent(ev.a); if (a) { a.attackStart = now; a.attackUntil = now + 340; }
+    } else if (ev.k === 'buff') {
+      const t = ent(ev.t);
+      if (t) {
+        S.fx.push({ kind: 'burst', x: t.rx, y: t.ry, r: 40, sprite: ev.b === 'dmg' ? 'burst_fire' : 'burst_energy', t0: now, dur: 460 });
+        S.floats.push({ at: t, text: ev.b === 'dmg' ? 'DANO +' : 'DEFESA +', color: ev.b === 'dmg' ? '#ffb02e' : '#7ad0ff', big: true, t0: now });
+      }
     } else if (ev.k === 'heal') {
       const t = ent(ev.t);
       if (t) { S.floats.push({ at: t, text: '+' + ev.d, color: '#9affd0', t0: now }); S.fx.push({ kind: 'heal', at: t, t0: now, dur: 600 }); }
@@ -457,6 +464,12 @@
         const info = e.info;
         const isMe = e === S.players.get(S.youId);
         shadowAt(x, y, 9 * zoom);
+        if (e.buff) {
+          const col = e.buff & 1 ? '255,140,40' : '90,180,255';
+          ctx.strokeStyle = `rgba(${col},${0.55 + 0.25 * Math.sin(now / 150)})`; ctx.lineWidth = 2 * dpr;
+          ctx.beginPath(); ctx.ellipse(x, y, 12 * zoom, 4 * zoom, 0, 0, Math.PI * 2); ctx.stroke();
+          if (e.buff === 3) { ctx.strokeStyle = 'rgba(90,180,255,.6)'; ctx.beginPath(); ctx.ellipse(x, y, 14 * zoom, 5 * zoom, 0, 0, Math.PI * 2); ctx.stroke(); }
+        }
         const rar = info.weaponRarity;
         if (rar && ['epic', 'legendary', 'ancestral'].includes(rar)) {
           ctx.globalAlpha = 0.35 + 0.15 * Math.sin(now / 200); ctx.fillStyle = RAR[rar];
@@ -590,7 +603,7 @@
     $('#auto-state').textContent = me.auto ? (S.map && S.map.safe ? 'na cidade' : 'lutando') : 'desligado';
     $('#pts-badge').hidden = !(me.free > 0);
     // recargas
-    $$('#skills .act.skill').forEach((b) => {
+    $$('#skills .act.skill[data-id]').forEach((b) => {
       const cd = me.cds[b.dataset.id] || 0, total = Number(b.dataset.cd) || 1;
       b.querySelector('.cd').style.height = `${Math.min(100, cd / total * 100)}%`;
     });
@@ -629,20 +642,47 @@
     if (S.panel) renderPanel(S.panel);
   }
 
+  // nome completo no computador, primeira palavra no celular
+  const skLabel = (n) => `<span class="sk-full">${esc(n)}</span><span class="sk-short">${esc(n.split(' ')[0])}</span>`;
   function renderSkills() {
     const box = $('#skills');
     box.innerHTML = '';
-    for (const sk of S.char.skills) {
-      if (sk.id === 'basic') continue;
+    for (const def of S.char.allSkills) {
+      const sk = S.char.skills.find((x) => x.id === def.id);
       const b = document.createElement('button');
-      b.type = 'button'; b.className = 'act skill' + (sk.on ? '' : ' off');
-      b.dataset.id = sk.id; b.dataset.cd = sk.cd;
-      b.setAttribute('aria-pressed', sk.on);
-      b.title = sk.on ? 'O modo automático usa esta habilidade. Toque para desligar.' : 'Desligada. Toque para o modo automático usar.';
-      b.innerHTML = `${esc(sk.name)}<span class="mana">${sk.mana} MP</span><span class="cd"></span>`;
-      b.onclick = () => send({ type: 'settings', settings: { skills: { [sk.id]: !sk.on } } });
+      b.type = 'button';
+      if (!sk) {
+        b.className = 'act skill locked'; b.disabled = true;
+        b.innerHTML = `${skLabel(def.name)}<span class="mana">Nv. ${def.lvl}</span>`;
+        b.title = `Libera no nível ${def.lvl}`;
+      } else {
+        b.className = 'act skill' + (sk.on ? '' : ' off') + (sk.buff ? ' buff' : '');
+        b.dataset.id = sk.id; b.dataset.cd = sk.cd;
+        b.setAttribute('aria-pressed', sk.on);
+        b.title = sk.on ? 'O AUTO usa este poder. Toque para desligar.' : 'Desligado. Toque para o AUTO usar.';
+        b.innerHTML = `${skLabel(sk.name)}<span class="mana">${sk.mana} MP</span><span class="cd"></span>`;
+        b.onclick = () => send({ type: 'settings', settings: { skills: { [sk.id]: !sk.on } } });
+      }
       box.appendChild(b);
     }
+  }
+
+  function renderQuests() {
+    const q = S.quests; const box = $('#quests-body');
+    if (!q) { box.innerHTML = '<p class="muted">Carregando…</p>'; return; }
+    const h = Math.floor(q.resetIn / 3600000), mi = Math.floor((q.resetIn % 3600000) / 60000);
+    const bar = (v, g) => `<div class="qbar"><span style="width:${Math.min(100, v / g * 100)}%"></span><em>${fmt.format(v)}/${fmt.format(g)}</em></div>`;
+    const btn = (kind, id, ready, claimed) => claimed ? '<span class="q-done">Recebido</span>'
+      : `<button class="btn small ${ready ? 'btn-gold' : ''}" type="button" data-claim="${kind}" data-id="${id}" ${ready ? '' : 'disabled'}>${ready ? 'Pegar prêmio' : 'Em andamento'}</button>`;
+    box.innerHTML = `
+      <h3 style="margin-top:0">Prêmio de login · dia ${q.login.streak}</h3>
+      <ol class="login-days">${q.login.rewards.map((r, i) => `<li class="${i < q.login.today || (i === q.login.today && q.login.claimed) ? 'got' : ''} ${i === q.login.today ? 'now' : ''}"><b>Dia ${i + 1}</b><small>${esc(r)}</small></li>`).join('')}</ol>
+      <div class="row" style="justify-content:flex-start">${btn('login', 'today', !q.login.claimed, q.login.claimed)}<small class="muted">Entre todo dia: se faltar um dia, a sequência recomeça.</small></div>
+      <h3>Missões diárias <small class="muted">renovam em ${h}h ${mi}min</small></h3>
+      <ul class="qlist">${q.daily.map((m) => `<li><div><b>${esc(m.text)}</b><small>Prêmio: ${esc(m.reward)}</small>${bar(m.prog, m.goal)}</div>${btn('daily', m.id, m.prog >= m.goal, m.claimed)}</li>`).join('')}</ul>
+      <h3>Conquistas</h3>
+      <ul class="qlist">${q.ach.map((a) => `<li class="${a.state === 'claimed' ? 'claimed' : ''}"><div><b>${esc(a.text)}</b><small>Prêmio: ${esc(a.reward)}</small>${a.state === 'open' ? bar(a.prog, a.goal) : ''}</div>${btn('ach', a.id, a.state === 'done', a.state === 'claimed')}</li>`).join('')}</ul>`;
+    $$('#quests-body [data-claim]').forEach((b) => { b.onclick = () => { b.disabled = true; send({ type: 'claim', kind: b.dataset.claim, id: b.dataset.id }); }; });
   }
 
   // ================= painéis =================
@@ -668,6 +708,7 @@
     else if (name === 'maps') renderMaps();
     else if (name === 'shop') renderShop();
     else if (name === 'config') renderConfig();
+    else if (name === 'quests') renderQuests();
   }
   $$('.menu [data-panel]').forEach((b) => { b.onclick = () => openPanel(b.dataset.panel); });
   $$('.panel [data-close]').forEach((b) => { b.onclick = closePanel; });
@@ -768,8 +809,9 @@
         <div><span>Poder de combate</span><br>${fmt.format(c.power)}</div><div><span>Monstros derrotados</span><br>${fmt.format(c.kills)}</div>
       </div>
       ${c.fullSet ? '<p style="color:#a8e08a">Bônus de conjunto completo ativo: +10% defesa, +5% dano.</p>' : ''}
-      <h3>Habilidades</h3>
-      <ul class="skills-list">${c.allSkills.map((s) => `<li>${esc(s.name)} <small class="muted">${c.level >= s.lvl ? 'liberada' : `nível ${s.lvl}`}</small></li>`).join('')}</ul>`;
+      <h3>Poderes</h3>
+      <ul class="skills-list">${c.allSkills.map((s) => `<li><b>${esc(s.name)}</b> <small class="muted">${c.level >= s.lvl ? 'liberado' : `libera no nível ${s.lvl}`} · ${s.mana} MP · ${(s.cd / 1000).toFixed(0)}s</small><br><small>${esc(s.desc)}</small></li>`).join('')}</ul>
+      <p class="mode-note">Servidor <b>${esc(c.mode)}</b>: subir de nível é difícil e morrer custa ${Math.round(c.deathLoss * 100)}% da EXP do nível.</p>`;
     $$('#hero-body [data-stat]').forEach((b) => { b.onclick = () => send({ type: 'stat', stat: b.dataset.stat, n: Number(b.dataset.n) }); });
     $('#auto-stats').onchange = (e) => send({ type: 'settings', settings: { autoStats: e.target.checked } });
     void me;
