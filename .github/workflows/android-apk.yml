@@ -1,0 +1,51 @@
+# Gera o APK do app Android a cada mudança em android-app/ (ou manualmente em Actions → Run workflow).
+# O APK pronto fica em public/download/mu-idle-legends.apk (baixável em muonlineclaude.com/download)
+# e também como artefato da execução.
+name: App Android (APK)
+
+on:
+  push:
+    branches: [main]
+    paths: ['android-app/**', '.github/workflows/android-apk.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Compilar APK
+        run: gradle -p android-app assembleRelease --no-daemon --stacktrace
+
+      - name: Copiar APK para o site
+        run: |
+          mkdir -p public/download
+          cp android-app/app/build/outputs/apk/release/app-release.apk public/download/mu-idle-legends.apk
+          ls -la public/download
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mu-idle-legends-apk
+          path: public/download/mu-idle-legends.apk
+
+      - name: Salvar APK no repositório
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/download/mu-idle-legends.apk
+          git commit -m "APK do app Android (gerado automaticamente)" || exit 0
+          git pull --rebase origin main
+          git push origin HEAD:main

@@ -1,0 +1,46 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.muidlelegends.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.muidlelegends.app'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+        // endereço do jogo (o mesmo servidor do navegador)
+        buildConfigField 'String', 'START_URL', '"https://muonlineclaude.com/app"'
+        buildConfigField 'String', 'GAME_HOST', '"muonlineclaude.com"'
+    }
+
+    signingConfigs {
+        release {
+            // chave própria do app (mantenha o arquivo para poder atualizar o app depois)
+            storeFile file('../keystore/mu-idle-legends.jks')
+            storePassword System.getenv('MUI_STORE_PASSWORD') ?: 'muidle2026'
+            keyAlias 'muidle'
+            keyPassword System.getenv('MUI_KEY_PASSWORD') ?: 'muidle2026'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.release
+        }
+    }
+
+    buildFeatures { buildConfig true }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

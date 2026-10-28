@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MU Idle Legends</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b1020; color: #f0e6cc; font: 17px/1.5 system-ui, sans-serif; }
+  main { min-height: 100%; display: grid; place-items: center; text-align: center; padding: 24px; box-sizing: border-box; }
+  h1 { font: 700 40px/1 monospace; color: #e8b84a; margin: 0 0 8px; text-shadow: 3px 3px 0 #05070f; }
+  p { color: #b9ae95; max-width: 30ch; margin: 8px auto 22px; }
+  button { font: 700 20px monospace; background: #e8b84a; color: #1a1206; border: 3px solid #0b1020; box-shadow: 3px 3px 0 #05070f; padding: 14px 26px; }
+  .px { width: 64px; height: 64px; margin: 0 auto 18px; image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <h1>MU Idle<br>Legends</h1>
+    <p id="msg">Sem conexão com o servidor. Verifique sua internet e tente de novo.</p>
+    <button id="retry" type="button">Tentar de novo</button>
+  </div>
+</main>
+<script>
+  if (!/^pt/i.test(navigator.language || '')) {
+    document.getElementById('msg').textContent = 'No connection to the server. Check your internet and try again.';
+    document.getElementById('retry').textContent = 'Try again';
+  }
+  document.getElementById('retry').onclick = function () {
+    if (window.MUIdleApp && MUIdleApp.retry) MUIdleApp.retry(); else location.href = 'https://muonlineclaude.com/app';
+  };
+  // tenta sozinho quando a internet voltar
+  window.addEventListener('online', function () { document.getElementById('retry').click(); });
+</script>
+</body>
+</html>

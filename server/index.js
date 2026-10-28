@@ -489,7 +489,7 @@ route('DELETE', '/api/characters/:id', async (req, url, res, params) => {
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
-  '.webmanifest': 'application/manifest+json', '.woff': 'font/woff', '.woff2': 'font/woff2', '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.txt': 'text/plain; charset=utf-8',
+  '.webmanifest': 'application/manifest+json', '.apk': 'application/vnd.android.package-archive', '.woff': 'font/woff', '.woff2': 'font/woff2', '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.txt': 'text/plain; charset=utf-8',
 };
 function serveStatic(req, res, pathname) {
   let rel;
@@ -497,6 +497,7 @@ function serveStatic(req, res, pathname) {
   if (rel === '/' || rel === '') rel = '/index.html';
   if (rel === '/status' || rel === '/status/') rel = '/status.html';
   if (rel === '/app' || rel === '/app/') rel = '/app.html';
+  if (rel === '/download' || rel === '/download/' || rel === '/apk') rel = '/download/mu-idle-legends.apk';
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
   if (!file.startsWith(PUBLIC_DIR + path.sep)) { res.writeHead(403); return res.end(); }
   fs.stat(file, (err, st) => {
@@ -509,6 +510,7 @@ function serveStatic(req, res, pathname) {
     const etag = `"${st.size.toString(36)}-${Math.floor(st.mtimeMs).toString(36)}"`;
     if (req.headers['if-none-match'] === etag) { res.writeHead(304, { ETag: etag, 'Cache-Control': 'no-cache' }); return res.end(); }
     const type = MIME[ext] || 'application/octet-stream';
+    if (ext === '.apk') res.setHeader('Content-Disposition', 'attachment; filename="MU-Idle-Legends.apk"');
     // pedaços do arquivo (Range): necessário para vídeo no iPhone e no app Android
     const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
     if (range && st.size > 0) {
