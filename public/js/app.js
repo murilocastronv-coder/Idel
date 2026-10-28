@@ -585,8 +585,9 @@
     const tb = $('#rank-body');
     try {
       const { ranking } = await api('GET', `/api/ranking?by=${by}`);
+      const lastCol = $('#rank-last'); if (lastCol) lastCol.textContent = { pvp: 'PvP', bosses: 'Bosses', power: 'Poder' }[by] || 'Resets';
       tb.innerHTML = ranking.length ? ranking.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)}</td>
-        <td>${esc((state.data && state.data.classes[r.class] || {}).name || r.class)}</td><td>${r.level}</td><td>${r.resets}</td></tr>`).join('')
+        <td>${esc((state.data && state.data.classes[r.class] || {}).name || r.class)}</td><td>${r.level}</td><td>${by === 'pvp' ? `${r.pvp_kills} · ${r.duel_wins} duelos` : by === 'bosses' ? r.bosses_killed : by === 'power' ? r.combat_power : r.resets}</td></tr>`).join('')
         : '<tr><td colspan="5" class="empty">Nenhum herói ainda. Crie o seu e seja o primeiro do ranking.</td></tr>';
     } catch (e) { tb.innerHTML = `<tr><td colspan="5" class="empty">${esc(e.message)}</td></tr>`; }
   }

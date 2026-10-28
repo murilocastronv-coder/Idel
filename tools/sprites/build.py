@@ -70,7 +70,9 @@ def main():
     mons = {
         'slime': (monsters.slime, 48, 40, (22, 37), False, 1.0),
         'goblin': (lambda a, i: monsters.goblin(a, i), 96, 96, (40, 90), True, 1.0),
-        'goblin_elite': (lambda a, i: monsters.goblin(a, i, elite=True), 96, 96, (40, 90), True, 1.35),
+        'goblin_elite': (monsters.goblin_chief, 96, 96, (40, 90), True, 1.25),
+        'ice_golem': (monsters.ice_golem, 96, 96, (42, 90), True, 1.25),
+        'lava_hound': (monsters.lava_hound, 80, 56, (34, 52), False, 1.0),
         'spider': (monsters.spider, 64, 48, (30, 44), False, 1.0),
         'skeleton': (lambda a, i: monsters.skeleton(a, i), 96, 96, (40, 90), True, 1.0),
         'skeleton_king': (lambda a, i: monsters.skeleton(a, i, king=True), 96, 96, (42, 90), True, 1.5),

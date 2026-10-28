@@ -372,7 +372,81 @@
      "fps": 6
     }
    },
-   "scale": 1.35
+   "scale": 1.25
+  },
+  "ice_golem": {
+   "sheet": "monsters/ice_golem.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    42,
+    90
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "scale": 1.25
+  },
+  "lava_hound": {
+   "sheet": "monsters/lava_hound.png",
+   "fw": 80,
+   "fh": 56,
+   "pivot": [
+    34,
+    52
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 4
+    },
+    "walk": {
+     "row": 1,
+     "frames": 4,
+     "fps": 8
+    },
+    "attack": {
+     "row": 2,
+     "frames": 4,
+     "fps": 12
+    },
+    "hit": {
+     "row": 3,
+     "frames": 1,
+     "fps": 1
+    },
+    "death": {
+     "row": 4,
+     "frames": 4,
+     "fps": 6
+    }
+   },
+   "scale": 1.0
   },
   "spider": {
    "sheet": "monsters/spider.png",

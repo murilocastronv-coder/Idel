@@ -70,7 +70,7 @@ const MAPS = [
   { id: 'barracks', name: 'Barracks', type: 'Quartel de guerra', level: 350 },
   { id: 'refuge', name: 'Refuge', type: 'Santuário sombrio', level: 380 },
   { id: 'swamp_of_peace', name: 'Swamp of Peace', type: 'Pântano', level: 410 },
-  { id: 'vulcanus', name: 'Vulcanus', type: 'Zona de PvP', level: 440, pvp: true },
+  { id: 'vulcanus', name: 'Vulcanus', type: 'Zona PvP · Cão de Lava', level: 10, pvp: true, playable: true },
   { id: 'raklion', name: 'Raklion', type: 'Deserto de pedra', level: 480 },
   { id: 'crywolf_fortress', name: 'Crywolf Fortress', type: 'Fortaleza de guerra', level: 520 },
   { id: 'land_of_trials', name: 'Land of Trials', type: 'Área de desafios', level: 560 },
@@ -114,6 +114,8 @@ const MONSTERS = {
   spider: { name: 'Aranha Sombria', sprite: 'spider', level: 10, hp: 280, dmg: 17, def: 6, exp: 100, zen: [30, 80], speed: 55, range: 20, atkMs: 1300, aggro: 90, drop: 0.12, size: 1 },
   goblin_elite: { name: 'Chefe Goblin', sprite: 'goblin', tint: 'elite', level: 14, hp: 900, dmg: 30, def: 12, exp: 380, zen: [120, 260], speed: 45, range: 24, atkMs: 1500, aggro: 110, drop: 0.35, size: 1.5, elite: true },
   skeleton: { name: 'Esqueleto Guerreiro', sprite: 'skeleton', level: 25, hp: 760, dmg: 40, def: 16, exp: 330, zen: [80, 200], speed: 50, range: 22, atkMs: 1400, aggro: 100, drop: 0.14, size: 1 },
+  ice_golem: { name: 'Golem de Gelo', sprite: 'ice_golem', level: 16, hp: 1500, dmg: 34, def: 18, exp: 520, zen: [150, 320], speed: 30, range: 28, atkMs: 1900, aggro: 90, drop: 0.3, size: 1, elite: true },
+  lava_hound: { name: 'Cão de Lava', sprite: 'lava_hound', level: 18, hp: 640, dmg: 30, def: 10, exp: 250, zen: [60, 160], speed: 64, range: 22, atkMs: 1100, aggro: 120, drop: 0.14, size: 1 },
   skeleton_king: { name: 'Rei Esqueleto', sprite: 'skeleton_king', level: 35, hp: 22000, dmg: 95, def: 30, exp: 26000, zen: [5000, 10000], speed: 38, range: 34, atkMs: 1800, aggro: 170, drop: 1, size: 2.2, boss: true, respawnMs: 10 * 60 * 1000 },
 };
 
@@ -122,11 +124,13 @@ const WORLD = {
   lorencia: { name: 'Lorencia', theme: 'town', w: 800, h: 560, safe: true, minLevel: 1, spawn: [400, 300],
     npcs: [{ id: 'shop', name: 'Mercadora Pasi', x: 470, y: 250 }], groups: [] },
   noria: { name: 'Noria', theme: 'noria', w: 1200, h: 800, minLevel: 1, spawn: [120, 400],
-    groups: [{ type: 'slime', count: 14 }, { type: 'goblin', count: 7 }] },
+    groups: [{ type: 'slime', count: 14 }, { type: 'goblin', count: 7 }, { type: 'goblin_elite', count: 1 }] },
   devias: { name: 'Devias', theme: 'snow', w: 1200, h: 800, minLevel: 10, spawn: [120, 400],
-    groups: [{ type: 'spider', count: 12 }, { type: 'goblin_elite', count: 2 }] },
+    groups: [{ type: 'spider', count: 12 }, { type: 'ice_golem', count: 3 }] },
   dungeon: { name: 'Dungeon', theme: 'dungeon', w: 1200, h: 800, minLevel: 25, spawn: [120, 400],
     groups: [{ type: 'skeleton', count: 14 }], boss: { type: 'skeleton_king', x: 950, y: 400 } },
+  vulcanus: { name: 'Vulcanus', theme: 'lava', w: 1200, h: 800, minLevel: 10, pvp: true, spawn: [600, 420],
+    groups: [{ type: 'lava_hound', count: 10 }] },
 };
 
 // Habilidades: ataque básico + 4 poderes por classe (níveis 1, 5, 15 e 30).

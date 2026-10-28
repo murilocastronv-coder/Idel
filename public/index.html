@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=9">
+  <link rel="stylesheet" href="/css/style.css?v=10">
 </head>
 <body>
   <a class="skip" href="#conteudo">Pular para o conteúdo</a>
@@ -114,10 +114,11 @@
           <button type="button" role="tab" class="tab" data-by="level" aria-selected="false">Nível</button>
           <button type="button" role="tab" class="tab" data-by="power" aria-selected="false">Poder</button>
           <button type="button" role="tab" class="tab" data-by="bosses" aria-selected="false">Bosses</button>
+          <button type="button" role="tab" class="tab" data-by="pvp" aria-selected="false">PvP</button>
         </div>
         <div class="window rank-box">
           <table class="rank">
-            <thead><tr><th scope="col">#</th><th scope="col">Herói</th><th scope="col">Classe</th><th scope="col">Nv.</th><th scope="col">Resets</th></tr></thead>
+            <thead><tr><th scope="col">#</th><th scope="col">Herói</th><th scope="col">Classe</th><th scope="col">Nv.</th><th scope="col" id="rank-last">Resets</th></tr></thead>
             <tbody id="rank-body"><tr><td colspan="5" class="muted">Carregando…</td></tr></tbody>
           </table>
         </div>
@@ -269,8 +270,8 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="/js/pixel.js?v=9"></script>
-  <script src="/js/sprites.js?v=9"></script>
-  <script src="/js/app.js?v=9"></script>
+  <script src="/js/pixel.js?v=10"></script>
+  <script src="/js/sprites.js?v=10"></script>
+  <script src="/js/app.js?v=10"></script>
 </body>
 </html>

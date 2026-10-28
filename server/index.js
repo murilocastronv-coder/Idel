@@ -165,7 +165,7 @@ route('GET', '/api/stats', async () => liveStats());
 
 route('GET', '/api/gamedata', async () => ({
   classes: game.CLASSES, maps: game.MAPS, rarities: game.RARITIES, items: game.ITEMS, limits: game.LIMITS,
-  world: Object.entries(game.WORLD).map(([id, w]) => ({ id, name: w.name, theme: w.theme, minLevel: w.minLevel, safe: !!w.safe,
+  world: Object.entries(game.WORLD).map(([id, w]) => ({ id, name: w.name, theme: w.theme, minLevel: w.minLevel, safe: !!w.safe, pvp: !!w.pvp,
     monsters: [...w.groups.map((g) => game.MONSTERS[g.type].name), ...(w.boss ? [game.MONSTERS[w.boss.type].name + ' (boss)'] : [])] })),
   shop: game.SHOP, sets: game.SETS,
 }));
@@ -181,9 +181,10 @@ route('GET', '/api/ranking', async (req, url) => {
     resets: 'resets DESC, level DESC, exp DESC',
     power: 'combat_power DESC, level DESC',
     bosses: 'bosses_killed DESC, level DESC',
+    pvp: 'pvp_kills DESC, duel_wins DESC, level DESC',
   };
   const by = orders[url.searchParams.get('by')] ? url.searchParams.get('by') : 'resets';
-  const { rows } = await db.query(`SELECT name, class, level, resets, combat_power, bosses_killed
+  const { rows } = await db.query(`SELECT name, class, level, resets, combat_power, bosses_killed, pvp_kills, duel_wins
     FROM characters ORDER BY ${orders[by]}, id ASC LIMIT 50`);
   return { by, ranking: rows };
 });

@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="/css/style.css?v=9">
-  <link rel="stylesheet" href="/css/game.css?v=9">
+  <link rel="stylesheet" href="/css/style.css?v=10">
+  <link rel="stylesheet" href="/css/game.css?v=11">
 </head>
 <body class="game">
   <canvas id="world" aria-label="Mapa do jogo"></canvas>
@@ -37,6 +37,11 @@
   </div>
 
   <div class="feed" id="feed" aria-live="polite"></div>
+  <div class="map-banner" id="map-banner" aria-live="polite"></div>
+  <div class="alert-banner" id="alert-banner" aria-live="assertive"></div>
+  <div class="duel-bar" id="duel-bar" hidden></div>
+  <div class="pcard window" id="pcard" hidden></div>
+  <div class="duel-invite window" id="duel-invite" hidden role="alertdialog"></div>
   <div class="center-msg" id="center-msg" hidden></div>
 
   <!-- Barra inferior -->
@@ -112,8 +117,9 @@
     <div class="row"><button class="btn btn-gold" type="button" data-close>Continuar</button></div>
   </dialog>
 
-  <script src="/js/pixel.js?v=9"></script>
-  <script src="/js/sprites.js?v=9"></script>
-  <script src="/js/game.js?v=9"></script>
+  <script src="/js/pixel.js?v=10"></script>
+  <script src="/js/sprites.js?v=10"></script>
+  <script src="/js/sfx.js?v=10"></script>
+  <script src="/js/game.js?v=11"></script>
 </body>
 </html>

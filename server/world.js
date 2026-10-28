@@ -12,6 +12,9 @@ const OFFLINE_CAP_S = 8 * 3600;    // limite de progresso offline
 const RESPAWN_MS = 4000;
 const MONSTER_RESPAWN_MS = 9000;
 const POTION_CD_MS = 1200;
+const PVP_SCALE = 0.7;          // dano entre jogadores é reduzido para lutas durarem mais
+const DUEL_MS = 3 * 60 * 1000;
+const PK_MS = 10 * 60 * 1000;
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancestral'];
 const DEFAULT_SETTINGS = { potHp: 0.5, potMp: 0.3, autoStats: true, returnToFarm: true, lootMin: 'common', skills: {} };
 
@@ -101,6 +104,9 @@ class Player {
     this.items = items;
     this.quests = row.quests || {};
     this.buffs = {};
+    this.isPlayer = true;
+    this.pvp = { kills: row.pvp_kills || 0, deaths: row.pvp_deaths || 0, duelW: row.duel_wins || 0, duelL: row.duel_losses || 0, pk: row.pk_count || 0 };
+    this.pkUntil = 0; this.duel = null; this.duelInvite = null;
     this.onlineAcc = 0;
     this.questsDirty = false;
     this.map = null;
@@ -169,7 +175,7 @@ class Player {
       crit: this.crit, power: this.power, fullSet: this.fullSet, kills: this.kills, deaths: this.deaths,
       items: this.items.map(publicItem), invMax: G.INVENTORY_SIZE,
       skills: this.skills().map((s) => ({ id: s.id, name: s.name, mana: s.mana, cd: s.cd, fx: s.fx, buff: s.buff || null, heal: !!s.heal, aoe: !!s.aoe, on: this.skillOn(s.id) })),
-      mode: G.GAME_MODE.name, deathLoss: G.GAME_MODE.deathExpLoss,
+      mode: G.GAME_MODE.name, deathLoss: G.GAME_MODE.deathExpLoss, pvp: this.pvp,
       allSkills: G.SKILLS[this.cls].filter((s) => s.id !== 'basic').map((s) => ({ id: s.id, name: s.name, lvl: s.lvl || 1, mana: s.mana, cd: s.cd, desc: skillDesc(s) })),
     };
   }
@@ -274,6 +280,7 @@ class World {
   async leave(p) {
     if (!this.players.has(p.charId) || this.players.get(p.charId) !== p) return;
     this.players.delete(p.charId);
+    if (p.duel) this.endDuel(null, null, 'draw', p);
     if (p.map) {
       p.map.players.delete(p.id);
       for (const o of p.map.players.values()) o.send({ type: 'pl', id: p.id });
@@ -331,7 +338,14 @@ class World {
         return;
       }
       case 'target': {
-        if (p.dead || p.map.def.safe) return;
+        if (p.dead) return;
+        if (String(msg.id).startsWith('p')) {
+          const o = p.map.players.get(String(msg.id));
+          if (o && this.hostile(p, o)) { p.target = o; p.moveTo = null; }
+          else p.send({ type: 'log', kind: 'warn', text: 'Você só pode atacar jogadores em Vulcanus (zona PvP) ou num duelo.' });
+          return;
+        }
+        if (p.map.def.safe) return;
         const m = p.map.monsters.find((mo) => mo.id === msg.id && !mo.dead);
         if (m) { p.target = m; p.moveTo = null; }
         return;
@@ -348,6 +362,9 @@ class World {
       case 'autoequip': return p.run(() => this.autoEquip(p));
       case 'chat': return this.chatMsg(p, msg.text);
       case 'claim': return p.run(() => this.claim(p, String(msg.kind), String(msg.id || '')));
+      case 'duel': return this.duelRequest(p, String(msg.id));
+      case 'duelAnswer': return this.duelAnswer(p, String(msg.id), !!msg.accept);
+      case 'duelQuit': if (p.duel) this.endDuel(p.duel.with, p, 'quit'); return undefined;
       case 'leave': return this.leave(p).then(() => client.send({ type: 'left' }));
       default: return undefined;
     }
@@ -369,6 +386,7 @@ class World {
     if (typeof s.potMp === 'number') out.potMp = clamp(Math.round(s.potMp * 100) / 100, 0, 0.9);
     if (typeof s.autoStats === 'boolean') out.autoStats = s.autoStats;
     if (typeof s.returnToFarm === 'boolean') out.returnToFarm = s.returnToFarm;
+    if (typeof s.pvpAuto === 'boolean') out.pvpAuto = s.pvpAuto;
     if (RARITY_ORDER.includes(s.lootMin)) out.lootMin = s.lootMin;
     if (s.skills && typeof s.skills === 'object') {
       for (const sk of G.SKILLS[p.cls]) if (typeof s.skills[sk.id] === 'boolean' && sk.id !== 'basic') out.skills[sk.id] = s.skills[sk.id];
@@ -556,7 +574,7 @@ class World {
     this.quest(p, 'loot', 1);
     if (['legendary', 'ancestral'].includes(it.rarity)) { p.quests.life = p.quests.life || {}; p.quests.life.legendary = (p.quests.life.legendary || 0) + 1; this.achieve(p); }
     if (!silent) {
-      p.send({ type: 'drop', item: publicItem(rows[0]) });
+      p.send({ type: 'drop', item: publicItem(rows[0]), x: it.pos ? it.pos[0] : null, y: it.pos ? it.pos[1] : null });
       p.send(p.charState());
     }
     return rows[0];
@@ -573,6 +591,90 @@ class World {
       for (const o of p.map.players.values()) o.send({ type: 'pj', ...this.pinfo(p) });
       p.send(p.charState());
       if (p.level % 10 === 0) this.system(`${p.name} alcançou o nível ${p.level}!`);
+    }
+  }
+
+  // ---------- PvP ----------
+  hostile(a, b) {
+    if (!b || !b.isPlayer || a === b || a.dead || b.dead || !a.map || a.map !== b.map) return false;
+    if (a.duel && a.duel.with === b) return true;
+    return !!a.map.def.pvp && !a.map.def.safe;
+  }
+
+  damagePlayer(a, v, mult, crit, now) {
+    const bd = a.buffs.dmg && a.buffs.dmg.until > now ? a.buffs.dmg.mult : 1;
+    const db = v.buffs.def && v.buffs.def.until > now ? v.buffs.def.mult : 1;
+    const raw = rand(a.dmgMin, a.dmgMax) * mult * bd * (crit ? 1.5 : 1);
+    const d = Math.max(1, Math.round((raw - v.def * db / 2) * PVP_SCALE));
+    v.hp -= d;
+    v.pvpHitAt = now;
+    v.flip = a.x < v.x;
+    // revida automaticamente quem está atacando
+    if (v.auto && (!v.target || !v.target.isPlayer)) v.target = a;
+    if (v.hp <= 0) this.pvpDefeat(a, v, now);
+    return d;
+  }
+
+  pvpDefeat(k, v, now) {
+    if (k.duel && k.duel.with === v) {
+      v.hp = Math.max(1, Math.round(v.maxHp * 0.3));
+      this.endDuel(k, v, 'win');
+      return;
+    }
+    const map = k.map;
+    k.pvp.kills++; v.pvp.deaths++;
+    if (v.pkUntil > now) {
+      k.zen += 3000;
+      k.send({ type: 'log', kind: 'quest', text: `Você derrotou o PK ${v.name}: +3.000 Zen de recompensa.` });
+    } else if (k.level - v.level >= 20) {
+      k.pkUntil = now + PK_MS; k.pvp.pk++;
+      this.system(`${k.name} atacou um herói muito mais fraco e virou PK por 10 minutos! Derrotá-lo dá recompensa.`);
+    }
+    for (const o of map.players.values()) o.send({ type: 'log', kind: 'pvp', text: `${k.name} derrotou ${v.name} em ${map.def.name}.` });
+    this.killPlayer(v, now, { T: { name: k.name } });
+    if (k.target === v) k.target = null;
+    k.dirty = true; v.dirty = true;
+  }
+
+  duelRequest(p, id) {
+    const now = Date.now();
+    if (p.lastDuelReq && now - p.lastDuelReq < 5000) return p.send({ type: 'log', kind: 'warn', text: 'Espere alguns segundos para convidar de novo.' });
+    const o = this.players.get(id.replace(/^p/, ''));
+    if (!o || o === p || o.map !== p.map) return p.send({ type: 'log', kind: 'warn', text: 'O jogador precisa estar no mesmo mapa.' });
+    if (p.duel || o.duel) return p.send({ type: 'log', kind: 'warn', text: 'Um de vocês já está em duelo.' });
+    if (p.dead || o.dead) return;
+    p.lastDuelReq = now;
+    o.duelInvite = { from: p, until: now + 15000 };
+    o.send({ type: 'duelInvite', id: p.id, name: p.name, level: p.level, cls: p.cls });
+    p.send({ type: 'log', kind: 'info', text: `Convite de duelo enviado para ${o.name}.` });
+  }
+
+  duelAnswer(o, fromId, accept) {
+    const inv = o.duelInvite;
+    o.duelInvite = null;
+    if (!inv || inv.from.id !== fromId || Date.now() > inv.until) return o.send({ type: 'log', kind: 'warn', text: 'O convite expirou.' });
+    const p = inv.from;
+    if (!this.players.has(p.charId) || p.map !== o.map || p.duel || o.duel) return o.send({ type: 'log', kind: 'warn', text: 'Não foi possível começar o duelo.' });
+    if (!accept) return p.send({ type: 'log', kind: 'warn', text: `${o.name} recusou o duelo.` });
+    const until = Date.now() + DUEL_MS;
+    p.duel = { with: o, until }; o.duel = { with: p, until };
+    for (const x of [p, o]) { x.hp = x.maxHp; x.mp = x.maxMp; x.target = null; x.moveTo = null; }
+    p.send({ type: 'duel', with: o.id, name: o.name, until: DUEL_MS });
+    o.send({ type: 'duel', with: p.id, name: p.name, until: DUEL_MS });
+    for (const x of p.map.players.values()) x.send({ type: 'log', kind: 'pvp', text: `Duelo: ${p.name} contra ${o.name}!` });
+  }
+
+  endDuel(winner, loser, reason, leaver) {
+    const a = winner || (leaver && leaver.duel && leaver.duel.with) || null;
+    const b = loser || leaver || (a && a.duel && a.duel.with) || null;
+    for (const x of [a, b]) if (x) { x.duel = null; if (x.target && x.target.isPlayer) x.target = null; }
+    if (reason === 'win' || reason === 'quit') {
+      winner.pvp.duelW++; loser.pvp.duelL++;
+      winner.dirty = true; loser.dirty = true;
+      this.system(`${winner.name} venceu o duelo contra ${loser.name}${reason === 'quit' ? ' (desistência)' : ''}!`);
+      winner.send({ type: 'duelEnd', result: 'win' }); loser.send({ type: 'duelEnd', result: 'loss' });
+    } else {
+      for (const x of [a, b]) if (x) x.send({ type: 'duelEnd', result: 'draw' });
     }
   }
 
@@ -644,7 +746,7 @@ class World {
     p.pots[kind]--;
     p.nextPot = now + POTION_CD_MS;
     this.quest(p, 'potion', 1);
-    if (kind === 'hp') { const v = Math.round(p.maxHp * 0.35); p.hp = Math.min(p.maxHp, p.hp + v); p.map.emit({ k: 'heal', t: p.id, d: v }); }
+    if (kind === 'hp') { const v = Math.round(p.maxHp * (now - (p.pvpHitAt || 0) < 5000 ? 0.15 : 0.35)); p.hp = Math.min(p.maxHp, p.hp + v); p.map.emit({ k: 'heal', t: p.id, d: v }); }
     else p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * 0.5));
     p.dirty = true;
   }
@@ -664,7 +766,8 @@ class World {
   attack(p, sk, target, now) {
     const map = p.map;
     if (sk.heal) {
-      const v = Math.round(p.maxHp * sk.heal);
+      const inPvp = !!p.duel || !!(target && target.isPlayer);
+      const v = Math.round(p.maxHp * sk.heal * (inPvp ? 0.5 : 1));
       p.hp = Math.min(p.maxHp, p.hp + v);
       p.mp -= sk.mana; p.cds[sk.id] = now + sk.cd;
       map.emit({ k: 'heal', t: p.id, d: v, fx: 'heal' });
@@ -686,8 +789,13 @@ class World {
     if (sk.aoe) {
       const cx = sk.self ? p.x : target.x, cy = sk.self ? p.y : target.y;
       const hits = map.monsters.filter((m) => !m.dead && Math.hypot(m.x - cx, m.y - cy) <= sk.aoe).slice(0, 8);
+      const foes = [...map.players.values()].filter((o) => this.hostile(p, o) && Math.hypot(o.x - cx, o.y - cy) <= sk.aoe).slice(0, 4);
       map.emit({ k: 'aoe', a: p.id, x: Math.round(cx), y: Math.round(cy), r: sk.aoe, fx: sk.fx });
       for (const m of hits) { const d = this.damageMonster(p, m, sk.mult, crit, now); map.emit({ k: 'h', a: p.id, t: m.id, d, c: crit ? 1 : 0, fx: sk.fx, aoe: 1 }); }
+      for (const o of foes) { if (o.dead) continue; const d = this.damagePlayer(p, o, sk.mult, crit, now); map.emit({ k: 'h', a: p.id, t: o.id, d, c: crit ? 1 : 0, fx: sk.fx, aoe: 1 }); }
+    } else if (target.isPlayer) {
+      const d = this.damagePlayer(p, target, sk.mult, crit, now);
+      map.emit({ k: 'h', a: p.id, t: target.id, d, c: crit ? 1 : 0, fx: sk.fx });
     } else {
       const d = this.damageMonster(p, target, sk.mult, crit, now);
       map.emit({ k: 'h', a: p.id, t: target.id, d, c: crit ? 1 : 0, fx: sk.fx });
@@ -712,6 +820,7 @@ class World {
     p.dirty = true;
     if (Math.random() < m.T.drop) {
       const it = rollItem(m.T.level, 'normal');
+      it.pos = [Math.round(m.x), Math.round(m.y)];
       p.run(() => this.addItem(p, it));
     }
     m.contrib.clear();
@@ -731,7 +840,7 @@ class World {
       p.send({ type: 'reward', exp, zen, mon: m.T.name, share: Math.round(share * 100) });
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
       const rolls = i === 0 ? 2 : (share >= 0.1 && Math.random() < 0.5 ? 1 : 0);
-      for (let r = 0; r < rolls; r++) { const it = rollItem(m.T.level, 'boss'); p.run(() => this.addItem(p, it)); }
+      for (let r = 0; r < rolls; r++) { const it = rollItem(m.T.level, 'boss'); it.pos = [Math.round(m.x + rand(-20, 20)), Math.round(m.y + rand(-10, 10))]; p.run(() => this.addItem(p, it)); }
       p.dirty = true;
       p.lastSave = 0; // salva no próximo ciclo
     });
@@ -754,7 +863,8 @@ class World {
     p.target = null; p.moveTo = null;
     p.map.emit({ k: 'pdie', t: p.id });
     // Hard XP: morrer custa uma parte da EXP do nível atual
-    const loss = Math.min(p.exp, Math.floor(expToNext(p.level) * G.GAME_MODE.deathExpLoss));
+    const pkMul = p.pkUntil > now ? 3 : 1; // PK perde o triplo
+    const loss = Math.min(p.exp, Math.floor(expToNext(p.level) * G.GAME_MODE.deathExpLoss * pkMul));
     p.exp -= loss;
     p.buffs = {};
     p.send({ type: 'log', kind: 'warn', text: `Você foi derrotado por ${by.T.name}${loss ? ` e perdeu ${loss.toLocaleString('pt-BR')} de EXP` : ''}. Voltando para Lorencia…` });
@@ -780,7 +890,8 @@ class World {
 
   respawnMonster(map, m) {
     m.dead = false; m.hp = m.T.hp; m.x = m.hx; m.y = m.hy; m.target = null; m.contrib.clear();
-    map.emit({ k: 'spawn', t: m.id });
+    m.enraged = false; m.slam = null; m.nextSpecial = Date.now() + 5000;
+    map.emit({ k: 'spawn', t: m.id, boss: m.T.boss ? 1 : 0 });
     if (m.T.boss) this.system(`O ${m.T.name} despertou em ${map.def.name}!`);
   }
 
@@ -793,7 +904,31 @@ class World {
       for (const p of map.players.values()) { if (p.dead) continue; const d = dist(m, p); if (d < bd) { bd = d; best = p; } }
       if (best) t = m.target = best;
     }
-    const step = m.T.speed * dt;
+    const step = m.T.speed * dt * (m.enraged ? 1.25 : 1);
+    if (m.T.boss) {
+      // fúria abaixo de 50% da vida
+      if (!m.enraged && m.hp < m.T.hp * 0.5) { m.enraged = true; map.emit({ k: 'enrage', t: m.id }); }
+      // golpe especial: avisa a área 1,3 s antes, depois acerta quem ficou dentro
+      if (m.slam && now >= m.slam.at) {
+        const sl = m.slam; m.slam = null;
+        map.emit({ k: 'slam', a: m.id, x: sl.x, y: sl.y, r: sl.r });
+        for (const p of map.players.values()) {
+          if (p.dead || Math.hypot(p.x - sl.x, p.y - sl.y) > sl.r) continue;
+          const db = p.buffs.def && p.buffs.def.until > now ? p.buffs.def.mult : 1;
+          const d = Math.max(1, Math.round(m.T.dmg * 2.4 * rand(0.9, 1.1) - p.def * db / 2));
+          p.hp -= d;
+          map.emit({ k: 'h', a: m.id, t: p.id, d, fx: 'boss', aoe: 1 });
+          if (p.hp <= 0) this.killPlayer(p, now, m);
+        }
+      }
+      if (m.slam) return; // parado preparando o golpe
+      if (t && !m.slam && now >= (m.nextSpecial || 0) && dist(m, t) < 150) {
+        m.nextSpecial = now + (m.enraged ? 6000 : 9000);
+        m.slam = { x: Math.round(t.x), y: Math.round(t.y), r: 64, at: now + 1300 };
+        map.emit({ k: 'warn', a: m.id, x: m.slam.x, y: m.slam.y, r: 64, ms: 1300 });
+        return;
+      }
+    }
     if (t) {
       if (Math.hypot(m.x - m.hx, m.y - m.hy) > 260) { // fugiu longe demais: volta e cura
         m.target = null; m.hp = m.T.hp; m.contrib.clear(); m.wander = { x: m.hx, y: m.hy }; return;
@@ -801,7 +936,7 @@ class World {
       const d = dist(m, t);
       const reach = m.T.range + 6 * m.T.size;
       if (d > reach) { m.x += (t.x - m.x) / d * step; m.y += (t.y - m.y) / d * step; m.flip = t.x > m.x; }
-      else if (now >= m.nextAtk) { m.nextAtk = now + m.T.atkMs; m.flip = t.x > m.x; this.hurtPlayer(m, t, now); }
+      else if (now >= m.nextAtk) { m.nextAtk = now + m.T.atkMs * (m.enraged ? 0.7 : 1); m.flip = t.x > m.x; this.hurtPlayer(m, t, now); }
       return;
     }
     if (m.hp < m.T.hp) m.hp = Math.min(m.T.hp, m.hp + m.T.hp * 0.02 * dt);
@@ -825,6 +960,10 @@ class World {
       }
       return;
     }
+    if (p.duel) {
+      const o = p.duel.with;
+      if (now > p.duel.until || !this.players.has(o.charId) || o.map !== p.map) this.endDuel(null, null, 'draw', p);
+    }
     // minutos jogados (missão diária) e virada do dia
     p.onlineAcc += dt;
     if (p.onlineAcc >= 60) {
@@ -834,28 +973,35 @@ class World {
     }
     if (p.questsDirty && (!p.lastQuestSend || now - p.lastQuestSend > 1500)) { p.questsDirty = false; p.lastQuestSend = now; p.send(Q.state(p)); }
     // regeneração: rápida na cidade, lenta no campo
-    const regen = map.def.safe ? 0.08 : 0.004;
+    const fast = map.def.safe && !p.duel;
+    const regen = fast ? 0.08 : 0.004;
     p.hp = Math.min(p.maxHp, p.hp + p.maxHp * regen * dt);
-    p.mp = Math.min(p.maxMp, p.mp + p.maxMp * (map.def.safe ? 0.08 : 0.02) * dt);
+    p.mp = Math.min(p.maxMp, p.mp + p.maxMp * (fast ? 0.08 : 0.02) * dt);
 
-    if (map.def.safe) {
+    if (map.def.safe && !p.duel) {
       if (p.returnAt && now >= p.returnAt) {
         p.returnAt = 0;
         const dest = p.lastFarm;
         if (dest && G.WORLD[dest] && p.level >= G.WORLD[dest].minLevel && p.auto) { this.enterMap(p, dest); p.send({ type: 'log', kind: 'info', text: `Voltando ao farm em ${G.WORLD[dest].name}.` }); return; }
       }
-    } else {
+    } else if (!p.duel) {
       if (p.hp < p.maxHp * p.settings.potHp) this.usePotion(p, 'hp', now);
       else if (p.mp < p.maxMp * p.settings.potMp) this.usePotion(p, 'mp', now);
     }
 
     // movimento manual tem prioridade
     if (p.moveTo) { this.stepToward(p, p.moveTo, PLAYER_SPEED * dt); if (dist(p, p.moveTo) < 2) p.moveTo = null; return; }
-    if (map.def.safe) return;
+    if (map.def.safe && !p.duel) return;
 
     // escolhe alvo
-    if (p.target && (p.target.dead || !map.monsters.includes(p.target))) p.target = null;
-    if (!p.target && p.auto) {
+    if (p.target && (p.target.isPlayer ? !this.hostile(p, p.target) : (p.target.dead || !map.monsters.includes(p.target)))) p.target = null;
+    if (!p.target && p.auto && p.duel) p.target = p.duel.with;
+    if (!p.target && p.auto && map.def.pvp && p.settings.pvpAuto) {
+      let best = null, bd = 170;
+      for (const o of map.players.values()) { if (!this.hostile(p, o)) continue; const d = dist(p, o); if (d < bd) { bd = d; best = o; } }
+      p.target = best;
+    }
+    if (!p.target && p.auto && !map.def.safe) {
       let best = null, bd = Infinity;
       for (const m of map.monsters) {
         if (m.dead) continue;
@@ -881,7 +1027,7 @@ class World {
     }
     if (!sk) sk = skills[0];
     const d = dist(p, t);
-    const reach = sk.range + 8 * t.T.size;
+    const reach = sk.range + 8 * (t.T ? t.T.size : 1);
     if (d > reach) { this.stepToward(p, t, PLAYER_SPEED * dt, reach - 2); return; }
     if (now >= p.nextAtk) this.attack(p, sk, t, now);
   }
@@ -897,13 +1043,14 @@ class World {
 
   broadcast(map, now) {
     const P = [...map.players.values()].map((p) => [p.id, Math.round(p.x), Math.round(p.y), Math.round(p.hp), p.maxHp, p.dead ? 1 : 0, p.flip ? 1 : 0,
-      (p.buffs.dmg && p.buffs.dmg.until > now ? 1 : 0) + (p.buffs.def && p.buffs.def.until > now ? 2 : 0)]);
+      (p.buffs.dmg && p.buffs.dmg.until > now ? 1 : 0) + (p.buffs.def && p.buffs.def.until > now ? 2 : 0),
+      (p.pkUntil > now ? 1 : 0) + (p.duel ? 2 : 0)]);
     const M = map.monsters.map((m) => [m.id, Math.round(m.x), Math.round(m.y), Math.max(0, Math.round(m.hp)), m.dead ? 1 : 0, m.flip ? 1 : 0]);
     const ev = map.events; map.events = [];
     let boss = null;
     if (map.boss) {
       const total = [...map.boss.contrib.values()].reduce((a, b) => a + b, 0) || 1;
-      boss = { id: map.boss.id, name: map.boss.T.name, hp: Math.max(0, Math.round(map.boss.hp)), max: map.boss.T.hp, dead: map.boss.dead,
+      boss = { id: map.boss.id, name: map.boss.T.name, hp: Math.max(0, Math.round(map.boss.hp)), max: map.boss.T.hp, dead: map.boss.dead, enraged: !!map.boss.enraged,
         respawnIn: map.boss.dead ? Math.max(0, map.boss.respawnAt - now) : 0,
         top: [...map.boss.contrib.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
           .map(([cid, d]) => ({ name: (this.players.get(cid) || {}).name || '—', pct: Math.round(d / total * 100) })) };
@@ -929,11 +1076,11 @@ class World {
       const map = p.dead ? 'lorencia' : (p.map ? p.map.id : 'lorencia');
       await db.query(`UPDATE characters SET level=$2, exp=$3, zen=$4, str=$5, agi=$6, vit=$7, ene=$8, cmd=$9, free_points=$10,
         map=$11, pos_x=$12, pos_y=$13, hp=$14, mp=$15, pot_hp=$16, pot_mp=$17, settings=$18, kills=$19, deaths=$20,
-        bosses_killed=$21, combat_power=$22, last_farm_map=$23, auto_on=$24, quests=$25, last_seen_at=now()
+        bosses_killed=$21, combat_power=$22, last_farm_map=$23, auto_on=$24, quests=$25, pvp_kills=$26, pvp_deaths=$27, duel_wins=$28, duel_losses=$29, pk_count=$30, last_seen_at=now()
         WHERE id=$1 RETURNING id`,
       [p.charId, p.level, Math.round(p.exp), Math.round(p.zen), p.stats.str, p.stats.agi, p.stats.vit, p.stats.ene, p.stats.cmd, p.free,
         map, p.dead ? 0 : Math.round(p.x), p.dead ? 0 : Math.round(p.y), Math.max(1, Math.round(p.hp)), Math.round(p.mp),
-        p.pots.hp, p.pots.mp, JSON.stringify(p.settings), p.kills, p.deaths, p.bossesKilled, p.power, p.lastFarm, p.auto, JSON.stringify(p.quests || {})]);
+        p.pots.hp, p.pots.mp, JSON.stringify(p.settings), p.kills, p.deaths, p.bossesKilled, p.power, p.lastFarm, p.auto, JSON.stringify(p.quests || {}), p.pvp.kills, p.pvp.deaths, p.pvp.duelW, p.pvp.duelL, p.pvp.pk]);
       p.dirty = false; p.lastSave = Date.now();
     }
   }

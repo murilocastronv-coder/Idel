@@ -58,7 +58,7 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .act.pot canvas { width: 26px; height: 26px; }
 .act.pot small { color: var(--bone); }
 .skills { display: flex; gap: 6px; }
-.act.skill { width: 66px; font-size: 9px; line-height: 1.05; text-align: center; overflow: hidden; overflow-wrap: anywhere; hyphens: auto; }
+.act.skill { width: 66px; font-size: 9px; line-height: 1.05; text-align: center; overflow: hidden; overflow-wrap: normal; word-break: normal; hyphens: none; }
 .act.skill .cd { position: absolute; inset: auto 0 0 0; background: rgba(0, 0, 0, .65); pointer-events: none; }
 .act.skill.off { opacity: .45; }
 .act.skill .mana { font-size: 9px; color: #8ab4ff; }
@@ -144,7 +144,7 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 
 @media (max-width: 420px) {
   .act { min-width: 48px; height: 50px; }
-  .act.skill { width: 58px; font-size: 8px; }
+  .act.skill { width: 58px; font-size: 7.5px; letter-spacing: -0.2px; }
   .act.auto { min-width: 62px; }
   .menu button { padding: 7px 7px; font-size: 12px; min-width: 0; }
   #minimap { width: 96px; height: 64px; }
@@ -186,3 +186,27 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
   .sk-full { display: none; }
   .sk-short { display: block; font-size: 10px; }
 }
+
+/* entrada no mapa, alertas e PvP */
+.map-banner, .alert-banner { position: fixed; left: 50%; transform: translateX(-50%); z-index: 6; pointer-events: none; text-align: center; opacity: 0; }
+.map-banner { top: 22%; }
+.map-banner b { display: block; font: 700 clamp(30px, 7vw, 52px) var(--display); color: var(--gold); text-shadow: 3px 3px 0 #0b1020, 0 0 18px rgba(232, 184, 74, .5); letter-spacing: .03em; }
+.map-banner small { display: block; font: 500 16px var(--display); color: var(--bone); text-shadow: 2px 2px 0 #0b1020; margin-top: 4px; }
+.map-banner.show { animation: banner 3s ease forwards; }
+@keyframes banner { 0% { opacity: 0; transform: translate(-50%, 12px); } 15%, 70% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -8px); } }
+.alert-banner { top: 32%; font: 700 clamp(20px, 5vw, 34px) var(--display); color: #ff5a4a; text-shadow: 3px 3px 0 #0b1020, 0 0 16px rgba(255, 60, 40, .6); white-space: nowrap; }
+.alert-banner.show { animation: banner 3.2s ease forwards; }
+@media (prefers-reduced-motion: reduce) { .map-banner.show, .alert-banner.show { animation-duration: .01s; } }
+.map-name.pvp { color: #ff8a7a; box-shadow: inset 0 0 0 1px #c8452c; }
+.feed .pvp { border-color: #ff5a4a; color: #ffb0a0; }
+.duel-bar { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 7; background: rgba(90, 30, 10, .9); border: 2px solid var(--edge); box-shadow: inset 0 0 0 1px #ffb02e; padding: 4px 10px; font: 500 14px var(--display); color: #ffe0b0; display: flex; gap: 10px; align-items: center; white-space: nowrap; }
+.duel-bar[hidden], .pcard[hidden], .duel-invite[hidden] { display: none; }
+.pcard, .duel-invite { position: fixed; left: 50%; transform: translateX(-50%); bottom: 170px; z-index: 9; width: min(320px, calc(100vw - 24px)); padding: 12px; display: grid; gap: 4px; }
+.pcard b { font: 600 18px var(--display); }
+.pcard small { color: var(--bone-dim); }
+.pcard .close { position: absolute; top: 4px; right: 6px; }
+.pcard .row, .duel-invite .row { justify-content: flex-start; margin-top: 6px; }
+.duel-invite { bottom: auto; top: 30%; font-size: 15px; }
+.boss-bar.enraged { box-shadow: inset 0 0 0 2px #ff4030, 0 0 18px rgba(255, 40, 30, .5); }
+.boss-bar.enraged .boss-title { color: #ff6a5a; }
+.boss-bar.enraged .gbar.boss span { background: linear-gradient(#ff5a3a, #a8180a); }
