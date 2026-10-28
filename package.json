@@ -1,0 +1,17 @@
+{
+  "name": "mu-idle-legends",
+  "version": "0.1.0",
+  "description": "MU Idle Legends - MMORPG Idle 2D Pixel Art (portal, contas e personagens)",
+  "main": "server/index.js",
+  "private": true,
+  "scripts": {
+    "start": "node server/index.js",
+    "migrate": "node server/migrate-cli.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

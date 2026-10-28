@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>MU Idle Legends — MMORPG Idle em pixel art</title>
+  <meta name="description" content="MMORPG Idle 2D em pixel art inspirado nos clássicos. Seis classes, 30 mapas, bosses, guildas e progressão automática.">
+  <meta name="theme-color" content="#141b33">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="topbar">
+    <a class="brand" href="#topo" aria-label="MU Idle Legends, início">
+      <canvas id="brand-icon" width="44" height="42" aria-hidden="true"></canvas>
+      <span>MU Idle Legends</span>
+    </a>
+    <nav class="nav" aria-label="Seções">
+      <a href="#classes">Classes</a>
+      <a href="#mapas">Mapas</a>
+      <a href="#equipamentos">Equipamentos</a>
+      <a href="#noticias">Notícias</a>
+      <a href="#ranking">Ranking</a>
+    </nav>
+    <div class="auth-area" id="auth-area">
+      <!-- preenchido por app.js -->
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <section class="hero" id="topo">
+      <canvas id="hero-scene" aria-label="Cena animada: os seis heróis enfrentam monstros em Lorencia ao entardecer" role="img"></canvas>
+      <div class="hero-copy">
+        <h1 class="logo">MU Idle<br>Legends</h1>
+        <p class="tagline">Seu herói luta, evolui e coleta tesouros mesmo quando você está fora. Escolha uma classe e entre em Lorencia.</p>
+        <div class="hero-actions">
+          <button class="btn btn-gold" id="btn-play" type="button">Jogar</button>
+          <button class="btn" id="btn-hero-register" type="button">Criar conta</button>
+          <button class="btn btn-ghost" id="btn-hero-ranking" type="button">Ver ranking</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="hud" role="status" aria-live="polite">
+      <div class="hud-cell">
+        <span class="hud-num" id="stat-online">–</span>
+        <span class="hud-label"><i class="dot" id="conn-dot"></i>jogadores online</span>
+      </div>
+      <div class="hud-cell">
+        <span class="hud-num" id="stat-visitors">–</span>
+        <span class="hud-label">pessoas no site agora</span>
+      </div>
+      <div class="hud-cell">
+        <span class="hud-num" id="stat-accounts">–</span>
+        <span class="hud-label">contas registradas</span>
+      </div>
+      <div class="hud-cell">
+        <span class="hud-num" id="stat-chars">–</span>
+        <span class="hud-label">heróis criados</span>
+      </div>
+      <div class="hud-cell hud-conn">
+        <span class="hud-label" id="conn-text">Conectando ao servidor…</span>
+      </div>
+    </div>
+
+    <section class="block" id="classes" aria-labelledby="classes-title">
+      <h2 id="classes-title">Seis caminhos de herói</h2>
+      <p class="lead">Cada classe tem atributos, armas e habilidades próprias. Toque em uma para ver de perto.</p>
+      <div class="class-layout">
+        <div class="class-tabs" role="tablist" id="class-tabs"></div>
+        <article class="window class-detail" id="class-detail" role="tabpanel"></article>
+      </div>
+    </section>
+
+    <section class="block" id="mapas" aria-labelledby="mapas-title">
+      <h2 id="mapas-title">Um mundo de 30 áreas</h2>
+      <p class="lead">Da cidade inicial ao Pináculo Celestial. Áreas novas abrem conforme seu nível sobe.</p>
+      <div class="map-filter" role="group" aria-label="Filtrar mapas por nível">
+        <button type="button" class="chip is-on" data-range="all">Todos</button>
+        <button type="button" class="chip" data-range="0-99">Nível 1–99</button>
+        <button type="button" class="chip" data-range="100-399">100–399</button>
+        <button type="button" class="chip" data-range="400-1000">400+</button>
+      </div>
+      <ol class="map-grid" id="map-grid"></ol>
+    </section>
+
+    <section class="block" id="equipamentos" aria-labelledby="equip-title">
+      <h2 id="equip-title">Equipamentos e raridades</h2>
+      <p class="lead">Seis níveis de raridade, sets com bônus e asas que mudam a aparência do herói.</p>
+      <div class="equip-layout">
+        <div class="window inventory">
+          <div class="inv-grid" id="inv-grid" role="listbox" aria-label="Itens de exemplo"></div>
+          <ul class="rarity-legend" id="rarity-legend"></ul>
+        </div>
+        <div class="window item-tip" id="item-tip" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="block two-col" aria-label="Notícias e ranking">
+      <div id="noticias">
+        <h2>Notícias e eventos</h2>
+        <ul class="news" id="news-list"><li class="muted">Carregando notícias…</li></ul>
+      </div>
+      <div id="ranking">
+        <h2>Ranking</h2>
+        <div class="tabs" role="tablist" aria-label="Ordenar ranking">
+          <button type="button" role="tab" class="tab is-on" data-by="resets" aria-selected="true">Resets</button>
+          <button type="button" role="tab" class="tab" data-by="level" aria-selected="false">Nível</button>
+          <button type="button" role="tab" class="tab" data-by="power" aria-selected="false">Poder</button>
+          <button type="button" role="tab" class="tab" data-by="bosses" aria-selected="false">Bosses</button>
+        </div>
+        <div class="window rank-box">
+          <table class="rank">
+            <thead><tr><th scope="col">#</th><th scope="col">Herói</th><th scope="col">Classe</th><th scope="col">Nv.</th><th scope="col">Resets</th></tr></thead>
+            <tbody id="rank-body"><tr><td colspan="5" class="muted">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>MU Idle Legends é um projeto de fã independente com arte original. Não é afiliado a nenhuma empresa ou marca.</p>
+  </footer>
+
+  <!-- Janela de acesso: entrar / criar conta / recuperar -->
+  <dialog class="window dialog" id="auth-dialog" aria-labelledby="auth-title">
+    <button class="close" type="button" data-close aria-label="Fechar">×</button>
+    <h2 id="auth-title">Entrar</h2>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" class="tab" data-view="login">Entrar</button>
+      <button type="button" role="tab" class="tab" data-view="register">Criar conta</button>
+      <button type="button" role="tab" class="tab" data-view="forgot">Esqueci a senha</button>
+    </div>
+
+    <form class="form" data-view-panel="login" id="form-login" novalidate>
+      <label>Usuário ou e-mail<input name="login" autocomplete="username" required maxlength="254"></label>
+      <label>Senha<input name="password" type="password" autocomplete="current-password" required maxlength="128"></label>
+      <label class="check"><input type="checkbox" name="remember" checked> Manter conectado neste aparelho</label>
+      <p class="form-msg" role="alert"></p>
+      <button class="btn btn-gold wide" type="submit">Entrar</button>
+    </form>
+
+    <form class="form" data-view-panel="register" id="form-register" novalidate>
+      <label>Nome de usuário<input name="username" autocomplete="username" required minlength="4" maxlength="16" pattern="[A-Za-z0-9_]{4,16}"><small>4 a 16 caracteres: letras, números ou _</small></label>
+      <label>E-mail<input name="email" type="email" autocomplete="email" required maxlength="254"><small>Usado só para recuperar a senha</small></label>
+      <label>Senha<input name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128"><small>Mínimo 8 caracteres, com letras e números</small></label>
+      <label>Repita a senha<input name="password2" type="password" autocomplete="new-password" required></label>
+      <p class="form-msg" role="alert"></p>
+      <button class="btn btn-gold wide" type="submit">Criar conta</button>
+    </form>
+
+    <div data-view-panel="forgot">
+      <div class="tabs small" role="tablist">
+        <button type="button" class="tab is-on" data-forgot="email">Por e-mail</button>
+        <button type="button" class="tab" data-forgot="code">Com código de recuperação</button>
+      </div>
+      <form class="form" id="form-forgot" data-forgot-panel="email" novalidate>
+        <p class="muted">Enviaremos um link para criar uma nova senha. Ele vale por 1 hora.</p>
+        <label>E-mail da conta<input name="email" type="email" autocomplete="email" required maxlength="254"></label>
+        <p class="form-msg" role="alert"></p>
+        <button class="btn btn-gold wide" type="submit">Enviar link</button>
+      </form>
+      <form class="form" id="form-recover-code" data-forgot-panel="code" hidden novalidate>
+        <p class="muted">Use o código de 16 caracteres que você recebeu ao criar a conta.</p>
+        <label>Nome de usuário<input name="username" autocomplete="username" required maxlength="16"></label>
+        <label>Código de recuperação<input name="code" autocomplete="off" required maxlength="19" placeholder="XXXX-XXXX-XXXX-XXXX" class="mono-input"></label>
+        <label>Nova senha<input name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128"></label>
+        <p class="form-msg" role="alert"></p>
+        <button class="btn btn-gold wide" type="submit">Trocar senha</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Nova senha via link do e-mail -->
+  <dialog class="window dialog" id="reset-dialog" aria-labelledby="reset-title">
+    <button class="close" type="button" data-close aria-label="Fechar">×</button>
+    <h2 id="reset-title">Criar nova senha</h2>
+    <form class="form" id="form-reset" novalidate>
+      <label>Nova senha<input name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128"><small>Mínimo 8 caracteres, com letras e números</small></label>
+      <label>Repita a nova senha<input name="password2" type="password" autocomplete="new-password" required></label>
+      <p class="form-msg" role="alert"></p>
+      <button class="btn btn-gold wide" type="submit">Salvar nova senha</button>
+    </form>
+  </dialog>
+
+  <!-- Código de recuperação (mostrado uma única vez) -->
+  <dialog class="window dialog" id="code-dialog" aria-labelledby="code-title">
+    <h2 id="code-title">Guarde seu código de recuperação</h2>
+    <p>Com ele você troca a senha mesmo sem acesso ao e-mail. Ele aparece só agora — anote ou copie.</p>
+    <p class="recovery-code" id="recovery-code"></p>
+    <div class="row">
+      <button class="btn" type="button" id="btn-copy-code">Copiar código</button>
+      <button class="btn btn-gold" type="button" data-close>Já guardei</button>
+    </div>
+  </dialog>
+
+  <!-- Painel da conta -->
+  <dialog class="window dialog dialog-wide" id="account-dialog" aria-labelledby="account-title">
+    <button class="close" type="button" data-close aria-label="Fechar">×</button>
+    <h2 id="account-title">Minha conta</h2>
+    <p class="muted" id="account-meta"></p>
+    <h3>Seus heróis</h3>
+    <ul class="char-list" id="char-list"></ul>
+    <p class="note" id="world-note">Seus heróis e nomes ficam salvos no servidor. O mundo de Lorencia com combate automático abre na próxima atualização.</p>
+
+    <details class="create-char" id="create-char">
+      <summary class="btn">Criar novo herói</summary>
+      <form class="form create-grid" id="form-char" novalidate>
+        <div class="preview">
+          <canvas id="char-preview" width="132" height="126" aria-label="Prévia do herói"></canvas>
+        </div>
+        <div>
+          <label>Nome do herói<input name="name" required minlength="3" maxlength="12" pattern="[A-Za-z0-9]{3,12}" autocomplete="off"><small>3 a 12 letras ou números</small></label>
+          <fieldset>
+            <legend>Classe</legend>
+            <div class="class-pick" id="class-pick"></div>
+          </fieldset>
+          <fieldset>
+            <legend>Cabelo</legend>
+            <div class="swatches" id="hair-pick"></div>
+          </fieldset>
+          <fieldset>
+            <legend>Tom de pele</legend>
+            <div class="swatches" id="skin-pick"></div>
+          </fieldset>
+          <p class="form-msg" role="alert"></p>
+          <button class="btn btn-gold wide" type="submit">Criar herói</button>
+        </div>
+      </form>
+    </details>
+
+    <details class="security">
+      <summary class="btn btn-ghost">Segurança da conta</summary>
+      <form class="form" id="form-change-pw" novalidate>
+        <h4>Trocar senha</h4>
+        <label>Senha atual<input name="current" type="password" autocomplete="current-password" required></label>
+        <label>Nova senha<input name="password" type="password" autocomplete="new-password" required minlength="8"></label>
+        <p class="form-msg" role="alert"></p>
+        <button class="btn" type="submit">Trocar senha</button>
+      </form>
+      <form class="form" id="form-new-code" novalidate>
+        <h4>Novo código de recuperação</h4>
+        <p class="muted">Gera um código novo e invalida o anterior.</p>
+        <label>Confirme sua senha<input name="password" type="password" autocomplete="current-password" required></label>
+        <p class="form-msg" role="alert"></p>
+        <button class="btn" type="submit">Gerar novo código</button>
+      </form>
+    </details>
+  </dialog>
+
+  <!-- Excluir herói -->
+  <dialog class="window dialog" id="delete-dialog" aria-labelledby="delete-title">
+    <button class="close" type="button" data-close aria-label="Fechar">×</button>
+    <h2 id="delete-title">Excluir herói</h2>
+    <form class="form" id="form-delete" novalidate>
+      <p>Isso apaga <b id="delete-name"></b> para sempre, com nível e itens. Digite o nome para confirmar.</p>
+      <label>Nome do herói<input name="confirmName" autocomplete="off" required></label>
+      <p class="form-msg" role="alert"></p>
+      <button class="btn btn-danger wide" type="submit">Excluir para sempre</button>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="/js/pixel.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

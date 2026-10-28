@@ -1,0 +1,30 @@
+# Blueprint da Render: cria o servidor web e o banco PostgreSQL juntos.
+# Render Dashboard → New → Blueprint → escolha o repositório com este arquivo.
+services:
+  - type: web
+    name: mu-idle-legends
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mu-idle-db
+          property: connectionString
+      # Opcional: envio do e-mail de "esqueci a senha" (https://resend.com)
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+
+databases:
+  - name: mu-idle-db
+    plan: free
+    databaseName: muidle
+    user: muidle
