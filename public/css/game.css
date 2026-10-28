@@ -1,6 +1,6 @@
 /* ---------- tela do jogo ---------- */
 body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; touch-action: none; user-select: none; -webkit-user-select: none; }
-#world { position: fixed; inset: 0; width: 100vw; height: 100dvh; cursor: pointer; }
+#world { position: fixed; inset: 0; width: 100vw; height: 100dvh; cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; touch-action: none; }
 
 .hud-me, .hud-map, .boss-bar, .bottom, .feed, .panel, .center-msg { position: fixed; z-index: 5; }
 

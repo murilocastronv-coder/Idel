@@ -550,6 +550,7 @@
 
   // ================= toque / clique no mapa =================
   cv.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault(); // sem destaque/seleção do navegador ao tocar no mapa
     if (!S.map || !S.me || S.me.dead) return;
     if (S.panel && window.innerWidth < 700) closePanel();
     const wx = camX + ev.clientX * dpr / zoom, wy = camY + ev.clientY * dpr / zoom;
