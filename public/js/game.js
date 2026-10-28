@@ -33,7 +33,7 @@
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     ws = new WebSocket(`${proto}://${location.host}/ws`);
     const sock = ws;
-    sock.onopen = () => { retry = 0; setConn(true); send({ type: 'join', charId }); };
+    sock.onopen = () => { retry = 0; setConn(true); send({ type: 'join', charId, room: S.room || 1 }); };
     sock.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch (_) { return; } onMsg(m); };
     sock.onclose = () => {
       if (sock !== ws || leaving) return;
@@ -103,7 +103,8 @@
     if (window.Sfx) Sfx.ambient(m.theme);
     const built = buildGround(m);
     S.ground = built.canvas; S.props = built.props; S.lights = built.lights;
-    $('#map-name').textContent = m.name + (m.safe ? ' · zona segura' : (wInfo && wInfo.pvp ? ' · PvP' : ''));
+    if (m.room) { S.room = m.room; S.rooms = m.rooms || 4; }
+    $('#map-name').textContent = m.name + (m.safe ? ' · zona segura' : (wInfo && wInfo.pvp ? ' · PvP' : '')) + (m.room ? ` · Sala ${m.room}` : '');
     $('#map-name').classList.toggle('pvp', !!(wInfo && wInfo.pvp));
     $('#btn-shop').hidden = false;
     if (S.panel === 'maps') renderMaps();
@@ -1130,6 +1131,11 @@
 
   function renderMaps() {
     const ul = $('#tp-list'); ul.innerHTML = '';
+    const rs = $('#room-switch');
+    if (rs) {
+      rs.innerHTML = `<span>Sala</span>` + Array.from({ length: S.rooms || 4 }, (_, i) => i + 1).map((r) => `<button class="btn small ${r === S.room ? 'btn-gold' : ''}" type="button" data-room="${r}" ${r === S.room ? 'aria-pressed="true"' : ''}>${r}</button>`).join('');
+      $$('[data-room]', rs).forEach((b) => { b.onclick = () => { const r = Number(b.dataset.room); if (r === S.room) return; S.room = r; try { localStorage.setItem('mui_room', String(r)); } catch (_) { /* ok */ } send({ type: 'room', room: r }); setTimeout(renderMaps, 400); }; });
+    }
     for (const w of S.data.world) {
       const li = document.createElement('li');
       const here = S.map && S.map.map === w.id;
@@ -1427,6 +1433,31 @@
   PA.drawIcon($('#btn-pot-hp canvas').getContext('2d'), 'potion_hp', 0, 0, 3, '#fff');
   PA.drawIcon($('#btn-pot-mp canvas').getContext('2d'), 'potion_mp', 0, 0, 3, '#3a7aff');
 
+  // ================= escolha da sala =================
+  async function pickRoom() {
+    let last = 1;
+    try { last = Number(localStorage.getItem('mui_room')) || 1; } catch (_) { /* ok */ }
+    let rooms = [1, 2, 3, 4].map((room) => ({ room, players: 0 }));
+    try { rooms = (await (await fetch('/api/rooms', { credentials: 'same-origin' })).json()).rooms; } catch (_) { /* usa o padrão */ }
+    const max = Math.max(1, ...rooms.map((r) => r.players));
+    const box = $('#room-pick');
+    centerMsg(null);
+    box.innerHTML = `<h2>Escolha a sala</h2><p class="muted">Cada sala é uma cópia do mundo com seus próprios monstros, boss e PvP. O chat é de todos.</p>
+      <div class="room-grid">${rooms.map((r) => `<button type="button" class="room-btn ${r.room === last ? 'last' : ''}" data-r="${r.room}">
+        <b>Sala ${r.room}</b><small>${r.players} ${r.players === 1 ? 'jogador' : 'jogadores'}</small>
+        <span class="room-bar"><i style="width:${Math.round(r.players / max * 100)}%"></i></span>${r.room === last ? '<em>última</em>' : ''}</button>`).join('')}</div>`;
+    box.hidden = false;
+    return new Promise((ok) => {
+      $$('.room-btn', box).forEach((b) => {
+        b.onclick = () => {
+          S.room = Number(b.dataset.r);
+          try { localStorage.setItem('mui_room', String(S.room)); } catch (_) { /* ok */ }
+          box.hidden = true; centerMsg('Entrando no mundo…'); ok();
+        };
+      });
+    });
+  }
+
   // ================= início =================
   (async function init() {
     centerMsg('Entrando no mundo…');
@@ -1435,6 +1466,7 @@
       S.data = await r.json();
       await Sprites.ready;
     } catch (_) { centerMsg('Não foi possível carregar o jogo. Verifique a internet.', true); return; }
+    await pickRoom();
     connect();
     // voltando do pagamento do Stripe
     const vipQ = new URLSearchParams(location.search).get('vip');

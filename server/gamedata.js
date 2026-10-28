@@ -284,8 +284,9 @@ const SETS = {
 
 const RARITY_MULT = { common: 1, uncommon: 1.15, rare: 1.35, epic: 1.6, legendary: 2, ancestral: 2.6 };
 const RARITY_WEIGHTS = {
-  normal: { common: 70, uncommon: 22, rare: 6.5, epic: 1.3, legendary: 0.19, ancestral: 0.01 },
-  boss: { common: 0, uncommon: 30, rare: 45, epic: 18, legendary: 6, ancestral: 1 },
+  // itens bons são raros de verdade: Épico ~1 em 330 drops, Lendário ~1 em 3.300, Ancestral ~1 em 50.000
+  normal: { common: 80, uncommon: 17, rare: 2.65, epic: 0.3, legendary: 0.03, ancestral: 0.002 },
+  boss: { common: 0, uncommon: 52, rare: 36, epic: 9.5, legendary: 2.2, ancestral: 0.3 },
 };
 
 const SHOP = {

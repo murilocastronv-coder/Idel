@@ -12,6 +12,7 @@ const SAVE_EVERY_MS = 20000;
 const PLAYER_SPEED = 80;           // px por segundo
 const OFFLINE_CAP_S = 8 * 3600;    // limite de progresso offline
 const RESPAWN_MS = 4000;
+const ROOMS = 4;                   // salas (cópias separadas do mundo, como os subservidores do MU)
 const MONSTER_RESPAWN_MS = 9000;
 const POTION_CD_MS = 1200;
 const PVP_SCALE = 0.7;          // dano entre jogadores é reduzido para lutas durarem mais
@@ -66,7 +67,10 @@ function rollItem(level, table) {
   let pool = Object.entries(G.ITEM_BASES).filter(([, b]) => b.req <= level + 3 && b.req >= level - 16);
   if (!pool.length) pool = Object.entries(G.ITEM_BASES).filter(([, b]) => b.req <= Math.max(1, level + 3));
   const [base] = pool[Math.floor(Math.random() * pool.length)];
-  return { base, rarity: rollRarity(table), plus: Math.random() < 0.15 ? randi(1, 3) : 0 };
+  // +1 a +3 também ficou mais raro (6% dos drops; boss 12%), e +3 é o mais difícil
+  const pr = Math.random(), plusChance = table === 'boss' ? 0.12 : 0.06;
+  const plus = pr < plusChance * 0.12 ? 3 : pr < plusChance * 0.4 ? 2 : pr < plusChance ? 1 : 0;
+  return { base, rarity: rollRarity(table), plus };
 }
 // o que aparece no corpo do herói: arma (item exato) e conjunto de cada peça de armadura
 function gearVisual(items) {
@@ -203,8 +207,8 @@ class Player {
 
 // ------------------------------------------------------------------ mapa
 class MapInstance {
-  constructor(world, id, def) {
-    this.world = world; this.id = id; this.def = def;
+  constructor(world, id, def, room = 1) {
+    this.world = world; this.id = id; this.def = def; this.room = room;
     this.players = new Map();
     this.monsters = [];
     this.events = [];
@@ -235,7 +239,7 @@ class MapInstance {
 class World {
   constructor() {
     this.maps = new Map();
-    for (const [id, def] of Object.entries(G.WORLD)) this.maps.set(id, new MapInstance(this, id, def));
+    for (let r = 1; r <= ROOMS; r++) for (const [id, def] of Object.entries(G.WORLD)) this.maps.set(`${r}:${id}`, new MapInstance(this, id, def, r));
     this.players = new Map(); // charId -> Player
     this.chat = [];
     this.timer = setInterval(() => this.tick(), TICK_MS);
@@ -246,7 +250,25 @@ class World {
   online() { return this.players.size; }
 
   // ---------- entrada e saída ----------
-  async join(client, charId) {
+  roomCounts() {
+    const out = Array.from({ length: ROOMS }, (_, i) => ({ room: i + 1, players: 0 }));
+    for (const p of this.players.values()) if (out[(p.room || 1) - 1]) out[(p.room || 1) - 1].players++;
+    return out;
+  }
+
+  switchRoom(p, room) {
+    room = Math.round(Number(room));
+    if (!(room >= 1 && room <= ROOMS) || !p.map || room === p.room) return;
+    if (p.dead) return;
+    if (p.duel) return p.send({ type: 'log', kind: 'warn', text: 'Termine o duelo antes de trocar de sala.' });
+    if (Date.now() - Math.max(p.pvpHitAt || 0, p.pvpAtkAt || 0) < 10000) return p.send({ type: 'log', kind: 'warn', text: 'Em combate PvP: espere alguns segundos para trocar de sala.' });
+    const mapId = p.map.id;
+    p.room = room;
+    this.enterMap(p, mapId);
+    p.send({ type: 'log', kind: 'info', text: `Você entrou na Sala ${room}.` });
+  }
+
+  async join(client, charId, room) {
     if (!client.meta.accountId) return client.send({ type: 'error', error: 'Faça login para entrar no mundo.' });
     if (!/^\d{1,18}$/.test(String(charId))) return client.send({ type: 'error', error: 'Personagem inválido.' });
     const { rows } = await db.query(`SELECT c.*, EXTRACT(EPOCH FROM (now() - c.last_seen_at))::int AS offline_secs,
@@ -267,6 +289,7 @@ class World {
 
     const items = (await db.query('SELECT id, base, rarity, plus, equipped FROM items WHERE character_id = $1 ORDER BY id', [row.id])).rows;
     const p = new Player(row, client, items);
+    p.room = Math.min(ROOMS, Math.max(1, Math.round(Number(room)) || 1));
     client.player = p;
     this.players.set(p.charId, p);
 
@@ -316,7 +339,7 @@ class World {
   }
 
   enterMap(p, mapId, pos) {
-    const m = this.maps.get(mapId);
+    const m = this.maps.get(`${p.room || 1}:${mapId}`);
     if (p.map) {
       p.map.players.delete(p.id);
       for (const o of p.map.players.values()) o.send({ type: 'pl', id: p.id });
@@ -329,7 +352,7 @@ class World {
     if (!m.def.safe) p.lastFarm = mapId;
     m.players.set(p.id, p);
     p.send({
-      type: 'enter', map: mapId, name: m.def.name, theme: m.def.theme, w: m.def.w, h: m.def.h, safe: !!m.def.safe,
+      type: 'enter', map: mapId, room: m.room, rooms: ROOMS, name: m.def.name, theme: m.def.theme, w: m.def.w, h: m.def.h, safe: !!m.def.safe,
       npcs: m.def.npcs || [],
       monsters: m.monsters.map((mo) => ({ id: mo.id, type: mo.type, name: mo.T.name, sprite: mo.T.sprite, tint: mo.T.tint || null,
         size: mo.T.size, level: mo.T.level, maxHp: mo.T.hp, boss: !!mo.T.boss, elite: !!mo.T.elite })),
@@ -347,7 +370,7 @@ class World {
 
   // ---------- mensagens do navegador ----------
   async handle(client, msg) {
-    if (msg.type === 'join') return this.join(client, msg.charId);
+    if (msg.type === 'join') return this.join(client, msg.charId, msg.room);
     const p = client.player;
     if (!p) return;
     switch (msg.type) {
@@ -389,6 +412,7 @@ class World {
       case 'duel': return this.duelRequest(p, String(msg.id));
       case 'duelAnswer': return this.duelAnswer(p, String(msg.id), !!msg.accept);
       case 'pvp': return this.setPvp(p, !!msg.on, Date.now());
+      case 'room': return this.switchRoom(p, msg.room);
       case 'duelQuit': if (p.duel) this.endDuel(p.duel.with, p, 'quit'); return undefined;
       case 'leave': return this.leave(p).then(() => client.send({ type: 'left' }));
       default: return undefined;
@@ -1015,7 +1039,7 @@ class World {
       p.lastSave = 0; // salva no próximo ciclo
     });
     const top = ranked[0] && this.players.get(ranked[0][0]);
-    this.system(`O ${m.T.name} foi derrotado${top ? ` — maior dano: ${top.name}` : ''}! Ele volta em 10 minutos.`);
+    this.system(`O ${m.T.name} foi derrotado na Sala ${map.room}${top ? ` — maior dano: ${top.name}` : ''}! Ele volta em 10 minutos.`);
     m.contrib.clear();
   }
 
@@ -1062,7 +1086,7 @@ class World {
     m.dead = false; m.hp = m.T.hp; m.x = m.hx; m.y = m.hy; m.target = null; m.contrib.clear();
     m.enraged = false; m.slam = null; m.nextSpecial = Date.now() + 5000;
     map.emit({ k: 'spawn', t: m.id, boss: m.T.boss ? 1 : 0 });
-    if (m.T.boss) this.system(`O ${m.T.name} despertou em ${map.def.name}!`);
+    if (m.T.boss) this.system(`O ${m.T.name} despertou em ${map.def.name} (Sala ${map.room})!`);
   }
 
   tickMonster(m, map, now, dt) {

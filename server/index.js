@@ -164,6 +164,7 @@ route('GET', '/api/health', async () => {
 });
 
 route('GET', '/api/stats', async () => liveStats());
+route('GET', '/api/rooms', async () => ({ rooms: world ? world.roomCounts() : [1, 2, 3, 4].map((room) => ({ room, players: 0 })) }));
 
 // ---------------- página /status: crescimento do jogo ----------------
 const STARTED_AT = Date.now();
@@ -225,7 +226,7 @@ async function buildStatus() {
       WHEN level < 100 THEN '50–99' ELSE '100+' END AS band, min(level)::int AS lo, count(*)::int AS n
     FROM characters GROUP BY 1 ORDER BY lo`, []);
   const maps = [];
-  if (world) for (const m of world.maps.values()) if (m.players.size) maps.push({ id: m.id, name: m.def.name, players: m.players.size });
+  if (world) for (const m of world.maps.values()) if (m.players.size) maps.push({ id: `${m.room}:${m.id}`, name: `${m.def.name} · Sala ${m.room}`, players: m.players.size });
   maps.sort((a, b) => b.players - a.players);
   return {
     live: { ...liveStats(), peakSinceBoot: peakOnline, uptimeSec: Math.round((Date.now() - STARTED_AT) / 1000) },
