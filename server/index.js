@@ -567,7 +567,8 @@ const server = http.createServer(async (req, res) => {
       const out = await r.handler(req, url, res, params);
       return sendJson(res, 200, out);
     }
-    console.warn(`[api 404] ${req.method} ${url.pathname} ref=${req.headers.referer || '-'}`);
+    // abas antigas do jogo anterior deste domínio ainda chamam /api/wow/*: não polui o log
+    if (!url.pathname.startsWith('/api/wow/')) console.warn(`[api 404] ${req.method} ${url.pathname} ref=${req.headers.referer || '-'}`);
     throw new HttpError(404, 'Rota não encontrada.');
   } catch (e) {
     if (e instanceof HttpError) {
