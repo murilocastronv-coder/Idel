@@ -6,8 +6,13 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
+import android.graphics.Insets;
+import android.os.Build;
 import android.os.Bundle;
+import android.widget.FrameLayout;
+import android.window.OnBackInvokedDispatcher;
 import android.view.View;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
@@ -38,7 +43,26 @@ public class MainActivity extends Activity {
         web = new WebView(this);
         web.setBackgroundColor(Color.parseColor("#0B1020"));
         web.setOverScrollMode(View.OVER_SCROLL_NEVER);
-        setContentView(web);
+
+        // Android 15+ desenha de borda a borda: o jogo fica entre a barra de status e a de navegação
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(Color.parseColor("#0B1020"));
+        root.addView(web, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            root.setOnApplyWindowInsetsListener((v, insets) -> {
+                Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout() | WindowInsets.Type.ime());
+                v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+                return WindowInsets.CONSUMED;
+            });
+        } else {
+            root.setFitsSystemWindows(true);
+        }
+        setContentView(root);
+
+        // botão voltar (Android 13+ usa o "voltar preditivo")
+        if (Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::goBackOrExit);
+        }
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -112,10 +136,15 @@ public class MainActivity extends Activity {
         if (intent.getData() != null) web.loadUrl(startUrl(intent));
     }
 
+    private void goBackOrExit() {
+        if (!showingOffline && web.canGoBack()) web.goBack();
+        else finish();
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
     public void onBackPressed() {
-        if (!showingOffline && web.canGoBack()) web.goBack();
-        else super.onBackPressed();
+        goBackOrExit(); // Android 12 ou mais antigo
     }
 
     @Override
