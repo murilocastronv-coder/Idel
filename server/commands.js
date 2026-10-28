@@ -263,11 +263,12 @@ const CMDS = {
   resetplayer: { role: 'admin', usage: '/resetplayer NOME [forcar]', desc: 'Reset normal pela regra do servidor.', confirm: true, target: true },
   masterresetplayer: { role: 'admin', usage: '/masterresetplayer NOME', desc: 'Master Reset (confere os requisitos).', confirm: true, target: true },
   admlog: { role: 'admin', usage: '/admlog [NOME] [QUANTIDADE]', desc: 'Histórico administrativo.' },
+  invasao: { role: 'admin', usage: '/invasao iniciar|parar|status|spawn MAPA QTD [SALA]|remover|configurar|teste [bronze|prata|ouro] [N] [NIVEL]|proxima MINUTOS', desc: 'Controla a Invasão Dourada.' },
   setrole: { role: 'superadmin', usage: '/setrole NOME player|moderator|admin', desc: 'Muda o papel da conta do personagem.', confirm: true },
   confirm: { role: 'moderator', usage: '/confirm CODIGO', desc: 'Confirma uma operação pendente.' },
   cancel: { role: 'moderator', usage: '/cancel CODIGO', desc: 'Cancela uma operação pendente.' },
 };
-const ALIAS = { help: 'ajuda', confirmar: 'confirm', cancelar: 'cancel', masterreset: 'masterresetplayer', items: 'itens' };
+const ALIAS = { invasion: 'invasao', 'invasão': 'invasao', help: 'ajuda', confirmar: 'confirm', cancelar: 'cancel', masterreset: 'masterresetplayer', items: 'itens' };
 
 function reply(p, ok, lines, extra = {}) {
   p.send({ type: 'cmdres', ok, lines: Array.isArray(lines) ? lines : [lines], ...extra });
@@ -543,6 +544,59 @@ const handlers = {
     const { rows } = await db.query(`SELECT created_at, admin_name, command, target_name, result, message FROM admin_log
       WHERE ($1 = '' OR lower(target_name) = lower($1) OR lower(admin_name) = lower($1)) ORDER BY id DESC LIMIT $2`, [who, n]);
     reply(p, true, rows.length ? rows.map((r) => `${new Date(r.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })} · ${r.admin_name || '?'} · /${r.command}${r.target_name ? ' ' + r.target_name : ''} · ${r.result}${r.message ? ' · ' + r.message : ''}`) : 'Nenhum registro.');
+  },
+  async invasao(p, parts, def, cmd, reason) {
+    const INV = W.invasion;
+    const sub = (parts[0] || 'status').toLowerCase();
+    const done = (lines, params) => { log(p, cmd, null, { sub, ...params }, null, null, 'ok', [].concat(lines).join(' | '), reason); reply(p, true, lines); };
+    switch (sub) {
+      case 'status': return reply(p, true, INV.statusText());
+      case 'iniciar': case 'start':
+        if (INV.isActive()) throw err('Já existe uma invasão em andamento.');
+        await INV.start('admin');
+        return done(['Invasão Dourada iniciada.', ...INV.statusText()], {});
+      case 'parar': case 'stop':
+        if (!INV.isActive()) throw err('Não há invasão em andamento.');
+        await INV.end('admin');
+        return done(['Invasão encerrada; os monstros dourados restantes sumiram.', ...INV.statusText()], {});
+      case 'remover': {
+        const n = INV.removeAll();
+        return done(`${n} monstro(s) dourado(s) removido(s).`, { n });
+      }
+      case 'spawn': {
+        need(parts, 3);
+        const map = parts[1].toLowerCase();
+        const n = int(parts[2], 1, 30, 'Quantidade');
+        const room = parts[3] ? int(parts[3], 1, 4, 'Sala') : 0;
+        let made;
+        try { made = INV.spawnManual(map, n, room); } catch (e) { throw err(e.message); }
+        return done(`${made} monstro(s) dourado(s) criado(s) em ${G.WORLD[map].name}${room ? ' (sala ' + room + ')' : ' (todas as salas)'}.`, { map, n, room });
+      }
+      case 'proxima': {
+        need(parts, 2);
+        const m = int(parts[1], 1, 1440, 'Minutos');
+        try { await INV.setNext(m); } catch (e) { throw err(e.message); }
+        return done(`Próxima invasão em ${m} min.`, { m });
+      }
+      case 'configurar': case 'config': {
+        const c = INV.cfg();
+        const T = c.tiers;
+        return reply(p, true, [
+          `Temporizador ${c.enabled ? 'LIGADO' : 'DESLIGADO'} · a cada ${c.intervalMin} min · dura ${c.durationMin} min · recompensa: ${{ contribution: 'compartilhada por contribuição', individual: 'individual', lasthit: 'último golpe' }[c.rewardMode]} (mín. ${c.minShare}% do dano)`,
+          `Categorias pelo nível do monstro: Bronze < ${c.thresholds.prata} ≤ Prata < ${c.thresholds.ouro} ≤ Ouro (elites sobem uma)`,
+          ...['bronze', 'prata', 'ouro'].map((k) => `${k}: vida ×${T[k].hp}, dano ×${T[k].dmg}, defesa ×${T[k].def}, EXP ×${T[k].exp} → ${G.ITEM_BASES[T[k].box].name}`),
+          'Para mudar: Painel do administrador → Invasão Dourada.',
+        ]);
+      }
+      case 'teste': {
+        const tier = ['bronze', 'prata', 'ouro'].includes((parts[1] || '').toLowerCase()) ? parts[1].toLowerCase() : 'ouro';
+        const n = parts[2] ? int(parts[2], 1, 100000, 'N') : 1000;
+        const lv = parts[3] ? int(parts[3], 1, G.LIMITS.maxLevel, 'Nível') : p.level;
+        const sim = require('./kundun').simulate(INV.cfg().tiers[tier].box, n, lv, p.cls);
+        return done([`${sim.box}: ${fmt(sim.opens)} aberturas simuladas (nível ${sim.level}, nada foi entregue) · Zen médio ${fmt(sim.zenAvg)}`, ...sim.results.map((r) => `${r.name}: ${r.pct}%`)], { tier, n, lv });
+      }
+      default: throw err('Use: iniciar, parar, status, spawn, remover, configurar, teste ou proxima.', true);
+    }
   },
   async setrole(p, parts, def, cmd, reason) {
     need(parts, 2, def);

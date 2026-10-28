@@ -416,3 +416,44 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 #panel-admin .adt-cls label { display: inline-flex; flex-direction: column; align-items: center; font-size: 10px; margin: 0 1px; }
 #panel-admin .adt-sec .adm-row input:not([type="checkbox"]):not([type="number"]) { flex: 1 1 140px; }
 #panel-admin .adt-rules td { white-space: nowrap; }
+/* ---------- Invasão Dourada ---------- */
+.inv-timer { display: inline-flex; align-items: center; gap: 5px; font: 500 12px var(--display); color: #ffe7a0; background: rgba(40, 28, 4, .85);
+  border: 2px solid #8a6a1a; padding: 2px 7px; cursor: pointer; }
+.inv-timer[hidden] { display: none; }
+.inv-timer b { color: #ffd84a; } .inv-timer em { font-style: normal; color: #fff; min-width: 3.2em; text-align: right; }
+.inv-timer.on { border-color: #ffd84a; color: #fff6c8; box-shadow: 0 0 12px rgba(255, 210, 70, .7); animation: invPulse 1.4s ease-in-out infinite; }
+@keyframes invPulse { 50% { box-shadow: 0 0 22px rgba(255, 210, 70, .95); } }
+.gold-banner { position: fixed; left: 50%; top: 20%; transform: translateX(-50%); z-index: 7; pointer-events: none; opacity: 0; width: min(92vw, 640px);
+  text-align: center; font: 700 clamp(16px, 3.6vw, 24px) var(--display); color: #ffe27a; padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(60, 40, 4, .92), rgba(30, 18, 2, .92)); border: 3px solid #ffd84a;
+  text-shadow: 2px 2px 0 #2a1a00, 0 0 12px rgba(255, 200, 60, .8); box-shadow: 0 0 30px rgba(255, 200, 60, .55); }
+.gold-banner.show { animation: goldBanner 6s ease forwards; }
+@keyframes goldBanner { 0% { opacity: 0; transform: translate(-50%, -20px) scale(.9); } 8% { opacity: 1; transform: translate(-50%, 0) scale(1.04); } 14% { transform: translate(-50%, 0) scale(1); } 85% { opacity: 1; } 100% { opacity: 0; } }
+.gold-flash { position: fixed; inset: 0; z-index: 9; pointer-events: none; opacity: 0; display: grid; place-items: center;
+  background: radial-gradient(circle, rgba(255, 220, 90, .55), rgba(255, 180, 40, 0) 65%); }
+.gold-flash span { font: 700 clamp(18px, 4vw, 30px) var(--display); color: #fff3b0; text-shadow: 2px 2px 0 #3a2600, 0 0 18px #ffb800; text-align: center; padding: 0 12px; }
+.gold-flash.show { animation: goldFlash 2.4s ease-out forwards; }
+@keyframes goldFlash { 0% { opacity: 0; } 12% { opacity: 1; } 70% { opacity: .85; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .gold-banner.show, .gold-flash.show { animation-duration: .01s; } .inv-timer.on { animation: none; } }
+#feed .gold { color: #ffe27a; --r: #ffd84a; }
+.chat-lines li.sys.gold { color: #ffe27a; }
+/* Box Kundun */
+.box-dialog { text-align: center; width: min(360px, calc(100vw - 24px)); }
+.box-stage { height: 130px; display: grid; place-items: center; position: relative; }
+.box-stage canvas { image-rendering: pixelated; }
+.box-stage.opening canvas { animation: boxShake .18s linear infinite; filter: drop-shadow(0 0 10px #ffd84a); }
+@keyframes boxShake { 0% { transform: rotate(-6deg) translateY(0); } 50% { transform: rotate(6deg) translateY(-3px); } 100% { transform: rotate(-6deg) translateY(0); } }
+.box-stage.open canvas { animation: boxPop .5s ease-out; filter: drop-shadow(0 0 12px rgba(255, 220, 120, .8)); }
+.box-stage.legendary::before { content: ''; position: absolute; inset: -20px; background: repeating-conic-gradient(rgba(255, 216, 74, .35) 0 10deg, transparent 10deg 20deg);
+  border-radius: 50%; animation: rays 4s linear infinite; mask: radial-gradient(circle, #000 30%, transparent 70%); -webkit-mask: radial-gradient(circle, #000 30%, transparent 70%); }
+@keyframes rays { to { transform: rotate(360deg); } }
+@keyframes boxPop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.box-prize { font: 700 20px var(--display); margin: 4px 0; }
+.box-list-title { margin: 6px 0 2px; font-weight: 600; } .box-list { margin: 0 0 6px; padding-left: 18px; font-size: 14px; columns: 2; }
+#panel-admin .adt-mon { display: inline-flex; flex-direction: column; align-items: flex-start; font-size: 11px; margin: 0 4px 2px 0; }
+#panel-admin .adt-msgrow { display: grid; grid-template-columns: 1fr; gap: 2px; margin: 4px 0; font-size: 13px; }
+#panel-admin .adt-msgrow input { width: 100% !important; }
+#panel-admin .adt-entry { margin: 3px 0; padding: 3px; border-bottom: 1px dashed var(--edge); }
+#panel-admin .adt-entry input[type=number] { width: 64px; }
+#panel-admin .adt-p[hidden] { display: none; }
+#panel-admin .adt-box h4 { color: var(--gold); }

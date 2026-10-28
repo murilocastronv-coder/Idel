@@ -386,6 +386,16 @@ const ITEM_BASES = {
   cape_emperor: { name: 'Cape of Emperor', slot: 'wings', cat: 'cape', tier: 2, icon: 'cape', ic: '#ff3a3a', req: 130, def: 34, wdmg: 39, absorb: 30, rarity: 'ancestral', value: 1500000, special: true, classes: ['dark_lord'] },
 };
 
+// ---------- Invasão Dourada: caixas abertas na bolsa ----------
+Object.assign(ITEM_BASES, {
+  kundun_bronze: { name: 'Box Kundun Bronze', slot: 'box', icon: 'box', ic: '#d08a4a', req: 1, stack: 99, rarity: 'uncommon', value: 2000, special: true, tier: 1,
+    desc: 'Caixa da Invasão Dourada. Pode ter Zen, poções, equipamentos comuns e incomuns, joias e uma pequena chance de equipamento raro.' },
+  kundun_prata: { name: 'Box Kundun Prata', slot: 'box', icon: 'box', ic: '#d8e2f0', req: 1, stack: 99, rarity: 'rare', value: 9000, special: true, tier: 2,
+    desc: 'Caixa da Invasão Dourada. Mais Zen, equipamentos raros com adicionais, joias, materiais de criação e chance de equipamento épico.' },
+  kundun_ouro: { name: 'Box Kundun Ouro', slot: 'box', icon: 'box', ic: '#ffc83a', req: 1, stack: 99, rarity: 'epic', value: 40000, special: true, tier: 3,
+    desc: 'Caixa da Invasão Dourada. Equipamentos épicos, lendários e ancestrais, asas e capas, joias raras e materiais poderosos.' },
+});
+
 // asa de nível 1 -> asa de nível 2 (o Magic Gladiator transforma Satan/Heaven em Darkness)
 const WING_EVOLVE = { wings_satan: 'wings_dragon', wings_heaven: 'wings_soul', wings_elf: 'wings_spirit', wings_curse: 'wings_despair' };
 

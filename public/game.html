@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=1">
   <link rel="stylesheet" href="/css/style.css?v=14">
-  <link rel="stylesheet" href="/css/game.css?v=21">
+  <link rel="stylesheet" href="/css/game.css?v=22">
 </head>
 <body class="game">
   <canvas id="world" aria-label="Mapa do jogo"></canvas>
@@ -25,6 +25,7 @@
   <div class="hud-map">
     <div class="map-name"><i class="dot" id="g-conn"></i><span id="map-name">Conectando…</span></div>
     <div class="mode-tag">Hard XP</div>
+    <button class="inv-timer" id="inv-timer" type="button" hidden aria-live="off"><b aria-hidden="true">♛</b><span id="inv-label">Próxima invasão</span><em id="inv-time">--:--</em></button>
     <canvas id="minimap" width="120" height="80" aria-label="Minimapa"></canvas>
   </div>
 
@@ -37,6 +38,8 @@
   <div class="feed" id="feed" aria-live="polite"></div>
   <div class="map-banner" id="map-banner" aria-live="polite"></div>
   <div class="alert-banner" id="alert-banner" aria-live="assertive"></div>
+  <div class="gold-banner" id="gold-banner" aria-live="polite"></div>
+  <div class="gold-flash" id="gold-flash" aria-hidden="true"></div>
   <div class="duel-bar" id="duel-bar" hidden></div>
   <div class="pcard window" id="pcard" hidden></div>
   <div class="duel-invite window" id="duel-invite" hidden role="alertdialog"></div>
@@ -152,20 +155,27 @@
     </form>
   </section>
 
+  <dialog class="window dialog box-dialog" id="box-dialog" aria-labelledby="box-title">
+    <h2 id="box-title">Box Kundun</h2>
+    <div class="box-stage" id="box-stage"></div>
+    <div id="box-out" role="status"></div>
+    <div class="row"><button class="btn btn-gold" type="button" id="box-again" hidden>Abrir outra</button><button class="btn" type="button" data-close>Fechar</button></div>
+  </dialog>
+
   <dialog class="window dialog" id="offline-dialog" aria-labelledby="offline-title">
     <h2 id="offline-title">Enquanto você esteve fora</h2>
     <div id="offline-body"></div>
     <div class="row"><button class="btn btn-gold" type="button" data-close>Continuar</button></div>
   </dialog>
 
-  <script src="/js/i18n-en.js?v=21"></script>
+  <script src="/js/i18n-en.js?v=22"></script>
 
   <script src="/js/i18n.js?v=20"></script>
 
-  <script src="/js/pixel.js?v=14"></script>
+  <script src="/js/pixel.js?v=15"></script>
   <script src="/js/sprites.js?v=22"></script>
   <script src="/js/sfx.js?v=20"></script>
-  <script src="/js/admin-tools.js?v=1"></script>
-  <script src="/js/game.js?v=23"></script>
+  <script src="/js/admin-tools.js?v=2"></script>
+  <script src="/js/game.js?v=24"></script>
 </body>
 </html>

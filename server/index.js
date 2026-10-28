@@ -23,6 +23,7 @@ const { World } = require('./world');
 const CHAOS = require('./chaos');
 const DROPS = require('./drops');
 const CMDS = require('./commands');
+const KUNDUN = require('./kundun');
 
 const PORT = Number(process.env.PORT || 3000);
 const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
@@ -368,6 +369,34 @@ route('POST', '/api/admin/drops', bad(async (req) => {
   }
   CMDS.log(who, 'panel:drops:' + body.op, null, body, null, null, 'ok', message, null);
   return { ok: true, message, ...DROPS.adminView() };
+}));
+// ---- Invasão Dourada e Box Kundun (Super ADM) ----
+async function invasionView() {
+  const INV = world.invasion;
+  return { ...INV.adminView(), boxes: KUNDUN.cfg(), boxIds: KUNDUN.BOXES, boxNames: Object.fromEntries(KUNDUN.BOXES.map((b) => [b, game.ITEM_BASES[b].name])),
+    kinds: KUNDUN.KINDS, materials: Object.keys(game.ITEM_BASES).filter((k) => game.ITEM_BASES[k].slot === 'material').map((k) => ({ id: k, name: game.ITEM_BASES[k].name })),
+    history: await INV.history(20), opens: await KUNDUN.history(40) };
+}
+route('GET', '/api/admin/invasion', async (req) => { await requireAdmin(req); return invasionView(); });
+route('POST', '/api/admin/invasion', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 64 * 1024);
+  const INV = world.invasion;
+  const who = { accountId: acc.id, name: acc.username, role: 'superadmin' };
+  let message = 'Salvo.';
+  switch (body.op) {
+    case 'config': await INV.saveConfig(body.config || {}); message = 'Invasão Dourada salva.'; break;
+    case 'boxes': await KUNDUN.saveConfig(body.boxes || {}); message = 'Caixas salvas.'; break;
+    case 'start': if (!(await INV.start('admin'))) throw new HttpError(400, 'Já existe uma invasão em andamento.'); message = 'Invasão iniciada.'; break;
+    case 'stop': if (!(await INV.end('admin'))) throw new HttpError(400, 'Não há invasão em andamento.'); message = 'Invasão encerrada.'; break;
+    case 'remove': message = `${INV.removeAll()} monstro(s) removido(s).`; break;
+    case 'next': await INV.setNext(body.minutes); message = `Próxima invasão em ${Math.round(Number(body.minutes))} min.`; break;
+    case 'spawn': message = `${INV.spawnManual(String(body.map), body.n, Number(body.room) || 0)} monstro(s) dourado(s) criado(s).`; break;
+    case 'simulate': return { ok: true, sim: KUNDUN.simulate(String(body.box), body.n, body.level, String(body.cls || 'dark_knight')) };
+    default: throw new HttpError(400, 'Operação inválida.');
+  }
+  CMDS.log(who, 'panel:invasao:' + body.op, null, body.op === 'config' || body.op === 'boxes' ? {} : body, null, null, 'ok', message, null);
+  return { ok: true, message, ...(await invasionView()) };
 }));
 route('GET', '/api/admin/rules', async (req, url) => {
   await requireAdmin(req);

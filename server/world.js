@@ -9,6 +9,8 @@ const ADMIN = require('./admin');
 const CHAOS = require('./chaos');
 const DROPS = require('./drops');
 const CMDS = require('./commands');
+const INV = require('./invasion');
+const KUNDUN = require('./kundun');
 
 const TICK_MS = 100;
 const SAVE_EVERY_MS = 20000;
@@ -64,6 +66,7 @@ function canUse(p, it) {
   const b = G.ITEM_BASES[it.base];
   if (!b) return 'Item desconhecido.';
   if (b.slot === 'material') return 'Este item é um material: use na Chaos Machine, com o Chaos Goblin em Lorencia.';
+  if (b.slot === 'box') return 'Toque na caixa e em Abrir para ver o prêmio.';
   if (b.classes && !b.classes.includes(p.cls)) return b.cat === 'cape' ? 'Só o Dark Lord usa capas.' : 'Sua classe não usa estas asas.';
   if (p.level < b.req) return `Requer nível ${b.req}.`;
   if (b.slot === 'weapon' && !G.CLASS_WEAPONS[p.cls].includes(b.kind)) return 'Sua classe não usa esta arma.';
@@ -105,7 +108,7 @@ function publicItem(it) {
   const b = G.ITEM_BASES[it.base] || {};
   return { id: String(it.id), base: it.base, name: b.name, slot: b.slot, icon: b.icon, ic: b.ic || null, kind: b.kind, req: b.req, set: b.set,
     cat: b.cat || (b.slot === 'material' ? 'material' : null), tier: b.tier || 0, classes: b.classes || null, chaos: !!b.chaos, desc: b.desc || null,
-    qty: Math.max(1, Number(it.qty) || 1), stack: b.stack || 0,
+    qty: Math.max(1, Number(it.qty) || 1), stack: b.stack || 0, contents: b.slot === 'box' ? KUNDUN.contents(it.base) : undefined,
     rarity: it.rarity, plus: it.plus, equipped: !!it.equipped, stats: itemStats(it), value: itemValue(it) };
 }
 function bagUsed(p) { return p.items.filter((i) => !i.equipped).length; }
@@ -283,6 +286,9 @@ class World {
     await DROPS.init(helpers);
     CMDS.init(this, expToNext);
     this.commands = CMDS;
+    await KUNDUN.init(helpers);
+    await INV.init(this, helpers);
+    this.invasion = INV;
   }
 
   // ficha de um personagem que não está no mundo (para comandos de administração)
@@ -410,6 +416,7 @@ class World {
     this.enterMap(p, mapId, row.map === mapId && row.pos_x > 0 ? [row.pos_x, row.pos_y] : null);
     p.send(p.charState());
     p.send({ type: 'chatlog', lines: this.chat.slice(-30) });
+    p.send({ type: 'invasion', phase: 'status', ...INV.status() });
     p.send(Q.state(p));
     if (report) p.send({ type: 'offline', ...report });
     p.dirty = true;
@@ -465,8 +472,7 @@ class World {
       type: 'enter', map: mapId, room: m.room, rooms: ROOMS, name: m.def.name, theme: m.def.theme, w: m.def.w, h: m.def.h, safe: !!m.def.safe,
       npcs: m.def.npcs || [],
       ground: m.ground ? [...m.ground.values()].map((g) => DROPS.publicGround(g)) : [],
-      monsters: m.monsters.map((mo) => ({ id: mo.id, type: mo.type, name: mo.T.name, sprite: mo.T.sprite, tint: mo.T.tint || null,
-        size: mo.T.size, scale: mo.T.scale || 1, level: mo.T.level, maxHp: mo.T.hp, boss: !!mo.T.boss, elite: !!mo.T.elite })),
+      monsters: m.monsters.map((mo) => INV.monInfo(mo)),
       players: [...m.players.values()].filter((o) => o !== p).map((o) => this.pinfo(o)),
       you: p.id,
     });
@@ -527,6 +533,7 @@ class World {
       case 'room': return this.switchRoom(p, msg.room);
       case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS])));
       case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
+      case 'openBox': return p.run(() => KUNDUN.open(this, p, String(msg.id || '')));
       case 'pickup': {
         if (p.dead || !p.map || !p.map.ground) return undefined;
         const g = p.map.ground.get(String(msg.gid));
@@ -700,8 +707,9 @@ class World {
     for (const o of this.players.values()) o.send({ type: 'chat', ...line });
   }
 
-  system(text) {
+  system(text, en) {
     const line = { from: null, text, t: Date.now() };
+    if (en) line.en = en;
     this.chat.push(line); if (this.chat.length > 60) this.chat.shift();
     for (const o of this.players.values()) o.send({ type: 'chat', ...line });
   }
@@ -1167,8 +1175,9 @@ class World {
     if (m.dead) return;
     m.dead = true; m.hp = 0; m.target = null;
     const map = killer.map;
-    m.respawnAt = now + (m.T.respawnMs || MONSTER_RESPAWN_MS);
+    m.respawnAt = m.golden ? Infinity : now + (m.T.respawnMs || MONSTER_RESPAWN_MS);
     map.emit({ k: 'die', t: m.id });
+    if (m.T.golden) return INV.onKill(this, m, map, killer);
     if (m.T.boss) return this.bossRewards(m, map, killer);
     const p = killer;
     const pk = p.perks();
@@ -1189,6 +1198,18 @@ class World {
     }
     DROPS.onKill(this, p, m, map);
     m.contrib.clear();
+  }
+
+  // EXP e Zen de um monstro dividido por contribuição (Invasão Dourada)
+  grantShare(p, m, share) {
+    const pk = p.perks();
+    const exp = Math.round(m.T.exp * XP() * pk.exp * share);
+    const zen = Math.round(randi(m.T.zen[0], m.T.zen[1]) * pk.zen * share);
+    p.exp += exp; p.zen += zen; p.kills++;
+    this.quest(p, 'kill', 1); this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
+    p.send({ type: 'reward', exp, zen, mon: m.T.name, share: share < 1 ? Math.round(share * 100) : undefined });
+    while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
+    p.dirty = true;
   }
 
   bossRewards(m, map, killer) {

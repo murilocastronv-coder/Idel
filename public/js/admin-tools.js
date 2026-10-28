@@ -235,13 +235,134 @@
       ${r.message ? `<br><small>${esc(r.message)}</small>` : ''}${r.before && r.after ? `<br><small class="muted">antes: ${val(r.before)} · depois: ${val(r.after)}</small>` : ''}${r.reason ? `<br><small>Motivo: ${esc(r.reason)}</small>` : ''}</li>`).join('');
   }
 
+  // ---------------- Invasão Dourada ----------------
+  const MODE_PT = { contribution: 'Compartilhada por contribuição (1 caixa, sorteada pelo dano)', individual: 'Individual (cada participante ganha a sua)', lasthit: 'Último golpe' };
+  const TIER_NAME = { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro' };
+  const KIND_NAME = { zen: 'Zen', pot: 'Poções', item: 'Equipamento', material: 'Material', chaosweapon: 'Arma do Caos', wing1: 'Asa nível 1', wing2: 'Asa nível 2', cape: 'Capa do Dark Lord' };
+  const MSG_NAME = { start: 'Início', spawn: 'Aparição ({monstro}, {mapa})', kill: 'Derrota ({jogador}, {monstro}, {caixa})', end: 'Fim ({minutos})' };
+  async function invasion(box) {
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    let V;
+    try { V = await X.api('GET', '/api/admin/invasion'); } catch (e) { box.innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+    draw();
+    function draw() {
+      const C = V.config;
+      const entry = (e) => `<div class="adm-row adt-entry">${sel('kind', V.kinds.map((k) => [k, KIND_NAME[k]]), e.kind)}
+        <label>peso ${num('w', e.w, 'min="0.001" step="0.1"')}</label>
+        <span class="adt-p" data-k="zen pot material">mín ${num('min', e.min ?? 1, 'min="1"')} máx ${num('max', e.max ?? 1, 'min="1"')}</span>
+        <span class="adt-p" data-k="pot">${sel('pot', [['hp', 'vida'], ['mp', 'mana']], e.pot || 'hp')}</span>
+        <span class="adt-p" data-k="material">${sel('item', V.materials.map((m) => [m.id, m.name]), e.item || V.materials[0].id)}</span>
+        <span class="adt-p" data-k="item chaosweapon">${sel('rarity', RAR.map((k) => [k, RAR_PT[k]]), e.rarity || 'common')} +${num('plusMin', e.plusMin ?? 0, 'min="0" max="15"')} a +${num('plusMax', e.plusMax ?? 0, 'min="0" max="15"')}</span>
+        <button class="btn small" type="button" data-del-entry>×</button></div>`;
+      box.innerHTML = `<p class="adt-msg" role="status"></p>
+        <fieldset class="adt-card"><legend>Agora</legend>
+          <p>${V.statusText.map(esc).join('<br>')}</p>
+          <div class="adm-row"><button class="btn small btn-gold" type="button" data-op="start">Iniciar agora</button><button class="btn small" type="button" data-op="stop">Encerrar</button>
+            <button class="btn small" type="button" data-op="remove">Remover monstros dourados</button>
+            <label>Próxima em ${num('next', 40, 'min="1" max="1440" id="adt-inv-next"')} min</label><button class="btn small" type="button" data-op="next">Definir</button></div>
+          <div class="adm-row">${sel('spawnMap', V.maps.map((m) => [m.id, m.name]), V.maps[0].id, 'id="adt-inv-map"')}<label>qtd ${num('n', 3, 'min="1" max="30" id="adt-inv-n"')}</label>
+            <label>sala ${sel('room', [['0', 'todas'], ['1', '1'], ['2', '2'], ['3', '3'], ['4', '4']], '0', 'id="adt-inv-room"')}</label><button class="btn small" type="button" data-op="spawn">Criar monstros dourados</button></div>
+        </fieldset>
+        <fieldset class="adt-card" id="adt-inv-cfg"><legend>Configuração</legend>
+          <label class="adt-check"><input type="checkbox" data-f="enabled" ${C.enabled ? 'checked' : ''}> Temporizador automático ligado</label>
+          <div class="adm-row"><label>A cada (min) ${num('intervalMin', C.intervalMin, 'min="5"')}</label><label>Dura (min) ${num('durationMin', C.durationMin, 'min="1"')}</label>
+            <label>Participação mínima (% do dano) ${num('minShare', C.minShare, 'min="0" max="100"')}</label></div>
+          <div class="adm-row"><label>Recompensa ${sel('rewardMode', V.modes.map((k) => [k, MODE_PT[k]]), C.rewardMode)}</label></div>
+          <div class="adm-row"><label>Nível do monstro para Prata ${num('thresholds.prata', C.thresholds.prata, 'min="1"')}</label><label>para Ouro ${num('thresholds.ouro', C.thresholds.ouro, 'min="1"')}</label>
+            <small class="muted">elites sobem uma categoria</small></div>
+          <div class="adt-table-wrap"><table class="adt-table"><thead><tr><th>Categoria</th><th>Vida ×</th><th>Dano ×</th><th>Defesa ×</th><th>EXP ×</th><th>Zen ×</th><th>Tamanho</th><th>Caixa</th><th>Anunciar</th></tr></thead><tbody>
+            ${V.tiers.map((t) => `<tr data-tier="${t}"><td>${TIER_NAME[t]}</td>${['hp', 'dmg', 'def', 'exp', 'zen', 'scale'].map((k) => `<td>${num(k, C.tiers[t][k], 'step="0.05" min="1"')}</td>`).join('')}
+              <td>${sel('box', V.boxIds.map((b) => [b, V.boxNames[b]]), C.tiers[t].box)}</td><td><input type="checkbox" data-ann ${C.announceKills.includes(t) ? 'checked' : ''}></td></tr>`).join('')}
+          </tbody></table></div>
+          <div class="adm-row"><label>Padrão por mapa: quantidade ${num('mapDefaults.count', C.mapDefaults.count, 'min="0"')}</label><label>vivos ao mesmo tempo ${num('mapDefaults.maxAlive', C.mapDefaults.maxAlive, 'min="1"')}</label>
+            <label>segundos entre nascimentos ${num('mapDefaults.intervalSec', C.mapDefaults.intervalSec, 'min="1"')}</label></div>
+          <p class="adt-sub">Mapas (quantidade por sala, em cada invasão)</p>
+          <div class="adt-table-wrap"><table class="adt-table"><thead><tr><th>Mapa</th><th>Ativo</th><th>Qtd</th><th>Vivos</th><th>Seg.</th><th>Nível rec.</th><th>Monstros (categoria)</th></tr></thead><tbody>
+            ${V.maps.map((m) => `<tr data-map="${m.id}"><td>${esc(m.name)}</td><td><input type="checkbox" data-f="enabled" ${m.cfg.enabled ? 'checked' : ''}></td>
+              <td>${num('count', m.cfg.count, 'min="0" class="w-xs"')}</td><td>${num('maxAlive', m.cfg.maxAlive, 'min="1" class="w-xs"')}</td><td>${num('intervalSec', m.cfg.intervalSec, 'min="1" class="w-xs"')}</td><td>${num('recLevel', m.cfg.recLevel, 'min="1" class="w-xs"')}</td>
+              <td>${m.monsters.map((mo) => `<label class="adt-mon">${esc(mo.name)} ${sel('mon', [['auto', `auto (${TIER_NAME[mo.auto]})`], ['bronze', 'Bronze'], ['prata', 'Prata'], ['ouro', 'Ouro'], ['off', 'desligado']], m.cfg.monsters[mo.type] || 'auto', `data-type="${mo.type}"`)}</label>`).join('')}</td></tr>`).join('')}
+          </tbody></table></div>
+          <p class="adt-sub">Mensagens (português e inglês)</p>
+          ${Object.keys(C.messages).map((k) => `<div class="adt-msgrow" data-msg="${k}"><b>${esc(MSG_NAME[k] || k)}</b><input data-l="pt" value="${esc(C.messages[k].pt)}" maxlength="240"><input data-l="en" value="${esc(C.messages[k].en)}" maxlength="240"></div>`).join('')}
+          <button class="btn btn-gold" type="button" id="adt-inv-save">Salvar Invasão Dourada</button>
+        </fieldset>
+        <fieldset class="adt-card" id="adt-boxes"><legend>Box Kundun (prêmios e pesos)</legend>
+          <p class="muted small">A chance de cada prêmio é o peso dele ÷ soma dos pesos da caixa. Lendários e ancestrais precisam ser mais raros que comuns, incomuns e raros. Equipamentos saem perto do nível de quem abre.</p>
+          ${V.boxIds.map((b) => `<div class="adt-box" data-box="${b}"><h4>${esc(V.boxNames[b])}</h4><div class="adt-entries">${V.boxes[b].map(entry).join('')}</div><button class="btn small" type="button" data-add-entry>+ prêmio</button></div>`).join('')}
+          <button class="btn btn-gold" type="button" id="adt-box-save">Salvar caixas</button>
+          <div class="adm-row">${sel('simBox', V.boxIds.map((b) => [b, V.boxNames[b]]), 'kundun_ouro', 'id="adt-sim-box"')}<label>aberturas ${num('n', 5000, 'id="adt-sim-n" min="1" max="100000"')}</label>
+            <label>nível ${num('lv', 100, 'id="adt-sim-lv" min="1"')}</label><button class="btn small" type="button" id="adt-box-sim">Simular</button></div>
+          <div id="adt-box-out"></div>
+        </fieldset>
+        <h4>Últimas invasões</h4>
+        <ul class="adm-list adt-log">${V.history.invasions.map((h) => `<li>#${h.id} · ${dt(h.started_at)} · ${esc(h.trigger)} · ${h.ended_at ? `terminou ${dt(h.ended_at)} (${esc(h.end_reason || '')})` : 'em andamento'} · ${h.spawned} criados · ${h.killed} derrotados</li>`).join('') || '<li class="muted">Nenhuma ainda.</li>'}</ul>
+        <h4>Monstros dourados derrotados</h4>
+        <ul class="adm-list adt-log">${V.history.kills.map((k) => `<li>${dt(k.created_at)} · ${esc(k.monster_name)} (${TIER_NAME[k.tier] || k.tier}) · ${esc(k.map)} sala ${k.room} · ${k.rewards.map((r) => `${esc(r.name)} → ${esc(V.boxNames[r.box] || r.box)}${r.share ? ` (${r.share}%)` : ''}`).join(', ')}</li>`).join('') || '<li class="muted">Nenhum ainda.</li>'}</ul>
+        <h4>Caixas abertas</h4>
+        <ul class="adm-list adt-log">${V.opens.map((o) => `<li>${dt(o.created_at)} · <b>${esc(o.char_name)}</b> · ${esc(V.boxNames[o.box] || o.box)} → ${esc(o.reward.text || '')}</li>`).join('') || '<li class="muted">Nenhuma ainda.</li>'}</ul>`;
+      const showParams = (row) => { const k = $('[data-f=kind]', row).value; $$('.adt-p', row).forEach((sp) => { sp.hidden = !sp.dataset.k.split(' ').includes(k); }); };
+      const bindEntries = () => {
+        $$('.adt-entry', box).forEach((row) => { showParams(row); $('[data-f=kind]', row).onchange = () => showParams(row); $('[data-del-entry]', row).onclick = () => row.remove(); });
+      };
+      bindEntries();
+      $$('[data-add-entry]', box).forEach((b) => { b.onclick = () => { b.previousElementSibling.insertAdjacentHTML('beforeend', entry({ kind: 'zen', w: 1, min: 1000, max: 5000 })); bindEntries(); }; });
+      const post = async (body) => { try { const r = await X.api('POST', '/api/admin/invasion', body); if (r.config) { V = r; draw(); } msg(box, r.message || 'Ok.'); return r; } catch (e) { msg(box, e.message, true); box.scrollIntoView({ block: 'start' }); return null; } };
+      $$('[data-op]', box).forEach((b) => {
+        b.onclick = () => {
+          const op = b.dataset.op;
+          if (op === 'next') return post({ op, minutes: Number($('#adt-inv-next').value) });
+          if (op === 'spawn') return post({ op, map: $('#adt-inv-map').value, n: Number($('#adt-inv-n').value), room: Number($('#adt-inv-room').value) });
+          return post({ op });
+        };
+      });
+      $('#adt-inv-save').onclick = () => {
+        const f = $('#adt-inv-cfg');
+        const c = { thresholds: {}, tiers: {}, mapDefaults: {}, maps: {}, messages: {}, announceKills: [] };
+        for (const el of $$(':scope > [data-f], :scope > .adm-row [data-f], :scope > label [data-f]', f)) {
+          const p2 = el.dataset.f.split('.'); const v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value;
+          if (p2.length === 2) c[p2[0]][p2[1]] = v; else c[p2[0]] = v;
+        }
+        for (const tr of $$('[data-tier]', f)) {
+          const t = tr.dataset.tier; c.tiers[t] = {};
+          for (const el of $$('[data-f]', tr)) c.tiers[t][el.dataset.f] = el.dataset.f === 'box' ? el.value : Number(el.value);
+          if ($('[data-ann]', tr).checked) c.announceKills.push(t);
+        }
+        for (const tr of $$('[data-map]', f)) {
+          const m = { monsters: {} };
+          for (const el of $$('[data-f]', tr)) { if (el.dataset.f === 'mon') m.monsters[el.dataset.type] = el.value; else m[el.dataset.f] = el.type === 'checkbox' ? el.checked : Number(el.value); }
+          c.maps[tr.dataset.map] = m;
+        }
+        for (const row of $$('[data-msg]', f)) c.messages[row.dataset.msg] = { pt: $('[data-l=pt]', row).value, en: $('[data-l=en]', row).value };
+        post({ op: 'config', config: c });
+      };
+      $('#adt-box-save').onclick = () => {
+        const b2 = {};
+        for (const bx of $$('[data-box]', box)) {
+          b2[bx.dataset.box] = $$('.adt-entry', bx).map((row) => {
+            const o = {}; for (const el of $$('[data-f]', row)) { if (el.closest('.adt-p') && el.closest('.adt-p').hidden) continue; o[el.dataset.f] = el.type === 'number' ? Number(el.value) : el.value; }
+            return o;
+          });
+        }
+        post({ op: 'boxes', boxes: b2 });
+      };
+      $('#adt-box-sim').onclick = async () => {
+        try {
+          const r = await X.api('POST', '/api/admin/invasion', { op: 'simulate', box: $('#adt-sim-box').value, n: Number($('#adt-sim-n').value), level: Number($('#adt-sim-lv').value) });
+          const s2 = r.sim;
+          $('#adt-box-out').innerHTML = `<p>${esc(s2.box)} · ${fmt.format(s2.opens)} aberturas (nível ${s2.level}) · Zen médio ${fmt.format(s2.zenAvg)}</p><ul class="adm-list">${s2.results.map((x) => `<li>${esc(x.name)}: ${x.pct}%</li>`).join('')}</ul>`;
+        } catch (e) { msg(box, e.message, true); }
+      };
+    }
+  }
+
   function mount(el, ctx) {
     X = ctx;
     el.innerHTML = `
+      <details class="adm-sec adt-sec" data-sec="invasion"><summary><h3>♛ Invasão Dourada e Box Kundun</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="chaos"><summary><h3>Chaos Machine (asas e capas)</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="drops"><summary><h3>Drops de materiais e eventos</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="rules"><summary><h3>Comandos, reset e histórico ADM</h3></summary><div class="adt-body"></div></details>`;
-    const fn = { chaos, drops, rules };
+    const fn = { invasion, chaos, drops, rules };
     $$('.adt-sec', el).forEach((d) => { d.addEventListener('toggle', () => { if (d.open && !d.dataset.loaded) { d.dataset.loaded = 1; fn[d.dataset.sec]($('.adt-body', d)); } }); });
   }
 

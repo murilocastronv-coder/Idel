@@ -9,7 +9,7 @@
   const charId = new URLSearchParams(location.search).get('c');
 
   const S = {
-    gitems: new Map(),
+    gitems: new Map(), goldFx: [], inv: null,
     data: null, char: null, me: null, map: null, ground: null,
     players: new Map(), monsters: new Map(), fx: [], floats: [], clickMark: null,
     boss: null, chatUnread: 0, panel: null, selItem: null, rarFilter: 'all', youId: null,
@@ -72,11 +72,16 @@
         const it = m.item;
         if (m.x !== null && m.x !== undefined) S.drops.push({ x: m.x, y: m.y, dx: (Math.random() - 0.5) * 24, item: it, t0: performance.now() });
         const n = m.gain || 1;
+        if (['legendary', 'ancestral'].includes(it.rarity) || it.slot === 'wings') goldFlash(`${it.name}!`);
         if (it.stack) feed(`Item: ${it.name} ×${n}${m.src ? ` — ${m.src}` : ''}`, 'drop', ACCENT(it));
         else feed(`Item: ${it.name}${it.plus ? ' +' + it.plus : ''} (${RAR_NAME[it.rarity]})${m.src ? ` — ${m.src}` : ''}`, 'drop', RAR[it.rarity]);
         return;
       }
       case 'gadd': S.gitems.set(m.g.gid, { ...m.g, t0: performance.now() }); return;
+      case 'madd': S.monsters.set(m.m.id, { ...m.m, x: 0, y: 0, rx: null, ry: null, hp: m.m.maxHp, dead: false, bornAt: performance.now() }); return;
+      case 'mdel': S.monsters.delete(m.id); return;
+      case 'invasion': return onInvasion(m);
+      case 'boxResult': return boxResult(m);
       case 'gdel': S.gitems.delete(m.gid); return;
       case 'chaosInfo': CH.info = m; if (S.panel === 'chaos') renderChaos(); return;
       case 'chaosResult': return chaosResult(m);
@@ -205,6 +210,9 @@
       const t = ent(ev.t);
       if (t) { S.fx.push({ kind: 'lvl', at: t, t0: now, dur: 1200 }); S.floats.push({ at: t, text: 'LEVEL UP!', color: '#ffd36b', big: true, t0: now }); }
       if (ev.t === S.youId) { feed('Subiu de nível!', 'lvl'); if (window.Sfx) Sfx.levelUp(); shake(4, 300); }
+    } else if (ev.k === 'gold') {
+      S.goldFx.push({ x: ev.x, y: ev.y, t0: now, tier: ev.tier, coins: Array.from({ length: ev.tier === 'ouro' ? 26 : ev.tier === 'prata' ? 18 : 12 }, () => ({ a: Math.random() * Math.PI * 2, v: 30 + Math.random() * 60, h: 20 + Math.random() * 40 })) });
+      if (window.Sfx) Sfx.drop('legendary');
     } else if (ev.k === 'die') {
       const t = ent(ev.t); if (t) t.dyingAt = now;
     } else if (ev.k === 'pdie') {
@@ -713,6 +721,33 @@
     });
   }
 
+  // ---------- explosão dourada quando um monstro dourado morre ----------
+  const GOLD_TIER = { bronze: '#f0b070', prata: '#e8f0ff', ouro: '#ffd84a' };
+  function drawGoldFx(now) {
+    if (!S.goldFx.length) return;
+    S.goldFx = S.goldFx.filter((g) => {
+      const age = (now - g.t0) / 1000;
+      if (age > 1.4) return false;
+      const [sx, sy] = toScreen(g.x, g.y);
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const r = (12 + age * 90) * zoom;
+      ctx.strokeStyle = `rgba(255,214,90,${Math.max(0, 1 - age / 0.8)})`; ctx.lineWidth = 3 * dpr;
+      ctx.beginPath(); ctx.ellipse(sx, sy - 10 * zoom, r, r * 0.5, 0, 0, Math.PI * 2); ctx.stroke();
+      const rg = ctx.createRadialGradient(sx, sy - 14 * zoom, 0, sx, sy - 14 * zoom, 40 * zoom);
+      rg.addColorStop(0, `rgba(255,236,150,${Math.max(0, 0.7 - age)})`); rg.addColorStop(1, 'rgba(255,200,60,0)');
+      ctx.fillStyle = rg; ctx.fillRect(sx - 40 * zoom, sy - 54 * zoom, 80 * zoom, 80 * zoom);
+      ctx.restore();
+      for (const c of g.coins) {
+        const d = c.v * age * zoom, lift = (c.h * age - 60 * age * age) * zoom;
+        ctx.globalAlpha = Math.max(0, 1 - age / 1.4);
+        ctx.fillStyle = (Math.floor(now / 90 + c.a * 10) % 2) ? '#ffd84a' : '#fff6c0';
+        ctx.fillRect(sx + Math.cos(c.a) * d - 1.5 * dpr, sy - 12 * zoom + Math.sin(c.a) * d * 0.5 - lift - 1.5 * dpr, 3 * dpr, 3 * dpr);
+      }
+      ctx.globalAlpha = 1;
+      return true;
+    });
+  }
+
   // ---------- áreas de perigo do boss ----------
   function drawDangers(now) {
     S.dangers = (S.dangers || []).filter((d) => {
@@ -763,6 +798,7 @@
       drawGroundItems(now);
       drawEntities(now, me);
       drawDrops(now, me);
+      drawGoldFx(now);
       drawFx(now);
       drawLighting(now, me);
       updateParticles(dt, now, vw, vh);
@@ -856,12 +892,38 @@
           ctx.fillStyle = g2; ctx.fillRect(x - ar * 1.6, y - h * 0.4 - ar * 1.6, ar * 3.2, ar * 3.2);
           ctx.restore();
         }
+        if (e.golden && !e.dead) {
+          // aura dourada e brilhos subindo
+          ctx.save(); ctx.globalCompositeOperation = 'lighter';
+          const ar = w * (1.3 + 0.12 * Math.sin(now / 140));
+          const g3 = ctx.createRadialGradient(x, y - h * 0.45, 0, x, y - h * 0.45, ar * 1.5);
+          g3.addColorStop(0, 'rgba(255,205,70,.42)'); g3.addColorStop(1, 'rgba(255,190,40,0)');
+          ctx.fillStyle = g3; ctx.fillRect(x - ar * 1.5, y - h * 0.45 - ar * 1.5, ar * 3, ar * 3);
+          for (let k = 0; k < 5; k++) {
+            const ph = ((now / 900 + k / 5 + (e.x % 7) / 7) % 1);
+            const sx2 = x + Math.sin(k * 2.3 + now / 400) * w * 0.7, sy2 = y - ph * h * 1.2;
+            ctx.globalAlpha = 1 - ph; ctx.fillStyle = '#fff1a8'; ctx.fillRect(sx2 - dpr, sy2 - dpr, 2 * dpr, 2 * dpr);
+          }
+          ctx.restore();
+          if (e.bornAt && now - e.bornAt < 700) { const k = (now - e.bornAt) / 700; ctx.strokeStyle = `rgba(255,214,90,${1 - k})`; ctx.lineWidth = 3 * dpr; ctx.beginPath(); ctx.ellipse(x, y, w * (0.5 + k * 1.6), w * (0.18 + k * 0.55), 0, 0, Math.PI * 2); ctx.stroke(); }
+        }
         if (e.id === myTarget && !e.dead) { ctx.strokeStyle = '#ffd36b'; ctx.lineWidth = dpr * 2; ctx.beginPath(); ctx.ellipse(x, y, w, w * 0.34, 0, 0, Math.PI * 2); ctx.stroke(); }
         shadowAt(x, y, w * 0.8);
         const hurt = now < (e.hurtUntil || 0) && !e.dyingAt;
         Sprites.monster(ctx, name, act, t, x, y, sc * (e.scale || 1), !e.flip, { once, white: hurt && (now - e.hurtUntil) > -90, tint: e.tint && e.tint[0] === '#' ? e.tint : null });
         if (e.dead) continue;
         const top = y - h - 6 * dpr;
+        if (e.golden) {
+          // barra de vida dourada com moldura
+          const bw = Math.max(34 * dpr, w * 1.8), bh = 4 * dpr, bx = Math.round(x - bw / 2);
+          ctx.fillStyle = '#3a2a06'; ctx.fillRect(bx - 2 * dpr, top - 2 * dpr, bw + 4 * dpr, bh + 4 * dpr);
+          ctx.fillStyle = '#0b1020'; ctx.fillRect(bx, top, bw, bh);
+          const gg = ctx.createLinearGradient(0, top, 0, top + bh); gg.addColorStop(0, '#fff3a0'); gg.addColorStop(1, '#e09a10');
+          ctx.fillStyle = gg; ctx.fillRect(bx, top, Math.max(0, bw * Math.min(1, e.hpShow / e.maxHp)), bh);
+          ctx.strokeStyle = '#ffd36b'; ctx.lineWidth = dpr; ctx.strokeRect(bx - 1.5 * dpr, top - 1.5 * dpr, bw + 3 * dpr, bh + 3 * dpr);
+          label(`♛ ${e.name} Nv.${e.level}`, x, top - 4 * dpr, GOLD_TIER[e.golden] || '#ffd36b', 10);
+          continue;
+        }
         hpBar(x, top, Math.max(28 * dpr, w * 1.6), e.hpShow / e.maxHp, e.boss ? '#c06bff' : e.elite ? '#ffb02e' : '#e0473a');
         if (e.boss || e.elite || e.id === myTarget) label(`${e.name} Nv.${e.level}`, x, top - 4 * dpr, e.boss ? '#e0b0ff' : e.elite ? '#ffd36b' : '#f0e6cc', 10);
       } else {
@@ -1304,6 +1366,17 @@
       $('[data-act]', box).onclick = () => { S.selItem = null; send({ type: 'sell', id: it.id }); };
       return;
     }
+    if (it.slot === 'box') {
+      box.innerHTML = `<h3 style="color:${ACCENT(it)}">${esc(it.name)} ×${fmt.format(it.qty)}</h3>
+        <p class="muted">Recompensa da Invasão Dourada</p>
+        ${it.desc ? `<p>${esc(it.desc)}</p>` : ''}
+        <p class="box-list-title">Pode conter:</p><ul class="box-list">${(it.contents || []).map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+        <div class="row"><button class="btn small btn-gold" type="button" data-open>Abrir</button>
+          <button class="btn small btn-ghost" type="button" data-act="sell">Vender ${it.qty > 1 ? 'todas ' : ''}por ${fmt.format(it.value)} Zen</button></div>`;
+      $('[data-open]', box).onclick = () => openBox(it);
+      $('[data-act]', box).onclick = () => { S.selItem = null; send({ type: 'sell', id: it.id }); };
+      return;
+    }
     const wingOk = !it.classes || it.classes.includes(S.char.cls);
     const catTxt = it.cat === 'cape' ? `Capa do Dark Lord · nível ${it.tier}` : it.cat === 'wings' ? `Asa de nível ${it.tier}` : SLOT_NAME[it.slot];
     box.innerHTML = `<h3 style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}</h3>
@@ -1597,13 +1670,13 @@
   // ================= chat =================
   function addChat(l, notify) {
     const li = document.createElement('li');
-    if (!l.from) { li.className = 'sys'; li.textContent = l.text; }
+    if (!l.from) { li.className = 'sys'; li.textContent = l.en && window.I18N && I18N.lang === 'en' ? l.en : l.text; if (/DOURAD|Dourad|Golden|GOLDEN/.test(l.text)) li.classList.add('gold'); }
     else { const b = document.createElement('b'); b.textContent = l.from + ': '; li.appendChild(b); li.append(l.text); }
     const ul = $('#chat-lines'); ul.appendChild(li);
     while (ul.children.length > 80) ul.firstChild.remove();
     ul.scrollTop = ul.scrollHeight;
     if (notify && S.panel !== 'chat') {
-      if (!l.from) feed(l.text, 'lvl');
+      if (!l.from) feed(l.en && window.I18N && I18N.lang === 'en' ? l.en : l.text, /Dourad|DOURAD/.test(l.text) ? 'gold' : 'lvl');
       else { S.chatUnread++; $('#chat-badge').hidden = false; }
     }
   }
@@ -1637,6 +1710,77 @@
     }
     if (S.panel !== 'chat') feed(m.lines[0], m.ok ? 'quest' : 'warn');
   }
+
+  // ================= Box Kundun =================
+  const BOX = { it: null, busy: false, res: null, t0: 0 };
+  function openBox(it) {
+    BOX.it = it; BOX.res = null; BOX.busy = true; BOX.t0 = performance.now();
+    const d = $('#box-dialog');
+    $('#box-title').textContent = it.name;
+    const stage = $('#box-stage'); stage.innerHTML = ''; stage.className = 'box-stage opening';
+    const ic = chaosIcon(it, 96); stage.appendChild(ic);
+    $('#box-out').innerHTML = '<p class="muted">Abrindo…</p>';
+    $('#box-again').hidden = true;
+    if (!d.open) d.showModal();
+    send({ type: 'openBox', id: it.id });
+  }
+  function boxResult(m) {
+    BOX.res = m;
+    // a animação dura pelo menos 1,4 s, mas o prêmio já veio decidido do servidor
+    const wait = Math.max(0, 1400 - (performance.now() - BOX.t0));
+    setTimeout(() => {
+      BOX.busy = false;
+      const stage = $('#box-stage'), out = $('#box-out');
+      stage.className = 'box-stage ' + (m.ok ? (m.high ? 'open legendary' : 'open') : 'fail');
+      if (!m.ok) { out.innerHTML = `<p class="bad">${esc(m.text)}</p>`; return; }
+      stage.innerHTML = '';
+      const r = m.reward;
+      const shown = m.item || { icon: r.kind === 'zen' ? 'zen' : r.kind === 'pot' ? (r.pot === 'mp' ? 'potion_mp' : 'potion_hp') : 'jewel', rarity: 'rare' };
+      stage.appendChild(chaosIcon(shown, 96));
+      const col = m.item ? (m.item.ic || RAR[m.item.rarity]) : '#ffd36b';
+      out.innerHTML = `<p class="box-prize" style="color:${col}">${esc(r.text)}</p>${m.item && m.item.rarity && m.item.slot !== 'material' ? `<p style="color:${RAR[m.item.rarity]}">${RAR_NAME[m.item.rarity]}</p>` : ''}`;
+      if (m.high) goldFlash(r.text);
+      if (window.Sfx) { if (m.high) Sfx.levelUp(); else Sfx.coin(); }
+      const left = S.char && S.char.items.find((i) => i.id === (BOX.it && BOX.it.id));
+      const again = $('#box-again'); again.hidden = !left;
+      if (left) again.onclick = () => openBox(left);
+    }, wait);
+  }
+  $('#box-dialog').addEventListener('click', (e) => { if (e.target.closest('[data-close]') && !BOX.busy) e.currentTarget.close(); });
+  // brilho dourado na tela (itens lendários, asas)
+  function goldFlash(text) {
+    const el = $('#gold-flash');
+    el.innerHTML = `<span>${esc(text)}</span>`;
+    el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+  }
+
+  // ================= Invasão Dourada =================
+  function onInvasion(m) {
+    S.inv = { active: m.active, endsAt: m.endsAt, nextAt: m.nextAt, skew: Date.now() - m.now, enabled: m.enabled };
+    if (m.text) {
+      const txt = window.I18N && I18N.lang === 'en' ? (m.textEn || I18N.t(m.text)) : m.text;
+      const el = $('#gold-banner');
+      el.textContent = txt;
+      el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+      if (window.Sfx && m.phase === 'start') Sfx.boss();
+    }
+    invTimer();
+  }
+  function invTimer() {
+    const el = $('#inv-timer');
+    const I = S.inv;
+    if (!I || (!I.active && !I.enabled)) { el.hidden = true; return; }
+    const now = Date.now() - (I.skew || 0);
+    const ms = I.active ? I.endsAt - now : I.nextAt - now;
+    const s = Math.max(0, Math.round(ms / 1000));
+    const t = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    el.hidden = false;
+    el.classList.toggle('on', !!I.active);
+    $('#inv-label').textContent = I.active ? 'Invasão Dourada' : 'Próxima invasão';
+    $('#inv-time').textContent = t;
+  }
+  setInterval(invTimer, 1000);
+  $('#inv-timer').onclick = () => feed(S.inv && S.inv.active ? 'Monstros dourados estão nos mapas de caça! Derrote-os para ganhar Box Kundun.' : 'A cada 40 minutos monstros dourados invadem os mapas de caça.', 'gold');
 
   // ================= Chaos Machine =================
   const CH = { info: null, tab: 'wing1', sel: {}, busy: false, t: 0 };
