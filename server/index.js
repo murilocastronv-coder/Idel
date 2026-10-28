@@ -17,6 +17,7 @@ const sec = require('./security');
 const mail = require('./mail');
 const game = require('./gamedata');
 const { WSServer } = require('./ws');
+const { World } = require('./world');
 
 const PORT = Number(process.env.PORT || 3000);
 const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
@@ -134,11 +135,12 @@ async function refreshCounts() {
   accountsCount = Number(rows[0].a); charactersCount = Number(rows[0].c);
 }
 let ws; // definido ao iniciar
+let world = null;
 function liveStats() {
   const players = new Set();
   let visitors = 0;
   if (ws) for (const c of ws.clients) { visitors++; if (c.meta.accountId) players.add(c.meta.accountId); }
-  return { online: players.size, visitors, accounts: accountsCount, characters: charactersCount, serverTime: Date.now() };
+  return { online: players.size, inWorld: world ? world.online() : 0, visitors, accounts: accountsCount, characters: charactersCount, serverTime: Date.now() };
 }
 let statsTimer = null;
 function pushStats() {
@@ -163,6 +165,9 @@ route('GET', '/api/stats', async () => liveStats());
 
 route('GET', '/api/gamedata', async () => ({
   classes: game.CLASSES, maps: game.MAPS, rarities: game.RARITIES, items: game.ITEMS, limits: game.LIMITS,
+  world: Object.entries(game.WORLD).map(([id, w]) => ({ id, name: w.name, theme: w.theme, minLevel: w.minLevel, safe: !!w.safe,
+    monsters: [...w.groups.map((g) => game.MONSTERS[g.type].name), ...(w.boss ? [game.MONSTERS[w.boss.type].name + ' (boss)'] : [])] })),
+  shop: game.SHOP, sets: game.SETS,
 }));
 
 route('GET', '/api/news', async () => {
@@ -479,12 +484,25 @@ ws = new WSServer(server, {
 });
 ws.on('connection', (client) => {
   client.send({ type: 'hello', username: client.meta.username, ...liveStats() });
+  // limite de mensagens por conexão (anti-abuso)
+  client.rate = { n: 0, reset: Date.now() + 1000 };
   client.on('message', (msg) => {
-    if (msg === '{"type":"ping"}') client.send({ type: 'pong', t: Date.now() });
+    if (msg === '{"type":"ping"}') return client.send({ type: 'pong', t: Date.now() });
+    const now = Date.now();
+    if (now > client.rate.reset) client.rate = { n: 0, reset: now + 1000 };
+    if (++client.rate.n > 25) return;
+    let data;
+    try { data = JSON.parse(msg); } catch (_) { return; }
+    if (!data || typeof data.type !== 'string' || !world) return;
+    world.handle(client, data).catch((e) => {
+      console.error('[world] erro:', e);
+      client.send({ type: 'log', kind: 'warn', text: 'Erro no servidor ao processar a ação.' });
+    });
+    if (data.type === 'join' || data.type === 'leave') pushStats();
   });
   pushStats();
 });
-ws.on('disconnect', pushStats);
+ws.on('disconnect', (client) => { if (world) world.disconnect(client); pushStats(); });
 
 // Limpeza periódica de sessões e tokens expirados
 setInterval(() => {
@@ -495,12 +513,14 @@ setInterval(() => {
 (async () => {
   await db.migrate();
   await refreshCounts();
+  world = new World();
   server.listen(PORT, () => console.log(`[server] MU Idle Legends ouvindo na porta ${PORT}`));
 })().catch((e) => { console.error('[server] falha ao iniciar:', e); process.exit(1); });
 
 function shutdown() {
   console.log('[server] encerrando...');
-  server.close(() => db.pool.end().then(() => process.exit(0)));
+  const done = () => db.pool.end().then(() => process.exit(0));
+  (world ? world.shutdown() : Promise.resolve()).catch(() => {}).then(() => server.close(done));
   setTimeout(() => process.exit(0), 5000).unref();
 }
 process.on('SIGTERM', shutdown);

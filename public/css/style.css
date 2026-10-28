@@ -316,3 +316,7 @@ details[open] > summary { margin-bottom: 14px; }
   .hero-actions .btn { font-size: 16px; padding: 10px 14px; }
   .hero-copy { padding-top: 72px; }
 }
+
+.char-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.char-acts .btn { margin-top: 0; }
+.tag-open { color: var(--gold); }

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>MU Idle Legends — Mundo</title>
+  <meta name="theme-color" content="#141b33">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/game.css">
+</head>
+<body class="game">
+  <canvas id="world" aria-label="Mapa do jogo"></canvas>
+
+  <!-- HUD superior esquerdo -->
+  <div class="hud-me">
+    <div class="me-name"><span id="me-name">…</span> <span class="lv">Nv. <b id="me-level">1</b></span></div>
+    <div class="gbar hp"><span id="hp-fill"></span><em id="hp-text">0/0</em></div>
+    <div class="gbar mp"><span id="mp-fill"></span><em id="mp-text">0/0</em></div>
+    <div class="me-zen"><i class="coin"></i><span id="zen">0</span> Zen</div>
+  </div>
+
+  <!-- HUD superior direito -->
+  <div class="hud-map">
+    <div class="map-name"><i class="dot" id="g-conn"></i><span id="map-name">Conectando…</span></div>
+    <canvas id="minimap" width="120" height="80" aria-label="Minimapa"></canvas>
+  </div>
+
+  <div class="boss-bar" id="boss-bar" hidden>
+    <div class="boss-title" id="boss-title"></div>
+    <div class="gbar boss"><span id="boss-fill"></span><em id="boss-text"></em></div>
+    <ol class="boss-top" id="boss-top"></ol>
+  </div>
+
+  <div class="feed" id="feed" aria-live="polite"></div>
+  <div class="center-msg" id="center-msg" hidden></div>
+
+  <!-- Barra inferior -->
+  <div class="bottom">
+    <div class="actions">
+      <button type="button" class="act auto" id="btn-auto" aria-pressed="false"><b>AUTO</b><small id="auto-state">desligado</small></button>
+      <div class="skills" id="skills"></div>
+      <button type="button" class="act pot" id="btn-pot-hp" aria-label="Usar poção de vida"><canvas width="36" height="36"></canvas><small id="pot-hp">0</small></button>
+      <button type="button" class="act pot" id="btn-pot-mp" aria-label="Usar poção de mana"><canvas width="36" height="36"></canvas><small id="pot-mp">0</small></button>
+    </div>
+    <nav class="menu" aria-label="Menu do jogo">
+      <button type="button" data-panel="bag">Bolsa</button>
+      <button type="button" data-panel="hero">Herói<i class="badge" id="pts-badge" hidden></i></button>
+      <button type="button" data-panel="maps">Mapas</button>
+      <button type="button" data-panel="shop" id="btn-shop">Loja</button>
+      <button type="button" data-panel="config">Idle</button>
+      <button type="button" data-panel="chat">Chat<i class="badge" id="chat-badge" hidden></i></button>
+      <button type="button" id="btn-exit">Sair</button>
+    </nav>
+    <div class="xpbar"><span id="xp-fill"></span><em id="xp-text">EXP 0%</em></div>
+  </div>
+
+  <!-- Painéis -->
+  <section class="panel window" id="panel-bag" hidden aria-labelledby="bag-title">
+    <header><h2 id="bag-title">Bolsa <small id="bag-count"></small></h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <div class="equip-slots" id="equip-slots"></div>
+    <div class="bag-tools">
+      <button class="btn small btn-gold" type="button" id="btn-autoequip">Equipar o melhor</button>
+      <div class="rar-filter" id="rar-filter"></div>
+    </div>
+    <div class="bag-grid" id="bag-grid"></div>
+    <div class="item-detail" id="item-detail"></div>
+  </section>
+
+  <section class="panel window" id="panel-hero" hidden aria-labelledby="hero-title">
+    <header><h2 id="hero-title">Herói</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <div id="hero-body"></div>
+  </section>
+
+  <section class="panel window" id="panel-maps" hidden aria-labelledby="maps-title">
+    <header><h2 id="maps-title">Teleporte</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <ul class="tp-list" id="tp-list"></ul>
+  </section>
+
+  <section class="panel window" id="panel-shop" hidden aria-labelledby="shop-title">
+    <header><h2 id="shop-title">Loja da Mercadora Pasi</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <div id="shop-body"></div>
+  </section>
+
+  <section class="panel window" id="panel-config" hidden aria-labelledby="config-title">
+    <header><h2 id="config-title">Configurar o modo idle</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <div id="config-body"></div>
+  </section>
+
+  <section class="panel window" id="panel-chat" hidden aria-labelledby="chat-title">
+    <header><h2 id="chat-title">Chat global</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <ul class="chat-lines" id="chat-lines"></ul>
+    <form class="chat-form" id="chat-form" autocomplete="off">
+      <input name="text" maxlength="120" placeholder="Escreva para todos…" aria-label="Mensagem">
+      <button class="btn small btn-gold" type="submit">Enviar</button>
+    </form>
+  </section>
+
+  <dialog class="window dialog" id="offline-dialog" aria-labelledby="offline-title">
+    <h2 id="offline-title">Enquanto você esteve fora</h2>
+    <div id="offline-body"></div>
+    <div class="row"><button class="btn btn-gold" type="button" data-close>Continuar</button></div>
+  </dialog>
+
+  <script src="/js/pixel.js"></script>
+  <script src="/js/game.js"></script>
+</body>
+</html>

@@ -166,15 +166,49 @@
     '...W..W...',
     '..WW..WW..',
   ];
+  const GOBLIN = [
+    '...ggggg...',
+    'g.ggKgKgg.g',
+    '.ggggggggg.',
+    '...gWWWg...',
+    '...RRRRR...',
+    '..gRRRRRg..',
+    '..gRRBRRg..',
+    '...RR.RR...',
+    '...gg.gg...',
+    '..BBB.BBB..',
+  ];
+  const SPIDER = [
+    '..L.......L..',
+    '...L.SSS.L...',
+    'L...SSSSS...L',
+    '.L.SSRSRSS.L.',
+    '..LSSSSSSSL..',
+    '.L.SSSSSSS.L.',
+    'L...SSSSS...L',
+    '...L.....L...',
+  ];
+  const KING = [
+    '..Y.Y.Y...',
+    '..YYYYYY..',
+  ].concat(SKELETON.map((r) => r.replace(/K/g, 'E')));
+  const MON = {
+    slime: (o) => ({ rows: SLIME, pal: { G: '#2f7a3a', g: '#5fd35f', W: '#ffffff', K: '#1b1b2a', M: '#1b3a20' } }),
+    skeleton: (o) => ({ rows: SKELETON, pal: { W: '#e6dfcc', K: '#1b1b2a' } }),
+    skeleton_king: (o) => ({ rows: KING, pal: { W: '#d8cfb4', K: '#1b1b2a', E: '#ff3030', Y: '#e8b84a' } }),
+    goblin: (o) => ({ rows: GOBLIN, pal: o.tint === 'elite'
+      ? { g: '#4f8a2a', K: '#ff3030', W: '#ffffff', R: '#5a1a8a', B: '#3a2418' }
+      : { g: '#6aa84f', K: '#1b1b2a', W: '#ffffff', R: '#8a3a1e', B: '#4a2c18' } }),
+    spider: (o) => ({ rows: SPIDER, pal: { S: '#3a2a4a', R: '#ff4040', L: '#241830' } }),
+  };
+  function monsterSize(kind) { const r = (MON[kind] || MON.slime)({}).rows; return [r[0].length + 2, r.length + 2]; }
   function drawMonster(ctx, kind, x, y, scale, opts = {}) {
-    const rows = kind === 'skeleton' ? SKELETON : SLIME;
-    const pal = kind === 'skeleton'
-      ? { W: opts.hurt ? '#ffffff' : '#e6dfcc', K: '#1b1b2a' }
-      : { G: opts.hurt ? '#ffffff' : '#2f7a3a', g: opts.hurt ? '#ffffff' : '#5fd35f', W: '#ffffff', K: '#1b1b2a', M: '#1b3a20' };
+    const def = (MON[kind] || MON.slime)(opts);
     const squash = kind === 'slime' && opts.bob ? 1 : 0;
-    const grid = rows.map((r, ry) => Array.from(r).map((k) => (k === '.' ? null : pal[k] || null)));
-    if (squash) grid.shift();
-    drawGrid(ctx, grid, x, y + squash * scale, scale, false);
+    let grid = def.rows.map((r) => Array.from(r).map((k) => (k === '.' ? null : (opts.hurt ? '#ffffff' : def.pal[k] || null))));
+    if (opts.hurt) grid = grid.map((row, ry) => row.map((c, rx) => (c && (def.rows[ry][rx] === 'K' || def.rows[ry][rx] === 'E') ? def.pal[def.rows[ry][rx]] : c)));
+    if (squash) grid = grid.slice(1);
+    drawGrid(ctx, grid, x, y + squash * scale, scale, !!opts.flip);
   }
 
   // ---- Ícones de itens 12x12 ----
@@ -189,10 +223,15 @@
     scepter: ['.....AA.....', '....AWWA....', '...GAWWAG...', '....GAAG....', '.....GG.....', '.....GG.....', '.....GG.....', '.....GG.....', '.....GG.....', '....GGGG....', '.....GG.....', '.....GG.....'],
     wings: ['A..........A', 'AA........AA', 'AWA......AWA', 'AWWA....AWWA', 'AWWWA..AWWWA', '.AWWWAAWWWA.', '.AWWWAAWWWA.', '..AWWA.AWWA.'.slice(0, 12), '..AWA..AWA..', '...AA..AA...', '....A..A....', '............'],
     jewel: ['............', '....AAAA....', '...AWWAAA...', '..AWWAAAAA..', '..AAAAAAAA..', '..AAAAAAAA..', '...AAAAAA...', '....AAAA....', '.....AA.....', '............', '............', '............'],
+    gloves: ['............', '..W.W.W.....', '..W.W.W.W...', '..WWWWWWW...', '..WWWWWWW.W.', '..WWWWWWWWW.', '..WWWWWWWW..', '..WWWWWWW...', '...GGGGG....', '...GGGGG....', '............', '............'],
+    boots: ['............', '...WWWW.....', '...WWWW.....', '...WWWW.....', '...WWWW.....', '...WWWW.....', '...WWWWWW...', '..WWWWWWWW..', '..WWWWWWWWW.', '..GGGGGGGGG.', '............', '............'],
+    book: ['............', '..GGGGGGGG..', '..GRRRRRRG..', '..GRRAARRG..', '..GRAWWARG..', '..GRAWWARG..', '..GRRAARRG..', '..GRRRRRRG..', '..GRRRRRRG..', '..GGGGGGGG..', '...ssssss...', '............'],
+    potion_hp: ['....hh......', '....WW......', '...W..W.....', '..WRRRRW....', '.WRRRRRRW...', '.WRRWRRRW...', '.WRRRRRRW...', '.WRRRRRRW...', '..WRRRRW....', '...WWWW.....', '............', '............'],
+    potion_mp: ['....hh......', '....WW......', '...W..W.....', '..WAAAAW....', '.WAAAAAAW...', '.WAAWAAAW...', '.WAAAAAAW...', '.WAAAAAAW...', '..WAAAAW....', '...WWWW.....', '............', '............'],
     necklace: ['GG........GG', '.G........G.', '.GG......GG.', '..G......G..', '..GG....GG..', '...GG..GG...', '....GAAG....', '....AWWA....', '....AWWA....', '.....AA.....', '............', '............'],
   };
   function drawIcon(ctx, icon, x, y, scale, accent) {
-    const pal = { W: '#e8edf5', w: '#9aa3b5', G: '#c99a2e', g: '#e8b84a', h: '#7a4a22', R: '#7a1e1e', K: '#1b1b2a', A: accent, s: '#efe4c8' };
+    const pal = { W: '#e8edf5', w: '#9aa3b5', G: '#c99a2e', g: '#e8b84a', h: '#7a4a22', R: icon === 'potion_hp' ? '#d0302a' : '#7a1e1e', K: '#1b1b2a', A: icon === 'potion_mp' ? '#3a7aff' : accent, s: '#efe4c8' };
     const rows = ICONS[icon] || ICONS.jewel;
     const grid = rows.map((r) => Array.from(r.padEnd(12, '.')).map((k) => (k === '.' ? null : pal[k] || null)));
     drawGrid(ctx, grid, x, y, scale, false);
@@ -296,5 +335,5 @@
     });
   }
 
-  window.PixelArt = { drawCharacter, drawMonster, drawIcon, drawLandscape, HAIR, SKIN, GRID_W, GRID_H };
+  window.PixelArt = { drawCharacter, drawMonster, monsterSize, drawIcon, drawLandscape, drawGrid, HAIR, SKIN, GRID_W, GRID_H };
 })();

@@ -15,6 +15,18 @@ Primeira etapa do MMORPG Idle 2D em pixel art: a página inicial completa, com c
 - **Minha conta**: criar até 5 heróis (nome único, classe, cor de cabelo e tom de pele com prévia animada), excluir herói (digitando o nome), trocar senha e gerar novo código de recuperação.
 - Tudo é salvo no PostgreSQL e continua lá depois que o servidor reinicia.
 
+## O mundo jogável
+
+No painel **Minha conta**, cada herói tem o botão **Entrar no mundo** (`/game.html?c=ID`).
+
+- **Mapas abertos:** Lorencia (cidade, loja, zona segura), Campos de Lorencia (nível 1), Bosque Encantado (nível 10) e Dungeon (nível 25) com o boss **Rei Esqueleto**, que volta 10 minutos depois de derrotado.
+- **Combate automático (AUTO):** o herói procura o monstro mais próximo, anda até ele, ataca, usa as habilidades ligadas e toma poções sozinho nos limites configurados. Também dá para tocar no chão para andar e tocar num monstro para atacá-lo.
+- **Servidor como autoridade:** movimento, dano, EXP, Zen, drops, compra e venda são calculados no servidor; o navegador só envia intenções.
+- **Progressão:** EXP cada vez mais difícil, pontos por nível (manual ou automático), morte com renascimento em Lorencia e volta automática ao farm.
+- **Itens:** armas por classe, conjuntos de couro/bronze/escamas/dragão com bônus de conjunto, anéis, 6 raridades, melhorias +1 a +3, equipar, desequipar, vender e "Equipar o melhor". Itens abaixo da raridade escolhida viram Zen na hora.
+- **Progresso offline:** com o AUTO ligado ao sair, o servidor calcula até 8 horas de farm (EXP, Zen, itens, poções gastas) usando só o relógio do servidor, e mostra um relatório ao voltar.
+- **Multiplayer:** todos os jogadores no mesmo mapa se veem em tempo real, com chat global e avisos do boss. Cada conta pode ter só um herói no mundo por vez.
+
 ## Segurança
 
 - Senhas e códigos de recuperação com **scrypt** + sal aleatório (nunca em texto puro).
@@ -95,4 +107,4 @@ Chamadas que alteram dados exigem o cabeçalho `X-Requested-With: mui` e a mesma
 
 ## Próximas etapas
 
-O mundo jogável vem a seguir, sobre esta base de contas: mapa de Lorencia em Phaser 3, combate automático calculado no servidor, inventário e drops persistidos, progresso offline e jogadores se vendo no mesmo mapa.
+Grupos e guildas, PvP na arena, mercado entre jogadores, asas e montarias, mais mapas e habilidades (meta de 15 por classe), resets e missões diárias.

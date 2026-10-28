@@ -205,10 +205,15 @@
       const mapName = (state.data.maps.find((m) => m.id === c.map) || {}).name || c.map;
       info.innerHTML = `<b>${esc(c.name)}</b><span>${esc(state.data.classes[c.class].name)} · Nv. ${c.level}${c.resets ? ` · ${c.resets} resets` : ''}</span>
         <span>${esc(mapName)} · ${fmt.format(c.zen)} Zen</span>`;
+      const play = document.createElement('a');
+      play.className = 'btn small btn-gold'; play.textContent = 'Entrar no mundo';
+      play.href = `/game.html?c=${encodeURIComponent(c.id)}`;
       const del = document.createElement('button');
       del.type = 'button'; del.className = 'btn small btn-ghost'; del.textContent = 'Excluir';
       del.onclick = () => openDelete(c);
-      info.appendChild(del);
+      const acts = document.createElement('div'); acts.className = 'char-acts';
+      acts.append(play, del);
+      info.appendChild(acts);
       li.appendChild(info);
       list.appendChild(li);
     });
@@ -216,7 +221,7 @@
     $('#create-char').hidden = full;
     $('#world-note').textContent = full
       ? `Você atingiu o limite de ${state.data.limits.maxCharactersPerAccount} heróis por conta.`
-      : 'Seus heróis e nomes ficam salvos no servidor. O mundo de Lorencia com combate automático abre na próxima atualização.';
+      : 'Toque em “Entrar no mundo” para jogar. Ligue o AUTO e seu herói luta sozinho, até offline.';
   }
 
   async function openAccount() {
@@ -475,7 +480,7 @@
       cv.setAttribute('aria-hidden', 'true');
       PA.drawLandscape(cv.getContext('2d'), m.theme, m.id, 96, 54, 0);
       li.appendChild(cv);
-      const tag = m.pvp ? '<span class="tag-pvp">PvP</span>' : m.safe ? '<span class="tag-safe">Zona segura</span>' : '';
+      const tag = [m.playable ? '<span class="tag-open">Aberto agora</span>' : '', m.pvp ? '<span class="tag-pvp">PvP</span>' : m.safe ? '<span class="tag-safe">Zona segura</span>' : ''].filter(Boolean).join(' · ');
       li.insertAdjacentHTML('beforeend', `<div class="info"><h3>${esc(m.name)}</h3>
         <p><span>${esc(m.type)}</span><span class="lvl">Nv. ${m.level}+</span></p>${tag ? `<p>${tag}</p>` : ''}</div>`);
       grid.appendChild(li);
