@@ -406,6 +406,7 @@ class World {
       case 'equip': return p.run(() => this.equip(p, String(msg.id)));
       case 'unequip': return p.run(() => this.unequip(p, String(msg.id)));
       case 'sell': return p.run(() => this.sell(p, String(msg.id)));
+      case 'sellMany': return p.run(() => this.sellMany(p, Array.isArray(msg.ids) ? msg.ids.slice(0, 500).map(String) : []));
       case 'autoequip': return p.run(() => this.autoEquip(p));
       case 'chat': return this.chatMsg(p, msg.text);
       case 'claim': return p.run(() => this.claim(p, String(msg.kind), String(msg.id || '')));
@@ -543,6 +544,23 @@ class World {
     p.zen += v;
     await this.persist(p);
     p.send({ type: 'log', kind: 'info', text: `Vendeu ${G.ITEM_BASES[it.base].name} por ${v} Zen.` });
+    p.send(p.charState());
+  }
+
+  async sellMany(p, ids) {
+    const want = new Set(ids);
+    const list = p.items.filter((i) => want.has(String(i.id)) && !i.equipped);
+    if (!list.length) return;
+    const { rows } = await db.query("DELETE FROM items WHERE id = ANY(string_to_array($1, ',')::bigint[]) AND character_id = $2 AND equipped = FALSE RETURNING id",
+      [list.map((i) => String(Number(i.id))).join(','), p.charId]);
+    const gone = new Set(rows.map((r) => String(r.id)));
+    let v = 0, n = 0;
+    for (const it of list) if (gone.has(String(it.id))) { v += itemValue(it); n++; }
+    if (!n) return;
+    p.items = p.items.filter((i) => !gone.has(String(i.id)));
+    p.zen += v;
+    await this.persist(p);
+    p.send({ type: 'log', kind: 'info', text: `Vendeu ${n} ${n > 1 ? 'itens' : 'item'} por ${v} Zen.` });
     p.send(p.charState());
   }
 

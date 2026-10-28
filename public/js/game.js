@@ -1053,7 +1053,7 @@
       eq: (() => { const o = { w: null }; for (const i of c.items) { if (!i.equipped) continue; if (i.slot === 'weapon') { o.w = i.base; o.wr = i.rarity; o.wp = i.plus || 0; } else if (i.set && Sprites.ARMOR.includes(i.slot)) o[i.slot] = i.set; } return o; })() };
     S.players.set(S.youId || c.id, meP);
     renderSkills();
-    if (S.panel) renderPanel(S.panel);
+    if (S.panel && S.panel !== 'rank') renderPanel(S.panel);
   }
 
   // nome completo no computador, primeira palavra no celular
@@ -1124,6 +1124,7 @@
     else if (name === 'shop') renderShop();
     else if (name === 'config') renderConfig();
     else if (name === 'quests') renderQuests();
+    else if (name === 'rank') renderRank();
     else if (name === 'admin') { if (!ADM.open) { ADM.open = true; renderAdmin(); } }
   }
   $$('.menu [data-panel]').forEach((b) => { b.onclick = () => openPanel(b.dataset.panel); });
@@ -1137,7 +1138,9 @@
   }
   function slotButton(it, onClick) {
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'islot' + (S.selItem === it.id ? ' sel' : '');
+    const picked = MS.on && MS.ids.has(it.id);
+    b.type = 'button'; b.className = 'islot' + (MS.on ? (picked ? ' picked' : '') : (S.selItem === it.id ? ' sel' : ''));
+    if (MS.on && !it.equipped) b.setAttribute('aria-pressed', picked);
     b.style.setProperty('--r', RAR[it.rarity]);
     b.setAttribute('aria-label', `${it.name}${it.plus ? ' +' + it.plus : ''}, ${RAR_NAME[it.rarity]}`);
     b.appendChild(iconCanvas(it));
@@ -1145,14 +1148,58 @@
     b.onclick = onClick;
     return b;
   }
+  // venda de vários itens de uma vez
+  const MS = { on: false, ids: new Set(), confirm: false };
+  const HIGH_RAR = ['epic', 'legendary', 'ancestral'];
+  function bagVisible() {
+    return S.char.items.filter((i) => !i.equipped && (S.rarFilter === 'all' || i.rarity === S.rarFilter));
+  }
+  function renderMulti() {
+    const bar = $('#multi-bar'), btn = $('#btn-multi');
+    btn.setAttribute('aria-pressed', MS.on); btn.classList.toggle('btn-gold', MS.on);
+    btn.textContent = MS.on ? 'Cancelar' : 'Vender vários';
+    bar.hidden = !MS.on;
+    if (!MS.on) return;
+    const sel = S.char.items.filter((i) => MS.ids.has(i.id) && !i.equipped);
+    const total = sel.reduce((a, i) => a + (i.value || 0), 0);
+    const high = sel.filter((i) => HIGH_RAR.includes(i.rarity)).length;
+    $('#multi-info').innerHTML = sel.length
+      ? `<span class="zen">${sel.length} marcados · ${fmt.format(total)} Zen</span>${high ? ` <span class="bad">${high} valiosos</span>` : ''}`
+      : 'Toque nos itens para marcar.';
+    const sb = $('#multi-sell');
+    sb.disabled = !sel.length;
+    sb.textContent = MS.confirm ? `Confirmar venda de ${sel.length}` : 'Vender';
+    sb.classList.toggle('danger', MS.confirm);
+  }
+  $('#btn-multi').onclick = () => { MS.on = !MS.on; MS.ids.clear(); MS.confirm = false; S.selItem = null; renderBag(); };
+  $('#multi-all').onclick = () => { bagVisible().forEach((i) => MS.ids.add(i.id)); MS.confirm = false; renderBag(); };
+  $('#multi-none').onclick = () => { MS.ids.clear(); MS.confirm = false; renderBag(); };
+  $('#multi-sell').onclick = () => {
+    const ids = S.char.items.filter((i) => MS.ids.has(i.id) && !i.equipped).map((i) => i.id);
+    if (!ids.length) return;
+    const high = S.char.items.some((i) => MS.ids.has(i.id) && HIGH_RAR.includes(i.rarity));
+    if ((high || ids.length >= 10) && !MS.confirm) { MS.confirm = true; renderMulti(); return; }
+    send({ type: 'sellMany', ids });
+    MS.ids.clear(); MS.confirm = false; renderMulti();
+  };
+  function pickItem(it) {
+    if (MS.on) {
+      if (it.equipped) return;
+      if (MS.ids.has(it.id)) MS.ids.delete(it.id); else MS.ids.add(it.id);
+      MS.confirm = false;
+    } else S.selItem = it.id;
+    renderBag();
+  }
+
   function renderBag() {
     const c = S.char;
     const bag = c.items.filter((i) => !i.equipped);
+    for (const id of [...MS.ids]) if (!bag.some((i) => i.id === id)) MS.ids.delete(id);
     $('#bag-count').textContent = `${bag.length}/${c.invMax}`;
     const slots = $('#equip-slots'); slots.innerHTML = '';
     for (const slot of Object.keys(SLOT_NAME)) {
       const it = c.items.find((i) => i.equipped && i.slot === slot);
-      if (it) slots.appendChild(slotButton(it, () => { S.selItem = it.id; renderBag(); }));
+      if (it) slots.appendChild(slotButton(it, () => { if (!MS.on) { S.selItem = it.id; renderBag(); } }));
       else { const e = document.createElement('div'); e.className = 'islot empty'; e.innerHTML = `<span class="slotname">${SLOT_NAME[slot]}</span>`; slots.appendChild(e); }
     }
     const rf = $('#rar-filter');
@@ -1161,9 +1208,11 @@
     const grid = $('#bag-grid'); grid.innerHTML = '';
     bag.filter((i) => S.rarFilter === 'all' || i.rarity === S.rarFilter)
       .sort((a, b) => RAR_ORDER.indexOf(b.rarity) - RAR_ORDER.indexOf(a.rarity) || b.req - a.req)
-      .forEach((it) => grid.appendChild(slotButton(it, () => { S.selItem = it.id; renderBag(); })));
+      .forEach((it) => grid.appendChild(slotButton(it, () => pickItem(it))));
     if (!bag.length) grid.innerHTML = '<p class="muted" style="grid-column:1/-1;margin:4px 0">Bolsa vazia. Monstros deixam itens ao morrer.</p>';
-    renderItemDetail();
+    renderMulti();
+    if (MS.on) $('#item-detail').innerHTML = '';
+    else renderItemDetail();
   }
   function statLine(st) {
     const parts = [];
@@ -1206,6 +1255,30 @@
   }
   const WEAPONS = { dark_knight: ['sword'], magic_gladiator: ['sword', 'staff'], dark_wizard: ['staff'], fairy_elf: ['bow'], dark_lord: ['scepter'], summoner: ['book'] };
   $('#btn-autoequip').onclick = () => send({ type: 'autoequip' });
+
+  // ranking dentro do jogo
+  const RK = { by: 'level', seq: 0 };
+  async function renderRank() {
+    $$('#rank-tabs [data-by]').forEach((t) => { const on = t.dataset.by === RK.by; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); });
+    const last = { level: 'Poder', resets: 'Resets', power: 'Poder', bosses: 'Bosses', pvp: 'PvP' }[RK.by];
+    $('#g-rank-last').textContent = last;
+    const tb = $('#g-rank-body');
+    if (!tb.children.length) tb.innerHTML = '<tr><td colspan="5" class="muted">Carregando…</td></tr>';
+    const seq = ++RK.seq;
+    try {
+      const r = await fetch(`/api/ranking?by=${RK.by}`, { credentials: 'same-origin' });
+      const { ranking } = await r.json();
+      if (seq !== RK.seq || S.panel !== 'rank') return;
+      const val = (x) => RK.by === 'pvp' ? `${x.pvp_kills} · ${x.duel_wins} duelos` : RK.by === 'bosses' ? x.bosses_killed : RK.by === 'resets' ? x.resets : fmt.format(x.combat_power);
+      const medal = ['🥇', '🥈', '🥉'];
+      tb.innerHTML = ranking.length ? ranking.map((x, i) => `<tr class="${S.char && x.name === S.char.name ? 'me' : ''}">
+        <td>${medal[i] || i + 1}</td><td>${esc(x.name)}</td><td>${esc((S.data.classes[x.class] || {}).name || x.class)}</td><td>${x.level}</td><td>${val(x)}</td></tr>`).join('')
+        : '<tr><td colspan="5" class="muted">Nenhum herói ainda.</td></tr>';
+    } catch (e) {
+      if (seq === RK.seq) tb.innerHTML = '<tr><td colspan="5" class="muted">Não foi possível carregar o ranking.</td></tr>';
+    }
+  }
+  $$('#rank-tabs [data-by]').forEach((t) => { t.onclick = () => { RK.by = t.dataset.by; $('#g-rank-body').innerHTML = ''; renderRank(); }; });
 
   function renderHero() {
     const c = S.char, me = S.me || {};

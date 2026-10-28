@@ -901,5 +901,17 @@ window.I18N_EN = {
 "item ancestral": "ancestral item",
 "Igual que o equipado ({0})": "Same as equipped ({0})",
 "Idioma": "Language",
-"Idioma / Language": "Language / Idioma"
+"Idioma / Language": "Language / Idioma",
+"Vender vários": "Sell many",
+"Cancelar": "Cancel",
+"Toque nos itens para marcar.": "Tap items to mark them.",
+"Marcar todos": "Mark all",
+"Limpar": "Clear",
+"Vender": "Sell",
+"Confirmar venda de {0}": "Confirm selling {0}",
+"{0} valiosos": "{0} valuable",
+"{0} marcados · {1} Zen": "{0} marked · {1} Zen",
+"Vendeu {0} itens por {1} Zen.": "Sold {0} items for {1} Zen.",
+"Vendeu {0} item por {1} Zen.": "Sold {0} item for {1} Zen.",
+"Não foi possível carregar o ranking.": "Couldn't load the ranking."
 };

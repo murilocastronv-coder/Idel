@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=1">
   <link rel="stylesheet" href="/css/style.css?v=14">
-  <link rel="stylesheet" href="/css/game.css?v=19">
+  <link rel="stylesheet" href="/css/game.css?v=20">
 </head>
 <body class="game">
   <canvas id="world" aria-label="Mapa do jogo"></canvas>
@@ -60,6 +60,7 @@
       <button type="button" data-panel="shop" id="btn-shop">Loja</button>
       <button type="button" data-panel="quests">Missões<i class="badge" id="quest-badge" hidden></i></button>
       <button type="button" data-panel="config">Idle</button>
+      <button type="button" data-panel="rank">Ranking</button>
       <button type="button" data-panel="chat">Chat<i class="badge" id="chat-badge" hidden></i></button>
       <button type="button" id="btn-exit" title="Voltar à seleção de heróis">Heróis</button>
     </nav>
@@ -71,8 +72,17 @@
     <header><h2 id="bag-title">Bolsa <small id="bag-count"></small></h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
     <div class="equip-slots" id="equip-slots"></div>
     <div class="bag-tools">
-      <button class="btn small btn-gold" type="button" id="btn-autoequip">Equipar o melhor</button>
+      <span class="row"><button class="btn small btn-gold" type="button" id="btn-autoequip">Equipar o melhor</button>
+      <button class="btn small" type="button" id="btn-multi" aria-pressed="false">Vender vários</button></span>
       <div class="rar-filter" id="rar-filter"></div>
+    </div>
+    <div class="multi-bar" id="multi-bar" hidden>
+      <span id="multi-info">Toque nos itens para marcar.</span>
+      <span class="row">
+        <button class="btn small btn-ghost" type="button" id="multi-all">Marcar todos</button>
+        <button class="btn small btn-ghost" type="button" id="multi-none">Limpar</button>
+        <button class="btn small btn-gold" type="button" id="multi-sell" disabled>Vender</button>
+      </span>
     </div>
     <div class="bag-grid" id="bag-grid"></div>
     <div class="item-detail" id="item-detail"></div>
@@ -92,6 +102,21 @@
   <section class="panel window" id="panel-shop" hidden aria-labelledby="shop-title">
     <header><h2 id="shop-title">Loja da Mercadora Pasi</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
     <div id="shop-body"></div>
+  </section>
+
+  <section class="panel window" id="panel-rank" hidden aria-labelledby="rank-title">
+    <header><h2 id="rank-title">Ranking</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <div class="rank-tabs" id="rank-tabs" role="tablist" aria-label="Ordenar ranking">
+      <button type="button" role="tab" data-by="level">Nível</button>
+      <button type="button" role="tab" data-by="resets">Resets</button>
+      <button type="button" role="tab" data-by="power">Poder</button>
+      <button type="button" role="tab" data-by="bosses">Bosses</button>
+      <button type="button" role="tab" data-by="pvp">PvP</button>
+    </div>
+    <div class="rank-wrap"><table class="g-rank">
+      <thead><tr><th scope="col">#</th><th scope="col">Herói</th><th scope="col">Classe</th><th scope="col">Nv.</th><th scope="col" id="g-rank-last">Poder</th></tr></thead>
+      <tbody id="g-rank-body"></tbody>
+    </table></div>
   </section>
 
   <section class="panel window" id="panel-quests" hidden aria-labelledby="quests-title">
@@ -133,6 +158,6 @@
   <script src="/js/pixel.js?v=13"></script>
   <script src="/js/sprites.js?v=21"></script>
   <script src="/js/sfx.js?v=20"></script>
-  <script src="/js/game.js?v=21"></script>
+  <script src="/js/game.js?v=22"></script>
 </body>
 </html>
