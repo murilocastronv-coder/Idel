@@ -159,7 +159,8 @@ const MONSTERS = {
 const WORLD = {
   lorencia: { name: 'Lorencia', theme: 'town', w: 800, h: 560, safe: true, minLevel: 1, spawn: [400, 300],
     npcs: [{ id: 'shop', name: 'Mercadora Pasi', x: 470, y: 250, kind: 'shop' }, { id: 'chaos', name: 'Chaos Goblin', x: 335, y: 240, kind: 'chaos' },
-      { id: 'marlon', name: 'Marlon', x: 250, y: 380, kind: 'marlon' }, { id: 'vault', name: 'Baú Pessoal', x: 565, y: 290, kind: 'vault' }], groups: [] },
+      { id: 'marlon', name: 'Marlon', x: 250, y: 380, kind: 'marlon' }, { id: 'vault', name: 'Baú Pessoal', x: 565, y: 290, kind: 'vault' },
+      { id: 'castle_guard', name: 'Guarda do Chaos Castle', x: 640, y: 360, kind: 'castle_guard' }, { id: 'charon', name: 'Charon', x: 160, y: 300, kind: 'charon' }], groups: [] },
   noria: { name: 'Noria', theme: 'noria', w: 1200, h: 800, minLevel: 1, spawn: [120, 400],
     npcs: [{ id: 'vault', name: 'Baú Pessoal', x: 190, y: 330, kind: 'vault', optional: true }],
     groups: [{ type: 'slime', count: 14 }, { type: 'goblin', count: 7 }, { type: 'goblin_elite', count: 1 }] },

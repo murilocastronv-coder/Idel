@@ -14,6 +14,7 @@ const KUNDUN = require('./kundun');
 const EQUIP = require('./equip');
 const VAULT = require('./vault');
 const CLS = require('./classes');
+const ARENA = require('./arena');
 
 const TICK_MS = 100;
 const SAVE_EVERY_MS = 20000;
@@ -299,6 +300,27 @@ class World {
     await VAULT.init(helpers);
     await INV.init(this, helpers);
     this.invasion = INV;
+    this.expToNext = expToNext;
+    await ARENA.init(this, { ...helpers, rollItem, expToNext });
+    this.arena = ARENA;
+  }
+
+  // instâncias temporárias (arenas de evento): entram no ciclo do mundo enquanto existirem
+  addInstance(key, id, def) {
+    const inst = new MapInstance(this, id, def, 0);
+    inst.key = key;
+    this.maps.set(key, inst);
+    return inst;
+  }
+  removeInstance(key) {
+    const inst = this.maps.get(key);
+    if (!inst || !inst.key) return;
+    for (const p of [...inst.players.values()]) {
+      p.arena = null;
+      if (p.dead) { p.dead = false; p.hp = p.maxHp; p.mp = p.maxMp; }
+      this.enterMap(p, 'lorencia');
+    }
+    this.maps.delete(key);
   }
 
   // ficha de um personagem que não está no mundo (para comandos de administração)
@@ -378,6 +400,7 @@ class World {
     if (!(room >= 1 && room <= ROOMS) || !p.map || room === p.room) return;
     if (p.dead) return;
     if (p.duel) return p.send({ type: 'log', kind: 'warn', text: 'Termine o duelo antes de trocar de sala.' });
+    if (p.arena || (p.map && p.map.def.arena)) return p.send({ type: 'log', kind: 'warn', text: ARENA.blocked(p) || 'Você está em um evento.' });
     if (Date.now() - Math.max(p.pvpHitAt || 0, p.pvpAtkAt || 0) < 10000) return p.send({ type: 'log', kind: 'warn', text: 'Em combate PvP: espere alguns segundos para trocar de sala.' });
     const mapId = p.map.id;
     p.room = room;
@@ -427,6 +450,7 @@ class World {
     p.send(p.charState());
     p.send({ type: 'chatlog', lines: this.chat.slice(-30) });
     p.send({ type: 'invasion', phase: 'status', ...INV.status() });
+    ARENA.onJoin(p);
     p.send(Q.state(p));
     if (report) p.send({ type: 'offline', ...report });
     p.dirty = true;
@@ -449,6 +473,7 @@ class World {
   async leave(p) {
     if (!this.players.has(p.charId) || this.players.get(p.charId) !== p) return;
     this.players.delete(p.charId);
+    ARENA.onLeave(p);
     if (p.duel) this.endDuel(null, null, 'draw', p);
     if (p.map) {
       p.map.players.delete(p.id);
@@ -465,8 +490,8 @@ class World {
     if (client.player) this.leave(client.player).catch((e) => console.error('[world] leave:', e.message));
   }
 
-  enterMap(p, mapId, pos) {
-    const m = this.maps.get(`${p.room || 1}:${mapId}`);
+  enterMap(p, mapId, pos, inst) {
+    const m = inst || this.maps.get(`${p.room || 1}:${mapId}`);
     if (p.map) {
       p.map.players.delete(p.id);
       for (const o of p.map.players.values()) o.send({ type: 'pl', id: p.id });
@@ -476,10 +501,11 @@ class World {
     p.x = clamp(sx + (pos ? 0 : rand(-20, 20)), 20, m.def.w - 20);
     p.y = clamp(sy + (pos ? 0 : rand(-20, 20)), 20, m.def.h - 20);
     p.target = null; p.moveTo = null;
-    if (!m.def.safe) p.lastFarm = mapId;
+    if (!m.def.safe && !m.def.arena) p.lastFarm = mapId;
     m.players.set(p.id, p);
     p.send({
       type: 'enter', map: mapId, room: m.room, rooms: ROOMS, name: m.def.name, theme: m.def.theme, w: m.def.w, h: m.def.h, safe: !!m.def.safe,
+      arena: m.def.arena || null, pvp: !!m.def.pvp, margin: m.def.margin || 0,
       npcs: (m.def.npcs || []).filter((n) => VAULT.npcVisible(mapId, n)),
       ground: m.ground ? [...m.ground.values()].map((g) => DROPS.publicGround(g)) : [],
       monsters: m.monsters.map((mo) => INV.monInfo(mo)),
@@ -492,6 +518,9 @@ class World {
 
   pinfo(p) {
     const w = p.equipped().find((i) => G.ITEM_BASES[i.base] && G.ITEM_BASES[i.base].slot === 'weapon');
+    // disfarce do Chaos Castle: só a aparência muda; itens e atributos reais continuam no servidor
+    if (ARENA.disguise(p)) return { id: p.id, name: p.name, cls: 'dark_knight', ap: { hair: 0, skin: 1 }, level: p.level, evo: 0, className: 'Guerreiro do Castelo', weaponRarity: 'common', vip: 0, disguise: 1,
+      eq: { helm: 'abyss', armor: 'abyss', gloves: 'abyss', boots: 'abyss', w: 'sword' } };
     return { id: p.id, name: p.name, cls: p.cls, ap: p.ap, level: p.level, evo: p.evo, className: p.className(), weaponRarity: w ? w.rarity : 'common', vip: p.vip().tier, eq: gearVisual(p.equipped()) };
   }
 
@@ -545,6 +574,7 @@ class World {
       case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
       case 'openBox': return p.run(() => KUNDUN.open(this, p, String(msg.id || '')));
       case 'vault': return p.run(() => VAULT.act(this, p, msg));
+      case 'arena': return p.run(() => ARENA.act(this, p, msg));
       case 'cqInfo': return p.send(CLS.info(p, String(msg.npc || ''), DROPS.sources(CLS.QUEST_ITEMS)));
       case 'cqAct': return p.run(() => CLS.act(this, p, String(msg.action || ''), String(msg.npc || ''), DROPS.sources(CLS.QUEST_ITEMS)));
       case 'pickup': {
@@ -566,6 +596,7 @@ class World {
     const def = G.WORLD[mapId];
     if (!def) return p.send({ type: 'log', kind: 'warn', text: 'Mapa não disponível.' });
     if (p.dead) return;
+    const ab = ARENA.blocked(p); if (ab) return p.send({ type: 'log', kind: 'warn', text: ab });
     if (p.level < def.minLevel) return p.send({ type: 'log', kind: 'warn', text: `${def.name} abre no nível ${def.minLevel}.` });
     if (p.map && p.map.id === mapId) return;
     this.enterMap(p, mapId);
@@ -982,6 +1013,7 @@ class World {
     if (!b || !b.isPlayer || a === b || a.dead || b.dead || !a.map || a.map !== b.map) return false;
     if (a.duel && a.duel.with === b) return true;
     if (a.map.def.safe) return false;
+    if (a.map.def.arena) return !!a.map.def.pvp;
     if (a.map.def.pvp) return true;
     // nos outros mapas de caça: luta quem ligou o modo PvP (os dois)
     return !!a.settings.pvpOn && !!b.settings.pvpOn;
@@ -1023,6 +1055,13 @@ class World {
     }
     const map = k.map;
     k.pvp.kills++; v.pvp.deaths++;
+    if (map.def.arena) {
+      ARENA.onPvpKill(this, k, v);
+      this.killPlayer(v, now, { T: { name: k.name } });
+      if (k.target === v) k.target = null;
+      k.dirty = true; v.dirty = true;
+      return;
+    }
     if (v.pkUntil > now) {
       k.zen += 3000;
       k.send({ type: 'log', kind: 'quest', text: `Você derrotou o PK ${v.name}: +3.000 Zen de recompensa.` });
@@ -1041,6 +1080,7 @@ class World {
     if (p.lastDuelReq && now - p.lastDuelReq < 5000) return p.send({ type: 'log', kind: 'warn', text: 'Espere alguns segundos para convidar de novo.' });
     const o = this.players.get(id.replace(/^p/, ''));
     if (!o || o === p || o.map !== p.map) return p.send({ type: 'log', kind: 'warn', text: 'O jogador precisa estar no mesmo mapa.' });
+    if (p.map && p.map.def.arena) return p.send({ type: 'log', kind: 'warn', text: 'Não há duelos durante eventos.' });
     if (p.duel || o.duel) return p.send({ type: 'log', kind: 'warn', text: 'Um de vocês já está em duelo.' });
     if (p.dead || o.dead) return;
     p.lastDuelReq = now;
@@ -1207,6 +1247,7 @@ class World {
     m.dead = true; m.hp = 0; m.target = null;
     const map = killer.map;
     m.respawnAt = m.golden ? Infinity : now + (m.T.respawnMs || MONSTER_RESPAWN_MS);
+    if (m.T.arena) return ARENA.onMonsterKill(this, m, map, killer);
     map.emit({ k: 'die', t: m.id });
     if (m.T.golden) return INV.onKill(this, m, map, killer);
     if (m.T.boss) return this.bossRewards(m, map, killer);
@@ -1282,6 +1323,8 @@ class World {
     p.respawnAt = now + RESPAWN_MS;
     p.target = null; p.moveTo = null;
     p.map.emit({ k: 'pdie', t: p.id });
+    // eliminado de um evento: não perde EXP
+    if (p.map.def.arena) { p.buffs = {}; ARENA.onDeath(p, by); p.dirty = true; return; }
     // Hard XP: morrer custa uma parte da EXP do nível atual
     const pkMul = p.pkUntil > now ? 3 : 1; // PK perde o triplo
     const loss = Math.min(p.exp, Math.floor(expToNext(p.level) * G.GAME_MODE.deathExpLoss * pkMul));
@@ -1422,12 +1465,14 @@ class World {
     }
     // movimento manual tem prioridade
     if (p.moveTo) { this.stepToward(p, p.moveTo, PLAYER_SPEED * dt); if (dist(p, p.moveTo) < 2) p.moveTo = null; return; }
+    // evento com área segura diminuindo: o automático volta para dentro antes de lutar
+    if (p.auto && map.def.arena) { const e = ARENA.escape(p); if (e) { p.target = null; this.stepToward(p, e, PLAYER_SPEED * dt); return; } }
     if (map.def.safe && !p.duel) return;
 
     // escolhe alvo
     if (p.target && (p.target.isPlayer ? !this.hostile(p, p.target) : (p.target.dead || !map.monsters.includes(p.target)))) p.target = null;
     if (!p.target && p.auto && p.duel) p.target = p.duel.with;
-    if (!p.target && p.auto && p.settings.pvpAuto && (map.def.pvp || p.settings.pvpOn)) {
+    if (!p.target && p.auto && (p.settings.pvpAuto || (map.def.arena && map.def.pvp)) && (map.def.pvp || p.settings.pvpOn)) {
       let best = null, bd = 170;
       for (const o of map.players.values()) { if (!this.hostile(p, o)) continue; const d = dist(p, o); if (d < bd) { bd = d; best = o; } }
       p.target = best;
@@ -1469,7 +1514,8 @@ class World {
     const s = Math.min(step, d - stopAt);
     p.x += (dest.x - p.x) / d * s; p.y += (dest.y - p.y) / d * s;
     p.flip = dest.x < p.x;
-    p.x = clamp(p.x, 10, p.map.def.w - 10); p.y = clamp(p.y, 10, p.map.def.h - 10);
+    const mg = p.map.def.margin || 10;
+    p.x = clamp(p.x, mg, p.map.def.w - mg); p.y = clamp(p.y, mg, p.map.def.h - mg);
   }
 
   broadcast(map, now) {
@@ -1504,14 +1550,15 @@ class World {
   // grava direto (usar só dentro de p.run, que já serializa as operações)
   async persist(p) {
     {
-      const map = p.dead ? 'lorencia' : (p.map ? p.map.id : 'lorencia');
+      const inArena = !!(p.map && p.map.def.arena);
+      const map = p.dead || inArena ? 'lorencia' : (p.map ? p.map.id : 'lorencia');
       await db.query(`UPDATE characters SET level=$2, exp=$3, zen=$4, str=$5, agi=$6, vit=$7, ene=$8, cmd=$9, free_points=$10,
         map=$11, pos_x=$12, pos_y=$13, hp=$14, mp=$15, pot_hp=$16, pot_mp=$17, settings=$18, kills=$19, deaths=$20,
         bosses_killed=$21, combat_power=$22, last_farm_map=$23, auto_on=$24, quests=$25, pvp_kills=$26, pvp_deaths=$27, duel_wins=$28, duel_losses=$29, pk_count=$30,
         resets=$31, master_resets=$32, bonus_points=$33, evo=$34, class_quest=$35, last_seen_at=now()
         WHERE id=$1 RETURNING id`,
       [p.charId, p.level, Math.round(p.exp), Math.round(p.zen), p.stats.str, p.stats.agi, p.stats.vit, p.stats.ene, p.stats.cmd, p.free,
-        map, p.dead ? 0 : Math.round(p.x), p.dead ? 0 : Math.round(p.y), Math.max(1, Math.round(p.hp)), Math.round(p.mp),
+        map, p.dead || inArena ? 0 : Math.round(p.x), p.dead || inArena ? 0 : Math.round(p.y), Math.max(1, Math.round(p.hp)), Math.round(p.mp),
         p.pots.hp, p.pots.mp, JSON.stringify(p.settings), p.kills, p.deaths, p.bossesKilled, p.power, p.lastFarm, p.auto, JSON.stringify(p.quests || {}), p.pvp.kills, p.pvp.deaths, p.pvp.duelW, p.pvp.duelL, p.pvp.pk,
         p.resets, p.masterResets, p.bonusPoints, p.evo, p.classQuest ? JSON.stringify(p.classQuest) : null]);
       p.dirty = false; p.lastSave = Date.now();

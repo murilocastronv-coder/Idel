@@ -512,3 +512,30 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .vault-msg.bad { color: #ff9a7a; } .vault-msg.ok { color: #a8e08a; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 680px) { .vault-grid { max-height: 44vh; } #panel-vault { padding: 10px; } }
+/* Eventos em arena (Chaos Castle / Devil Square) */
+.arena-hud { position: fixed; top: 8px; left: 50%; transform: translateX(-50%); z-index: 6; width: min(360px, 48vw); background: rgba(24, 6, 10, .88); border: 2px solid #b8302a; padding: 6px 10px; font: 600 14px var(--display); color: #ffe0d8; }
+.arena-hud[hidden] { display: none; }
+.arena-hud.devil { background: rgba(18, 6, 28, .88); border-color: #8a3aff; }
+.ah-title { text-align: center; font: 700 15px var(--title); color: #ffb0a0; letter-spacing: .5px; }
+.arena-hud.devil .ah-title { color: #d8b0ff; }
+.ah-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 3px; font-variant-numeric: tabular-nums lining-nums; }
+.ah-row b { color: #fff; }
+.ah-me b { color: #ffd36b; }
+.ah-row .btn { padding: 1px 8px; font-size: 12px; }
+@media (max-width: 600px) { .arena-hud { width: calc(100vw - 16px); top: auto; bottom: 168px; } }
+.arena-result { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 12; width: min(420px, calc(100vw - 24px)); padding: 16px; text-align: center; }
+.arena-result[hidden] { display: none; }
+.arena-result h3 { margin: 0 0 6px; font: 900 24px var(--title); color: #ffd36b; }
+.arena-result .place { font: 800 40px var(--display); color: #fff; margin: 4px 0; }
+.arena-result ul { list-style: none; padding: 0; margin: 8px 0; text-align: left; font-size: 14px; }
+.arena-result li { display: flex; justify-content: space-between; border-bottom: 1px solid var(--edge); padding: 3px 0; }
+.arena-result .rw { color: #a8e08a; margin: 6px 0; }
+.ar-cats { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0; }
+.ar-cats th, .ar-cats td { border-bottom: 1px solid var(--edge); padding: 4px 6px; text-align: left; }
+.ar-cats tr.mine td { background: rgba(255, 211, 107, .1); color: #ffe7a0; }
+.ar-cats td.ok { color: #a8e08a; } .ar-cats td.no { color: #ff9a7a; }
+.ar-count { text-align: center; margin: 6px 0 10px; }
+.ar-count b { display: block; font: 800 30px var(--display); color: #ffd36b; font-variant-numeric: tabular-nums lining-nums; }
+.ar-rules { font-size: 13px; color: var(--bone-dim); padding-left: 18px; margin: 6px 0; }
+.ar-rw { font-size: 13px; margin: 4px 0; } .ar-rw b { color: var(--gold); }
+.ar-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }

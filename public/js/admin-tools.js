@@ -489,16 +489,81 @@
     const cg = $('#adt-vcapgo'); if (cg) cg.onclick = () => post({ op: 'capacity', owner: $('#adt-vowner').value, capacity: $('#adt-vcap').value === '' ? null : Number($('#adt-vcap').value) });
   }
 
+  // ---------------- Eventos: Chaos Castle e Devil Square ----------------
+  async function arena(box) {
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    let V;
+    try { V = await X.api('GET', '/api/admin/arena'); } catch (e) { box.innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+    const PH = { idle: 'aguardando', open: 'inscrições abertas', running: 'em andamento' };
+    const hm = (ms) => new Date(ms).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const card = (kind) => {
+      const c = V.config[kind], st = V.state[kind];
+      return `<fieldset class="adt-card" data-kind="${kind}"><legend>${esc(c.name)}</legend>
+        <p><b>${PH[st.phase] || st.phase}</b> · próxima partida: ${hm(st.slot)} · inscritos: ${st.regs.length ? st.regs.map((r) => `${esc(r.name)} (cat. ${r.cat + 1})`).join(', ') : 'nenhum'}</p>
+        ${st.matches.map((m) => `<p>⚔ ${esc(m.name)}: ${m.alive}/${m.total} vivos, ${m.monsters} monstros, termina ${hm(m.endsAt)}${m.ended ? ' (encerrando)' : ''}</p>`).join('')}
+        <div class="adm-row"><label>Começar em ${num('openIn', 2, 'min="1" max="60" class="w-xs"')} min</label><button class="btn small" type="button" data-op="open">Abrir inscrições agora</button>
+          <button class="btn small btn-danger" type="button" data-op="end" ${st.matches.length ? '' : 'disabled'}>Encerrar partida</button></div>
+        <label class="adt-check"><input type="checkbox" data-f="enabled" ${c.enabled ? 'checked' : ''}> Evento ativo</label>
+        <label>Horários (HH:MM, Brasília, separados por vírgula)<textarea data-f="times" rows="2" style="width:100%">${esc(c.times.join(', '))}</textarea></label>
+        <div class="adm-row"><label>Inscrições abrem ${num('openMin', c.openMin, 'min="1" max="60"')} min antes</label><label>Duração ${num('durationMin', c.durationMin, 'min="2" max="60"')} min</label>
+          <label>Participantes: mín. ${num('minPlayers', c.minPlayers, 'min="1" max="50"')}</label><label>máx. ${num('maxPlayers', c.maxPlayers, 'min="1" max="100"')}</label></div>
+        ${kind === 'castle' ? `<div class="adm-row"><label>Vender Armor of Guardsman no NPC por ${num('buyZen', c.buyZen, 'min="0" step="1000" style="width:120px"')} Zen (0 = não vende)</label>
+          <label class="adt-check"><input type="checkbox" data-f="disguise" ${c.disguise ? 'checked' : ''}> Disfarce de guerreiro</label></div>
+          <div class="adm-row"><label>Monstros: base ${num('monsters.base', c.monsters.base, 'min="0" max="120"')}</label><label>por jogador ${num('monsters.perPlayer', c.monsters.perPlayer, 'min="-5" max="5"')}</label>
+            <label>mínimo ${num('monsters.min', c.monsters.min, 'min="0" max="120"')}</label><label>força × ${num('monsters.mult', c.monsters.mult, 'min="0.2" max="10" step="0.1"')}</label></div>
+          <div class="adm-row"><label class="adt-check"><input type="checkbox" data-f="shrink.enabled" ${c.shrink.enabled ? 'checked' : ''}> Área segura diminui</label>
+            <label>de ${num('shrink.startPct', c.shrink.startPct, 'min="0" max="95"')}% até ${num('shrink.endPct', c.shrink.endPct, 'min="5" max="100"')}% do tempo</label>
+            <label>tamanho final ${num('shrink.finalSize', c.shrink.finalSize, 'min="10" max="100"')}%</label><label>dano fora ${num('shrink.dmgPct', c.shrink.dmgPct, 'min="1" max="50"')}% da vida/s</label></div>`
+    : `<div class="adm-row"><label>Monstros vivos ${num('monsters.maxAlive', c.monsters.maxAlive, 'min="3" max="60"')}</label><label>+ por jogador ${num('monsters.perPlayer', c.monsters.perPlayer, 'min="0" max="10"')}</label>
+            <label>nova leva a cada ${num('monsters.everySec', c.monsters.everySec, 'min="1" max="60"')} s</label><label>força × ${num('monsters.mult', c.monsters.mult, 'min="0.2" max="10" step="0.1"')}</label></div>`}
+        <div class="adm-row"><label>Pontos: monstro ${num('score.monster', c.score.monster, 'min="0" max="100"')}</label><label>jogador ${num('score.player', c.score.player, 'min="0" max="100"')}</label>
+          <label>sobreviver ${num('score.survive', c.score.survive, 'min="0" max="500"')}</label><label>mínimo p/ prêmio ${num('score.minForReward', c.score.minForReward, 'min="0" max="1000"')}</label></div>
+        <p class="adt-sub">Categorias</p>
+        <div class="adt-table-wrap"><table class="adt-table"><thead><tr><th>#</th><th>Nome</th><th>Nível mín.</th><th>Nível máx.</th><th>Resets mín.</th></tr></thead><tbody>
+          ${c.categories.map((x, i) => `<tr data-cat="${i}"><td>${i + 1}</td><td><input data-f="name" value="${esc(x.name)}" maxlength="40"></td><td>${num('minLevel', x.minLevel, 'min="1"')}</td><td>${num('maxLevel', x.maxLevel, 'min="1"')}</td><td>${num('minResets', x.minResets || 0, 'min="0"')}</td></tr>`).join('')}</tbody></table></div>
+        <p class="adt-sub">Prêmios por categoria (JSON). Tipos: zen, exp, item (com "base"), gear (com "rarity": rare, epic…). Lugares: winner, second, third, participant.</p>
+        <textarea data-f="rewards" rows="8" style="width:100%;font:12px monospace">${esc(JSON.stringify(c.rewards, null, 1))}</textarea>
+        <details><summary class="muted small">Ids de itens</summary><p class="muted small">${V.items.filter((x) => /jewel|kundun|devil|guard|loch|feather|chaos_/.test(x.id)).map((x) => `${esc(x.id)} (${esc(x.name)})`).join(' · ')}</p></details>
+        <button class="btn btn-gold" type="button" data-op="save">Salvar ${esc(c.name)}</button>
+      </fieldset>`;
+    };
+    box.innerHTML = `<p class="adt-msg" role="status"></p><p class="muted small">${V.pending} prêmio(s) aguardando entrega (jogador offline ou bolsa cheia).</p>
+      ${V.kinds.map(card).join('')}
+      <h4>Últimas partidas</h4>
+      <div class="adt-table-wrap"><table class="adt-table"><thead><tr><th>#</th><th>Evento</th><th>Início</th><th>Jogadores</th><th>Vencedor</th><th>Fim</th></tr></thead><tbody>
+      ${V.history.map((h) => `<tr><td>${h.id}</td><td>${h.kind === 'castle' ? 'Chaos Castle' : 'Devil Square'} ${h.category + 1}</td><td>${h.started_at ? dt(h.started_at) : '—'}</td><td>${h.players}</td><td>${esc(h.winner_name || '—')}</td>
+        <td>${esc(h.status)}${h.end_reason ? ' · ' + esc(h.end_reason) : ''}${h.data && h.data.results ? `<br><small class="muted">${h.data.results.slice(0, 5).map((r) => `${r.place}º ${esc(r.name)} ${r.score}`).join(' · ')}</small>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Nenhuma ainda.</td></tr>'}</tbody></table></div>`;
+    const post = async (body) => { try { const r = await X.api('POST', '/api/admin/arena', body); msg(box, r.message); setTimeout(() => arena(box), 900); } catch (e) { msg(box, e.message, true); box.scrollIntoView({ block: 'start' }); } };
+    for (const fs of $$('[data-kind]', box)) {
+      const kind = fs.dataset.kind;
+      $$('[data-op]', fs).forEach((b) => { b.onclick = () => {
+        if (b.dataset.op === 'open') return post({ op: 'open', kind, minutes: Number($('[data-f=openIn]', fs).value) });
+        if (b.dataset.op === 'end') { if (confirm('Encerrar a partida agora? Ninguém recebe o prêmio de vencedor; participantes recebem o de participação.')) post({ op: 'end', kind }); return; }
+        const c = { monsters: {}, shrink: {}, score: {}, categories: [] };
+        for (const el of $$('[data-f]', fs)) {
+          if (el.closest('[data-cat]') || el.dataset.f === 'openIn') continue;
+          const path = el.dataset.f.split('.');
+          let v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value;
+          if (el.dataset.f === 'rewards') { try { v = JSON.parse(el.value); } catch (_) { return msg(box, 'Prêmios: JSON inválido.', true); } }
+          if (path.length === 2) c[path[0]][path[1]] = v; else c[path[0]] = v;
+        }
+        for (const row of $$('[data-cat]', fs)) { const x = {}; for (const el of $$('[data-f]', row)) x[el.dataset.f] = el.type === 'number' ? Number(el.value) : el.value; c.categories.push(x); }
+        post({ op: 'config', kind, config: c });
+      }; });
+    }
+  }
+
   function mount(el, ctx) {
     X = ctx;
     el.innerHTML = `
       <details class="adm-sec adt-sec" data-sec="invasion"><summary><h3>♛ Invasão Dourada e Box Kundun</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="equip"><summary><h3>Equipamentos por classe e evolução</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="vault"><summary><h3>Baú Pessoal</h3></summary><div class="adt-body"></div></details>
+      <details class="adm-sec adt-sec" data-sec="arena"><summary><h3>Eventos: Chaos Castle e Devil Square</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="chaos"><summary><h3>Chaos Machine (asas e capas)</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="drops"><summary><h3>Drops de materiais e eventos</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="rules"><summary><h3>Comandos, reset e histórico ADM</h3></summary><div class="adt-body"></div></details>`;
-    const fn = { invasion, equip, vault, chaos, drops, rules };
+    const fn = { invasion, arena, equip, vault, chaos, drops, rules };
     $$('.adt-sec', el).forEach((d) => { d.addEventListener('toggle', () => { if (d.open && !d.dataset.loaded) { d.dataset.loaded = 1; fn[d.dataset.sec]($('.adt-body', d)); } }); });
   }
 

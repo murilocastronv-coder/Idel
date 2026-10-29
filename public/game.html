@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=2">
   <link rel="stylesheet" href="/css/style.css?v=18">
-  <link rel="stylesheet" href="/css/game.css?v=25">
+  <link rel="stylesheet" href="/css/game.css?v=26">
 </head>
 <body class="game">
   <canvas id="world" aria-label="Mapa do jogo"></canvas>
@@ -35,6 +35,11 @@
     <ol class="boss-top" id="boss-top"></ol>
   </div>
 
+  <div class="arena-hud" id="arena-hud" hidden aria-live="off">
+    <div class="ah-title" id="ah-title"></div>
+    <div class="ah-row"><span>⏱ <b id="ah-time">--:--</b></span><span>👥 <b id="ah-alive">0</b></span><span>👹 <b id="ah-mons">0</b></span></div>
+    <div class="ah-row ah-me"><span>Pontos <b id="ah-score">0</b></span><span>Posição <b id="ah-pos">-</b></span><button class="btn small btn-ghost" type="button" id="ah-quit">Sair</button></div>
+  </div>
   <div class="feed" id="feed" aria-live="polite"></div>
   <div class="map-banner" id="map-banner" aria-live="polite"></div>
   <div class="alert-banner" id="alert-banner" aria-live="assertive"></div>
@@ -144,6 +149,13 @@
     <p class="vault-msg" id="vault-msg" role="status"></p>
   </section>
 
+  <section class="panel window" id="panel-arena" hidden aria-labelledby="arena-title">
+    <header><h2 id="arena-title">Chaos Castle</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <div id="arena-body"></div>
+  </section>
+
+  <div class="arena-result window" id="arena-result" hidden role="dialog" aria-labelledby="ar-res-title"></div>
+
   <section class="panel window" id="panel-rank" hidden aria-labelledby="rank-title">
     <header><h2 id="rank-title">Ranking</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
     <div class="rank-tabs" id="rank-tabs" role="tablist" aria-label="Ordenar ranking">
@@ -198,14 +210,14 @@
     <div class="row"><button class="btn btn-gold" type="button" data-close>Continuar</button></div>
   </dialog>
 
-  <script src="/js/i18n-en.js?v=25"></script>
+  <script src="/js/i18n-en.js?v=26"></script>
 
   <script src="/js/i18n.js?v=20"></script>
 
   <script src="/js/pixel.js?v=17"></script>
   <script src="/js/sprites.js?v=22"></script>
   <script src="/js/sfx.js?v=20"></script>
-  <script src="/js/admin-tools.js?v=5"></script>
-  <script src="/js/game.js?v=28"></script>
+  <script src="/js/admin-tools.js?v=6"></script>
+  <script src="/js/game.js?v=29"></script>
 </body>
 </html>

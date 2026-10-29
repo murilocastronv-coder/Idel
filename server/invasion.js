@@ -201,7 +201,7 @@ async function end(reason = 'tempo') {
 
 function spawnTick(now) {
   for (const map of W.maps.values()) {
-    if (map.def.safe) continue;
+    if (map.def.safe || map.def.arena) continue;
     const mc = mapCfg(map.id);
     if (!mc.enabled) continue;
     const el = eligible(map.id);
@@ -245,6 +245,7 @@ async function restore() {
     // conta só o tempo que resta (proporcional) para não recriar a invasão inteira
     const left = (st.active.endsAt - now) / Math.max(1, st.active.endsAt - st.active.startedAt);
     for (const map of W.maps.values()) {
+      if (map.def.arena) continue;
       const mc = mapCfg(map.id);
       active.perMap.set(`${map.room}:${map.id}`, { spawned: Math.floor(mc.count * (1 - left)), next: now + 5000 });
     }

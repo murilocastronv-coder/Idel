@@ -233,7 +233,7 @@ async function buildStatus() {
       WHEN level < 100 THEN '50–99' ELSE '100+' END AS band, min(level)::int AS lo, count(*)::int AS n
     FROM characters GROUP BY 1 ORDER BY lo`, []);
   const maps = [];
-  if (world) for (const m of world.maps.values()) if (m.players.size) maps.push({ id: `${m.room}:${m.id}`, name: `${m.def.name} · Sala ${m.room}`, players: m.players.size });
+  if (world) for (const m of world.maps.values()) if (m.players.size) maps.push({ id: m.key || `${m.room}:${m.id}`, name: m.def.arena ? m.def.name : `${m.def.name} · Sala ${m.room}`, players: m.players.size });
   maps.sort((a, b) => b.players - a.players);
   return {
     live: { ...liveStats(), peakSinceBoot: peakOnline, uptimeSec: Math.round((Date.now() - STARTED_AT) / 1000) },
@@ -421,6 +421,26 @@ route('POST', '/api/admin/equip', bad(async (req) => {
   }
   CMDS.log(who, 'panel:equip:' + body.op, null, { base: body.base, n: Array.isArray(body.rules) ? body.rules.length : undefined }, null, null, 'ok', message, null);
   return { ok: true, message, ...EQUIP.adminView(), denials: await EQUIP.denials(80), classes2: CLS.cfg(), questItems: CLS.QUEST_ITEMS.map((k) => ({ id: k, name: game.ITEM_BASES[k].name })), evolutionsLog: await CLS.history(40) };
+}));
+// ---- Eventos: Chaos Castle e Devil Square (Super ADM) ----
+route('GET', '/api/admin/arena', async (req) => {
+  await requireAdmin(req);
+  return { ok: true, ...(await world.arena.adminView()) };
+});
+route('POST', '/api/admin/arena', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 128 * 1024);
+  const who = { accountId: acc.id, name: acc.username, role: 'superadmin' };
+  const kind = String(body.kind || '');
+  let message = 'Salvo.';
+  switch (body.op) {
+    case 'config': await world.arena.saveConfig(kind, body.config || {}); message = 'Evento salvo.'; break;
+    case 'open': { const at = await world.arena.openNow(kind, body.minutes); message = `Próxima partida em ${Math.round((at - Date.now()) / 60000)} min (inscrições abertas).`; break; }
+    case 'end': message = `${await world.arena.endNow(kind)} partida(s) encerrada(s).`; break;
+    default: throw new HttpError(400, 'Operação inválida.');
+  }
+  CMDS.log(who, 'panel:arena:' + body.op, null, { kind, minutes: body.minutes }, null, null, 'ok', message, null);
+  return { ok: true, message, ...(await world.arena.adminView()) };
 }));
 // ---- Baú Pessoal (Super ADM) ----
 route('GET', '/api/admin/vault', async (req, url) => {

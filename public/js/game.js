@@ -84,6 +84,9 @@
       case 'mdel': S.monsters.delete(m.id); return;
       case 'invasion': return onInvasion(m);
       case 'boxResult': return boxResult(m);
+      case 'arenaInfo': AR.info = m; AR.skew = Date.now() - m.now; AR.busy = false; if (S.panel === 'arena') renderArena(); return;
+      case 'arenaResult': AR.busy = false; feed(m.text, m.ok ? 'quest' : 'warn'); return;
+      case 'arena': return onArena(m);
       case 'vault': VT.data = m; VT.no = m.no; VT.busy = false; if (S.panel === 'vault') renderVault(); return;
       case 'vaultResult': VT.busy = false; vaultMsg(m.text, m.ok); if (!m.ok) feed(m.text, 'warn'); return;
       case 'cqInfo': CQ.info = m; if (S.panel === 'cquest') renderCQ(); return;
@@ -120,7 +123,8 @@
     S.enterAt = performance.now(); S.camInit = false;
     const wInfo = S.data && S.data.world.find((w) => w.id === m.map);
     const ban = $('#map-banner');
-    ban.innerHTML = `<b>${esc(m.name)}</b><small>${m.safe ? 'Zona segura' : wInfo && wInfo.pvp ? 'Zona PvP · jogadores podem se atacar' : wInfo ? `Nível ${wInfo.minLevel}+` : ''}</small>`;
+    ban.innerHTML = `<b>${esc(m.name)}</b><small>${m.arena ? (m.pvp ? 'Evento · todos contra todos' : 'Evento · derrote os monstros') : m.safe ? 'Zona segura' : wInfo && wInfo.pvp ? 'Zona PvP · jogadores podem se atacar' : wInfo ? `Nível ${wInfo.minLevel}+` : ''}</small>`;
+    if (!m.arena) { AR.hud = null; S.arenaZone = null; arenaHud(); }
     ban.classList.remove('show'); void ban.offsetWidth; ban.classList.add('show');
     if (window.Sfx) Sfx.ambient(m.theme);
     const built = buildGround(m);
@@ -155,7 +159,7 @@
     renderHud();
   }
 
-  function ent(id) { return id[0] === 'p' ? S.players.get(id) : S.monsters.get(id); }
+  function ent(id) { if (!id) return null; return id[0] === 'p' ? S.players.get(id) : S.monsters.get(id); }
 
   const PROJ = { fire: 'proj_fire', energy: 'proj_energy', ice: 'proj_ice', arrow: 'proj_arrow', arrow3: 'proj_arrow', dark: 'proj_dark', spirit: 'proj_spirit' };
   const IMPACT = { fire: 'impact_fire', energy: 'impact_energy', ice: 'impact_ice', arrow: 'impact_arrow', arrow3: 'impact_arrow', dark: 'impact_dark',
@@ -246,6 +250,8 @@
     sky: { base: '#a8c8e8', a: '#bcd8f4', b: '#94b4d8', blade: '#d8ecff' },
     darkforest: { base: '#1a2e1c', a: '#203822', b: '#142416', blade: '#2a4a2c' },
     void: { base: '#1a1024', a: '#22162e', b: '#140c1c', blade: '#2e1e3e' },
+    castle: { base: '#2a2428', a: '#322a30', b: '#221c20', blade: '#3a3036' },
+    devilsq: { base: '#24141e', a: '#2e1826', b: '#1c0e16', blade: '#3a1e2e' },
   };
   // Monta o chão (pintado uma vez) + objetos altos separados (balançam e entram na ordem de profundidade) + luzes
   function buildGround(m) {
@@ -310,7 +316,43 @@
       light(x, y - 16, 70, lightCol, 0.1);
     };
 
-    if (m.theme === 'town') {
+    if (m.theme === 'castle' || m.theme === 'devilsq') {
+      // arena de evento: piso de pedra, muralhas com ameias e braseiros
+      const dev = m.theme === 'devilsq';
+      const M = (m.margin || 46) * GS;
+      const tiles = dev ? ['#3a2230', '#32202a', '#2a1a24', '#40283a'] : ['#4a4248', '#423a40', '#3a3238', '#524a50'];
+      for (let y = 0, row = 0; y < H; y += 32, row++) for (let x = (row % 2) * 16 - 16; x < W; x += 32) {
+        px(x + 1, y + 1, 30, 30, tiles[(r() * 4) | 0]); px(x + 1, y + 1, 30, 2, dev ? '#4a2c3e' : '#5e565c'); px(x + 1, y + 29, 30, 2, dev ? '#1a0c14' : '#2a2428');
+        if (r() < 0.18) { const cx2 = x + 6 + r() * 18, cy2 = y + 6 + r() * 18; px(cx2, cy2, 6, 1, '#1a1418'); px(cx2 + 5, cy2 + 1, 1, 4, '#1a1418'); }
+      }
+      // emblema no centro
+      const ecx = W / 2, ecy = H / 2;
+      disc(ecx, ecy, 92, dev ? '#4a1a3a' : '#5a1a1a'); disc(ecx, ecy, 86, dev ? '#2a0e22' : '#2e0e0e'); disc(ecx, ecy, 60, dev ? '#3a1430' : '#481414'); disc(ecx, ecy, 56, dev ? '#24101c' : '#2a0c0c');
+      for (let k = 0; k < 5; k++) {
+        const a1 = -Math.PI / 2 + k * Math.PI * 4 / 5, a2 = -Math.PI / 2 + (k + 1) * Math.PI * 4 / 5;
+        for (let t = 0; t <= 1; t += 0.01) px(ecx + Math.cos(a1) * 80 * (1 - t) + Math.cos(a2) * 80 * t, ecy + Math.sin(a1) * 80 * (1 - t) + Math.sin(a2) * 80 * t, 3, 3, dev ? '#a84aff' : '#d8402a');
+      }
+      light(ecx, ecy, 260, dev ? '170,80,255' : '255,70,40', 0.12);
+      // muralhas
+      const wallCol = dev ? ['#2a1424', '#3a1e30', '#1a0a14'] : ['#4a3a34', '#5e4a42', '#2a201c'];
+      for (const [x0, y0, w0, h0] of [[0, 0, W, M], [0, H - M, W, M], [0, 0, M, H], [W - M, 0, M, H]]) {
+        px(x0, y0, w0, h0, wallCol[2]);
+        for (let y = y0; y < y0 + h0; y += 14) for (let x = x0 + ((y / 14) % 2) * 12; x < x0 + w0; x += 24) { px(x + 1, y + 1, 22, 12, r() < 0.5 ? wallCol[0] : wallCol[1]); px(x + 1, y + 1, 22, 2, dev ? '#4a2a3e' : '#7a6458'); }
+      }
+      // ameias na borda interna
+      for (let x = M; x < W - M; x += 28) { px(x, M - 14, 16, 14, wallCol[1]); px(x, M - 14, 16, 3, dev ? '#5a3a4e' : '#8a7468'); px(x, H - M, 16, 10, wallCol[0]); }
+      for (let y = M; y < H - M; y += 28) { px(M - 12, y, 12, 16, wallCol[1]); px(W - M, y, 12, 16, wallCol[1]); }
+      px(M, M, W - 2 * M, 4, 'rgba(0,0,0,.35)'); px(M, M, 4, H - 2 * M, 'rgba(0,0,0,.35)');
+      // torres nos cantos e braseiros
+      for (const [tx, ty] of [[M / 2, M / 2], [W - M / 2, M / 2], [M / 2, H - M / 2], [W - M / 2, H - M / 2]]) { disc(tx, ty, M * 0.62, wallCol[2]); disc(tx, ty, M * 0.54, wallCol[1]); disc(tx - 4, ty - 4, M * 0.3, wallCol[0]); }
+      for (const [bx, by] of [[M + 40, M + 40], [W - M - 40, M + 40], [M + 40, H - M - 30], [W - M - 40, H - M - 30], [W / 2, M + 30], [W / 2, H - M - 24]]) {
+        prop(bx, by, 24, 34, 12, 30, (ax, ay) => {
+          px(ax - 7, ay - 6, 14, 6, '#3a3a44'); px(ax - 5, ay - 16, 10, 10, '#5a5a66'); px(ax - 8, ay - 18, 16, 3, '#7a7a88');
+          disc(ax, ay - 22, 6, dev ? '#8a3aff' : '#ff5a1a'); disc(ax, ay - 23, 4, dev ? '#d0a0ff' : '#ffb02e'); px(ax - 1, ay - 29, 2, 4, '#fff2a8');
+        });
+        light(bx, by - 22, 120, dev ? '180,100,255' : '255,140,60', 0.3);
+      }
+    } else if (m.theme === 'town') {
       const cx = m.w, cy = m.h;
       px(cx - 360, cy - 240, 720, 480, '#6e685c');
       for (let y = cy - 240, row = 0; y < cy + 240; y += 16, row++) {
@@ -800,6 +842,7 @@
       const sx = Math.max(0, camX), sy = Math.max(0, camY);
       const sw = Math.min(S.map.w - sx, vw), sh = Math.min(S.map.h - sy, vh);
       ctx.drawImage(S.ground, sx * GS, sy * GS, sw * GS, sh * GS, (sx - camX) * zoom, (sy - camY) * zoom, sw * zoom, sh * zoom);
+      drawArenaZone(now);
       drawDangers(now);
       drawClickMark(now);
       drawGroundItems(now);
@@ -885,6 +928,19 @@
           else Sprites.hero(ctx, 'dark_knight', { hair: 4, skin: 1 }, 'idle', now, x, y, sc, true, { equip: { helm: 'storm', armor: 'storm', gloves: 'storm', boots: 'storm' } });
           label(e.name, x, y - HERO_H * sc - 4 * dpr, e.kind === 'sevina' ? '#bfe8ff' : '#ffcf7a');
           label('Evolução de classe', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
+          continue;
+        }
+        if (e.kind === 'castle_guard' || e.kind === 'charon') {
+          const guard = e.kind === 'castle_guard';
+          ctx.save(); ctx.globalCompositeOperation = 'lighter';
+          const r3 = 22 * zoom * (1 + 0.07 * Math.sin(now / 240));
+          const g5 = ctx.createRadialGradient(x, y - 14 * zoom, 0, x, y - 14 * zoom, r3);
+          g5.addColorStop(0, guard ? 'rgba(255,70,50,.42)' : 'rgba(170,80,255,.42)'); g5.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g5; ctx.fillRect(x - r3, y - 14 * zoom - r3, r3 * 2, r3 * 2); ctx.restore();
+          if (guard) Sprites.hero(ctx, 'dark_knight', { hair: 0, skin: 1 }, 'idle', now, x, y, sc, true, { equip: { helm: 'abyss', armor: 'abyss', gloves: 'abyss', boots: 'abyss' } });
+          else Sprites.hero(ctx, 'dark_wizard', { hair: 3, skin: 0 }, 'idle', now, x, y, sc, false, { equip: { armor: 'abyss', helm: 'abyss' } });
+          label(e.name, x, y - HERO_H * sc - 4 * dpr, guard ? '#ffb0a0' : '#d8b0ff');
+          label(guard ? 'Chaos Castle' : 'Devil Square', x, y - HERO_H * sc - 17 * dpr, guard ? '#ff7a5a' : '#c88aff', 10);
           continue;
         }
         if (e.kind === 'vault') { drawVaultChest(x, y, now); label(e.name, x, y - 30 * zoom - 4 * dpr, '#ffd36b'); label('Guardar itens e Zen', x, y - 30 * zoom - 17 * dpr, '#9affd0', 10); continue; }
@@ -1100,6 +1156,7 @@
       if (Math.hypot(n.x - wx, n.y - 10 - wy) < 16) {
         if (n.kind === 'sevina' || n.kind === 'marlon') { CQ.npc = n.kind; openPanel('cquest'); return; }
         if (n.kind === 'vault') { if (S.panel !== 'vault') openPanel('vault'); return; }
+        if (n.kind === 'castle_guard' || n.kind === 'charon') { AR.kind = n.kind === 'charon' ? 'devil' : 'castle'; if (S.panel === 'arena') renderPanel('arena'); else openPanel('arena'); send({ type: 'arena', action: 'info', kind: AR.kind }); return; }
         openPanel(n.kind === 'chaos' ? 'chaos' : 'shop'); return;
       }
     }
@@ -1270,6 +1327,7 @@
     else if (name === 'rank') renderRank();
     else if (name === 'chaos') { renderChaos(); send({ type: 'chaosInfo' }); }
     else if (name === 'vault') renderVault();
+    else if (name === 'arena') renderArena();
     else if (name === 'cquest') { renderCQ(); send({ type: 'cqInfo', npc: CQ.npc }); }
     else if (name === 'admin') { if (!ADM.open) { ADM.open = true; renderAdmin(); } }
   }
@@ -1769,6 +1827,109 @@
 
   // ================= Evolução de classe (Sevina e Marlon) =================
   const CQ = { npc: 'sevina', info: null, busy: false };
+  // ================= Eventos: Chaos Castle e Devil Square =================
+  const AR = { kind: 'castle', info: null, hud: null, skew: 0, busy: false };
+  const mmss = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+  const hhmm = (ms) => { const d = new Date(ms); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  function onArena(m) {
+    if (m.phase === 'notice' || m.phase === 'start') {
+      const el = $('#gold-banner');
+      el.textContent = window.I18N && I18N.lang === 'en' ? I18N.t(m.text) : m.text;
+      el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+      feed(m.text, 'gold');
+      if (window.Sfx && m.phase === 'start') Sfx.boss();
+    }
+    if (m.phase === 'start' || m.phase === 'hud') { AR.hud = m; AR.hudSkew = Date.now() - m.now; S.arenaZone = m.zone ? { ...m.zone, full: m.full } : null; arenaHud(); }
+    if (m.phase === 'elim') feed(m.text, 'pvp');
+    if (m.phase === 'result') { AR.hud = null; S.arenaZone = null; arenaHud(); showArenaResult(m); }
+  }
+  function arenaHud() {
+    const el = $('#arena-hud'), H = AR.hud;
+    if (!H || !S.map || !S.map.arena) { el.hidden = true; return; }
+    el.hidden = false;
+    el.classList.toggle('devil', H.kind === 'devil');
+    $('#ah-title').textContent = H.name;
+    $('#ah-time').textContent = mmss(H.endsAt - (Date.now() - (AR.hudSkew || 0)));
+    $('#ah-alive').textContent = `${H.alive}/${H.total}`;
+    $('#ah-mons').textContent = H.monsters;
+    $('#ah-score').textContent = fmt.format(H.score);
+    $('#ah-pos').textContent = H.me ? `${H.pos}º` : 'eliminado';
+  }
+  setInterval(arenaHud, 500);
+  $('#ah-quit').onclick = () => { if (confirm('Sair do evento? Você será eliminado e a entrada não volta.')) send({ type: 'arena', action: 'quit', kind: AR.hud ? AR.hud.kind : AR.kind }); };
+  function drawArenaZone(now) {
+    const z = S.arenaZone;
+    if (!z || !S.map || !S.map.arena || !z.full) return;
+    const [ax, ay] = toScreen(z.x0, z.y0), [bx, by] = toScreen(z.x1, z.y1);
+    const [fx0, fy0] = toScreen(z.full.x0, z.full.y0), [fx1, fy1] = toScreen(z.full.x1, z.full.y1);
+    if (z.x0 > z.full.x0 + 1) {
+      ctx.fillStyle = `rgba(200,20,20,${0.22 + 0.1 * Math.sin(now / 250)})`;
+      ctx.fillRect(fx0, fy0, fx1 - fx0, ay - fy0); ctx.fillRect(fx0, by, fx1 - fx0, fy1 - by);
+      ctx.fillRect(fx0, ay, ax - fx0, by - ay); ctx.fillRect(bx, ay, fx1 - bx, by - ay);
+    }
+    ctx.strokeStyle = `rgba(255,${120 + Math.round(60 * Math.sin(now / 200))},80,.9)`; ctx.lineWidth = Math.max(2, 3 * dpr);
+    ctx.setLineDash([8 * dpr, 6 * dpr]); ctx.strokeRect(ax, ay, bx - ax, by - ay); ctx.setLineDash([]);
+  }
+  function renderArena() {
+    const body = $('#arena-body'), I = AR.info;
+    if (!I || I.kind !== AR.kind) { body.innerHTML = '<p class="muted">Carregando…</p>'; $('#arena-title').textContent = AR.kind === 'devil' ? 'Devil Square' : 'Chaos Castle'; return; }
+    $('#arena-title').textContent = I.name;
+    const now = Date.now() - AR.skew;
+    const my = I.myCat >= 0 ? I.categories[I.myCat] : null;
+    const phaseTxt = !I.enabled ? 'Evento desativado' : I.phase === 'running' ? 'Partida em andamento' : I.phase === 'open' ? 'Inscrições abertas · começa em' : `Próximo às ${hhmm(I.slot)} · inscrições abrem em`;
+    const cd = I.phase === 'open' ? I.slot - now : I.openAt - now;
+    const canReg = I.enabled && I.phase === 'open' && my && my.entry.have > 0 && I.registered === null && !I.inMatch;
+    const rw = I.rewards ? `<div class="ar-rw"><b>Vencedor:</b> ${I.rewards.winner.map(esc).join(', ') || '—'}</div><div class="ar-rw"><b>2º:</b> ${I.rewards.second.map(esc).join(', ') || '—'} · <b>3º:</b> ${I.rewards.third.map(esc).join(', ') || '—'}</div><div class="ar-rw"><b>Participação:</b> ${I.rewards.participant.map(esc).join(', ') || '—'}</div>` : '';
+    body.innerHTML = `<div class="ar-count"><span id="ar-phase">${phaseTxt}</span>${I.enabled && I.phase !== 'running' ? `<b id="ar-cd">${mmss(cd)}</b>` : ''}</div>
+      ${I.registered !== null ? `<p class="req-ok">✔ Você está inscrito no ${esc(I.categories[I.registered].name)}. Fique online: o item de entrada só é usado quando a partida começar.</p>` : ''}
+      ${!I.atNpc ? `<p class="chaos-warn">Fale com ${I.kind === 'castle' ? 'o Guarda do Chaos Castle' : 'Charon'} em Lorencia para se inscrever. <button class="btn small" type="button" id="ar-go">Ir para Lorencia</button></p>` : ''}
+      <table class="ar-cats"><thead><tr><th>Categoria</th><th>Nível</th><th>Entrada</th><th>Inscritos</th></tr></thead><tbody>
+      ${I.categories.map((c) => `<tr class="${c.i === I.myCat ? 'mine' : ''}"><td>${esc(c.name)}${c.running ? ' ⚔' : ''}</td><td>${c.minLevel}${c.maxLevel >= 9999 ? '+' : '–' + c.maxLevel}${c.minResets ? ` · ${c.minResets}+ resets` : ''}</td>
+        <td class="${c.entry.have ? 'ok' : 'no'}">${esc(c.entry.name)} (${c.entry.have})</td><td>${c.registered}/${I.maxPlayers}</td></tr>`).join('')}</tbody></table>
+      ${my ? '' : '<p class="bad">Seu nível não se encaixa em nenhuma categoria.</p>'}
+      <div class="ar-actions">
+        ${I.inMatch ? '<button class="btn btn-gold" type="button" data-ar="quit">Sair do evento</button>' : ''}
+        ${I.registered === null && !I.inMatch ? `<button class="btn btn-gold" type="button" data-ar="register" ${canReg ? '' : 'disabled'}>Confirmar inscrição</button>` : ''}
+        ${I.registered !== null && I.phase === 'open' ? '<button class="btn" type="button" data-ar="unregister">Cancelar inscrição</button>' : ''}
+        ${I.kind === 'castle' && I.buyZen ? `<button class="btn small" type="button" data-ar="buy" ${I.zen >= I.buyZen ? '' : 'disabled'}>Comprar ${esc(I.categories[0].entry.name)} (${fmt.format(I.buyZen)} Zen)</button>` : ''}
+      </div>
+      ${rw ? `<h4>Prêmios da sua categoria</h4>${rw}` : ''}
+      <h4>Regras</h4>
+      <ul class="ar-rules">
+        <li>Inscrições abrem antes do horário; a partida dura ${I.durationMin} min e precisa de ${I.minPlayers}+ participante${I.minPlayers > 1 ? 's' : ''} (máximo ${I.maxPlayers}).</li>
+        ${I.kind === 'castle' ? `<li>Todos contra todos e contra os soldados do castelo. Vence o último de pé.</li>${I.shrink ? '<li>A área segura diminui com o tempo: fora dela você perde vida.</li>' : ''}${I.disguise ? '<li>Todos entram disfarçados de guerreiro do castelo (seus itens continuam com você).</li>' : ''}<li>Se o tempo acabar, vence quem tiver mais pontos (jogadores e monstros derrotados).</li>`
+    : '<li>Ondas de monstros sem parar. Quem fizer mais pontos vence.</li><li>Use o Devil\'s Invitation do nível da sua categoria.</li>'}
+        <li>Quem morre ou sai é eliminado e volta para Lorencia (sem perder EXP). O item de entrada só é gasto quando a partida começa.</li>
+      </ul>`;
+    $$('[data-ar]', body).forEach((b) => { b.onclick = () => {
+      if (AR.busy) return;
+      if (b.dataset.ar === 'quit' && !confirm('Sair do evento? Você será eliminado e a entrada não volta.')) return;
+      AR.busy = true; send({ type: 'arena', action: b.dataset.ar, kind: I.kind });
+    }; });
+    const go = $('#ar-go'); if (go) go.onclick = () => send({ type: 'teleport', map: 'lorencia' });
+  }
+  setInterval(() => {
+    if (S.panel !== 'arena' || !AR.info) return;
+    const I = AR.info, el = $('#ar-cd'); if (!el) return;
+    const now = Date.now() - AR.skew;
+    const ms = I.phase === 'open' ? I.slot - now : I.openAt - now;
+    el.textContent = mmss(ms);
+    if (ms <= 0) send({ type: 'arena', action: 'info', kind: I.kind });
+  }, 1000);
+  function showArenaResult(m) {
+    const el = $('#arena-result');
+    el.innerHTML = `<h3 id="ar-res-title">${esc(m.name)}</h3>
+      <p>${m.winner ? `Vencedor: <b style="color:#ffd36b">${esc(m.winner)}</b>` : 'Terminou sem vencedor'}</p>
+      <div class="place">${m.place}º <small style="font-size:16px;color:var(--bone-dim)">de ${m.total}</small></div>
+      <p>${fmt.format(m.score)} pontos · ${m.mk} monstros${m.pk ? ` · ${m.pk} jogadores` : ''}</p>
+      <p class="rw">${m.rewards && m.rewards.length ? 'Prêmios: ' + m.rewards.map(esc).join(', ') : 'Sem prêmio desta vez.'}</p>
+      <ul>${(m.top || []).map((x) => `<li><span>${x.place}º ${esc(x.name)}</span><span>${fmt.format(x.score)} pts</span></li>`).join('')}</ul>
+      <button class="btn btn-gold" type="button" id="ar-res-ok">OK</button>`;
+    el.hidden = false;
+    if (m.place === 1 && m.winner) { goldFlash(`${m.name}!`); if (window.Sfx) Sfx.levelUp(); }
+    $('#ar-res-ok').onclick = () => { el.hidden = true; };
+  }
+
   // ================= Baú Pessoal =================
   // baú desenhado em pixel: madeira, ferragens douradas e um brilho suave
   function drawVaultChest(x, y, now) {
