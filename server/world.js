@@ -1346,10 +1346,19 @@ class World {
         for (const m of map.monsters) if (m.dead && now >= m.respawnAt) this.respawnMonster(map, m);
         continue;
       }
-      for (const p of [...map.players.values()]) this.tickPlayer(p, map, now, dt);
-      for (const m of map.monsters) this.tickMonster(m, map, now, dt);
-      this.broadcast(map, now);
+      // um erro num jogador ou monstro não pode travar o mapa inteiro
+      for (const p of [...map.players.values()]) { try { this.tickPlayer(p, map, now, dt); } catch (e) { this.tickError('jogador ' + p.name, e); } }
+      for (const m of map.monsters) { try { this.tickMonster(m, map, now, dt); } catch (e) { this.tickError('monstro ' + m.type, e); } }
+      try { this.broadcast(map, now); } catch (e) { this.tickError('envio ' + map.id, e); }
     }
+  }
+
+  tickError(who, e) {
+    const k = who + e.message;
+    this.tickErrs = this.tickErrs || new Map();
+    if (Date.now() - (this.tickErrs.get(k) || 0) < 60000) return;
+    this.tickErrs.set(k, Date.now());
+    console.error('[world] tick', who, e.stack || e.message);
   }
 
   respawnMonster(map, m) {

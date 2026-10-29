@@ -775,7 +775,7 @@
   function drawGoldFx(now) {
     if (!S.goldFx.length) return;
     S.goldFx = S.goldFx.filter((g) => {
-      const age = (now - g.t0) / 1000;
+      const age = Math.max(0, (now - g.t0) / 1000);
       if (age > 1.4) return false;
       const [sx, sy] = toScreen(g.x, g.y);
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -800,7 +800,7 @@
   // ---------- áreas de perigo do boss ----------
   function drawDangers(now) {
     S.dangers = (S.dangers || []).filter((d) => {
-      const p = (now - d.t0) / d.ms;
+      const p = Math.max(0, (now - d.t0) / d.ms);
       if (p >= 1) return false;
       const [sx, sy] = toScreen(d.x, d.y);
       ctx.save();
@@ -816,7 +816,17 @@
   }
 
   let last = performance.now();
+  let frameErrAt = 0;
+  // um erro de desenho nunca pode parar o jogo: o quadro seguinte sempre é agendado
   function frame(now) {
+    try { drawFrame(now); } catch (e) {
+      if (performance.now() - frameErrAt > 5000) { frameErrAt = performance.now(); console.error('[frame]', e); }
+      if (S.camBase) { camX = S.camBase[0]; camY = S.camBase[1]; S.camBase = null; }
+      try { ctx.restore(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.setLineDash([]); } catch (_) { /* nada */ }
+    }
+    requestAnimationFrame(frame);
+  }
+  function drawFrame(now) {
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = '#0b1020'; ctx.fillRect(0, 0, cv.width, cv.height);
@@ -835,6 +845,7 @@
         if (S.map.h < vh) camY = (S.map.h - vh) / 2;
       }
       const baseX = camX, baseY = camY;
+      S.camBase = [baseX, baseY];
       if (S.shake && now < S.shake.until) {
         const k = (S.shake.until - now) / S.shake.dur;
         camX += (Math.random() - 0.5) * S.shake.mag * k; camY += (Math.random() - 0.5) * S.shake.mag * k;
@@ -862,10 +873,9 @@
       }
       // escurece e clareia ao entrar no mapa
       if (S.enterAt && now - S.enterAt < 700) { ctx.fillStyle = `rgba(5,6,14,${1 - (now - S.enterAt) / 700})`; ctx.fillRect(0, 0, cv.width, cv.height); }
-      camX = baseX; camY = baseY;
+      camX = baseX; camY = baseY; S.camBase = null;
       drawMinimap();
     }
-    requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 
@@ -981,7 +991,7 @@
             ctx.globalAlpha = 1 - ph; ctx.fillStyle = '#fff1a8'; ctx.fillRect(sx2 - dpr, sy2 - dpr, 2 * dpr, 2 * dpr);
           }
           ctx.restore();
-          if (e.bornAt && now - e.bornAt < 700) { const k = (now - e.bornAt) / 700; ctx.strokeStyle = `rgba(255,214,90,${1 - k})`; ctx.lineWidth = 3 * dpr; ctx.beginPath(); ctx.ellipse(x, y, w * (0.5 + k * 1.6), w * (0.18 + k * 0.55), 0, 0, Math.PI * 2); ctx.stroke(); }
+          if (e.bornAt && now - e.bornAt < 700) { const k = Math.max(0, (now - e.bornAt) / 700); ctx.strokeStyle = `rgba(255,214,90,${1 - k})`; ctx.lineWidth = 3 * dpr; ctx.beginPath(); ctx.ellipse(x, y, w * (0.5 + k * 1.6), w * (0.18 + k * 0.55), 0, 0, Math.PI * 2); ctx.stroke(); }
         }
         if (e.id === myTarget && !e.dead) { ctx.strokeStyle = '#ffd36b'; ctx.lineWidth = dpr * 2; ctx.beginPath(); ctx.ellipse(x, y, w, w * 0.34, 0, 0, Math.PI * 2); ctx.stroke(); }
         shadowAt(x, y, w * 0.8);
@@ -1095,7 +1105,7 @@
   }
   function drawClickMark(now) {
     const c = S.clickMark; if (!c) return;
-    const p = (now - c.t0) / 500; if (p >= 1) { S.clickMark = null; return; }
+    const p = Math.max(0, (now - c.t0) / 500); if (p >= 1) { S.clickMark = null; return; }
     const [x, y] = toScreen(c.x, c.y);
     ctx.strokeStyle = '#ffd36b'; ctx.globalAlpha = 1 - p; ctx.lineWidth = dpr * 2;
     ctx.beginPath(); ctx.ellipse(x, y, (4 + p * 6) * zoom, (2 + p * 3) * zoom, 0, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
