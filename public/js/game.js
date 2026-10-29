@@ -87,6 +87,10 @@
       case 'arenaInfo': AR.info = m; AR.skew = Date.now() - m.now; AR.busy = false; if (S.panel === 'arena') renderArena(); return;
       case 'arenaResult': AR.busy = false; feed(m.text, m.ok ? 'quest' : 'warn'); return;
       case 'arena': return onArena(m);
+      case 'upgPreview': return upgPreview(m);
+      case 'upgResult': return upgResult(m);
+      case 'smithInfo': SM.info = m; SM.busy = false; if (S.panel === 'smith') renderSmith(); return;
+      case 'smithResult': return smithResult(m);
       case 'vault': VT.data = m; VT.no = m.no; VT.busy = false; if (S.panel === 'vault') renderVault(); return;
       case 'vaultResult': VT.busy = false; vaultMsg(m.text, m.ok); if (!m.ok) feed(m.text, 'warn'); return;
       case 'cqInfo': CQ.info = m; if (S.panel === 'cquest') renderCQ(); return;
@@ -953,6 +957,14 @@
           label(guard ? 'Chaos Castle' : 'Devil Square', x, y - HERO_H * sc - 17 * dpr, guard ? '#ff7a5a' : '#c88aff', 10);
           continue;
         }
+        if (e.kind === 'smith') {
+          drawForge(x, y, now);
+          const ph = now % 1600, hit = ph < 500;
+          Sprites.hero(ctx, 'dark_knight', { hair: 2, skin: 2 }, hit ? 'attack' : 'idle', hit ? ph : now, x - 10 * zoom, y, sc, false, { once: hit, equip: { armor: 'bronze', gloves: 'bronze', w: 'sword' } });
+          label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffb46a');
+          label('Aprimorar +9 a +15', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
+          continue;
+        }
         if (e.kind === 'vault') { drawVaultChest(x, y, now); label(e.name, x, y - 30 * zoom - 4 * dpr, '#ffd36b'); label('Guardar itens e Zen', x, y - 30 * zoom - 17 * dpr, '#9affd0', 10); continue; }
         Sprites.hero(ctx, 'dark_wizard', { hair: 1, skin: 1 }, 'idle', now, x, y, sc, true);
         label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffd36b');
@@ -1166,6 +1178,7 @@
       if (Math.hypot(n.x - wx, n.y - 10 - wy) < 16) {
         if (n.kind === 'sevina' || n.kind === 'marlon') { CQ.npc = n.kind; openPanel('cquest'); return; }
         if (n.kind === 'vault') { if (S.panel !== 'vault') openPanel('vault'); return; }
+        if (n.kind === 'smith') { if (S.panel !== 'smith') openPanel('smith'); return; }
         if (n.kind === 'castle_guard' || n.kind === 'charon') { AR.kind = n.kind === 'charon' ? 'devil' : 'castle'; if (S.panel === 'arena') renderPanel('arena'); else openPanel('arena'); send({ type: 'arena', action: 'info', kind: AR.kind }); return; }
         openPanel(n.kind === 'chaos' ? 'chaos' : 'shop'); return;
       }
@@ -1315,6 +1328,8 @@
     S.panel = name;
     $(`#panel-${name}`).hidden = false;
     $$('.menu [data-panel]').forEach((b) => b.setAttribute('aria-expanded', b.dataset.panel === name));
+    if (name === 'smith') { SM.result = null; send({ type: 'smith', action: 'info', id: SM.sel }); }
+    if (name !== 'bag') S.jewelSel = null;
     if (name === 'vault') { VT.sel = null; vaultSend({ action: 'open', no: VT.no }); }
     if (name === 'chat') { S.chatUnread = 0; $('#chat-badge').hidden = true; setTimeout(() => { const l = $('#chat-lines'); l.scrollTop = l.scrollHeight; }, 0); }
     renderPanel(name);
@@ -1338,6 +1353,7 @@
     else if (name === 'chaos') { renderChaos(); send({ type: 'chaosInfo' }); }
     else if (name === 'vault') renderVault();
     else if (name === 'arena') renderArena();
+    else if (name === 'smith') renderSmith();
     else if (name === 'cquest') { renderCQ(); send({ type: 'cqInfo', npc: CQ.npc }); }
     else if (name === 'admin') { if (!ADM.open) { ADM.open = true; renderAdmin(); } }
   }
@@ -1360,7 +1376,11 @@
     b.appendChild(iconCanvas(it));
     if (it.plus) b.insertAdjacentHTML('beforeend', `<span class="plus">+${it.plus}</span>`);
     if (it.stack) b.insertAdjacentHTML('beforeend', `<span class="qty">${it.qty > 999 ? '999+' : it.qty}</span>`);
-    b.onclick = onClick;
+    b.dataset.id = it.id;
+    b.onclick = (ev) => { if (UP.justDragged) { UP.justDragged = false; return; } onClick(ev); };
+    if (it.base === 'jewel_of_bless' || it.base === 'jewel_of_soul') { b.classList.add('jewel-drag'); b.addEventListener('pointerdown', (ev) => jewelDown(ev, it, b)); }
+    if (S.jewelSel && it.id !== S.jewelSel) b.classList.add(jewelFits(it) ? 'drop-ok' : 'drop-no');
+    if (S.jewelSel === it.id) b.classList.add('sel');
     return b;
   }
   // venda de vários itens de uma vez
@@ -1398,6 +1418,7 @@
     MS.ids.clear(); MS.confirm = false; renderMulti();
   };
   function pickItem(it) {
+    if (S.jewelSel && it.id !== S.jewelSel) { upgAsk(S.jewelSel, it.id); return; }
     if (MS.on) {
       if (it.equipped) return;
       if (MS.ids.has(it.id)) MS.ids.delete(it.id); else MS.ids.add(it.id);
@@ -1414,7 +1435,7 @@
     const slots = $('#equip-slots'); slots.innerHTML = '';
     for (const slot of Object.keys(SLOT_NAME)) {
       const it = c.items.find((i) => i.equipped && (i.eqSlot || i.slot) === slot);
-      if (it) slots.appendChild(slotButton(it, () => { if (!MS.on) { S.selItem = it.id; renderBag(); } }));
+      if (it) slots.appendChild(slotButton(it, () => { if (S.jewelSel) { upgAsk(S.jewelSel, it.id); return; } if (!MS.on) { S.selItem = it.id; renderBag(); } }));
       else { const e = document.createElement('div'); e.className = 'islot empty'; e.innerHTML = `<span class="slotname">${SLOT_NAME[slot]}</span>`; slots.appendChild(e); }
     }
     const rf = $('#rar-filter');
@@ -1456,6 +1477,17 @@
         ${it.desc ? `<p>${esc(it.desc)}</p>` : ''}
         <div class="row"><button class="btn small btn-ghost" type="button" data-act="sell">Vender ${it.qty > 1 ? 'todas ' : ''}por ${fmt.format(it.value)} Zen</button></div>`;
       $('[data-act]', box).onclick = () => { if (!confirm(`Vender ${it.name}${it.qty > 1 ? ' ×' + it.qty : ''}?`)) return; S.selItem = null; send({ type: 'sell', id: it.id }); };
+      return;
+    }
+    if (it.base === 'jewel_of_bless' || it.base === 'jewel_of_soul') {
+      const on = S.jewelSel === it.id;
+      box.innerHTML = `<h3 style="color:${ACCENT(it)}">${esc(it.name)} ×${fmt.format(it.qty)}</h3>
+        <p style="color:${RAR[it.rarity]}">Joia de aprimoramento · ${it.base === 'jewel_of_bless' ? '+0 até +6' : '+6 até +9'}</p>
+        <p>${on ? '<b style="color:#ffd36b">Agora toque no equipamento que quer aprimorar.</b>' : 'Arraste a joia até o equipamento (ou toque em "Usar" e depois no equipamento). Do +9 ao +15, só no Ferreiro Mestre.'}</p>
+        <div class="row"><button class="btn small btn-gold" type="button" data-jw>${on ? 'Cancelar' : 'Usar em um equipamento'}</button>
+          <button class="btn small btn-ghost" type="button" data-act="sell">Vender ${it.qty > 1 ? 'todas ' : ''}por ${fmt.format(it.value)} Zen</button></div>`;
+      $('[data-jw]', box).onclick = () => { S.jewelSel = on ? null : it.id; renderBag(); };
+      $('[data-act]', box).onclick = () => { if (!confirm(`Vender ${it.name} ×${it.qty}?`)) return; S.selItem = null; S.jewelSel = null; send({ type: 'sell', id: it.id }); };
       return;
     }
     if (it.slot === 'material') {
@@ -1952,6 +1984,117 @@
     el.hidden = false;
     if (m.place === 1 && m.winner) { goldFlash(`${m.name}!`); if (window.Sfx) Sfx.levelUp(); }
     $('#ar-res-ok').onclick = () => { el.hidden = true; };
+  }
+
+  // ================= Aprimoramento (+0 a +15) =================
+  const UP = { justDragged: false, drag: null, pend: null };
+  const SM = { info: null, sel: null, busy: false, result: null };
+  function jewelFits(it) {
+    const j = S.char && S.char.items.find((i) => i.id === S.jewelSel);
+    if (!j || !it || it.id === j.id) return false;
+    const ok = ['weapon', 'shield', 'helm', 'armor', 'pants', 'gloves', 'boots', 'wings'].includes(it.slot);
+    const pl = it.plus || 0;
+    return ok && pl < 9 && (j.base === 'jewel_of_bless' ? pl < 6 : pl >= 6);
+  }
+  // arrastar a joia com mouse ou dedo (Pointer Events): solta em cima do equipamento
+  function jewelDown(ev, it, btn) {
+    if (MS.on || ev.button > 0) return;
+    const sx = ev.clientX, sy = ev.clientY;
+    let ghost = null, over = null;
+    const move = (e) => {
+      if (!ghost) {
+        if (Math.hypot(e.clientX - sx, e.clientY - sy) < 8) return;
+        ghost = document.createElement('div'); ghost.className = 'jewel-ghost'; ghost.appendChild(iconCanvas(it)); document.body.appendChild(ghost);
+        S.jewelSel = it.id; renderBag(); UP.justDragged = true;
+      }
+      e.preventDefault();
+      ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px';
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const slot = el && el.closest && el.closest('#panel-bag .islot[data-id]');
+      if (over && over !== slot) over.classList.remove('drop-hover');
+      over = slot && slot.dataset.id !== it.id ? slot : null;
+      if (over) over.classList.add('drop-hover');
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
+      if (!ghost) return;
+      ghost.remove();
+      if (over) { over.classList.remove('drop-hover'); upgAsk(it.id, over.dataset.id); }
+      else { S.jewelSel = null; renderBag(); }
+      setTimeout(() => { UP.justDragged = false; }, 50);
+    };
+    window.addEventListener('pointermove', move, { passive: false }); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+  }
+  function upgAsk(jewel, item) { UP.pend = { jewel, item }; send({ type: 'upgPreview', jewel, item }); }
+  const statTxt = (st) => statLine(st || {}) || '—';
+  function upgPreview(m) {
+    if (!m.ok) { feed(m.text, 'warn'); alertBanner(m.text); S.jewelSel = null; renderBag(); return; }
+    const box = $('#upg-modal');
+    box.innerHTML = `<h3>${esc(m.name)} +${m.from} → <b style="color:#ffd36b">+${m.to}</b></h3>
+      <p class="upg-chance">Chance de sucesso: <b>${m.chance}%</b></p>
+      <p class="muted small">${esc(m.jewelName)} será usada. ${m.fail === 'keep' ? 'Se falhar, o item continua +' + m.from + ' (não quebra nem perde nível).' : m.fail === 'minus1' ? 'Se falhar, o item perde 1 nível.' : 'Se falhar, o item volta para +0.'}</p>
+      <ul class="upg-stats"><li><span>Agora</span><b>${esc(statTxt(m.now))}</b></li><li><span>Depois</span><b style="color:#a8e08a">${esc(statTxt(m.next))}</b></li></ul>
+      <div class="row"><button class="btn btn-gold" type="button" id="upg-go">Aprimorar</button><button class="btn" type="button" id="upg-no">Cancelar</button></div>`;
+    box.hidden = false;
+    $('#upg-go').onclick = () => { $('#upg-go').disabled = true; send({ type: 'upgDirect', jewel: m.jewel, item: m.item }); };
+    $('#upg-no').onclick = () => { box.hidden = true; S.jewelSel = null; renderBag(); };
+  }
+  function upgResult(m) {
+    const box = $('#upg-modal'); box.hidden = true;
+    if (!m.ok) { feed(m.text, 'warn'); alertBanner(m.text); S.jewelSel = null; if (S.panel === 'bag') renderBag(); return; }
+    feed(m.text, m.success ? 'quest' : 'warn');
+    if (m.success) { goldFlash(`+${m.to}!`); if (window.Sfx) Sfx.levelUp(); } else { alertBanner(m.text); shake(5, 300); if (window.Sfx) Sfx.hurt(); }
+    S.jewelSel = null;
+    if (m.item) S.selItem = m.item.id;
+    if (S.panel === 'bag') renderBag();
+  }
+  // Ferreiro Mestre: bigorna, fornalha e fogo
+  function drawForge(x, y, now) {
+    const u = zoom * 1.4;
+    const R = (c, a, b, w, h) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x + a * u), Math.round(y + b * u), Math.ceil(w * u), Math.ceil(h * u)); };
+    // fornalha atrás
+    R('#2a1a14', 4, -26, 22, 26); R('#4a3428', 5, -25, 20, 24); R('#1a0c08', 9, -16, 12, 10);
+    const f = Math.sin(now / 90) * 1.5;
+    R('#ff5a1a', 10, -14 + f / 2, 10, 7); R('#ffb02e', 12, -12 + f / 2, 6, 4); R('#fff2a8', 14, -11, 2, 2);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const r = 26 * zoom * (1 + 0.1 * Math.sin(now / 130));
+    const g = ctx.createRadialGradient(x + 15 * u, y - 12 * u, 0, x + 15 * u, y - 12 * u, r);
+    g.addColorStop(0, 'rgba(255,140,40,.45)'); g.addColorStop(1, 'rgba(255,90,20,0)');
+    ctx.fillStyle = g; ctx.fillRect(x + 15 * u - r, y - 12 * u - r, r * 2, r * 2); ctx.restore();
+    // bigorna na frente
+    R('#1a1a22', 8, -6, 14, 3); R('#5a5a66', 8, -7, 14, 2); R('#3a3a44', 12, -4, 6, 4); R('#2a2a34', 10, 0, 10, 2);
+    if (Math.floor(now / 700) % 2) { R('#ffd36b', 14, -9, 1, 1); R('#ffb02e', 17, -10, 1, 1); R('#fff2a8', 11, -11, 1, 1); }
+  }
+  function renderSmith() {
+    const body = $('#smith-body'), I = SM.info;
+    if (!I) { body.innerHTML = '<p class="muted">Acendendo a fornalha…</p>'; return; }
+    const sel = I.sel;
+    body.innerHTML = `${!I.atNpc ? '<p class="chaos-warn">O Ferreiro Mestre fica em Lorencia. <button class="btn small" type="button" id="sm-go">Ir para Lorencia</button></p>' : ''}
+      <p class="muted small">Coloque um equipamento +9 ou maior. Cada tentativa gasta as joias e o Zen da tabela, mesmo se falhar${I.fail === 'keep' ? ', mas o item nunca quebra nem perde nível' : ''}.</p>
+      <div class="sm-items">${I.items.length ? I.items.map((it) => `<button type="button" class="sm-item ${sel && sel.id === it.id ? 'on' : ''}" data-id="${it.id}" ${it.max ? 'disabled' : ''}><span class="sm-ic" data-ic="${it.id}"></span><span><b style="color:${RAR[it.rarity]}">${esc(it.name)} +${it.plus}</b><small>${it.equipped ? 'equipado' : 'na bolsa'}${it.max ? ' · máximo' : ''}</small></span></button>`).join('')
+    : '<p class="muted">Nenhum equipamento +9 ou maior com você. Use Jewel of Bless e Jewel of Soul direto no item até chegar a +9.</p>'}</div>
+      ${sel && sel.to ? `<div class="sm-box">
+        <h3>${esc(sel.item.name)} <span>+${sel.from} → <b style="color:#ffd36b">+${sel.to}</b></span></h3>
+        <p class="upg-chance">Chance de sucesso: <b>${sel.chance}%</b></p>
+        <ul class="upg-stats"><li><span>Agora</span><b>${esc(statTxt(sel.now))}</b></li><li><span>Depois</span><b style="color:#a8e08a">${esc(statTxt(sel.next))}</b></li></ul>
+        <table class="sm-mats"><tbody>${sel.mats.filter((x) => x.need > 0).map((x) => `<tr class="${x.have >= x.need ? 'ok' : 'no'}"><td><span class="sm-ic" data-mic="${x.base}"></span>${esc(x.name)}</td><td>${fmt.format(x.have)}/${x.need}</td></tr>`).join('')}
+          <tr class="${I.zen >= sel.zen ? 'ok' : 'no'}"><td>Zen</td><td>${fmt.format(sel.zen)}</td></tr></tbody></table>
+        <div class="row"><button class="btn btn-gold" type="button" id="sm-do" ${SM.busy || !I.atNpc || sel.mats.some((x) => x.have < x.need) || I.zen < sel.zen ? 'disabled' : ''}>Aprimorar</button><button class="btn" type="button" id="sm-cancel">Cancelar</button></div>
+      </div>` : ''}
+      ${SM.result ? `<p class="sm-result ${SM.result.success ? 'ok' : 'bad'}" role="status">${esc(SM.result.text)}</p>` : ''}`;
+    for (const el of $$('[data-ic]', body)) { const it = I.items.find((x) => x.id === el.dataset.ic); el.appendChild(iconCanvas(it)); }
+    for (const el of $$('[data-mic]', body)) { const x = sel.mats.find((m) => m.base === el.dataset.mic); el.appendChild(chaosIcon({ icon: x.icon, ic: x.ic, rarity: 'rare' }, 22)); }
+    $$('.sm-item', body).forEach((b) => { b.onclick = () => { SM.sel = b.dataset.id; SM.result = null; send({ type: 'smith', action: 'info', id: SM.sel }); }; });
+    const go = $('#sm-go'); if (go) go.onclick = () => send({ type: 'teleport', map: 'lorencia' });
+    const d = $('#sm-do'); if (d) d.onclick = () => { if (SM.busy) return; SM.busy = true; d.disabled = true; $('#smith-panel-fx').classList.remove('hit'); void $('#smith-panel-fx').offsetWidth; $('#smith-panel-fx').classList.add('hit'); send({ type: 'smith', action: 'upgrade', id: sel.id }); };
+    const c = $('#sm-cancel'); if (c) c.onclick = () => { SM.sel = null; SM.result = null; send({ type: 'smith', action: 'info' }); };
+  }
+  function smithResult(m) {
+    SM.busy = false;
+    SM.result = m.ok ? { success: m.success, text: m.text } : { success: false, text: m.text };
+    feed(m.text, m.ok && m.success ? 'quest' : 'warn');
+    if (m.ok && m.success) { goldFlash(`+${m.to}!`); if (window.Sfx) Sfx.levelUp(); }
+    else if (m.ok) { shake(5, 300); if (window.Sfx) Sfx.hurt(); }
   }
 
   // ================= Baú Pessoal =================

@@ -15,6 +15,7 @@ const EQUIP = require('./equip');
 const VAULT = require('./vault');
 const CLS = require('./classes');
 const ARENA = require('./arena');
+const UPG = require('./upgrade');
 
 const TICK_MS = 100;
 const SAVE_EVERY_MS = 20000;
@@ -45,11 +46,12 @@ function itemStats(it) {
   const b = G.ITEM_BASES[it.base];
   if (!b) return {};
   if (b.slot === 'wings') {
-    const pl = it.plus || 0;
-    return { def: b.def + pl * 2, wdmg: b.wdmg + pl * WING_PLUS, absorb: Math.min(60, b.absorb + pl * WING_PLUS) };
+    const wb = UPG.wingBonus(it.plus || 0);
+    return { def: b.def + wb.def, wdmg: b.wdmg + wb.wdmg, absorb: Math.min(60, b.absorb + wb.absorb) };
   }
-  if (b.slot === 'material') return {};
-  const m = (G.RARITY_MULT[it.rarity] || 1) * (1 + (it.plus || 0) * 0.06);
+  if (b.slot === 'material' || b.slot === 'box' || b.slot === 'quest') return {};
+  // bônus do aprimoramento (+0 a +15) por tipo de equipamento, configurável no painel
+  const m = (G.RARITY_MULT[it.rarity] || 1) * UPG.mult(it.base, it.plus || 0);
   const out = {};
   if (b.dmg) out.dmg = [Math.round(b.dmg[0] * m), Math.round(b.dmg[1] * m)];
   if (b.def) out.def = Math.round(b.def * m);
@@ -298,6 +300,7 @@ class World {
     await CLS.init(helpers);
     await KUNDUN.init(helpers);
     await VAULT.init(helpers);
+    await UPG.init({ ...helpers, itemStats });
     await INV.init(this, helpers);
     this.invasion = INV;
     this.expToNext = expToNext;
@@ -506,7 +509,7 @@ class World {
     p.send({
       type: 'enter', map: mapId, room: m.room, rooms: ROOMS, name: m.def.name, theme: m.def.theme, w: m.def.w, h: m.def.h, safe: !!m.def.safe,
       arena: m.def.arena || null, pvp: !!m.def.pvp, margin: m.def.margin || 0,
-      npcs: (m.def.npcs || []).filter((n) => VAULT.npcVisible(mapId, n)),
+      npcs: (m.def.npcs || []).filter((n) => VAULT.npcVisible(mapId, n) && UPG.npcVisible(mapId, n)),
       ground: m.ground ? [...m.ground.values()].map((g) => DROPS.publicGround(g)) : [],
       monsters: m.monsters.map((mo) => INV.monInfo(mo)),
       players: [...m.players.values()].filter((o) => o !== p).map((o) => this.pinfo(o)),
@@ -575,6 +578,9 @@ class World {
       case 'openBox': return p.run(() => KUNDUN.open(this, p, String(msg.id || '')));
       case 'vault': return p.run(() => VAULT.act(this, p, msg));
       case 'arena': return p.run(() => ARENA.act(this, p, msg));
+      case 'upgPreview': return p.run(() => UPG.preview(p, msg));
+      case 'upgDirect': return p.run(() => UPG.direct(this, p, msg));
+      case 'smith': return p.run(() => UPG.smith(this, p, msg));
       case 'cqInfo': return p.send(CLS.info(p, String(msg.npc || ''), DROPS.sources(CLS.QUEST_ITEMS)));
       case 'cqAct': return p.run(() => CLS.act(this, p, String(msg.action || ''), String(msg.npc || ''), DROPS.sources(CLS.QUEST_ITEMS)));
       case 'pickup': {

@@ -553,6 +553,66 @@
     }
   }
 
+  // ---------------- Aprimoramento +0 a +15 / Ferreiro Mestre ----------------
+  async function upgrade(box) {
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    let V;
+    try { V = await X.api('GET', '/api/admin/upgrade'); } catch (e) { box.innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+    const draw = () => {
+      const c = V.config;
+      const FAILS = [['keep', 'mantém o nível (padrão)'], ['minus1', 'perde 1 nível'], ['reset', 'volta para +0']];
+      const CATN = { weapon: 'Armas', shield: 'Escudos', armor: 'Armaduras (elmo, armadura, calças, luvas, botas)', wings: 'Asas e capas', accessory: 'Anéis e colares' };
+      const st = {}; for (const r of V.stats) { const k = `${r.kind}:${r.from_plus}`; st[k] = r; }
+      const rate = (k) => (st[k] ? ` <small class="muted">(${st[k].ok}/${st[k].n} em 7 dias)</small>` : '');
+      box.innerHTML = `<p class="adt-msg" role="status"></p>
+        <fieldset class="adt-card" id="up-direct"><legend>Joias direto no item (+0 a +9)</legend>
+          <label class="adt-check"><input type="checkbox" data-f="directEnabled" ${c.directEnabled ? 'checked' : ''}> Ativo</label>
+          <div class="adt-table-wrap"><table class="adt-table"><thead><tr><th>Nível</th><th>Joia</th><th>Chance %</th></tr></thead><tbody>
+          ${c.direct.map((v, k) => `<tr><td>+${k} → +${k + 1}</td><td>${k < 6 ? 'Bless' : 'Soul'}</td><td>${num('d' + k, v, 'min="0" max="100" step="0.1"')}${rate('direct:' + k)}</td></tr>`).join('')}</tbody></table></div>
+          <label>Se falhar ${sel('directFail', FAILS, c.directFail)}</label>
+        </fieldset>
+        <fieldset class="adt-card" id="up-smith"><legend>Ferreiro Mestre (+9 a +15)</legend>
+          <label class="adt-check"><input type="checkbox" data-f="enabled" ${c.smith.enabled ? 'checked' : ''}> Ferreiro aberto</label>
+          <div class="adm-row">${Object.keys(c.smith.maps).map((m) => `<label class="adt-check"><input type="checkbox" data-map="${m}" ${c.smith.maps[m] ? 'checked' : ''}> ${m[0].toUpperCase() + m.slice(1)}</label>`).join('')}</div>
+          <label>Nível máximo ${num('maxLevel', c.maxLevel, 'min="9" max="15"')}</label>
+          <div class="adt-table-wrap"><table class="adt-table"><thead><tr><th>Nível</th><th>Chance %</th><th>Bless</th><th>Soul</th><th>Chaos</th><th>Creation</th><th>Zen</th></tr></thead><tbody>
+          ${c.smith.steps.map((s2, k) => `<tr data-step="${k}"><td>+${k + 9} → +${k + 10}</td><td>${num('chance', s2.chance, 'min="0" max="100" step="0.1"')}${rate('smith:' + (k + 9))}</td>
+            ${['bless', 'soul', 'chaos', 'creation'].map((m) => `<td>${num(m, s2[m], 'min="0" max="99" class="w-xs"')}</td>`).join('')}<td>${num('zen', s2.zen, 'min="0" step="100000" style="width:120px"')}</td></tr>`).join('')}</tbody></table></div>
+          <label>Se falhar ${sel('smithFail', FAILS, c.smith.fail)}</label>
+        </fieldset>
+        <fieldset class="adt-card" id="up-cats"><legend>Itens que podem ser aprimorados</legend>
+          ${Object.entries(CATN).map(([k, n]) => `<label class="adt-check"><input type="checkbox" data-cat="${k}" ${c.cats[k] ? 'checked' : ''}> ${esc(n)}</label>`).join('')}
+        </fieldset>
+        <fieldset class="adt-card" id="up-bonus"><legend>Bônus de atributo por nível (% sobre o item base)</legend>
+          <div class="adt-table-wrap"><table class="adt-table"><thead><tr><th></th>${Array.from({ length: 16 }, (_, k) => `<th>+${k}</th>`).join('')}</tr></thead><tbody>
+          ${Object.entries(c.bonus).map(([k, arr]) => `<tr data-bonus="${k}"><td>${{ weapon: 'Armas', shield: 'Escudos', armor: 'Armaduras', accessory: 'Acessórios' }[k] || k}</td>${arr.map((v, j) => `<td>${num('b' + j, v, 'min="0" max="1000" class="w-xs"')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+          <p class="adt-sub">Asas e capas, por nível: até +9 / do +10 ao +15</p>
+          <div class="adm-row" id="up-wings"><label>Defesa ${num('def', c.wings.def, 'min="0" max="50" class="w-xs"')} / ${num('defHigh', c.wings.defHigh, 'min="0" max="50" class="w-xs"')}</label>
+            <label>Dano % ${num('wdmg', c.wings.wdmg, 'min="0" max="50" class="w-xs"')} / ${num('wdmgHigh', c.wings.wdmgHigh, 'min="0" max="50" class="w-xs"')}</label>
+            <label>Absorção % ${num('absorb', c.wings.absorb, 'min="0" max="50" class="w-xs"')} / ${num('absorbHigh', c.wings.absorbHigh, 'min="0" max="50" class="w-xs"')}</label></div>
+        </fieldset>
+        <fieldset class="adt-card" id="up-msg"><legend>Mensagens ({item} = nome, {plus} = nível)</legend>
+          ${Object.entries(c.messages).map(([k, v]) => `<label style="display:block">${{ success: 'Sucesso', fail: 'Falha (joia)', smithFail: 'Falha (Ferreiro)', limit: 'Limite do +9' }[k]}<input data-msg="${k}" value="${esc(v)}" style="width:100%"></label>`).join('')}
+        </fieldset>
+        <button class="btn btn-gold" type="button" id="up-save">Salvar aprimoramento</button>
+        <h4>Últimas tentativas</h4>
+        <ul class="adm-list adt-log">${V.history.map((h) => `<li>${dt(h.created_at)} · <b>${esc(h.char_name)}</b> · ${esc(h.item)} +${h.from_plus} → +${h.to_plus} · ${h.kind === 'smith' ? 'Ferreiro' : 'joia'} · ${h.success ? '<span class="req-ok">sucesso</span>' : '<span class="req-no">falha</span>'} (${Number(h.chance)}%)${Number(h.zen) ? ' · ' + fmt.format(h.zen) + ' Zen' : ''}</li>`).join('') || '<li class="muted">Nenhuma ainda.</li>'}</ul>`;
+      $('#up-save').onclick = async () => {
+        const o = { directEnabled: $('[data-f=directEnabled]', box).checked, direct: c.direct.map((_, k) => Number($(`#up-direct [data-f=d${k}]`).value)), directFail: $('[data-f=directFail]', box).value,
+          maxLevel: Number($('[data-f=maxLevel]', box).value),
+          smith: { enabled: $('#up-smith [data-f=enabled]').checked, maps: {}, fail: $('[data-f=smithFail]', box).value, steps: [] }, cats: {}, bonus: {}, wings: {}, messages: {} };
+        for (const el of $$('[data-map]', box)) o.smith.maps[el.dataset.map] = el.checked;
+        for (const tr of $$('[data-step]', box)) { const x = {}; for (const el of $$('[data-f]', tr)) x[el.dataset.f] = Number(el.value); o.smith.steps.push(x); }
+        for (const el of $$('[data-cat]', box)) o.cats[el.dataset.cat] = el.checked;
+        for (const tr of $$('[data-bonus]', box)) o.bonus[tr.dataset.bonus] = $$('[data-f]', tr).map((el) => Number(el.value));
+        for (const el of $$('#up-wings [data-f]')) o.wings[el.dataset.f] = Number(el.value);
+        for (const el of $$('[data-msg]', box)) o.messages[el.dataset.msg] = el.value;
+        try { V = { ...V, ...(await X.api('POST', '/api/admin/upgrade', { config: o })) }; draw(); msg(box, 'Aprimoramento salvo.'); } catch (e) { msg(box, e.message, true); }
+      };
+    };
+    draw();
+  }
+
   function mount(el, ctx) {
     X = ctx;
     el.innerHTML = `
@@ -560,10 +620,11 @@
       <details class="adm-sec adt-sec" data-sec="equip"><summary><h3>Equipamentos por classe e evolução</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="vault"><summary><h3>Baú Pessoal</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="arena"><summary><h3>Eventos: Chaos Castle e Devil Square</h3></summary><div class="adt-body"></div></details>
+      <details class="adm-sec adt-sec" data-sec="upgrade"><summary><h3>Aprimoramento +0 a +15 e Ferreiro</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="chaos"><summary><h3>Chaos Machine (asas e capas)</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="drops"><summary><h3>Drops de materiais e eventos</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="rules"><summary><h3>Comandos, reset e histórico ADM</h3></summary><div class="adt-body"></div></details>`;
-    const fn = { invasion, arena, equip, vault, chaos, drops, rules };
+    const fn = { invasion, arena, upgrade, equip, vault, chaos, drops, rules };
     $$('.adt-sec', el).forEach((d) => { d.addEventListener('toggle', () => { if (d.open && !d.dataset.loaded) { d.dataset.loaded = 1; fn[d.dataset.sec]($('.adt-body', d)); } }); });
   }
 

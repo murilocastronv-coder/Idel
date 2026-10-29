@@ -160,7 +160,7 @@ const WORLD = {
   lorencia: { name: 'Lorencia', theme: 'town', w: 800, h: 560, safe: true, minLevel: 1, spawn: [400, 300],
     npcs: [{ id: 'shop', name: 'Mercadora Pasi', x: 470, y: 250, kind: 'shop' }, { id: 'chaos', name: 'Chaos Goblin', x: 335, y: 240, kind: 'chaos' },
       { id: 'marlon', name: 'Marlon', x: 250, y: 380, kind: 'marlon' }, { id: 'vault', name: 'Baú Pessoal', x: 565, y: 290, kind: 'vault' },
-      { id: 'castle_guard', name: 'Guarda do Chaos Castle', x: 640, y: 360, kind: 'castle_guard' }, { id: 'charon', name: 'Charon', x: 160, y: 300, kind: 'charon' }], groups: [] },
+      { id: 'castle_guard', name: 'Guarda do Chaos Castle', x: 640, y: 360, kind: 'castle_guard' }, { id: 'smith', name: 'Ferreiro Mestre', x: 210, y: 195, kind: 'smith' }, { id: 'charon', name: 'Charon', x: 160, y: 300, kind: 'charon' }], groups: [] },
   noria: { name: 'Noria', theme: 'noria', w: 1200, h: 800, minLevel: 1, spawn: [120, 400],
     npcs: [{ id: 'vault', name: 'Baú Pessoal', x: 190, y: 330, kind: 'vault', optional: true }],
     groups: [{ type: 'slime', count: 14 }, { type: 'goblin', count: 7 }, { type: 'goblin_elite', count: 1 }] },
@@ -376,6 +376,9 @@ const ITEM_BASES = {
   // ---------- Chaos Machine ----------
   // special = não entra no sorteio comum de drops (só pela tabela de drop configurável ou pela Chaos Machine)
   // materiais empilham (stack) e não ocupam mais de um lugar na bolsa
+  jewel_of_bless: { name: 'Jewel of Bless', slot: 'material', icon: 'jewel', ic: '#8ad8ff', req: 1, stack: 999, rarity: 'rare', value: 3000, special: true, desc: 'Arraste em cima de um equipamento da bolsa para aprimorar de +0 até +6. Também é usada no Ferreiro Mestre.' },
+  jewel_of_soul: { name: 'Jewel of Soul', slot: 'material', icon: 'jewel', ic: '#d86aff', req: 1, stack: 999, rarity: 'epic', value: 6000, special: true, desc: 'Arraste em cima de um equipamento da bolsa para aprimorar de +6 até +9. Também é usada no Ferreiro Mestre.' },
+  jewel_of_creation: { name: 'Jewel of Creation', slot: 'material', icon: 'jewel', ic: '#ffd84a', req: 1, stack: 999, rarity: 'epic', value: 12000, special: true, desc: 'Usada pelo Ferreiro Mestre para aprimorar equipamentos de +9 até +15.' },
   jewel_of_chaos: { name: 'Jewel of Chaos', slot: 'material', icon: 'jewel_chaos', req: 1, stack: 999, rarity: 'rare', value: 1500, special: true,
     desc: 'Joia usada na Chaos Machine para criar e evoluir asas e capas.' },
   // ---- convites de eventos (Chaos Castle e Devil Square) ----

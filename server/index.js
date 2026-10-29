@@ -442,6 +442,19 @@ route('POST', '/api/admin/arena', bad(async (req) => {
   CMDS.log(who, 'panel:arena:' + body.op, null, { kind, minutes: body.minutes }, null, null, 'ok', message, null);
   return { ok: true, message, ...(await world.arena.adminView()) };
 }));
+// ---- Aprimoramento +0 a +15 e Ferreiro Mestre (Super ADM) ----
+const UPG = require('./upgrade');
+route('GET', '/api/admin/upgrade', async (req, url) => {
+  await requireAdmin(req);
+  return { ok: true, config: UPG.cfg(), history: await UPG.history(url.searchParams.get('name') || ''), stats: await UPG.stats() };
+});
+route('POST', '/api/admin/upgrade', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 64 * 1024);
+  await UPG.saveConfig(body.config || {});
+  CMDS.log({ accountId: acc.id, name: acc.username, role: 'superadmin' }, 'panel:upgrade', null, {}, null, null, 'ok', 'Aprimoramento salvo', null);
+  return { ok: true, message: 'Aprimoramento salvo. O NPC aparece/some quando o jogador entra de novo no mapa.', config: UPG.cfg(), history: await UPG.history(''), stats: await UPG.stats() };
+}));
 // ---- Baú Pessoal (Super ADM) ----
 route('GET', '/api/admin/vault', async (req, url) => {
   await requireAdmin(req);
