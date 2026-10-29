@@ -1375,5 +1375,9 @@ window.I18N_EN = {
 "último de pé": "last one standing",
 "tempo": "time",
 "sem participantes": "no participants",
-"castelo limpo": "castle cleared"
+"castelo limpo": "castle cleared",
+"Dar VIP para todas as contas": "Give VIP to every account",
+"Os dois VIPs": "Both VIPs",
+"Dar para todos": "Give to everyone",
+"🎁 Presente para todos: {0} por {1} dia{2}!": "🎁 A gift for everyone: {0} for {1} day(s){2}!"
 };

@@ -1702,6 +1702,10 @@
           <select id="adm-vip-plan" aria-label="Plano">${D.plans.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select>
           <label>Dias <input type="number" id="adm-vip-days" min="1" max="3650" value="30"></label></div>
         <div class="adm-row"><button class="btn small btn-gold" type="button" id="adm-vip-give">Dar VIP</button><button class="btn small" type="button" id="adm-vip-del">Remover VIP</button></div>
+        <h4>Dar VIP para todas as contas</h4>
+        <div class="adm-row"><select id="adm-vipall-plan" aria-label="Plano para todos">${D.plans.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}<option value="both">Os dois VIPs</option></select>
+          <label>Dias <input type="number" id="adm-vipall-days" min="1" max="3650" value="7"></label>
+          <button class="btn small btn-gold" type="button" id="adm-vipall">Dar para todos</button></div>
         <h4>VIPs ativos (${D.vips.length})</h4>
         <ul class="adm-list">${D.vips.map((v) => `<li><b>${esc(v.username)}</b> · ${esc(v.name)} até ${dateFmt(v.until)}</li>`).join('') || '<li class="muted">Nenhum ainda.</li>'}</ul>
         <h4>Últimos pagamentos</h4>
@@ -1743,6 +1747,16 @@
     };
     $('#adm-vip-give').onclick = () => vip(Number($('#adm-vip-days').value));
     $('#adm-vip-del').onclick = () => vip(0);
+    $('#adm-vipall').onclick = async () => {
+      const sel = $('#adm-vipall-plan'), days = Number($('#adm-vipall-days').value);
+      const nm = sel.options[sel.selectedIndex].text;
+      if (!(days >= 1)) return admMsg('Coloque quantos dias.', true);
+      if (!confirm(`Dar ${nm} por ${days} dia(s) para TODAS as contas do jogo?`)) return;
+      const b = $('#adm-vipall'); b.disabled = true;
+      try { const r = await admApi('POST', '/api/admin/vip-all', { plan: sel.value, days }); admMsg(r.message); setTimeout(() => { if (S.panel === 'admin') renderAdmin(); }, 900); }
+      catch (e) { admMsg(e.message, true); }
+      b.disabled = false;
+    };
     // Chaos Machine, drops, comandos e histórico (admin-tools.js)
     if (window.MUAdminTools) {
       const box = document.createElement('div');

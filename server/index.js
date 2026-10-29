@@ -490,6 +490,30 @@ route('POST', '/api/admin/vip', async (req) => {
   const st = VIP.status(r);
   return { ok: true, message: days > 0 ? `${VIP.PLANS[body.plan].name}: +${days} dias para ${rows[0].username}.` : `${VIP.PLANS[body.plan].name} removido de ${rows[0].username}.`, vip: st };
 });
+// dá VIP para todas as contas de uma vez (um plano ou os dois)
+route('POST', '/api/admin/vip-all', async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req);
+  const plans = body.plan === 'both' ? ['vip1', 'vip2'] : [String(body.plan)];
+  for (const pl of plans) if (!VIP.PLANS[pl]) throw new HttpError(400, 'Plano inválido.');
+  const days = Math.round(Number(body.days) || 0);
+  if (!(days >= 1 && days <= 3650)) throw new HttpError(400, 'Dias: de 1 a 3650.');
+  let n = 0;
+  await db.tx(async (q) => {
+    for (const pl of plans) {
+      const col = VIP.PLANS[pl].tier === 2 ? 'vip2_until' : 'vip1_until';
+      const r = await q(`UPDATE accounts SET ${col} = GREATEST(COALESCE(${col}, now()), now()) + ($1::int * interval '1 day') RETURNING id`, [days]);
+      n = r.rows.length;
+      await q(`INSERT INTO payments (provider, account_id, plan, days, amount_cents, note) SELECT 'admin', id, $1, $2, 0, $3 FROM accounts RETURNING id`, [pl, days, `para todas as contas, por ${acc.username}`]);
+    }
+  });
+  await audit(acc.id, 'admin_vip_all', req, { plans, days, accounts: n });
+  const ids = new Set([...world.players.values()].map((p) => p.accountId));
+  for (const id of ids) world.refreshVip(id).catch(() => {});
+  const names = plans.map((pl) => VIP.PLANS[pl].name).join(' e ');
+  world.system(`🎁 Presente para todos: ${names} por ${days} dia${days > 1 ? 's' : ''}!`);
+  return { ok: true, message: `${names}: +${days} dias para ${n} conta(s).` };
+});
 route('POST', '/api/admin/vip-prices', async (req) => {
   const acc = await requireAdmin(req);
   const body = await readJson(req);
