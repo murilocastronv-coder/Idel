@@ -961,8 +961,9 @@
     ctx.fillStyle = color; ctx.fillRect(Math.round(cx - w / 2), y, Math.max(0, w * Math.min(1, frac)), h);
   }
   function label(text, x, y, color, size = 11) {
-    ctx.font = `600 ${size * dpr}px "Pixelify Sans", monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-    ctx.fillStyle = '#0b1020'; ctx.fillText(text, x + dpr, y + dpr);
+    ctx.font = `700 ${Math.round(size * 1.12 * dpr)}px "Exo 2", "Segoe UI", system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    // contorno escuro: dá para ler em cima de qualquer chão
+    ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(2, 3 * dpr); ctx.strokeStyle = 'rgba(8,10,20,.92)'; ctx.strokeText(text, x, y);
     ctx.fillStyle = color; ctx.fillText(text, x, y);
   }
   // centro do corpo, em coordenadas do mundo

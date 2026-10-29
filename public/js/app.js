@@ -452,7 +452,7 @@
         Sprites.drawEffect(ctx, f.sprite, p * f.frames, f.x, f.y, 1, f.flip ? Math.PI : 0);
         return true;
       });
-      ctx.font = '600 10px "Pixelify Sans", monospace';
+      ctx.font = '700 11px "Exo 2", "Segoe UI", sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
       scene.floats = scene.floats.filter((f) => {
         const age = t - f.born; if (age > 800) return false;
