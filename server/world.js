@@ -12,6 +12,7 @@ const CMDS = require('./commands');
 const INV = require('./invasion');
 const KUNDUN = require('./kundun');
 const EQUIP = require('./equip');
+const VAULT = require('./vault');
 const CLS = require('./classes');
 
 const TICK_MS = 100;
@@ -295,6 +296,7 @@ class World {
     await EQUIP.init();
     await CLS.init(helpers);
     await KUNDUN.init(helpers);
+    await VAULT.init(helpers);
     await INV.init(this, helpers);
     this.invasion = INV;
   }
@@ -305,7 +307,7 @@ class World {
       FROM characters c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1`, [charId]);
     if (!rows[0]) throw new Error('Personagem não encontrado.');
     rows[0].is_admin_user = ADMIN.isAdmin({ username: rows[0].acc_username, email: rows[0].acc_email });
-    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty, eq_slot, locked FROM items WHERE character_id = $1 ORDER BY id', [charId])).rows;
+    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty, eq_slot, locked FROM items WHERE character_id = $1 AND vault_no IS NULL ORDER BY id', [charId])).rows;
     const p = new Player(rows[0], null, items);
     p.room = 1;
     return p;
@@ -408,7 +410,7 @@ class World {
     }
     if (client.player) await this.leave(client.player);
 
-    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty, eq_slot, locked FROM items WHERE character_id = $1 ORDER BY id', [row.id])).rows;
+    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty, eq_slot, locked FROM items WHERE character_id = $1 AND vault_no IS NULL ORDER BY id', [row.id])).rows;
     const p = new Player(row, client, items);
     p.room = Math.min(ROOMS, Math.max(1, Math.round(Number(room)) || 1));
     client.player = p;
@@ -478,7 +480,7 @@ class World {
     m.players.set(p.id, p);
     p.send({
       type: 'enter', map: mapId, room: m.room, rooms: ROOMS, name: m.def.name, theme: m.def.theme, w: m.def.w, h: m.def.h, safe: !!m.def.safe,
-      npcs: m.def.npcs || [],
+      npcs: (m.def.npcs || []).filter((n) => VAULT.npcVisible(mapId, n)),
       ground: m.ground ? [...m.ground.values()].map((g) => DROPS.publicGround(g)) : [],
       monsters: m.monsters.map((mo) => INV.monInfo(mo)),
       players: [...m.players.values()].filter((o) => o !== p).map((o) => this.pinfo(o)),
@@ -542,6 +544,7 @@ class World {
       case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS])));
       case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
       case 'openBox': return p.run(() => KUNDUN.open(this, p, String(msg.id || '')));
+      case 'vault': return p.run(() => VAULT.act(this, p, msg));
       case 'cqInfo': return p.send(CLS.info(p, String(msg.npc || ''), DROPS.sources(CLS.QUEST_ITEMS)));
       case 'cqAct': return p.run(() => CLS.act(this, p, String(msg.action || ''), String(msg.npc || ''), DROPS.sources(CLS.QUEST_ITEMS)));
       case 'pickup': {
@@ -892,7 +895,7 @@ class World {
   async adminChar(name) {
     const { rows } = await db.query(`SELECT c.id, c.name, c.class, c.level, c.resets, c.zen, c.free_points, c.str, c.agi, c.vit, c.ene, c.cmd,
         a.username, a.vip1_until, a.vip2_until,
-        (SELECT count(*) FROM items i WHERE i.character_id = c.id AND NOT i.equipped)::int AS bag
+        (SELECT count(*) FROM items i WHERE i.character_id = c.id AND NOT i.equipped AND i.vault_no IS NULL)::int AS bag
       FROM characters c JOIN accounts a ON a.id = c.account_id WHERE lower(c.name) = lower($1)`, [String(name || '').trim()]);
     const r = rows[0];
     if (!r) return null;
@@ -1269,7 +1272,7 @@ class World {
   hurtPlayer(m, p, now) {
     const db = p.buffs.def && p.buffs.def.until > now ? p.buffs.def.mult : 1;
     const d = Math.max(1, Math.round((m.T.dmg * rand(0.85, 1.15) - p.def * db / 2) * (1 - (p.absorb || 0))));
-    p.hp -= d;
+    p.hp -= d; p.hurtAt = now;
     p.map.emit({ k: 'h', a: m.id, t: p.id, d, fx: m.T.boss ? 'boss' : 'claw' });
     if (p.hp <= 0) this.killPlayer(p, now, m);
   }
@@ -1334,7 +1337,7 @@ class World {
           if (p.dead || Math.hypot(p.x - sl.x, p.y - sl.y) > sl.r) continue;
           const db = p.buffs.def && p.buffs.def.until > now ? p.buffs.def.mult : 1;
           const d = Math.max(1, Math.round((m.T.dmg * 2.4 * rand(0.9, 1.1) - p.def * db / 2) * (1 - (p.absorb || 0))));
-          p.hp -= d;
+          p.hp -= d; p.hurtAt = now;
           map.emit({ k: 'h', a: m.id, t: p.id, d, fx: 'boss', aoe: 1 });
           if (p.hp <= 0) this.killPlayer(p, now, m);
         }

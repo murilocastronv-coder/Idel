@@ -476,3 +476,39 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 #panel-admin .adt-eq-wrap { max-height: 60vh; overflow: auto; }
 #panel-admin .adt-rules tr.custom td { background: rgba(255, 211, 107, .07); }
 #panel-admin .adt-q { border-top: 1px dashed var(--edge); padding-top: 4px; margin-top: 6px; }
+/* Baú Pessoal */
+#panel-vault { width: min(860px, calc(100vw - 16px)); }
+.vault-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+.vault-tabs button { font: 600 14px var(--display); background: var(--night); color: var(--bone-dim); border: 2px solid var(--edge); padding: 4px 10px; cursor: pointer; }
+.vault-tabs button.on { color: var(--gold); border-color: var(--gold); }
+.vault-tabs button:disabled { opacity: .5; cursor: not-allowed; }
+.vault-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+.vault-bar #vault-used { color: var(--bone-dim); }
+.vault-filter { display: flex; flex-wrap: wrap; gap: 3px; }
+.vault-filter button { font: 500 12px var(--display); background: var(--night); color: var(--bone-dim); border: 2px solid var(--edge); padding: 2px 6px; cursor: pointer; }
+.vault-filter button.on { color: var(--gold); border-color: var(--gold); }
+.vault-wrap { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 680px) { .vault-wrap { grid-template-columns: 1fr; } }
+.vault-grid { display: grid; grid-template-columns: repeat(var(--cols, 8), 1fr); gap: 2px; background: #0b0d18; padding: 4px; border: 2px solid #5a4630;
+  background-image: linear-gradient(rgba(90,70,48,.25) 1px, transparent 1px); max-height: 62vh; overflow-y: auto; }
+.vault-grid .islot { border-width: 1px; min-width: 0; }
+.vault-grid .islot.empty { background: rgba(20, 24, 44, .8); cursor: pointer; }
+.vault-grid .islot.empty.target { background: rgba(255, 211, 107, .12); border-color: rgba(255, 211, 107, .5); }
+.vault-grid .islot.dim { opacity: .25; }
+.vault-grid .islot.over { outline: 2px dashed var(--gold); outline-offset: -2px; }
+.vault-grid .islot .plus, .vault-grid .islot .qty { font-size: 10px; }
+.vault-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.vault-zen { background: var(--night); border: 2px solid #5a4630; padding: 8px; }
+.vz-row { display: flex; justify-content: space-between; font-size: 15px; }
+.vz-row b { color: var(--gold); font-variant-numeric: tabular-nums lining-nums; }
+.vz-form { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.vz-form input { width: 100%; font: 600 16px var(--display); padding: 6px 8px; background: #0b0d18; color: var(--bone); border: 2px solid var(--edge); }
+.vz-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.vault-h { margin: 2px 0 0; font-size: 16px; }
+.vault-bag.over { outline: 2px dashed var(--gold); }
+.vault-detail h3 { margin: 4px 0 2px; font-size: 17px; }
+.vault-detail p { margin: 2px 0; font-size: 14px; }
+.vault-msg { min-height: 1.2em; margin: 6px 0 0; font-size: 14px; }
+.vault-msg.bad { color: #ff9a7a; } .vault-msg.ok { color: #a8e08a; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 680px) { .vault-grid { max-height: 44vh; } #panel-vault { padding: 10px; } }

@@ -439,15 +439,63 @@
     }
   }
 
+  // ---------------- Baú Pessoal ----------------
+  async function vault(box, name = '') {
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    let V;
+    try { V = await X.api('GET', '/api/admin/vault' + (name ? '?name=' + encodeURIComponent(name) : '')); } catch (e) { box.innerHTML = `<p class="bad">${esc(e.message)}</p><button class="btn small" type="button" id="adt-v-back">Voltar</button>`; $('#adt-v-back').onclick = () => vault(box); return; }
+    const c = V.config, st = V.stats;
+    const act = { put: 'guardou', take: 'retirou', move: 'moveu', sort: 'organizou', zen_in: 'depositou Zen', zen_out: 'retirou Zen', denied: 'RECUSADO', admin: 'ADM' };
+    const logList = (L) => L.map((l) => `<li>${dt(l.created_at)} · <b>${esc(l.char_name || '?')}</b> ${act[l.action] || esc(l.action)}${l.item ? ' ' + esc(l.item) + (l.qty > 1 ? ' ×' + l.qty : '') : ''}${l.zen ? ' ' + fmt.format(l.zen) : ''}${l.vault_no ? ' · baú ' + l.vault_no : ''}${l.detail ? ' · <span class="muted">' + esc(l.detail) + '</span>' : ''}</li>`).join('') || '<li class="muted">Nada ainda.</li>';
+    box.innerHTML = `<p class="adt-msg" role="status"></p>
+      <p class="muted small">${fmt.format(st.items)} itens guardados · ${fmt.format(Number(st.zen))} Zen em ${st.vaults} baús · ${st.denied} tentativas recusadas nas últimas 24 h</p>
+      <fieldset class="adt-card" id="adt-vcfg"><legend>Configuração</legend>
+        <label class="adt-check"><input type="checkbox" data-f="enabled" ${c.enabled ? 'checked' : ''}> Baú aberto</label>
+        <label class="adt-check"><input type="checkbox" data-f="shared" ${c.shared ? 'checked' : ''}> Compartilhado entre os personagens da conta (desligado = um baú por personagem)</label>
+        <label class="adt-check"><input type="checkbox" data-f="allowQuestItems" ${c.allowQuestItems ? 'checked' : ''}> Permitir guardar itens de missão</label>
+        <div class="adm-row"><label>Colunas ${num('cols', c.cols, 'min="4" max="12"')}</label><label>Linhas ${num('rows', c.rows, 'min="1" max="40"')}</label>
+          <label>Zen máx. no baú ${num('maxVaultZen', c.maxVaultZen, 'min="1" style="width:150px"')}</label><label>Zen máx. do personagem ${num('maxCharZen', c.maxCharZen, 'min="1" style="width:150px"')}</label></div>
+        <p class="adt-sub">NPC nas cidades</p>
+        <div class="adm-row" id="adt-vmaps">${V.maps.map((m) => `<label class="adt-check"><input type="checkbox" value="${m.id}" ${c.maps[m.id] ? 'checked' : ''}> ${esc(m.name)}</label>`).join('')}</div>
+        <p class="adt-sub">Baús</p>
+        ${[1, 2, 3].map((k) => { const v = c.vaults[k]; return `<div class="adm-row" data-vno="${k}"><label class="adt-check"><input type="checkbox" data-f="enabled" ${v.enabled ? 'checked' : ''} ${k === 1 ? 'disabled' : ''}> ativo</label>
+          <label>Nome <input data-f="name" value="${esc(v.name)}" maxlength="40"></label><label>Nível ${num('minLevel', v.minLevel, 'min="0"')}</label>
+          <label class="adt-check"><input type="checkbox" data-f="vip" ${v.vip ? 'checked' : ''}> só VIP</label></div>`; }).join('')}
+        <button class="btn btn-gold" type="button" id="adt-vsave">Salvar Baú Pessoal</button>
+      </fieldset>
+      <fieldset class="adt-card"><legend>Ver o baú de um personagem</legend>
+        <div class="adm-row"><input id="adt-vname" placeholder="Nome do personagem" value="${esc(name)}"><button class="btn small" type="button" id="adt-vgo">Ver</button></div>
+        ${V.char ? `<p><b>${esc(V.char.name)}</b> · ${V.char.vaults.map((v) => `${esc(v.owner)}: ${fmt.format(Number(v.zen))} Zen${v.capacity ? ', capacidade ' + v.capacity : ''}`).join(' · ') || 'sem baú ainda'}</p>
+          <div class="adm-row"><select id="adt-vowner">${V.char.owners.map((o) => `<option>${esc(o)}</option>`).join('')}</select><label>Capacidade ${num('cap', '', 'id="adt-vcap" min="8" max="480" placeholder="padrão"')}</label><button class="btn small" type="button" id="adt-vcapgo">Definir</button></div>
+          <div class="adt-table-wrap"><table class="adt-table"><thead><tr><th>Baú</th><th>Lugar</th><th>Item</th><th>Qtd.</th><th>Dono</th></tr></thead><tbody>
+          ${V.char.items.map((i) => `<tr><td>${i.no}</td><td>${i.pos + 1}</td><td>${esc(i.name)}${i.plus ? ' +' + i.plus : ''} <small class="muted">${esc(i.rarity)} #${i.id}</small></td><td>${i.qty}</td><td>${esc(i.owner)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Vazio.</td></tr>'}</tbody></table></div>
+          <h4>Histórico deste personagem</h4><ul class="adm-list adt-log">${logList(V.char.log)}</ul>` : ''}
+      </fieldset>
+      <h4>Últimas operações</h4><ul class="adm-list adt-log">${logList(V.log)}</ul>`;
+    const post = async (body) => { try { const r = await X.api('POST', '/api/admin/vault', { ...body, name }); msg(box, r.message); setTimeout(() => vault(box, name), 900); } catch (e) { msg(box, e.message, true); } };
+    $('#adt-vsave').onclick = () => {
+      const f = $('#adt-vcfg'); const o = { maps: {}, vaults: {} };
+      for (const el of $$(':scope > label [data-f], :scope > .adm-row:not([data-vno]) [data-f]', f)) o[el.dataset.f] = el.type === 'checkbox' ? el.checked : Number(el.value);
+      for (const el of $$('#adt-vmaps input', f)) o.maps[el.value] = el.checked;
+      for (const row of $$('[data-vno]', f)) { const v = {}; for (const el of $$('[data-f]', row)) v[el.dataset.f] = el.type === 'checkbox' ? el.checked : el.dataset.f === 'name' ? el.value : Number(el.value); o.vaults[row.dataset.vno] = v; }
+      if (o.shared !== c.shared && !confirm(o.shared ? 'Juntar os baús dos personagens de cada conta em um só? Os itens e o Zen vão para o baú da conta quando o jogador abrir o baú.' : 'Separar os baús por personagem? Cada item volta para o baú do personagem que o guardou.')) return;
+      post({ op: 'config', config: o });
+    };
+    $('#adt-vgo').onclick = () => vault(box, $('#adt-vname').value.trim());
+    $('#adt-vname').onkeydown = (e) => { if (e.key === 'Enter') $('#adt-vgo').click(); };
+    const cg = $('#adt-vcapgo'); if (cg) cg.onclick = () => post({ op: 'capacity', owner: $('#adt-vowner').value, capacity: $('#adt-vcap').value === '' ? null : Number($('#adt-vcap').value) });
+  }
+
   function mount(el, ctx) {
     X = ctx;
     el.innerHTML = `
       <details class="adm-sec adt-sec" data-sec="invasion"><summary><h3>♛ Invasão Dourada e Box Kundun</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="equip"><summary><h3>Equipamentos por classe e evolução</h3></summary><div class="adt-body"></div></details>
+      <details class="adm-sec adt-sec" data-sec="vault"><summary><h3>Baú Pessoal</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="chaos"><summary><h3>Chaos Machine (asas e capas)</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="drops"><summary><h3>Drops de materiais e eventos</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="rules"><summary><h3>Comandos, reset e histórico ADM</h3></summary><div class="adt-body"></div></details>`;
-    const fn = { invasion, equip, chaos, drops, rules };
+    const fn = { invasion, equip, vault, chaos, drops, rules };
     $$('.adt-sec', el).forEach((d) => { d.addEventListener('toggle', () => { if (d.open && !d.dataset.loaded) { d.dataset.loaded = 1; fn[d.dataset.sec]($('.adt-body', d)); } }); });
   }
 

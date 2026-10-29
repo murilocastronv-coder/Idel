@@ -83,6 +83,8 @@
       case 'mdel': S.monsters.delete(m.id); return;
       case 'invasion': return onInvasion(m);
       case 'boxResult': return boxResult(m);
+      case 'vault': VT.data = m; VT.no = m.no; VT.busy = false; if (S.panel === 'vault') renderVault(); return;
+      case 'vaultResult': VT.busy = false; vaultMsg(m.text, m.ok); if (!m.ok) feed(m.text, 'warn'); return;
       case 'cqInfo': CQ.info = m; if (S.panel === 'cquest') renderCQ(); return;
       case 'cqResult': feed(m.text, m.ok ? 'quest' : 'warn'); CQ.busy = false; return;
       case 'evolved': goldFlash(`${m.className}!`); if (window.Sfx) Sfx.levelUp(); return;
@@ -884,6 +886,7 @@
           label('Evolução de classe', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
           continue;
         }
+        if (e.kind === 'vault') { drawVaultChest(x, y, now); label(e.name, x, y - 30 * zoom - 4 * dpr, '#ffd36b'); label('Guardar itens e Zen', x, y - 30 * zoom - 17 * dpr, '#9affd0', 10); continue; }
         Sprites.hero(ctx, 'dark_wizard', { hair: 1, skin: 1 }, 'idle', now, x, y, sc, true);
         label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffd36b');
         label('Loja', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
@@ -1095,6 +1098,7 @@
     for (const n of S.map.npcs || []) {
       if (Math.hypot(n.x - wx, n.y - 10 - wy) < 16) {
         if (n.kind === 'sevina' || n.kind === 'marlon') { CQ.npc = n.kind; openPanel('cquest'); return; }
+        if (n.kind === 'vault') { if (S.panel !== 'vault') openPanel('vault'); return; }
         openPanel(n.kind === 'chaos' ? 'chaos' : 'shop'); return;
       }
     }
@@ -1243,6 +1247,7 @@
     S.panel = name;
     $(`#panel-${name}`).hidden = false;
     $$('.menu [data-panel]').forEach((b) => b.setAttribute('aria-expanded', b.dataset.panel === name));
+    if (name === 'vault') { VT.sel = null; vaultSend({ action: 'open', no: VT.no }); }
     if (name === 'chat') { S.chatUnread = 0; $('#chat-badge').hidden = true; setTimeout(() => { const l = $('#chat-lines'); l.scrollTop = l.scrollHeight; }, 0); }
     renderPanel(name);
   }
@@ -1263,6 +1268,7 @@
     else if (name === 'quests') renderQuests();
     else if (name === 'rank') renderRank();
     else if (name === 'chaos') { renderChaos(); send({ type: 'chaosInfo' }); }
+    else if (name === 'vault') renderVault();
     else if (name === 'cquest') { renderCQ(); send({ type: 'cqInfo', npc: CQ.npc }); }
     else if (name === 'admin') { if (!ADM.open) { ADM.open = true; renderAdmin(); } }
   }
@@ -1754,6 +1760,140 @@
 
   // ================= Evolução de classe (Sevina e Marlon) =================
   const CQ = { npc: 'sevina', info: null, busy: false };
+  // ================= Baú Pessoal =================
+  // baú desenhado em pixel: madeira, ferragens douradas e um brilho suave
+  function drawVaultChest(x, y, now) {
+    const u = zoom * 1.6, W = 18 * u, Hh = 12 * u, L = Math.round(x - W / 2), T = Math.round(y - Hh);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const r = 22 * zoom * (1 + 0.05 * Math.sin(now / 300));
+    const gr = ctx.createRadialGradient(x, y - Hh / 2, 0, x, y - Hh / 2, r);
+    gr.addColorStop(0, 'rgba(255,200,90,.35)'); gr.addColorStop(1, 'rgba(255,200,90,0)');
+    ctx.fillStyle = gr; ctx.fillRect(x - r, y - Hh / 2 - r, r * 2, r * 2); ctx.restore();
+    const R = (c, a, b, w, h) => { ctx.fillStyle = c; ctx.fillRect(Math.round(L + a * u), Math.round(T + b * u), Math.ceil(w * u), Math.ceil(h * u)); };
+    R('#1a0f08', -1, -1, 20, 14);           // contorno
+    R('#6b3d1f', 0, 4, 18, 8);              // corpo
+    R('#8a5229', 0, 0, 18, 4);              // tampa
+    R('#a8683a', 1, 1, 16, 1);              // luz da tampa
+    R('#4a2a14', 0, 4, 18, 1);              // fresta
+    R('#d8a840', 2, 0, 2, 12); R('#d8a840', 14, 0, 2, 12);   // ferragens
+    R('#ffe08a', 2, 0, 1, 12); R('#ffe08a', 14, 0, 1, 12);
+    R('#d8a840', 7, 3, 4, 4); R('#2a1a0a', 8, 5, 2, 1);    // fechadura
+  }
+  const VT = { no: 1, data: null, sel: null, filter: 'all', busy: false };
+  const VCATS = [['all', 'Todos'], ['weapon', 'Armas'], ['armor', 'Armaduras'], ['wings', 'Asas'], ['accessory', 'Acessórios'], ['jewel', 'Joias'], ['material', 'Materiais'], ['other', 'Outros']];
+  function vaultCat(it) {
+    if (it.slot === 'weapon' || it.slot === 'shield') return 'weapon';
+    if (['helm', 'armor', 'pants', 'gloves', 'boots'].includes(it.slot)) return 'armor';
+    if (it.slot === 'wings') return 'wings';
+    if (it.slot === 'ring' || it.slot === 'necklace') return 'accessory';
+    if (it.slot === 'material') return /^jewel_/.test(it.base) ? 'jewel' : 'material';
+    return 'other';
+  }
+  function vaultSend(o) {
+    if (VT.busy && o.action !== 'open') return;
+    VT.busy = o.action !== 'open';
+    clearTimeout(VT.bt); VT.bt = setTimeout(() => { VT.busy = false; }, 4000);
+    send({ type: 'vault', no: VT.no, nonce: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), ...o });
+  }
+  function vaultMsg(t, ok) { const e = $('#vault-msg'); if (!e) return; e.textContent = t || ''; e.className = 'vault-msg ' + (ok ? 'ok' : 'bad'); }
+  function renderVault() {
+    const D = VT.data;
+    const grid = $('#vault-grid');
+    if (!D || !S.char) { grid.innerHTML = '<p class="muted">Abrindo o baú…</p>'; return; }
+    $('#vault-sub').textContent = D.shared ? '· compartilhado na conta' : '';
+    // abas dos baús
+    $('#vault-tabs').innerHTML = D.vaults.length > 1 ? D.vaults.map((v) => `<button type="button" role="tab" data-no="${v.no}" class="${v.no === D.no ? 'on' : ''}" aria-selected="${v.no === D.no}" ${v.locked ? `disabled title="${esc(v.locked)}"` : ''}>${esc(v.name)}${v.locked ? ' 🔒' : ''}</button>`).join('') : '';
+    $$('#vault-tabs [data-no]').forEach((b) => { b.onclick = () => { VT.no = Number(b.dataset.no); VT.sel = null; VT.data = null; renderVault(); vaultSend({ action: 'open', no: VT.no }); }; });
+    $('#vault-used').textContent = `${D.used}/${D.capacity} ocupados · ${D.capacity - D.used} livres`;
+    $('#vault-filter').innerHTML = VCATS.map(([k, n]) => `<button type="button" data-f="${k}" class="${VT.filter === k ? 'on' : ''}" aria-pressed="${VT.filter === k}">${n}</button>`).join('');
+    $$('#vault-filter [data-f]').forEach((b) => { b.onclick = () => { VT.filter = b.dataset.f; renderVault(); }; });
+    // grade
+    const byPos = new Map(D.items.map((i) => [i.pos, i]));
+    grid.style.setProperty('--cols', D.cols);
+    grid.innerHTML = '';
+    const selBag = VT.sel && VT.sel.from === 'bag';
+    for (let pos = 0; pos < D.capacity; pos++) {
+      const it = byPos.get(pos);
+      let b;
+      if (it) {
+        b = slotButton(it, () => { VT.sel = VT.sel && VT.sel.id === it.id ? null : { from: 'vault', id: it.id }; renderVault(); });
+        b.classList.toggle('sel', !!(VT.sel && VT.sel.id === it.id));
+        b.classList.remove('picked');
+        if (VT.filter !== 'all' && vaultCat(it) !== VT.filter) b.classList.add('dim');
+        b.draggable = true;
+        b.ondragstart = (e) => { e.dataTransfer.setData('text/plain', JSON.stringify({ from: 'vault', id: it.id })); };
+      } else {
+        b = document.createElement('button'); b.type = 'button'; b.className = 'islot empty' + (VT.sel ? ' target' : '');
+        b.setAttribute('aria-label', `Espaço ${pos + 1} vazio`);
+        b.onclick = () => {
+          if (!VT.sel) return;
+          if (VT.sel.from === 'bag') vaultSend({ action: 'put', id: VT.sel.id, pos });
+          else vaultSend({ action: 'move', id: VT.sel.id, pos });
+          VT.sel = null;
+        };
+      }
+      b.dataset.pos = pos;
+      b.ondragover = (e) => { e.preventDefault(); b.classList.add('over'); };
+      b.ondragleave = () => b.classList.remove('over');
+      b.ondrop = (e) => {
+        e.preventDefault(); b.classList.remove('over');
+        let d; try { d = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (_) { return; }
+        if (d.from === 'bag') vaultSend({ action: 'put', id: d.id, pos });
+        else if (d.from === 'vault' && d.id !== (it && it.id)) vaultSend({ action: 'move', id: d.id, pos });
+        VT.sel = null;
+      };
+      grid.appendChild(b);
+    }
+    // Zen
+    $('#vz-vault').textContent = fmt.format(D.zen);
+    $('#vz-char').textContent = fmt.format(S.char.zen);
+    // bolsa
+    const bag = S.char.items.filter((i) => !i.equipped);
+    $('#vault-bagcount').textContent = `${bag.length}/${S.char.invMax}`;
+    const bg = $('#vault-bag'); bg.innerHTML = '';
+    bag.sort((a, b) => RAR_ORDER.indexOf(b.rarity) - RAR_ORDER.indexOf(a.rarity) || b.req - a.req).forEach((it) => {
+      const b = slotButton(it, () => { VT.sel = VT.sel && VT.sel.id === it.id ? null : { from: 'bag', id: it.id }; renderVault(); });
+      b.classList.toggle('sel', !!(selBag && VT.sel.id === it.id)); b.classList.remove('picked');
+      b.draggable = true;
+      b.ondragstart = (e) => { e.dataTransfer.setData('text/plain', JSON.stringify({ from: 'bag', id: it.id })); };
+      bg.appendChild(b);
+    });
+    if (!bag.length) bg.innerHTML = '<p class="muted" style="grid-column:1/-1;margin:2px 0">Bolsa vazia.</p>';
+    bg.ondragover = (e) => { e.preventDefault(); bg.classList.add('over'); };
+    bg.ondragleave = () => bg.classList.remove('over');
+    bg.ondrop = (e) => {
+      e.preventDefault(); bg.classList.remove('over');
+      let d; try { d = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (_) { return; }
+      if (d.from === 'vault') vaultSend({ action: 'take', id: d.id });
+    };
+    // detalhe do item escolhido
+    const det = $('#vault-detail');
+    const it = VT.sel ? (VT.sel.from === 'bag' ? bag.find((i) => i.id === VT.sel.id) : D.items.find((i) => i.id === VT.sel.id)) : null;
+    if (!it) { VT.sel = null; det.innerHTML = '<p class="muted">Toque em um item da bolsa e depois em um espaço vazio do baú para guardar (no computador, pode arrastar). Toque em um item do baú para ver e retirar.</p>'; return; }
+    const R = it.reqs || {};
+    const reqTxt = [R.level || it.req ? `nível ${R.level || it.req}` : '', ...['str', 'agi', 'ene', 'vit', 'cmd'].filter((k) => R[k]).map((k) => `${STAT_PT[k]} ${fmt.format(R[k])}`)].filter(Boolean).join(' · ');
+    det.innerHTML = `<h3 style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}${it.stack ? ' ×' + fmt.format(it.qty) : ''}</h3>
+      <p style="color:${RAR[it.rarity]}">${RAR_NAME[it.rarity]} · ${esc(SLOT_NAME[it.slot] || (it.slot === 'material' ? 'Material' : it.slot === 'box' ? 'Caixa' : it.slot === 'quest' ? 'Item de missão' : ''))}</p>
+      ${statLine(it.stats || {}) ? `<p>${esc(statLine(it.stats))}</p>` : ''}${it.desc ? `<p class="muted">${esc(it.desc)}</p>` : ''}
+      ${reqTxt && it.slot !== 'material' ? `<p class="muted">Requisitos: ${esc(reqTxt)}</p>` : ''}
+      <div class="row">${VT.sel.from === 'bag'
+        ? '<button class="btn small btn-gold" type="button" data-v="put">Guardar no baú</button>'
+        : '<button class="btn small btn-gold" type="button" data-v="take">Retirar para a bolsa</button><span class="muted small">ou toque num espaço vazio para mover</span>'}</div>`;
+    const btn = $('[data-v]', det);
+    btn.onclick = () => { const a = btn.dataset.v; vaultSend({ action: a, id: it.id }); VT.sel = null; };
+  }
+  $('#vault-sort').onclick = () => { if (VT.data && VT.data.used) vaultSend({ action: 'sort' }); };
+  function vaultZen(action, all) {
+    const raw = $('#vz-amt').value.replace(/[^\d]/g, '');
+    const amount = Number(raw);
+    if (!all && !(amount > 0)) { vaultMsg('Digite uma quantidade de Zen.', false); $('#vz-amt').focus(); return; }
+    vaultSend({ action, amount: all ? undefined : amount, all: !!all });
+    $('#vz-amt').value = '';
+  }
+  $('#vz-form').onsubmit = (e) => { e.preventDefault(); vaultZen('zenIn', false); };
+  $$('#vz-form [data-z]').forEach((b) => { if (b.type !== 'submit') b.onclick = () => vaultZen(b.dataset.z, !!b.dataset.all); });
+  $('#vz-amt').oninput = (e) => { const d = e.target.value.replace(/[^\d]/g, ''); e.target.value = d ? fmt.format(Number(d)) : ''; };
+
   function renderCQ() {
     const body = $('#cq-body');
     const I = CQ.info;

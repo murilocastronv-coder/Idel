@@ -25,6 +25,7 @@ const DROPS = require('./drops');
 const CMDS = require('./commands');
 const KUNDUN = require('./kundun');
 const EQUIP = require('./equip');
+const VAULT = require('./vault');
 const CLS = require('./classes');
 
 const PORT = Number(process.env.PORT || 3000);
@@ -421,6 +422,25 @@ route('POST', '/api/admin/equip', bad(async (req) => {
   CMDS.log(who, 'panel:equip:' + body.op, null, { base: body.base, n: Array.isArray(body.rules) ? body.rules.length : undefined }, null, null, 'ok', message, null);
   return { ok: true, message, ...EQUIP.adminView(), denials: await EQUIP.denials(80), classes2: CLS.cfg(), questItems: CLS.QUEST_ITEMS.map((k) => ({ id: k, name: game.ITEM_BASES[k].name })), evolutionsLog: await CLS.history(40) };
 }));
+// ---- Baú Pessoal (Super ADM) ----
+route('GET', '/api/admin/vault', async (req, url) => {
+  await requireAdmin(req);
+  return { ok: true, ...(await VAULT.adminView(url.searchParams.get('name') || '')) };
+});
+route('POST', '/api/admin/vault', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 32 * 1024);
+  const who = { accountId: acc.id, name: acc.username, role: 'superadmin' };
+  let message = 'Salvo.';
+  switch (body.op) {
+    case 'config': await VAULT.saveConfig(body.config || {}); message = 'Baú Pessoal salvo. O NPC aparece/some quando o jogador entra de novo no mapa.'; break;
+    case 'capacity': await VAULT.setCapacity(String(body.owner), body.capacity); message = 'Capacidade atualizada.'; break;
+    default: throw new HttpError(400, 'Operação inválida.');
+  }
+  VAULT.log({ accountId: acc.id, charId: null, name: acc.username }, body.owner || null, null, 'admin', { detail: body.op === 'capacity' ? `capacidade ${body.owner} = ${body.capacity}` : 'configuração alterada' });
+  CMDS.log(who, 'panel:vault:' + body.op, null, body.op === 'capacity' ? body : {}, null, null, 'ok', message, null);
+  return { ok: true, message, ...(await VAULT.adminView(body.name || '')) };
+}));
 route('GET', '/api/admin/rules', async (req, url) => {
   await requireAdmin(req);
   return { rules: CMDS.cfg(), help: CMDS.help(), roles: CMDS.ROLES, log: await CMDS.history(120, url.searchParams.get('name') || '') };
@@ -692,6 +712,9 @@ route('DELETE', '/api/characters/:id', async (req, url, res, params) => {
   const { rows } = await db.query('SELECT name FROM characters WHERE id = $1 AND account_id = $2', [id, acc.id]);
   if (!rows[0]) throw new HttpError(404, 'Personagem não encontrado.');
   if (str(body.confirmName, 20).toLowerCase() !== rows[0].name.toLowerCase()) throw new HttpError(400, 'Digite o nome do personagem para confirmar.');
+  // itens do baú compartilhado da conta não somem com o personagem: passam para outro herói da conta
+  await db.query(`UPDATE items SET character_id = (SELECT id FROM characters WHERE account_id = $2 AND id <> $1 ORDER BY level DESC LIMIT 1)
+    WHERE character_id = $1 AND vault_owner = $3 AND EXISTS (SELECT 1 FROM characters WHERE account_id = $2 AND id <> $1) RETURNING id`, [id, acc.id, 'a:' + acc.id]);
   await db.query('DELETE FROM characters WHERE id = $1 AND account_id = $2 RETURNING id', [id, acc.id]);
   await audit(acc.id, 'character_deleted', req, { name: rows[0].name });
   await refreshCounts(); pushStats();
