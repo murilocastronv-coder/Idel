@@ -234,7 +234,10 @@
     cape: ['...GGGGGG...', '..GAAAAAAG..', '..GAAAAAAG..', '.GAAAwAAAAG.', '.GAAAwAAAAG.', '.GAAAwAAAAAG', 'GAAAAwAAAAAG', 'GAAAAwAAAAAG', 'GAAAAAAAAAAG', 'GAAAAAAAAAAG', '.GGG.GG.GGG.', '............'],
     box: ['............', '..GGGGGGGG..', '.GAAAAAAAAG.', 'GAAAAAAAAAAG', 'GGGGGGGGGGGG', 'GAAAAYYAAAAG', 'GAAAAYYAAAAG', 'GAAAAAAAAAAG', 'GAAAAAAAAAAG', 'GAAAAAAAAAAG', '.GGGGGGGGGG.', '............'],
     pants: ['............', '..GGGGGGGG..', '..WWWWWWWW..', '..WWWWWWWW..', '..WWWwwWWW..', '..WWW..WWW..', '..WWW..WWW..', '..WWW..WWW..', '..WWW..WWW..', '..WWW..WWW..', '..GGG..GGG..', '............'],
-    scroll: ['............', '.hhhhhhhhhh.', '.hAAAAAAAAh.', '..AWWWWWWA..', '..AWwwwwWA..', '..AWWWWWWA..', '..AWwwwWWA..', '..AWWWWWWA..', '..AWwwwwWA..', '.hAAAAAAAAh.', '.hhhhhhhhhh.', '............'],
+    scroll: ['............', '.hhhhhhhhhh.', '.hAAAAAAAAh.', '..AWWWWWWA..', '..AWAAAAWA..', '..AWWWWWWA..', '..AWAAAWWA..', '..AWWWWWWA..', '..AWAAAAWA..', '.hAAAAAAAAh.', '.hhhhhhhhhh.', '............'],
+    eye: ['............', '............', '...KKKKKK...', '..KWWWWWWK..', '.KWWAAAAWWK.', 'KWWAAKKAAWWK', 'KWWAAKKAAWWK', '.KWWAAAAWWK.', '..KWWWWWWK..', '...KKKKKK...', '............', '............'],
+    key: ['............', '..GGGG......', '.GAAAAG.....', '.GA..AG.....', '.GAAAAG.....', '..GGAAGGGGG.', '....GAAAAAAG', '.....GGGAAAG', '.......GAG.G', '.......GAG..', '........G...', '............'],
+    guard: ['..GG....GG..', '.GAAG..GAAG.', 'GAAAAGGAAAAG', 'GAAAAAAAAAAG', '.GAAYAAYAAG.', '.GAAYAAYAAG.', '.GAAAAAAAAG.', '.GAAAAAAAAG.', '.GGGGGGGGGG.', '.GAAAAAAAAG.', '.GAAAAAAAAG.', '..GGGGGGGG..'],
     zen: ['............', '....GGGG....', '...GggggG...', '...GggggG...', '....GGGG....', '..GGGG.GGGG.', '.GggggGggggG', '.GggggGggggG', '..GGGGGGGG..', '.GggggggggG.', '..GGGGGGGG..', '............'],
   };
   function drawIcon(ctx, icon, x, y, scale, accent) {

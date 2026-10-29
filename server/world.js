@@ -101,7 +101,7 @@ function gearVisual(items) {
 function publicItem(it) {
   const b = G.ITEM_BASES[it.base] || {};
   return { id: String(it.id), base: it.base, name: b.name, slot: b.slot, icon: b.icon, ic: b.ic || null, kind: b.kind, req: b.req, set: b.set,
-    cat: b.cat || (b.slot === 'material' ? 'material' : null), tier: b.tier || 0, classes: b.classes || null, chaos: !!b.chaos, desc: b.desc || null,
+    cat: b.cat || (b.slot === 'material' ? 'material' : null), tier: b.tier || 0, event: b.event || null, classes: b.classes || null, chaos: !!b.chaos, desc: b.desc || null,
     qty: Math.max(1, Number(it.qty) || 1), stack: b.stack || 0, contents: b.slot === 'box' ? KUNDUN.contents(it.base) : undefined,
     rarity: it.rarity, plus: it.plus, equipped: !!it.equipped, eqSlot: it.equipped ? EQUIP.eqSlotOf(it) : null, reqs: EQUIP.reqs(it.base), locked: !!it.locked,
     stats: itemStats(it), value: itemValue(it) };
@@ -541,7 +541,7 @@ class World {
       case 'duelAnswer': return this.duelAnswer(p, String(msg.id), !!msg.accept);
       case 'pvp': return this.setPvp(p, !!msg.on, Date.now());
       case 'room': return this.switchRoom(p, msg.room);
-      case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS])));
+      case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS, ...[1, 2, 3, 4, 5, 6, 7].flatMap((n) => ['devil_eye_' + n, 'devil_key_' + n])])));
       case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
       case 'openBox': return p.run(() => KUNDUN.open(this, p, String(msg.id || '')));
       case 'vault': return p.run(() => VAULT.act(this, p, msg));

@@ -12,6 +12,8 @@ const WINGS1 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === '
 const WINGS2 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === 'wings' && G.ITEM_BASES[k].tier === 2);
 const CAPES = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === 'cape');
 const MATERIALS = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].slot === 'material');
+const EYES = [1, 2, 3, 4, 5, 6, 7].map((n) => 'devil_eye_' + n);
+const INVS = [1, 2, 3, 4, 5, 6, 7].map((n) => 'devil_inv_' + n);
 const EVOLVE = { ...G.WING_EVOLVE, cape_lord: 'cape_emperor' };
 const ON_FAIL = ['lose_all', 'keep_main', 'keep_items'];
 // itens que o administrador pode ajustar (requisitos, atributos e classes)
@@ -44,6 +46,13 @@ const DEFAULTS = {
       materials: [{ item: 'jewel_of_chaos', qty: 1 }, { item: 'loch_feather', qty: 1 }], zen: 1500000,
       rate: { base: 30, perPlus: 5, perRarity: 0, max: 55 }, onFail: 'lose_all', results: ['cape_emperor'],
     },
+    devil: {
+      name: "Devil's Invitation", enabled: true, mode: 'pair', classes: [],
+      main: { bases: EYES, minPlus: 0, minRarity: 'common' },
+      materials: [{ item: 'jewel_of_chaos', qty: 1 }], zen: 100000,
+      // base = chance dos convites +1 a +4; high = +5 a +7
+      rate: { base: 80, high: 70, perPlus: 0, perRarity: 0, max: 100 }, onFail: 'lose_all', results: INVS,
+    },
   },
   items: {},  // ajustes do administrador: { wings_satan: { req, def, wdmg, absorb, classes } }
 };
@@ -54,6 +63,7 @@ const ALLOWED = {
   wing2: { main: WINGS1, results: WINGS2 },
   cape1: { main: CHAOS_WEAPONS, results: ['cape_lord'] },
   cape2: { main: ['cape_lord'], results: ['cape_emperor'] },
+  devil: { main: EYES, results: INVS },
 };
 const ORIGINAL = {};
 for (const k of TUNABLE) { const b = G.ITEM_BASES[k]; ORIGINAL[k] = { req: b.req, def: b.def, wdmg: b.wdmg, absorb: b.absorb, classes: [...b.classes] }; }
@@ -105,7 +115,8 @@ function sanitize(input) {
       materials: mats,
       zen: int(r.zen ?? d.zen, 0, 1e12, `${label}: Zen`),
       rate: { base: int(rate.base ?? d.rate.base, 0, 100, `${label}: chance base`), perPlus: int(rate.perPlus ?? d.rate.perPlus, 0, 50, `${label}: chance por +1`),
-        perRarity: int(rate.perRarity ?? d.rate.perRarity, 0, 50, `${label}: chance por raridade`), max },
+        perRarity: int(rate.perRarity ?? d.rate.perRarity, 0, 50, `${label}: chance por raridade`), max,
+        ...(d.mode === 'pair' ? { high: int(rate.high ?? d.rate.high, 0, 100, `${label}: chance +5 a +7`) } : {}) },
       onFail: ON_FAIL.includes(r.onFail) ? r.onFail : d.onFail,
       results,
     };
@@ -131,7 +142,9 @@ async function saveConfig(input) {
   return clean;
 }
 
+const pairLevel = (base) => Number((G.ITEM_BASES[base] || {}).devil) || 0;
 function chanceFor(r, it) {
+  if (r.mode === 'pair') return Math.max(0, Math.min(100, pairLevel(it.base) <= 4 ? r.rate.base : r.rate.high));
   const ri = Math.max(0, RARITY_ORDER.indexOf(it.rarity));
   const c = r.rate.base + (it.plus || 0) * r.rate.perPlus + ri * r.rate.perRarity;
   return Math.max(1, Math.min(r.rate.max, 100, Math.round(c)));
@@ -139,6 +152,11 @@ function chanceFor(r, it) {
 
 // possíveis resultados para este jogador
 function resultsFor(r, p, main) {
+  if (r.mode === 'pair') {
+    if (!main) return r.results.slice();
+    const to = 'devil_inv_' + pairLevel(main.base);
+    return r.results.includes(to) ? [to] : [];
+  }
   if (r.mode === 'evolve') {
     if (!main) return r.results.slice();
     let to = EVOLVE[main.base];
@@ -160,8 +178,9 @@ function mainProblem(r, it) {
 
 function atNpc(p) { return !!(p.map && (p.map.def.npcs || []).some((n) => n.kind === 'chaos')); }
 
-function matPlan(p, r) {
-  return r.materials.map((m) => {
+function matPlan(p, r, main) {
+  const mats = r.mode === 'pair' && main ? [{ item: 'devil_key_' + pairLevel(main.base), qty: 1 }, ...r.materials] : r.materials;
+  return mats.map((m) => {
     const stacks = p.items.filter((i) => i.base === m.item && !i.equipped).sort((a, b) => Number(a.id) - Number(b.id));
     const have = stacks.reduce((a, i) => a + (Number(i.qty) || 1), 0);
     return { ...m, stacks, have };
@@ -174,12 +193,22 @@ function info(p, sources) {
   const recipes = RECIPE_IDS.map((id) => {
     const r = c.recipes[id];
     const mats = matPlan(p, r);
-    const candidates = p.items.filter((i) => r.main.bases.includes(i.base)).map((i) => {
+    const candidates = p.items.filter((i) => r.main.bases.includes(i.base) && !i.equipped).map((i) => {
       const why = mainProblem(r, i);
       const res = resultsFor(r, p, i);
-      return { item: H.publicItem(i), ok: !why && res.length > 0, why: why || (res.length ? null : 'Nenhum resultado permitido para esta asa.'), chance: chanceFor(r, i), result: r.mode === 'evolve' ? res[0] || null : null };
-    }).sort((a, b) => (b.ok - a.ok) || (b.chance - a.chance));
+      const c = { item: H.publicItem(i), ok: !why && res.length > 0, why: why || (res.length ? null : r.mode === 'pair' ? 'Este convite está desativado.' : 'Nenhum resultado permitido para esta asa.'), chance: chanceFor(r, i), result: r.mode !== 'random' ? res[0] || null : null };
+      if (r.mode === 'pair') {
+        c.mats = matPlan(p, r, i).map((m) => ({ item: m.item, name: G.ITEM_BASES[m.item].name, icon: G.ITEM_BASES[m.item].icon, ic: G.ITEM_BASES[m.item].ic, rarity: G.ITEM_BASES[m.item].rarity, qty: m.qty, have: m.have }));
+        if (c.ok && c.mats[0].have < 1) { c.ok = false; c.why = `Falta ${c.mats[0].name}.`; }
+      }
+      return c;
+    }).sort((a, b) => (b.ok - a.ok) || (r.mode === 'pair' ? pairLevel(b.item.base) - pairLevel(a.item.base) : b.chance - a.chance));
     const results = resultsFor(r, p, null).map((b) => ({ base: b, name: G.ITEM_BASES[b].name, icon: G.ITEM_BASES[b].icon, ic: G.ITEM_BASES[b].ic, rarity: G.ITEM_BASES[b].rarity }));
+    if (r.mode === 'pair') return { id, name: r.name, enabled: r.enabled, mode: r.mode, zen: r.zen, onFail: r.onFail, maxChance: Math.max(r.rate.base, r.rate.high), rates: { low: r.rate.base, high: r.rate.high },
+      classes: r.classes, classOk: !r.classes.length || r.classes.includes(p.cls),
+      main: { bases: r.main.bases.map((b) => ({ base: b, name: G.ITEM_BASES[b].name })), minPlus: 0, minRarity: 'common' },
+      materials: [{ item: 'devil_key_1', name: "Devil's Key do mesmo nível", icon: 'key', ic: '#9ad8ff', rarity: 'rare', qty: 1, have: 0, pairKey: true }, ...mats.map((m) => ({ item: m.item, name: G.ITEM_BASES[m.item].name, icon: G.ITEM_BASES[m.item].icon, rarity: G.ITEM_BASES[m.item].rarity, qty: m.qty, have: m.have }))],
+      candidates, results, noResults: false };
     const classOk = !r.classes.length || r.classes.includes(p.cls);
     return {
       id, name: r.name, enabled: r.enabled, mode: r.mode, zen: r.zen, onFail: r.onFail, maxChance: r.rate.max,
@@ -203,8 +232,9 @@ async function craft(world, p, recipeId, mainId) {
   if (p.dead) return reply(false, 'Você está derrotado.');
   if (c.npcRequired && !atNpc(p)) return reply(false, 'Vá até o Chaos Goblin, em Lorencia, para usar a Chaos Machine.');
   if (r.classes.length && !r.classes.includes(p.cls)) return reply(false, r.classes.length === 1 && r.classes[0] === 'dark_lord' ? 'Só o Dark Lord pode fazer esta receita.' : 'Sua classe não pode fazer esta receita.');
-  const main = p.items.find((i) => String(i.id) === String(mainId));
+  const main = p.items.find((i) => String(i.id) === String(mainId) && !i.equipped);
   if (!main && mainId) return reply(false, 'Este item não está mais na sua bolsa.');
+  if (r.mode === 'pair') return craftPair(world, p, recipeId, r, main, reply);
   const why = mainProblem(r, main);
   if (why) return reply(false, why);
   const results = resultsFor(r, p, main);
@@ -299,6 +329,74 @@ async function craft(world, p, recipeId, mainId) {
   p.send({ type: 'log', kind: success ? 'quest' : 'warn', text: success ? `Chaos Machine: você criou ${name}!` : `Chaos Machine: a combinação falhou. ${lost.length ? 'Perdeu: ' + lost.join(', ') + '.' : 'Seus itens foram preservados.'}` });
   p.send(p.charState());
   if (success && G.ITEM_BASES[resultBase].tier >= 2) world.system(`${p.name} criou ${name} na Chaos Machine!`);
+  if (p.map) p.send(info(p, null));
+  return undefined;
+}
+
+// Devil's Eye +N + Devil's Key +N + materiais + Zen = Devil's Invitation +N (os dois do mesmo nível)
+async function craftPair(world, p, recipeId, r, eye, reply) {
+  if (!eye || !r.main.bases.includes(eye.base)) return reply(false, "Escolha um Devil's Eye.");
+  const n = pairLevel(eye.base);
+  const resultBase = 'devil_inv_' + n;
+  if (!r.results.includes(resultBase)) return reply(false, 'Este convite está desativado no momento.');
+  const plan = [{ item: eye.base, qty: 1, stacks: [eye], have: Number(eye.qty) || 1 }, ...matPlan(p, r, eye)];
+  const missing = plan.filter((m) => m.have < m.qty);
+  if (missing.length) return reply(false, 'Você não possui os itens necessários para fabricar este convite.', { missing: missing.map((m) => `${m.qty - m.have}× ${G.ITEM_BASES[m.item].name}`) });
+  if (p.zen < r.zen) return reply(false, `Zen insuficiente: a combinação custa ${r.zen.toLocaleString('pt-BR')} Zen.`);
+  const takes = [];
+  for (const m of plan) {
+    let need = m.qty;
+    for (const st of m.stacks) { if (need <= 0) break; const q = Number(st.qty) || 1; const t = Math.min(q, need); takes.push({ it: st, take: t, left: q - t, main: m.item === eye.base }); need -= t; }
+  }
+  const stackTo = p.items.find((i) => i.base === resultBase && !i.equipped && (Number(i.qty) || 1) < G.MAX_STACK);
+  const freed = takes.filter((t) => t.left === 0).length;
+  if (!stackTo && H.bagUsed(p) - freed + 1 > G.INVENTORY_SIZE) return reply(false, 'Bolsa sem espaço para o convite.');
+  const chance = chanceFor(r, eye);
+  const success = Math.random() * 100 < chance;
+  // na falha: lose_all gasta tudo; keep_main guarda o Eye; keep_items guarda Eye, Key e joias (só o Zen vai)
+  const used = takes.filter((t) => success || r.onFail === 'lose_all' || (r.onFail === 'keep_main' && !t.main));
+  const lost = success ? [] : used.map((t) => `${t.take}× ${G.ITEM_BASES[t.it.base].name}`);
+  const inputs = { main: { id: String(eye.id), base: eye.base }, materials: takes.map((t) => ({ id: String(t.it.id), base: t.it.base, qty: t.take })) };
+  p.crafting = true;
+  p.zen -= r.zen;
+  let created = null;
+  try {
+    created = await db.tx(async (q) => {
+      for (const t of used) {
+        const d = t.left > 0
+          ? await q('UPDATE items SET qty = qty - $3 WHERE id = $1 AND character_id = $2 AND qty = $4 AND vault_no IS NULL RETURNING id', [t.it.id, p.charId, t.take, t.take + t.left])
+          : await q('DELETE FROM items WHERE id = $1 AND character_id = $2 AND qty = $3 AND vault_no IS NULL RETURNING id', [t.it.id, p.charId, t.take]);
+        if (!d.rows[0]) throw new Error('Os materiais mudaram. Tente de novo.');
+      }
+      await q('UPDATE characters SET zen = $2 WHERE id = $1 RETURNING id', [p.charId, Math.round(p.zen)]);
+      let row = null;
+      if (success) {
+        if (stackTo) row = (await q('UPDATE items SET qty = qty + 1 WHERE id = $1 AND character_id = $2 AND vault_no IS NULL RETURNING id, base, rarity, plus, equipped, qty', [stackTo.id, p.charId])).rows[0];
+        if (!row) row = (await q(`INSERT INTO items (character_id, base, rarity, plus, qty) VALUES ($1, $2, $3, 0, 1) RETURNING id, base, rarity, plus, equipped, qty`, [p.charId, resultBase, G.ITEM_BASES[resultBase].rarity])).rows[0];
+      }
+      await q(`INSERT INTO chaos_log (character_id, char_name, recipe, inputs, zen, chance, success, result_item, result_base, lost)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+      [p.charId, p.name, recipeId, JSON.stringify(inputs), r.zen, chance, success, row ? row.id : null, success ? resultBase : null, JSON.stringify(lost)]);
+      return row;
+    });
+  } catch (e) {
+    p.zen += r.zen; p.crafting = false;
+    console.error('[chaos]', p.name, e.message);
+    return reply(false, /materiais/i.test(e.message) ? e.message : 'A combinação não foi feita (nada foi gasto). Tente de novo.');
+  }
+  p.crafting = false;
+  for (const t of used) { if (t.left > 0) t.it.qty = t.left; else p.items = p.items.filter((i) => i !== t.it); }
+  if (created) {
+    const mem = p.items.find((i) => String(i.id) === String(created.id));
+    if (mem) mem.qty = created.qty; else p.items.push(created);
+  }
+  p.dirty = true;
+  const name = G.ITEM_BASES[resultBase].name;
+  reply(true, success ? `Combinação realizada com sucesso! Você recebeu ${name}.` : `A combinação falhou (${chance}% de chance).`, {
+    success, chance, item: created ? H.publicItem({ ...created, qty: 1 }) : null, lost, recipe: recipeId, kept: !success && r.onFail !== 'lose_all',
+  });
+  p.send({ type: 'log', kind: success ? 'quest' : 'warn', text: success ? `Combinação realizada com sucesso! Você recebeu ${name}.` : `A combinação falhou. ${lost.length ? 'Perdeu: ' + lost.join(', ') + '.' : 'Seus itens foram preservados.'} Chance era ${chance}%.` });
+  p.send(p.charState());
   if (p.map) p.send(info(p, null));
   return undefined;
 }

@@ -15,8 +15,8 @@ const DEFAULTS = {
 };
 const TIERS = ['any', 'normal', 'elite', 'boss'];
 const SCOPES = ['all', 'map', 'monster'];
-const CATS = ['jewel', 'wing', 'cape'];
-const TARGETS = ['all', 'jewel', 'wing', 'cape', 'boss'];
+const CATS = ['jewel', 'wing', 'cape', 'devil', 'castle'];
+const TARGETS = ['all', 'jewel', 'wing', 'cape', 'boss', 'devil', 'castle'];
 
 let rules = [];
 let events = [];

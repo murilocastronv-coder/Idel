@@ -12,7 +12,7 @@
   const FAIL_PT = { lose_all: 'Perde tudo (item principal, materiais e Zen)', keep_main: 'Item principal volta; perde materiais e Zen', keep_items: 'Só cobra o Zen; itens voltam' };
   const TIER_PT = { any: 'Qualquer', normal: 'Comum', elite: 'Elite', boss: 'Boss' };
   const SCOPE_PT = { all: 'Todos os mapas', map: 'Um mapa', monster: 'Um monstro' };
-  const TARGET_PT = { all: 'Todos os materiais', jewel: 'Jewel of Chaos', wing: 'Materiais de asas', cape: 'Materiais de capas', boss: 'Recompensas de bosses' };
+  const TARGET_PT = { all: 'Todos os materiais', jewel: 'Jewel of Chaos', wing: 'Materiais de asas', cape: 'Materiais de capas', boss: 'Recompensas de bosses', devil: "Devil's Eye/Key", castle: 'Armor of Guardsman' };
   const ROLE_PT = { player: 'Jogador', moderator: 'Moderador', admin: 'Administrador', superadmin: 'Super ADM' };
   let X = null; // contexto (api, classes, sendCmd)
 
@@ -32,15 +32,18 @@
         <label class="adt-check"><input type="checkbox" data-f="enabled" ${r.enabled ? 'checked' : ''}> Receita ativa</label>
         <div class="adm-row"><label>Zen ${num('zen', r.zen, 'min="0" step="1000"')}</label>
           <label>Se falhar ${sel('onFail', V.onFail.map((k) => [k, FAIL_PT[k]]), r.onFail)}</label></div>
-        <div class="adm-row"><label>Chance base % ${num('rate.base', r.rate.base, 'min="0" max="100"')}</label>
+        ${r.mode === 'pair' ? `<div class="adm-row"><label>Chance convites +1 a +4 (%) ${num('rate.base', r.rate.base, 'min="0" max="100"')}</label>
+          <label>Chance convites +5 a +7 (%) ${num('rate.high', r.rate.high, 'min="0" max="100"')}</label></div>
+          <p class="muted small">Devil's Eye +N e Devil's Key +N do mesmo nível entram sempre; abaixo, os materiais extras (Jewel of Chaos).</p>`
+    : `<div class="adm-row"><label>Chance base % ${num('rate.base', r.rate.base, 'min="0" max="100"')}</label>
           <label>+% por +1 ${num('rate.perPlus', r.rate.perPlus, 'min="0" max="50"')}</label>
           <label>+% por raridade ${num('rate.perRarity', r.rate.perRarity, 'min="0" max="50"')}</label>
           <label>Máximo % ${num('rate.max', r.rate.max, 'min="1" max="100"')}</label></div>
         <div class="adm-row"><label>Item principal: + mínimo ${num('main.minPlus', r.main.minPlus, 'min="0" max="15"')}</label>
-          <label>raridade mínima ${sel('main.minRarity', RAR.map((k) => [k, RAR_PT[k]]), r.main.minRarity)}</label></div>
-        <p class="adt-sub">Aceita como item principal</p>
+          <label>raridade mínima ${sel('main.minRarity', RAR.map((k) => [k, RAR_PT[k]]), r.main.minRarity)}</label></div>`}
+        <p class="adt-sub">${r.mode === 'pair' ? "Devil's Eye aceitos" : 'Aceita como item principal'}</p>
         <div class="adt-checks">${al.main.map((b) => `<label class="adt-check"><input type="checkbox" data-list="main.bases" value="${b}" ${r.main.bases.includes(b) ? 'checked' : ''}> ${esc(N[b])}</label>`).join('')}</div>
-        <p class="adt-sub">Resultados possíveis${r.mode === 'random' ? ` · sorteio: ${sel('pick', [['class', 'só os da classe de quem combina'], ['any', 'qualquer um (clássico)']], r.pick)}` : ' (evolução da asa/capa usada)'}</p>
+        <p class="adt-sub">${r.mode === 'pair' ? 'Convites que podem ser criados (desmarcado = nível desativado)' : `Resultados possíveis${r.mode === 'random' ? ` · sorteio: ${sel('pick', [['class', 'só os da classe de quem combina'], ['any', 'qualquer um (clássico)']], r.pick)}` : ' (evolução da asa/capa usada)'}`}</p>
         <div class="adt-checks">${al.results.map((b) => `<label class="adt-check"><input type="checkbox" data-list="results" value="${b}" ${r.results.includes(b) ? 'checked' : ''}> ${esc(N[b])}</label>`).join('')}</div>
         <p class="adt-sub">Classes que podem combinar (nenhuma marcada = todas)</p>
         <div class="adt-checks">${Object.entries(CL).map(([k, c]) => `<label class="adt-check"><input type="checkbox" data-list="classes" value="${k}" ${r.classes.includes(k) ? 'checked' : ''}> ${esc(c.name)}</label>`).join('')}</div>

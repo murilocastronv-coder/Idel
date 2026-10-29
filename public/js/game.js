@@ -74,7 +74,8 @@
         if (m.x !== null && m.x !== undefined) S.drops.push({ x: m.x, y: m.y, dx: (Math.random() - 0.5) * 24, item: it, t0: performance.now() });
         const n = m.gain || 1;
         if (['legendary', 'ancestral'].includes(it.rarity) || it.slot === 'wings') goldFlash(`${it.name}!`);
-        if (it.stack) feed(`Item: ${it.name} ×${n}${m.src ? ` — ${m.src}` : ''}`, 'drop', ACCENT(it));
+        if (it.event || /^devil_(eye|key)_/.test(it.base)) feed(`Você encontrou: ${it.name}${n > 1 ? ' ×' + n : ''}!${m.src ? ` — ${m.src}` : ''}`, 'drop', ACCENT(it));
+        else if (it.stack) feed(`Item: ${it.name} ×${n}${m.src ? ` — ${m.src}` : ''}`, 'drop', ACCENT(it));
         else feed(`Item: ${it.name}${it.plus ? ' +' + it.plus : ''} (${RAR_NAME[it.rarity]})${m.src ? ` — ${m.src}` : ''}`, 'drop', RAR[it.rarity]);
         return;
       }
@@ -1381,6 +1382,14 @@
       cmp = `<p>${a > b ? '<span style="color:#a8e08a">Melhor</span>' : a < b ? '<span class="bad">Pior</span>' : 'Igual'} que o equipado (${esc(statLine(cur.stats))})</p>`;
     }
     const set = it.set && S.data.sets[it.set] ? `<p class="muted">Conjunto ${esc(S.data.sets[it.set].name)} — ${esc(S.data.sets[it.set].bonus)}</p>` : '';
+    if (it.slot === 'material' && it.event) {
+      box.innerHTML = `<h3 style="color:${ACCENT(it)}">${esc(it.name)} ×${fmt.format(it.qty)}</h3>
+        <p style="color:${RAR[it.rarity]}">Item de evento · ${it.event === 'castle' ? 'Chaos Castle' : 'Devil Square'}</p>
+        ${it.desc ? `<p>${esc(it.desc)}</p>` : ''}
+        <div class="row"><button class="btn small btn-ghost" type="button" data-act="sell">Vender ${it.qty > 1 ? 'todas ' : ''}por ${fmt.format(it.value)} Zen</button></div>`;
+      $('[data-act]', box).onclick = () => { if (!confirm(`Vender ${it.name}${it.qty > 1 ? ' ×' + it.qty : ''}?`)) return; S.selItem = null; send({ type: 'sell', id: it.id }); };
+      return;
+    }
     if (it.slot === 'material') {
       box.innerHTML = `<h3 style="color:${ACCENT(it)}">${esc(it.name)} ×${fmt.format(it.qty)}</h3>
         <p style="color:${RAR[it.rarity]}">Material · empilha até ${fmt.format(it.stack)}</p>
@@ -2026,7 +2035,8 @@
     if (!r.classOk) missing.push(r.classes.length === 1 && r.classes[0] === 'dark_lord' ? 'Só o Dark Lord faz esta receita.' : 'Sua classe não faz esta receita.');
     if (r.noResults) missing.push('Nenhuma asa de nível 1 serve para a sua classe (o Dark Lord usa a Capa).');
     if (!sel) missing.push(r.candidates.length ? 'Nenhum item principal válido na bolsa.' : `Falta o item principal: ${r.main.bases.map((b) => b.name).join(' ou ')}.`);
-    r.materials.forEach((m) => { if (m.have < m.qty) missing.push(`Falta ${m.qty - m.have}× ${m.name}.`); });
+    const mats = (sel && sel.mats) || r.materials;
+    mats.forEach((m) => { if (m.have < m.qty && !(m.pairKey && !r.candidates.length)) missing.push(`Falta ${m.qty - m.have}× ${m.name}.`); });
     if (I.zen < r.zen) missing.push(`Faltam ${fmt.format(r.zen - I.zen)} Zen.`);
     if (I.npcRequired && !I.atNpc) missing.push('Vá até o Chaos Goblin em Lorencia.');
     const res = sel && sel.result ? r.results.filter((x) => x.base === sel.result) : r.results;
@@ -2036,7 +2046,7 @@
       <div class="chaos-machine" id="chaos-machine">
         <div class="chaos-slot main ${sel ? 'filled' : ''}" id="chaos-main" title="Item principal"></div>
         <span class="chaos-plus">+</span>
-        ${r.materials.map((m) => `<div class="chaos-slot ${m.have >= m.qty ? 'filled' : 'need'}" data-mat="${m.item}"><b class="${m.have >= m.qty ? '' : 'bad'}">${m.have}/${m.qty}</b></div>`).join('<span class="chaos-plus">+</span>')}
+        ${mats.map((m) => `<div class="chaos-slot ${m.have >= m.qty ? 'filled' : 'need'}" data-mat="${m.item}"><b class="${m.have >= m.qty ? '' : 'bad'}">${m.have}/${m.qty}</b></div>`).join('<span class="chaos-plus">+</span>')}
         <span class="chaos-plus">+</span>
         <div class="chaos-zen ${I.zen >= r.zen ? '' : 'bad'}"><b>${fmt.format(r.zen)}</b><small>Zen</small></div>
         <span class="chaos-plus">=</span>
@@ -2044,21 +2054,22 @@
       </div>
       <div class="chaos-rate"><span>Chance de sucesso</span><b id="chaos-chance">${sel ? sel.chance + '%' : '—'}</b><small>máximo desta receita: ${r.maxChance}%</small></div>
       <p class="muted small">${esc(FAIL_TXT[r.onFail])}</p>
-      <h4>${r.mode === 'evolve' ? 'Escolha o item para evoluir' : 'Escolha a Arma do Caos'}</h4>
-      <p class="muted small"><span>Aceita: ${r.main.bases.map((b) => esc(b.name)).join(', ')}${r.main.minPlus ? ` (+${r.main.minPlus} ou mais)` : ''}.</span> <span>O + e a raridade aumentam a chance.</span></p>
+      <h4>${r.mode === 'evolve' ? 'Escolha o item para evoluir' : r.mode === 'pair' ? "Escolha o Devil's Eye" : 'Escolha a Arma do Caos'}</h4>
+      ${r.mode === 'pair' ? `<p class="muted small"><span>O Devil's Eye e o Devil's Key precisam ter o mesmo nível (+1 a +7).</span> <span>Chance: +1 a +4: ${r.rates.low}% · +5 a +7: ${r.rates.high}%.</span></p>`
+    : `<p class="muted small"><span>Aceita: ${r.main.bases.map((b) => esc(b.name)).join(', ')}${r.main.minPlus ? ` (+${r.main.minPlus} ou mais)` : ''}.</span> <span>O + e a raridade aumentam a chance.</span></p>`}
       <div class="chaos-cands" id="chaos-cands">${r.candidates.length ? '' : '<p class="muted">Nenhum na bolsa.</p>'}</div>
       ${missing.length ? `<ul class="chaos-missing">${missing.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
       <button class="btn btn-gold chaos-go" type="button" id="chaos-do" ${missing.length || CH.busy ? 'disabled' : ''}>${r.mode === 'evolve' ? 'Evoluir' : 'Combinar'}${sel ? ` (${sel.chance}%)` : ''}</button>
       <details class="chaos-src"><summary>Onde conseguir os materiais</summary>
-        <ul>${[...new Set([...r.materials.map((m) => m.item), ...(r.mode === 'random' ? r.main.bases.map((b) => b.base) : [])])].map((k) => {
-    const nm = (r.materials.find((m) => m.item === k) || r.main.bases.find((b) => b.base === k) || { name: k }).name;
+        <ul>${[...new Set([...mats.filter((m) => !m.pairKey).map((m) => m.item), ...(r.mode !== 'evolve' ? (r.mode === 'pair' && sel ? [sel.item.base] : r.mode === 'pair' ? [] : r.main.bases.map((b) => b.base)) : [])])].map((k) => {
+    const nm = (mats.find((m) => m.item === k) || r.main.bases.find((b) => b.base === k) || { name: k }).name;
     return `<li><b>${esc(nm)}</b>: ${(src.list[k] || []).map((x) => `<span>${esc(x)}</span>`).join(' · ') || '<span>criado na Chaos Machine</span>'}</li>`; }).join('')}
           ${r.mode === 'evolve' ? `<li><b>${esc(r.main.bases.map((b) => b.name).join(' / '))}</b>: <span>${r.id === 'cape2' ? 'crie na aba "Criar Capa do Dark Lord"' : 'crie na aba "Criar Asa Nível 1"'}</span></li>` : ''}</ul>
       </details>`;
     const mainBox = $('#chaos-main');
     if (sel) { mainBox.appendChild(chaosIcon(sel.item)); if (sel.item.plus) mainBox.insertAdjacentHTML('beforeend', `<span class="plus">+${sel.item.plus}</span>`); }
     else mainBox.innerHTML = '<small>?</small>';
-    $$('[data-mat]', body).forEach((el) => { const m = r.materials.find((x) => x.item === el.dataset.mat); el.prepend(chaosIcon(m, 32)); el.title = m.name; });
+    $$('[data-mat]', body).forEach((el) => { const m = mats.find((x) => x.item === el.dataset.mat); el.prepend(chaosIcon(m, 32)); el.title = m.name; });
     const resBox = $('#chaos-res');
     res.slice(0, 5).forEach((x) => { const d = document.createElement('div'); d.className = 'chaos-out'; d.title = x.name; d.appendChild(chaosIcon(x, 34)); d.insertAdjacentHTML('beforeend', `<small>${esc(x.name)}</small>`); resBox.appendChild(d); });
     if (!res.length) resBox.innerHTML = '<small class="muted">—</small>';
