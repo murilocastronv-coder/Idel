@@ -87,6 +87,10 @@
       case 'arenaInfo': AR.info = m; AR.skew = Date.now() - m.now; AR.busy = false; if (S.panel === 'arena') renderArena(); return;
       case 'arenaResult': AR.busy = false; feed(m.text, m.ok ? 'quest' : 'warn'); return;
       case 'arena': return onArena(m);
+      case 'tradeInvite': return tradeInvite(m);
+      case 'tradeInviteEnd': if (TR.inv && TR.inv.id === m.id) closeTradeInvite(); if (m.text) feed(m.text, 'warn'); return;
+      case 'trade': return onTrade(m);
+      case 'tradeMsg': tradeStatus(m.text, true); feed(m.text, 'warn'); return;
       case 'upgPreview': return upgPreview(m);
       case 'upgResult': return upgResult(m);
       case 'smithInfo': SM.info = m; SM.busy = false; if (S.panel === 'smith') renderSmith(); return;
@@ -1275,6 +1279,7 @@
     renderSkills();
     if (S.panel === 'chaos') { clearTimeout(CH.t); CH.t = setTimeout(() => send({ type: 'chaosInfo' }), 250); }
     if (S.panel && S.panel !== 'rank' && S.panel !== 'chaos') renderPanel(S.panel);
+    if (TR.s) renderTrade();
   }
 
   // nome completo no computador, primeira palavra no celular
@@ -1986,6 +1991,217 @@
     $('#ar-res-ok').onclick = () => { el.hidden = true; };
   }
 
+  // ================= Troca entre jogadores =================
+  const TR = { s: null, inv: null, sel: null, view: null, invTimer: null };
+  function heroIcon(cls, size = 56) {
+    const c = document.createElement('canvas'); c.width = size * 2; c.height = size * 2; c.className = 'tr-hero';
+    try { Sprites.hero(c.getContext('2d'), cls, { hair: 1, skin: 1 }, 'idle', 0, size, size * 2 - 6, 1.6, false); } catch (_) { /* sem sprite */ }
+    return c;
+  }
+  function tradeInvite(m) {
+    TR.inv = m;
+    const box = $('#trade-invite');
+    box.innerHTML = `<div class="ti-heads"><span data-h="a"></span><b>⇄</b><span data-h="b"></span></div>
+      <p><b>${esc(m.from.name)}</b> <small>(${esc(m.from.className)}, nível ${m.from.level})</small> deseja trocar itens com você.</p>
+      <div class="ti-bar"><i id="ti-bar"></i></div>
+      <div class="row"><button class="btn btn-ok" type="button" data-a="1">ACEITAR</button><button class="btn btn-danger" type="button" data-a="0">RECUSAR</button><small id="ti-left"></small></div>`;
+    $('[data-h="a"]', box).appendChild(heroIcon(m.from.cls)); $('[data-h="b"]', box).appendChild(heroIcon(m.to.cls));
+    box.hidden = false; box.classList.remove('pop'); void box.offsetWidth; box.classList.add('pop');
+    if (window.Sfx) Sfx.duel();
+    const end = performance.now() + m.ms;
+    clearInterval(TR.invTimer);
+    TR.invTimer = setInterval(() => {
+      const left = Math.max(0, end - performance.now());
+      const b = $('#ti-bar'); if (b) b.style.width = (left / m.ms * 100) + '%';
+      const l = $('#ti-left'); if (l) l.textContent = Math.ceil(left / 1000) + 's';
+      if (!left) closeTradeInvite();
+    }, 200);
+    const answer = (acc) => { if (!TR.inv) return; send({ type: 'trade', action: 'answer', id: m.id, accept: acc }); closeTradeInvite(); };
+    $('[data-a="1"]', box).onclick = () => answer(true);
+    $('[data-a="0"]', box).onclick = () => answer(false);
+  }
+  function closeTradeInvite() { TR.inv = null; clearInterval(TR.invTimer); $('#trade-invite').hidden = true; }
+  function tradeStatus(t, bad) { const e = $('#tr-status'); if (e) { e.textContent = t || ''; e.className = 'tr-status' + (bad ? ' bad' : ''); } }
+  function onTrade(m) {
+    if (m.phase === 'closed' || m.phase === 'done') {
+      TR.s = null; TR.sel = null;
+      $('#trade-win').hidden = true; $('#trade-dlg').hidden = true; closeItemInfo();
+      if (m.phase === 'done') { goldFlash('Troca concluída!'); if (window.Sfx) Sfx.coin(); feed(m.text, 'quest'); }
+      else if (m.text) { feed(m.text, 'warn'); alertBanner(m.text); }
+      return;
+    }
+    const first = !TR.s;
+    TR.s = m;
+    if (first) { closeTradeInvite(); if (S.panel) closePanel(); if (window.Sfx) Sfx.click(); }
+    renderTrade();
+    if (m.text) tradeStatus(m.text);
+    // se o item aberto nos detalhes saiu da oferta, avisa
+    if (TR.view && TR.view.side === 'them' && !m.them.items.some((i) => i.id === TR.view.id)) { $('#item-info-body').insertAdjacentHTML('afterbegin', '<p class="bad">Este item não está mais sendo oferecido.</p>'); TR.view = null; }
+  }
+  function tradeSlots(list, side) {
+    let h = '';
+    for (let i = 0; i < 12; i++) h += list[i] ? `<button type="button" class="islot tr-slot" data-side="${side}" data-id="${list[i].id}" style="--r:${RAR[list[i].rarity]}" aria-label="${esc(list[i].name)}"></button>` : `<div class="islot empty tr-slot" data-side="${side}" data-empty="${i}"></div>`;
+    return h;
+  }
+  function renderTrade() {
+    const m = TR.s; if (!m) return;
+    const win = $('#trade-win'); win.hidden = false;
+    const offered = new Map(m.me.items.map((i) => [i.id, i.qty]));
+    const bag = (S.char ? S.char.items : []).filter((i) => !i.equipped);
+    $('#tr-body').innerHTML = `
+      <div class="tr-cols">
+        <section class="tr-side mine ${m.me.confirmed ? 'ok' : ''}"><h3>SUA OFERTA <small>${esc(m.me.name)} · Nv. ${m.me.level}</small></h3>
+          <div class="tr-grid" id="tr-mine">${tradeSlots(m.me.items, 'me')}</div>
+          <div class="tr-zen"><label>Zen <input id="tr-zen" inputmode="numeric" value="${fmt.format(m.me.zen)}" aria-label="Zen oferecido"></label><button class="btn small" type="button" id="tr-zen-set">Oferecer</button></div>
+          <p class="tr-sub">${m.me.items.length}/12 itens · fica com ${fmt.format(Math.max(0, m.myZen - m.me.zen))} de ${fmt.format(m.myZen)} Zen</p>
+          <p class="tr-state">${m.me.confirmed ? '✔ Você confirmou' : 'Aguardando sua confirmação'}</p></section>
+        <section class="tr-side theirs ${m.them.confirmed ? 'ok' : ''}"><h3>OFERTA DE ${esc(m.them.name.toUpperCase())} <small>Nv. ${m.them.level} <i class="dot ${m.them.online ? 'on' : ''}" title="${m.them.online ? 'conectado' : 'desconectado'}"></i></small></h3>
+          <div class="tr-grid" id="tr-theirs">${tradeSlots(m.them.items, 'them')}</div>
+          <div class="tr-zen them"><span>Zen</span><b>${fmt.format(m.them.zen)}</b></div>
+          <p class="tr-sub">${m.them.items.length}/12 itens</p>
+          <p class="tr-state">${m.them.confirmed ? '✔ Confirmou' : 'Ainda não confirmou'}</p></section>
+      </div>
+      <h4 class="tr-inv-h">Sua bolsa <small>toque para adicionar · arraste para um espaço da sua oferta</small></h4>
+      <div class="bag-grid tr-bag" id="tr-bag"></div>`;
+    for (const el of $$('#tr-mine [data-id], #tr-theirs [data-id]')) {
+      const list = el.dataset.side === 'me' ? m.me.items : m.them.items;
+      const it = list.find((x) => x.id === el.dataset.id);
+      el.appendChild(iconCanvas(it));
+      if (it.plus) el.insertAdjacentHTML('beforeend', `<span class="plus">+${it.plus}</span>`);
+      if (it.stack) el.insertAdjacentHTML('beforeend', `<span class="qty">${it.qty}</span>`);
+      el.onclick = () => openItemInfo(it, el.dataset.side);
+    }
+    const bg = $('#tr-bag');
+    for (const it of bag) {
+      const left = (Number(it.qty) || 1) - (offered.get(it.id) || 0);
+      if (offered.has(it.id) && (!it.stack || left <= 0)) continue;
+      const b = slotButton(offered.has(it.id) ? { ...it, qty: left } : it, () => tradePick(it));
+      b.classList.remove('sel', 'drop-ok', 'drop-no');
+      if (TR.sel === it.id) b.classList.add('sel');
+      b.addEventListener('pointerdown', (ev) => tradeDrag(ev, it));
+      b.style.touchAction = 'none';
+      bg.appendChild(b);
+    }
+    if (!bg.children.length) bg.innerHTML = '<p class="muted" style="grid-column:1/-1;margin:2px 0">Nada para oferecer.</p>';
+    $('#tr-zen').oninput = (e) => { const d = e.target.value.replace(/[^\d]/g, ''); e.target.value = d ? fmt.format(Number(d)) : ''; };
+    $('#tr-zen-set').onclick = () => send({ type: 'trade', action: 'zen', amount: Number($('#tr-zen').value.replace(/[^\d]/g, '') || 0) });
+    $('#tr-confirm').textContent = m.me.confirmed ? 'AGUARDANDO…' : 'CONFIRMAR TROCA';
+    $('#tr-confirm').disabled = m.me.confirmed;
+    if (m.me.confirmed && !m.them.confirmed) tradeStatus('Você confirmou a oferta atual. Aguardando a confirmação do outro jogador.');
+  }
+  function tradePick(it) {
+    TR.sel = it.id;
+    const d = $('#trade-dlg');
+    const off = TR.s.me.items.find((x) => x.id === it.id);
+    const max = (Number(it.qty) || 1);
+    d.innerHTML = `<h3 style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}</h3>
+      ${it.stack ? `<label>Quantidade (até ${fmt.format(max)}) <input type="number" id="tr-qty" min="1" max="${max}" value="${off ? off.qty : max}"></label>` : ''}
+      <div class="row"><button class="btn btn-gold" type="button" id="tr-add">Adicionar à troca</button><button class="btn" type="button" id="tr-info">Ver detalhes</button><button class="btn btn-ghost" type="button" id="tr-x">Fechar</button></div>`;
+    d.hidden = false;
+    $('#tr-add').onclick = () => { send({ type: 'trade', action: 'add', item: it.id, qty: it.stack ? Number($('#tr-qty').value) : 1 }); d.hidden = true; TR.sel = null; };
+    $('#tr-info').onclick = () => { d.hidden = true; openItemInfo(it, 'bag'); };
+    $('#tr-x').onclick = () => { d.hidden = true; TR.sel = null; renderTrade(); };
+  }
+  function tradeDrag(ev, it) {
+    if (ev.button > 0) return;
+    const sx = ev.clientX, sy = ev.clientY;
+    let ghost = null, over = null;
+    const move = (e) => {
+      if (!ghost) { if (Math.hypot(e.clientX - sx, e.clientY - sy) < 10) return; ghost = document.createElement('div'); ghost.className = 'jewel-ghost'; ghost.appendChild(iconCanvas(it)); document.body.appendChild(ghost); UP.justDragged = true; }
+      e.preventDefault();
+      ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px';
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const zone = el && el.closest && el.closest('#tr-mine');
+      if (over && !zone) over.classList.remove('drop-hover');
+      over = zone; if (over) over.classList.add('drop-hover');
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
+      if (!ghost) return;
+      ghost.remove();
+      if (over) { over.classList.remove('drop-hover'); if (it.stack) tradePick(it); else send({ type: 'trade', action: 'add', item: it.id, qty: 1 }); }
+      setTimeout(() => { UP.justDragged = false; }, 50);
+    };
+    window.addEventListener('pointermove', move, { passive: false }); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+  }
+  // janela de detalhes completa (somente leitura) com comparação com o que está equipado
+  function itemInfoHtml(it) {
+    const R = it.reqs || {};
+    const cls = S.char ? S.char.cls : null;
+    const typeTxt = it.slot === 'material' ? (it.event ? 'Item de evento' : 'Material') : it.slot === 'box' ? 'Caixa' : it.slot === 'quest' ? 'Item de missão' : it.cat === 'cape' ? `Capa · nível ${it.tier}` : it.cat === 'wings' ? `Asa · nível ${it.tier}` : (SLOT_NAME[it.slot] || it.slot);
+    const equipable = !!SLOT_NAME[it.slot];
+    const rows = [];
+    const st = it.stats || {};
+    if (st.dmg) rows.push(['Dano', `${st.dmg[0]}–${st.dmg[1]}`]);
+    if (st.def) rows.push(['Defesa', `+${st.def}`]);
+    if (st.hp) rows.push(['Vida', `+${st.hp}`]);
+    if (st.wdmg) rows.push(['Dano extra', `+${st.wdmg}%`]);
+    if (st.absorb) rows.push(['Absorção', `${st.absorb}%`]);
+    if (equipable) rows.push(['Aprimoramento', `+${it.plus || 0}`]);
+    if (it.stack) rows.push(['Quantidade', fmt.format(it.qty)]);
+    const req = [];
+    if (equipable) {
+      if (R.level || it.req) req.push([S.char && S.char.level >= (R.level || it.req), `Nível ${R.level || it.req}`]);
+      if (R.classes) { const names = R.classes.map((k) => (S.data.classes[k] ? S.data.classes[k].name : k)); req.push([R.classes.includes(cls), `Classes: ${names.length === Object.keys(S.data.classes).length ? 'todas' : names.join(', ')}`]); }
+      if (R.minEvo) req.push([(S.char.evo || 0) >= R.minEvo, `Evolução ${R.minEvo}`]);
+      for (const k of ['str', 'agi', 'ene', 'vit', 'cmd']) if (R[k]) req.push([(S.char.stats[k] || 0) >= R[k], `${STAT_PT[k]} ${fmt.format(R[k])}`]);
+    }
+    const restr = [];
+    if (R.twoHand) restr.push('Arma de duas mãos (sem escudo)');
+    if (it.slot === 'quest') restr.push('Não pode ser trocado');
+    if (it.locked) restr.push('Bloqueado');
+    if (it.set && S.data.sets[it.set]) restr.push(`Conjunto ${S.data.sets[it.set].name}: ${S.data.sets[it.set].bonus}`);
+    let cmp = '';
+    if (equipable && S.char) {
+      const slot = it.slot;
+      const cur = S.char.items.find((i) => i.equipped && i.slot === slot && i.eqSlot !== 'ring2' && i.id !== it.id);
+      if (!cur) cmp = '<p class="muted">Comparação: nenhum equipamento equipado nesta posição.</p>';
+      else {
+        const a = it.stats || {}, b = cur.stats || {};
+        const avg = (x) => (x.dmg ? (x.dmg[0] + x.dmg[1]) / 2 : 0);
+        const line = (label, va, vb, suf = '') => { if (!va && !vb) return ''; const d = Math.round((va - vb) * 10) / 10; return `<tr><td>${label}</td><td>${fmt.format(Math.round(va))}${suf}</td><td>${fmt.format(Math.round(vb))}${suf}</td><td class="${d > 0 ? 'up' : d < 0 ? 'down' : 'same'}">${d > 0 ? '+' : ''}${fmt.format(d)}${suf}</td></tr>`; };
+        cmp = `<h4>Comparação com o seu ${esc(cur.name)}${cur.plus ? ' +' + cur.plus : ''}</h4><table class="ii-cmp"><thead><tr><th></th><th>Este</th><th>Seu</th><th>Diferença</th></tr></thead><tbody>
+          ${line('Dano médio', avg(a), avg(b))}${line('Defesa', a.def || 0, b.def || 0)}${line('Vida', a.hp || 0, b.hp || 0)}${line('Dano extra', a.wdmg || 0, b.wdmg || 0, '%')}${line('Absorção', a.absorb || 0, b.absorb || 0, '%')}${line('Aprimoramento', it.plus || 0, cur.plus || 0)}
+          </tbody></table>`;
+      }
+    }
+    return `<h3 style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}${it.stack && it.qty > 1 ? ' ×' + fmt.format(it.qty) : ''}</h3>
+      <p><span class="ii-rar" style="color:${RAR[it.rarity]};border-color:${RAR[it.rarity]}">${RAR_NAME[it.rarity]}</span> · ${esc(typeTxt)} · ${equipable ? 'equipável' : it.slot === 'box' ? 'abre na bolsa' : 'não equipável'}</p>
+      ${rows.length ? `<table class="ii-stats">${rows.map(([k, v]) => `<tr><td>${k}</td><td>${esc(v)}</td></tr>`).join('')}</table>` : ''}
+      ${req.length ? `<ul class="req-list">${req.map(([ok, t]) => `<li class="${ok ? 'req-ok' : 'req-no'}">${ok ? '✔' : '✘'} ${esc(t)}</li>`).join('')}</ul>` : ''}
+      ${it.desc ? `<p class="ii-desc">${esc(it.desc)}</p>` : ''}
+      ${it.contents ? `<p class="box-list-title">Pode conter:</p><ul class="box-list">${it.contents.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+      ${restr.length ? `<ul class="ii-restr">${restr.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+      ${cmp}`;
+  }
+  function openItemInfo(it, side) {
+    TR.view = { id: it.id, side };
+    const box = $('#item-info');
+    $('#item-info-body').innerHTML = '';
+    $('#item-info-body').appendChild((() => { const c = document.createElement('div'); c.className = 'ii-icon'; c.style.setProperty('--r', RAR[it.rarity]); c.appendChild(iconCanvas(it)); return c; })());
+    $('#item-info-body').insertAdjacentHTML('beforeend', itemInfoHtml(it));
+    $('#item-info-actions').innerHTML = (side === 'me' ? '<button class="btn" type="button" id="ii-remove">Tirar da oferta</button>' : '') + '<button class="btn btn-gold" type="button" id="ii-close">FECHAR</button>';
+    box.hidden = false;
+    $('#ii-close').onclick = closeItemInfo;
+    const rm = $('#ii-remove'); if (rm) rm.onclick = () => { send({ type: 'trade', action: 'remove', item: it.id }); closeItemInfo(); };
+  }
+  function closeItemInfo() { $('#item-info').hidden = true; TR.view = null; }
+  function tradeDialog(html, buttons) {
+    const d = $('#trade-dlg');
+    d.innerHTML = html + `<div class="row">${buttons.map((b, i) => `<button class="btn ${b.cls || ''}" type="button" data-b="${i}">${esc(b.label)}</button>`).join('')}</div>`;
+    d.hidden = false;
+    $$('[data-b]', d).forEach((el) => { el.onclick = () => { d.hidden = true; const f = buttons[Number(el.dataset.b)].fn; if (f) f(); }; });
+  }
+  $('#tr-confirm').onclick = () => {
+    const m = TR.s; if (!m) return;
+    const list = (arr) => arr.length ? arr.map((i) => `<li style="color:${RAR[i.rarity]}">${i.qty > 1 ? i.qty + '× ' : ''}${esc(i.name)}${i.plus ? ' +' + i.plus : ''}</li>`).join('') : '<li class="muted">nada</li>';
+    tradeDialog(`<h3>Resumo da troca</h3><div class="tr-sum"><div><b>Você entrega</b><ul>${list(m.me.items)}</ul><p>${fmt.format(m.me.zen)} Zen</p></div><div><b>Você recebe</b><ul>${list(m.them.items)}</ul><p>${fmt.format(m.them.zen)} Zen</p></div></div>`,
+      [{ label: 'Confirmar', cls: 'btn-gold', fn: () => send({ type: 'trade', action: 'confirm', ver: m.ver }) }, { label: 'Voltar', cls: '' }]);
+  };
+  const cancelTrade = () => tradeDialog('<h3>Deseja realmente cancelar esta troca?</h3>', [{ label: 'Sim, cancelar', cls: 'btn-danger', fn: () => send({ type: 'trade', action: 'cancel' }) }, { label: 'Continuar negociando', cls: 'btn-gold' }]);
+  $('#tr-cancel').onclick = cancelTrade;
+  $('#tr-x').onclick = cancelTrade;
+
   // ================= Aprimoramento (+0 a +15) =================
   const UP = { justDragged: false, drag: null, pend: null };
   const SM = { info: null, sel: null, busy: false, result: null };
@@ -2470,12 +2686,14 @@
       <div class="row">
         <button class="btn small ${canAttack ? 'btn-danger' : ''}" type="button" data-act="attack" ${canAttack ? '' : 'disabled'}>Atacar</button>
         <button class="btn small btn-gold" type="button" data-act="duel" ${S.duel ? 'disabled' : ''}>Desafiar para duelo</button>
+        <button class="btn small" type="button" data-act="trade" ${TR.s || (S.map && S.map.arena) ? 'disabled' : ''}>Trocar itens</button>
       </div>
       ${canAttack ? '' : `<small class="muted">${S.map.safe ? 'Na cidade não há PvP: desafie para um duelo.' : !S.me.pvpOn ? 'Ligue o botão PvP para atacar.' : 'Este jogador está com o PvP desligado.'}</small>`}`;
     card.hidden = false;
     card.querySelector('.close').onclick = () => { card.hidden = true; };
     card.querySelector('[data-act="attack"]').onclick = () => { send({ type: 'target', id: info.id }); card.hidden = true; };
     card.querySelector('[data-act="duel"]').onclick = () => { send({ type: 'duel', id: info.id }); card.hidden = true; };
+    card.querySelector('[data-act="trade"]').onclick = () => { send({ type: 'trade', action: 'invite', to: info.id }); card.hidden = true; };
   }
   let inviteTimer = null;
   function showDuelInvite(m) {

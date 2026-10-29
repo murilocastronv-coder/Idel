@@ -570,3 +570,43 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .chaos-luck { font-size: 13px; color: #ffe7a0; background: rgba(60, 40, 4, .5); border: 1px solid #8a6a1a; padding: 4px 8px; margin: 6px 0; }
 .chaos-out.other { opacity: .75; }
 .chaos-out small b { color: #ffd36b; }
+/* Troca entre jogadores */
+.trade-invite { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 14; width: min(380px, calc(100vw - 16px)); padding: 12px; text-align: center; border-color: #ffd36b; }
+.trade-invite[hidden] { display: none; }
+.trade-invite.pop { animation: tiPop .5s ease, tiGlow 1.6s ease-in-out .5s infinite; }
+@keyframes tiPop { 0% { transform: translate(-50%, -20px) scale(.9); opacity: 0; } 100% { transform: translate(-50%, 0) scale(1); opacity: 1; } }
+@keyframes tiGlow { 50% { box-shadow: 0 0 22px rgba(255, 211, 107, .55); } }
+.ti-heads { display: flex; justify-content: center; align-items: center; gap: 10px; } .ti-heads b { font-size: 26px; color: #ffd36b; }
+.tr-hero { width: 56px; height: 56px; image-rendering: pixelated; background: rgba(0,0,0,.25); border: 2px solid var(--edge); }
+.ti-bar { height: 5px; background: #1a1f36; margin: 6px 0; } .ti-bar i { display: block; height: 100%; width: 100%; background: #ffd36b; transition: width .2s linear; }
+.btn-ok { background: #2f8a3a; color: #fff; border-color: #6ae07a; } .btn-danger { background: #b8382c; color: #fff; border-color: #ff8a70; }
+.trade-win { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 11; width: min(820px, calc(100vw - 12px)); max-height: calc(100dvh - 16px); overflow-y: auto; padding: 12px;
+  background: linear-gradient(180deg, #1a1f36, #10142a); border: 3px solid #8a6a2a; box-shadow: inset 0 0 0 2px #3a2a10, 0 0 30px rgba(0,0,0,.6); }
+.trade-win[hidden] { display: none; }
+.trade-win header { display: flex; justify-content: space-between; align-items: center; } .trade-win h2 { font: 900 20px var(--title); color: #ffd36b; margin: 0; letter-spacing: 1px; }
+.tr-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+@media (max-width: 640px) { .tr-cols { grid-template-columns: 1fr; } }
+.tr-side { background: rgba(0,0,0,.25); border: 2px solid var(--edge); padding: 8px; }
+.tr-side.ok { border-color: #6ae07a; box-shadow: 0 0 12px rgba(106, 224, 122, .35); }
+.tr-side h3 { margin: 0 0 6px; font: 700 14px var(--display); color: #ffe7a0; } .tr-side h3 small { color: var(--bone-dim); font-weight: 500; }
+.tr-side .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #c43a2e; vertical-align: middle; } .tr-side .dot.on { background: #6ae07a; }
+.tr-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.tr-grid.drop-hover { outline: 2px dashed #ffd36b; outline-offset: 2px; }
+.tr-zen { display: flex; gap: 6px; align-items: center; margin-top: 6px; } .tr-zen input { width: 140px; font: 600 15px var(--display); padding: 4px 6px; background: #0b0d18; color: var(--bone); border: 2px solid var(--edge); }
+.tr-zen.them b { color: #ffd36b; font-size: 16px; }
+.tr-sub { font-size: 12px; color: var(--bone-dim); margin: 4px 0 0; } .tr-state { font-size: 13px; margin: 2px 0 0; color: #ffe7a0; } .tr-side.ok .tr-state { color: #a8e08a; }
+.tr-inv-h { margin: 10px 0 4px; font-size: 15px; } .tr-inv-h small { color: var(--bone-dim); font-weight: 400; font-size: 12px; }
+.tr-bag { max-height: 26vh; overflow-y: auto; }
+.tr-status { min-height: 1.2em; font-size: 14px; color: #ffe7a0; margin: 8px 0 4px; } .tr-status.bad { color: #ff9a7a; }
+.tr-foot { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.trade-dlg, .item-info { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 16; width: min(420px, calc(100vw - 20px)); max-height: calc(100dvh - 30px); overflow-y: auto; padding: 14px; }
+.trade-dlg[hidden], .item-info[hidden] { display: none; }
+.trade-dlg h3 { margin: 0 0 8px; font-size: 18px; } .trade-dlg label { display: block; margin: 6px 0; } .trade-dlg input { width: 120px; }
+.tr-sum { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px; } .tr-sum ul { padding-left: 16px; margin: 4px 0; } .tr-sum p { color: #ffd36b; margin: 0; }
+.ii-icon { width: 64px; height: 64px; float: right; border: 2px solid var(--r); background: var(--night); margin: 0 0 6px 8px; } .ii-icon canvas { width: 100%; height: 100%; }
+.item-info h3 { margin: 0 0 4px; font-size: 19px; }
+.ii-rar { border: 1px solid; padding: 0 5px; font-size: 13px; font-weight: 700; }
+.ii-stats, .ii-cmp { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0; }
+.ii-stats td, .ii-cmp td, .ii-cmp th { padding: 3px 4px; border-bottom: 1px solid var(--edge); text-align: left; } .ii-stats td:last-child { text-align: right; color: #fff; }
+.ii-cmp td.up { color: #a8e08a; } .ii-cmp td.down { color: #ff7a6a; } .ii-cmp td.same { color: var(--bone-dim); }
+.ii-desc { color: var(--bone-dim); font-size: 14px; clear: both; } .ii-restr { font-size: 13px; color: #ffcf7a; padding-left: 16px; }

@@ -16,6 +16,7 @@ const VAULT = require('./vault');
 const CLS = require('./classes');
 const ARENA = require('./arena');
 const UPG = require('./upgrade');
+const TRADE = require('./trade');
 
 const TICK_MS = 100;
 const SAVE_EVERY_MS = 20000;
@@ -301,6 +302,7 @@ class World {
     await KUNDUN.init(helpers);
     await VAULT.init(helpers);
     await UPG.init({ ...helpers, itemStats });
+    TRADE.init(this, helpers);
     await INV.init(this, helpers);
     this.invasion = INV;
     this.expToNext = expToNext;
@@ -476,6 +478,7 @@ class World {
   async leave(p) {
     if (!this.players.has(p.charId) || this.players.get(p.charId) !== p) return;
     this.players.delete(p.charId);
+    TRADE.drop(p);
     ARENA.onLeave(p);
     if (p.duel) this.endDuel(null, null, 'draw', p);
     if (p.map) {
@@ -495,6 +498,7 @@ class World {
 
   enterMap(p, mapId, pos, inst) {
     const m = inst || this.maps.get(`${p.room || 1}:${mapId}`);
+    if (p.trade && p.map !== m) TRADE.drop(p, `A troca foi cancelada: ${p.name} mudou de mapa.`);
     if (p.map) {
       p.map.players.delete(p.id);
       for (const o of p.map.players.values()) o.send({ type: 'pl', id: p.id });
@@ -532,6 +536,7 @@ class World {
     if (msg.type === 'join') return this.join(client, msg.charId, msg.room);
     const p = client.player;
     if (!p) return;
+    if (TRADE.blocks(p, msg.type)) return p.send({ type: 'log', kind: 'warn', text: 'Termine ou cancele a troca primeiro.' });
     switch (msg.type) {
       case 'move': {
         if (p.dead) return;
@@ -576,6 +581,7 @@ class World {
       case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS, ...[1, 2, 3, 4, 5, 6, 7].flatMap((n) => ['devil_eye_' + n, 'devil_key_' + n])])));
       case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
       case 'openBox': return p.run(() => KUNDUN.open(this, p, String(msg.id || '')));
+      case 'trade': return p.run(() => TRADE.act(this, p, msg));
       case 'vault': return p.run(() => VAULT.act(this, p, msg));
       case 'arena': return p.run(() => ARENA.act(this, p, msg));
       case 'upgPreview': return p.run(() => UPG.preview(p, msg));
@@ -1326,6 +1332,7 @@ class World {
 
   killPlayer(p, now, by) {
     p.hp = 0; p.dead = true; p.deaths++;
+    TRADE.drop(p, `A troca foi cancelada: ${p.name} foi derrotado.`);
     p.respawnAt = now + RESPAWN_MS;
     p.target = null; p.moveTo = null;
     p.map.emit({ k: 'pdie', t: p.id });
