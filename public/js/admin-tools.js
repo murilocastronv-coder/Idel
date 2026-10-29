@@ -43,8 +43,10 @@
           <label>raridade mínima ${sel('main.minRarity', RAR.map((k) => [k, RAR_PT[k]]), r.main.minRarity)}</label></div>`}
         <p class="adt-sub">${r.mode === 'pair' ? "Devil's Eye aceitos" : 'Aceita como item principal'}</p>
         <div class="adt-checks">${al.main.map((b) => `<label class="adt-check"><input type="checkbox" data-list="main.bases" value="${b}" ${r.main.bases.includes(b) ? 'checked' : ''}> ${esc(N[b])}</label>`).join('')}</div>
-        <p class="adt-sub">${r.mode === 'pair' ? 'Convites que podem ser criados (desmarcado = nível desativado)' : `Resultados possíveis${r.mode === 'random' ? ` · sorteio: ${sel('pick', [['class', 'só os da classe de quem combina'], ['any', 'qualquer um (clássico)']], r.pick)}` : ' (evolução da asa/capa usada)'}`}</p>
-        <div class="adt-checks">${al.results.map((b) => `<label class="adt-check"><input type="checkbox" data-list="results" value="${b}" ${r.results.includes(b) ? 'checked' : ''}> ${esc(N[b])}</label>`).join('')}</div>
+        <p class="adt-sub">${r.mode === 'pair' ? 'Convites que podem ser criados (desmarcado = nível desativado)' : r.mode === 'random' ? 'Resultados possíveis e peso de cada um no sorteio (a classe de quem combina não muda nada)' : 'Resultados possíveis (evolução da capa usada)'}</p>
+        <div class="adt-checks">${al.results.map((b) => { const wt = r.weights ? (r.weights[b] ?? 1) : null; return `<label class="adt-check"><input type="checkbox" data-list="results" value="${b}" ${r.results.includes(b) ? 'checked' : ''}> ${esc(N[b])}${wt !== null ? ` · peso <input type="number" class="w-xs" data-w="${b}" min="0" max="1000" value="${wt}">` : ''}</label>`; }).join('')}</div>
+        ${r.rarityRoll ? ['rarityRoll', 'plusRoll'].map((k) => { const rr = r[k]; const keys = k === 'rarityRoll' ? RAR : ['0', '1', '2', '3', '4', '5']; return `<div class="adm-row"><label class="adt-check"><input type="checkbox" data-roll-en="${k}" ${rr.enabled ? 'checked' : ''}> ${k === 'rarityRoll' ? 'Sortear raridade (pesos)' : 'Sortear + do item (pesos)'}</label>
+          ${keys.map((x) => `<label>${k === 'rarityRoll' ? esc(RAR_PT[x]) : '+' + x} <input type="number" class="w-xs" data-roll="${k}" data-k="${x}" min="0" max="1000" value="${rr.weights[x] ?? 0}"></label>`).join('')}</div>`; }).join('') : ''}
         <p class="adt-sub">Classes que podem combinar (nenhuma marcada = todas)</p>
         <div class="adt-checks">${Object.entries(CL).map(([k, c]) => `<label class="adt-check"><input type="checkbox" data-list="classes" value="${k}" ${r.classes.includes(k) ? 'checked' : ''}> ${esc(c.name)}</label>`).join('')}</div>
         <p class="adt-sub">Materiais</p>
@@ -84,6 +86,8 @@
         }
         for (const el of $$('[data-list]', fs)) if (el.checked) { const path = el.dataset.list.split('.'); (path.length === 2 ? r[path[0]][path[1]] : r[path[0]]).push(el.value); }
         for (const row of $$('.adt-mat', fs)) r.materials.push({ item: $('[data-f=item]', row).value, qty: Number($('[data-f=qty]', row).value) });
+        const ws = $$('[data-w]', fs); if (ws.length) { r.weights = {}; for (const el of ws) r.weights[el.dataset.w] = Number(el.value); }
+        for (const k of ['rarityRoll', 'plusRoll']) { const en = $(`[data-roll-en="${k}"]`, fs); if (!en) continue; r[k] = { enabled: en.checked, weights: {} }; for (const el of $$(`[data-roll="${k}"]`, fs)) r[k].weights[el.dataset.k] = Number(el.value); }
         cfg.recipes[fs.dataset.recipe] = r;
       }
       for (const tr of $$('[data-item]', box)) {

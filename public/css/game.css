@@ -567,3 +567,6 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .smith-fx { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 60%, rgba(255, 160, 60, .5), rgba(255, 90, 20, 0) 60%); }
 .smith-fx.hit { animation: smithHit .7s ease; }
 @keyframes smithHit { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
+.chaos-luck { font-size: 13px; color: #ffe7a0; background: rgba(60, 40, 4, .5); border: 1px solid #8a6a1a; padding: 4px 8px; margin: 6px 0; }
+.chaos-out.other { opacity: .75; }
+.chaos-out small b { color: #ffd36b; }

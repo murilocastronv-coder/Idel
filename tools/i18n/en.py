@@ -1218,4 +1218,7 @@ EN = {
 ", mas o item nunca quebra nem perde nível": ", but the item never breaks or loses levels",
 "Nenhum equipamento +9 ou maior com você. Use Jewel of Bless e Jewel of Soul direto no item até chegar a +9.": "You have no item at +9 or higher. Use Jewel of Bless and Jewel of Soul directly on the item until it reaches +9.",
 "equipado": "equipped", "na bolsa": "in bag", " · máximo": " · max",
+"🎲 Resultado aleatório: qualquer classe pode receber qualquer asa, conforme as chances acima. A classe só importa na hora de equipar.": "🎲 Random result: any class can get any wing, using the chances above. Class only matters when equipping.",
+"Escolha a asa de nível 1": "Choose the level 1 wing", "Nenhuma asa disponível nesta receita.": "No wing available in this recipe.",
+"{0} (sua classe não equipa)": "{0} (your class can't equip it)",
 }

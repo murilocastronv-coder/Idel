@@ -411,19 +411,19 @@ const ITEM_BASES = {
   chaos_nature_bow: { name: 'Chaos Nature Bow', slot: 'weapon', kind: 'bow', icon: 'bow', req: 30, dmg: [28, 41], special: true, chaos: true },
   chaos_lightning_staff: { name: 'Chaos Lightning Staff', slot: 'weapon', kind: 'staff', icon: 'staff', req: 30, dmg: [28, 41], special: true, chaos: true },
   // asas de nível 1 (wdmg = % de dano a mais; absorb = % do dano recebido que a asa absorve)
-  wings_satan: { name: 'Wings of Satan', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#d0342a', req: 40, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true, classes: ['dark_knight', 'magic_gladiator'] },
-  wings_heaven: { name: 'Wings of Heaven', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#e8f4ff', req: 40, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true, classes: ['dark_wizard', 'magic_gladiator'] },
-  wings_elf: { name: 'Wings of Elf', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#8aff6a', req: 40, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true, classes: ['fairy_elf'] },
-  wings_curse: { name: 'Wings of Curse', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#b05aff', req: 40, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true, classes: ['summoner'] },
+  wings_satan: { name: 'Wings of Satan', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#d0342a', req: 150, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true, classes: ['dark_knight', 'magic_gladiator'] },
+  wings_heaven: { name: 'Wings of Heaven', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#e8f4ff', req: 150, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true, classes: ['dark_wizard', 'magic_gladiator'] },
+  wings_elf: { name: 'Wings of Elf', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#8aff6a', req: 150, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true, classes: ['fairy_elf'] },
+  wings_curse: { name: 'Wings of Curse', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#b05aff', req: 150, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true, classes: ['summoner'] },
   // asas de nível 2
-  wings_dragon: { name: 'Wings of Dragon', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#ff5a2a', req: 100, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['dark_knight'] },
-  wings_soul: { name: 'Wings of Soul', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#5ac8ff', req: 100, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['dark_wizard'] },
-  wings_spirit: { name: 'Wings of Spirit', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#ffe08a', req: 100, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['fairy_elf'] },
-  wings_darkness: { name: 'Wings of Darkness', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#8a4aff', req: 100, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['magic_gladiator'] },
-  wings_despair: { name: 'Wings of Despair', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#ff6ab8', req: 100, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['summoner'] },
+  wings_dragon: { name: 'Wings of Dragon', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#ff5a2a', req: 150, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['dark_knight'] },
+  wings_soul: { name: 'Wings of Soul', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#5ac8ff', req: 150, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['dark_wizard'] },
+  wings_spirit: { name: 'Wings of Spirit', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#ffe08a', req: 150, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['fairy_elf'] },
+  wings_darkness: { name: 'Wings of Darkness', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#8a4aff', req: 150, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['magic_gladiator'] },
+  wings_despair: { name: 'Wings of Despair', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#ff6ab8', req: 150, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true, classes: ['summoner'] },
   // capas do Dark Lord (ocupam o lugar das asas, mas são equipamento só do Dark Lord)
-  cape_lord: { name: 'Cape of Lord', slot: 'wings', cat: 'cape', tier: 1, icon: 'cape', ic: '#9a4aff', req: 60, def: 18, wdmg: 20, absorb: 18, rarity: 'legendary', value: 150000, special: true, classes: ['dark_lord'] },
-  cape_emperor: { name: 'Cape of Emperor', slot: 'wings', cat: 'cape', tier: 2, icon: 'cape', ic: '#ff3a3a', req: 130, def: 34, wdmg: 39, absorb: 30, rarity: 'ancestral', value: 1500000, special: true, classes: ['dark_lord'] },
+  cape_lord: { name: 'Cape of Lord', slot: 'wings', cat: 'cape', tier: 1, icon: 'cape', ic: '#9a4aff', req: 150, def: 18, wdmg: 20, absorb: 18, rarity: 'legendary', value: 150000, special: true, classes: ['dark_lord'] },
+  cape_emperor: { name: 'Cape of Emperor', slot: 'wings', cat: 'cape', tier: 2, icon: 'cape', ic: '#ff3a3a', req: 150, def: 34, wdmg: 39, absorb: 30, rarity: 'ancestral', value: 1500000, special: true, classes: ['dark_lord'] },
 };
 
 // ---------- calças, escudos e colares (novos lugares do equipamento) ----------

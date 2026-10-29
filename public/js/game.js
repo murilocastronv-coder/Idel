@@ -2361,7 +2361,7 @@
     const missing = [];
     if (!r.enabled) missing.push('Receita desativada no momento.');
     if (!r.classOk) missing.push(r.classes.length === 1 && r.classes[0] === 'dark_lord' ? 'Só o Dark Lord faz esta receita.' : 'Sua classe não faz esta receita.');
-    if (r.noResults) missing.push('Nenhuma asa de nível 1 serve para a sua classe (o Dark Lord usa a Capa).');
+    if (r.noResults) missing.push('Nenhuma asa disponível nesta receita.');
     if (!sel) missing.push(r.candidates.length ? 'Nenhum item principal válido na bolsa.' : `Falta o item principal: ${r.main.bases.map((b) => b.name).join(' ou ')}.`);
     const mats = (sel && sel.mats) || r.materials;
     mats.forEach((m) => { if (m.have < m.qty && !(m.pairKey && !r.candidates.length)) missing.push(`Falta ${m.qty - m.have}× ${m.name}.`); });
@@ -2382,7 +2382,8 @@
       </div>
       <div class="chaos-rate"><span>Chance de sucesso</span><b id="chaos-chance">${sel ? sel.chance + '%' : '—'}</b><small>máximo desta receita: ${r.maxChance}%</small></div>
       <p class="muted small">${esc(FAIL_TXT[r.onFail])}</p>
-      <h4>${r.mode === 'evolve' ? 'Escolha o item para evoluir' : r.mode === 'pair' ? "Escolha o Devil's Eye" : 'Escolha a Arma do Caos'}</h4>
+      ${r.id === 'wing1' || r.id === 'wing2' ? '<p class="chaos-luck">🎲 Resultado aleatório: qualquer classe pode receber qualquer asa, conforme as chances acima. A classe só importa na hora de equipar.</p>' : ''}
+      <h4>${r.mode === 'evolve' ? 'Escolha o item para evoluir' : r.mode === 'pair' ? "Escolha o Devil's Eye" : r.id === 'wing2' ? 'Escolha a asa de nível 1' : 'Escolha a Arma do Caos'}</h4>
       ${r.mode === 'pair' ? `<p class="muted small"><span>O Devil's Eye e o Devil's Key precisam ter o mesmo nível (+1 a +7).</span> <span>Chance: +1 a +4: ${r.rates.low}% · +5 a +7: ${r.rates.high}%.</span></p>`
     : `<p class="muted small"><span>Aceita: ${r.main.bases.map((b) => esc(b.name)).join(', ')}${r.main.minPlus ? ` (+${r.main.minPlus} ou mais)` : ''}.</span> <span>O + e a raridade aumentam a chance.</span></p>`}
       <div class="chaos-cands" id="chaos-cands">${r.candidates.length ? '' : '<p class="muted">Nenhum na bolsa.</p>'}</div>
@@ -2399,7 +2400,7 @@
     else mainBox.innerHTML = '<small>?</small>';
     $$('[data-mat]', body).forEach((el) => { const m = mats.find((x) => x.item === el.dataset.mat); el.prepend(chaosIcon(m, 32)); el.title = m.name; });
     const resBox = $('#chaos-res');
-    res.slice(0, 5).forEach((x) => { const d = document.createElement('div'); d.className = 'chaos-out'; d.title = x.name; d.appendChild(chaosIcon(x, 34)); d.insertAdjacentHTML('beforeend', `<small>${esc(x.name)}</small>`); resBox.appendChild(d); });
+    res.slice(0, 12).forEach((x) => { const d = document.createElement('div'); d.className = 'chaos-out' + (x.canEquip === false ? ' other' : ''); d.title = x.name + (x.canEquip === false ? ' (sua classe não equipa)' : ''); d.appendChild(chaosIcon(x, 34)); d.insertAdjacentHTML('beforeend', `<small>${esc(x.name)}${x.pct !== null && x.pct !== undefined ? `<br><b>${x.pct}%</b>` : ''}</small>`); resBox.appendChild(d); });
     if (!res.length) resBox.innerHTML = '<small class="muted">—</small>';
     const cands = $('#chaos-cands');
     r.candidates.forEach((c) => {
