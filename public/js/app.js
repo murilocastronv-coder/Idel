@@ -236,8 +236,9 @@
   const draft = { class: 'dark_knight', hair: 0, skin: 0 };
   function setupCreateForm() {
     const pick = $('#class-pick');
+    const need = (state.data.classRules && state.data.classRules.creation) || {};
     pick.innerHTML = Object.entries(state.data.classes).map(([id, c], i) =>
-      `<label><input type="radio" name="class" value="${id}" ${i === 0 ? 'checked' : ''}> ${esc(c.name)}</label>`).join('');
+      `<label><input type="radio" name="class" value="${id}" ${i === 0 ? 'checked' : ''}> ${esc(c.name)}${need[id] ? ` <small class="cls-lock">(herói nível ${need[id]}+ na conta)</small>` : ''}</label>`).join('');
     pick.addEventListener('change', (e) => { draft.class = e.target.value; draft.hair = defaultHair(draft.class); syncSwatches(); drawPreview(); });
     const mk = (el, colors, key, label) => {
       el.innerHTML = colors.map((col, i) => `<button type="button" class="swatch" style="background:${col}" data-i="${i}" aria-label="${label} ${i + 1}" aria-pressed="false"></button>`).join('');

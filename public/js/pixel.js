@@ -233,6 +233,8 @@
     feather: ['..........W.', '.........WA.', '........WAA.', '.......WAAA.', '......WAAAw.', '.....WAAAw..', '....WAAAw...', '...WAAAw....', '..WAAw......', '.hAw........', '.h..........', 'h...........'],
     cape: ['...GGGGGG...', '..GAAAAAAG..', '..GAAAAAAG..', '.GAAAwAAAAG.', '.GAAAwAAAAG.', '.GAAAwAAAAAG', 'GAAAAwAAAAAG', 'GAAAAwAAAAAG', 'GAAAAAAAAAAG', 'GAAAAAAAAAAG', '.GGG.GG.GGG.', '............'],
     box: ['............', '..GGGGGGGG..', '.GAAAAAAAAG.', 'GAAAAAAAAAAG', 'GGGGGGGGGGGG', 'GAAAAYYAAAAG', 'GAAAAYYAAAAG', 'GAAAAAAAAAAG', 'GAAAAAAAAAAG', 'GAAAAAAAAAAG', '.GGGGGGGGGG.', '............'],
+    pants: ['............', '..GGGGGGGG..', '..WWWWWWWW..', '..WWWWWWWW..', '..WWWwwWWW..', '..WWW..WWW..', '..WWW..WWW..', '..WWW..WWW..', '..WWW..WWW..', '..WWW..WWW..', '..GGG..GGG..', '............'],
+    scroll: ['............', '.hhhhhhhhhh.', '.hAAAAAAAAh.', '..AWWWWWWA..', '..AWwwwwWA..', '..AWWWWWWA..', '..AWwwwWWA..', '..AWWWWWWA..', '..AWwwwwWA..', '.hAAAAAAAAh.', '.hhhhhhhhhh.', '............'],
     zen: ['............', '....GGGG....', '...GggggG...', '...GggggG...', '....GGGG....', '..GGGG.GGGG.', '.GggggGggggG', '.GggggGggggG', '..GGGGGGGG..', '.GggggggggG.', '..GGGGGGGG..', '............'],
   };
   function drawIcon(ctx, icon, x, y, scale, accent) {

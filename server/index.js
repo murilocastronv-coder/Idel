@@ -24,6 +24,8 @@ const CHAOS = require('./chaos');
 const DROPS = require('./drops');
 const CMDS = require('./commands');
 const KUNDUN = require('./kundun');
+const EQUIP = require('./equip');
+const CLS = require('./classes');
 
 const PORT = Number(process.env.PORT || 3000);
 const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
@@ -252,7 +254,7 @@ route('GET', '/api/gamedata', async () => ({
   classes: game.CLASSES, maps: game.MAPS, rarities: game.RARITIES, items: game.ITEMS, limits: game.LIMITS,
   world: Object.entries(game.WORLD).map(([id, w]) => ({ id, name: w.name, theme: w.theme, minLevel: w.minLevel, safe: !!w.safe, pvp: !!w.pvp,
     monsters: [...w.groups.map((g) => game.MONSTERS[g.type].name), ...(w.boss ? [game.MONSTERS[w.boss.type].name + ' (boss)'] : [])] })),
-  shop: game.SHOP, sets: game.SETS,
+  shop: game.SHOP, sets: game.SETS, classRules: CLS.publicRules(),
   vip: { plans: VIP.publicPlans(), days: VIP.DAYS, currency: VIP.CURRENCY, enabled: VIP.enabled() },
 }));
 
@@ -397,6 +399,27 @@ route('POST', '/api/admin/invasion', bad(async (req) => {
   }
   CMDS.log(who, 'panel:invasao:' + body.op, null, body.op === 'config' || body.op === 'boxes' ? {} : body, null, null, 'ok', message, null);
   return { ok: true, message, ...(await invasionView()) };
+}));
+// ---- Equipamentos por classe e evolução de classe (Super ADM) ----
+route('GET', '/api/admin/equip', async (req) => {
+  await requireAdmin(req);
+  return { ...EQUIP.adminView(), denials: await EQUIP.denials(80), classes2: CLS.cfg(), questItems: CLS.QUEST_ITEMS.map((k) => ({ id: k, name: game.ITEM_BASES[k].name })), evolutionsLog: await CLS.history(40) };
+});
+route('POST', '/api/admin/equip', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 128 * 1024);
+  const who = { accountId: acc.id, name: acc.username, role: 'superadmin' };
+  let message = 'Salvo.';
+  switch (body.op) {
+    case 'save': await EQUIP.saveRule(String(body.base), body.rule || {}); message = 'Regra do item salva.'; break;
+    case 'reset': await EQUIP.resetRule(String(body.base)); message = 'Regra voltou ao padrão.'; break;
+    case 'import': message = `${await EQUIP.importRules(body.rules)} regra(s) importada(s).`; break;
+    case 'test': return { ok: true, test: EQUIP.test(String(body.base), String(body.cls), body.evo, body.level, body.stats || {}) };
+    case 'classes': await CLS.saveConfig(body.config || {}); message = 'Evolução de classe salva.'; break;
+    default: throw new HttpError(400, 'Operação inválida.');
+  }
+  CMDS.log(who, 'panel:equip:' + body.op, null, { base: body.base, n: Array.isArray(body.rules) ? body.rules.length : undefined }, null, null, 'ok', message, null);
+  return { ok: true, message, ...EQUIP.adminView(), denials: await EQUIP.denials(80), classes2: CLS.cfg(), questItems: CLS.QUEST_ITEMS.map((k) => ({ id: k, name: game.ITEM_BASES[k].name })), evolutionsLog: await CLS.history(40) };
 }));
 route('GET', '/api/admin/rules', async (req, url) => {
   await requireAdmin(req);
@@ -634,6 +657,8 @@ route('POST', '/api/characters', async (req) => {
   const cls = game.CLASSES[body.class] ? body.class : null;
   if (!sec.CHARNAME_RE.test(name)) throw new HttpError(400, 'Nome do personagem: 3 a 12 letras ou números, sem espaços.');
   if (!cls) throw new HttpError(400, 'Escolha uma classe válida.');
+  const locked = await CLS.creationCheck(acc.id, cls);
+  if (locked) throw new HttpError(403, locked);
   const ap = body.appearance && typeof body.appearance === 'object' ? body.appearance : {};
   const appearance = {
     hair: Number.isInteger(ap.hair) && ap.hair >= 0 && ap.hair < HAIR_COLORS ? ap.hair : 0,

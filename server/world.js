@@ -11,6 +11,8 @@ const DROPS = require('./drops');
 const CMDS = require('./commands');
 const INV = require('./invasion');
 const KUNDUN = require('./kundun');
+const EQUIP = require('./equip');
+const CLS = require('./classes');
 
 const TICK_MS = 100;
 const SAVE_EVERY_MS = 20000;
@@ -62,16 +64,7 @@ function itemValue(it) {
   if (b && b.value) return Math.round(b.value * (1 + (it.plus || 0) * 0.2)) * q;
   return Math.round((20 + (b ? b.req : 1) * 12) * (RARITY_ORDER.indexOf(it.rarity) + 1) * (1 + (it.plus || 0) * 0.2)) * q;
 }
-function canUse(p, it) {
-  const b = G.ITEM_BASES[it.base];
-  if (!b) return 'Item desconhecido.';
-  if (b.slot === 'material') return 'Este item é um material: use na Chaos Machine, com o Chaos Goblin em Lorencia.';
-  if (b.slot === 'box') return 'Toque na caixa e em Abrir para ver o prêmio.';
-  if (b.classes && !b.classes.includes(p.cls)) return b.cat === 'cape' ? 'Só o Dark Lord usa capas.' : 'Sua classe não usa estas asas.';
-  if (p.level < b.req) return `Requer nível ${b.req}.`;
-  if (b.slot === 'weapon' && !G.CLASS_WEAPONS[p.cls].includes(b.kind)) return 'Sua classe não usa esta arma.';
-  return null;
-}
+function canUse(p, it) { return EQUIP.meets(p, it); }
 function rollRarity(table) {
   const w = G.RARITY_WEIGHTS[table];
   const total = Object.values(w).reduce((a, b) => a + b, 0);
@@ -109,7 +102,8 @@ function publicItem(it) {
   return { id: String(it.id), base: it.base, name: b.name, slot: b.slot, icon: b.icon, ic: b.ic || null, kind: b.kind, req: b.req, set: b.set,
     cat: b.cat || (b.slot === 'material' ? 'material' : null), tier: b.tier || 0, classes: b.classes || null, chaos: !!b.chaos, desc: b.desc || null,
     qty: Math.max(1, Number(it.qty) || 1), stack: b.stack || 0, contents: b.slot === 'box' ? KUNDUN.contents(it.base) : undefined,
-    rarity: it.rarity, plus: it.plus, equipped: !!it.equipped, stats: itemStats(it), value: itemValue(it) };
+    rarity: it.rarity, plus: it.plus, equipped: !!it.equipped, eqSlot: it.equipped ? EQUIP.eqSlotOf(it) : null, reqs: EQUIP.reqs(it.base), locked: !!it.locked,
+    stats: itemStats(it), value: itemValue(it) };
 }
 function bagUsed(p) { return p.items.filter((i) => !i.equipped).length; }
 
@@ -153,6 +147,16 @@ class Player {
     this.role = this.isAdmin ? 'superadmin' : (row.acc_role || 'player');
     this.mutedUntil = row.muted_until ? new Date(row.muted_until).getTime() : 0;
     this.masterResets = row.master_resets || 0;
+    this.evo = Math.max(0, Math.min((G.EVOLUTIONS[row.class] || [1]).length - 1, row.evo || 0));
+    this.classQuest = row.class_quest || null;
+    // lugar de cada item equipado (anéis repetidos: o segundo vai para o anel direito)
+    const used = new Set();
+    for (const it of items) {
+      if (!it.equipped) continue;
+      let sl = it.eq_slot || (G.ITEM_BASES[it.base] ? G.ITEM_BASES[it.base].slot : null);
+      if (sl === 'ring' && used.has('ring')) sl = 'ring2';
+      it.eq_slot = sl; used.add(sl);
+    }
     this.bonusPoints = row.bonus_points || 0;
     this.crafting = false;
     this.onlineAcc = 0;
@@ -209,7 +213,8 @@ class Player {
     if (this.hp > this.maxHp) this.hp = this.maxHp;
     if (this.mp > this.maxMp) this.mp = this.maxMp;
   }
-  skills() { return G.SKILLS[this.cls].filter((sk) => !sk.lvl || this.level >= sk.lvl); }
+  skills() { return G.SKILLS[this.cls].filter((sk) => (!sk.lvl || this.level >= sk.lvl) && (!sk.evo || this.evo >= sk.evo)); }
+  className() { return (G.EVOLUTIONS[this.cls] || [])[this.evo] || G.CLASSES[this.cls].name; }
   skillOn(id) { return this.settings.skills[id] !== false; }
   send(msg) { if (this.client && !this.client.closed) this.client.send(msg); }
   // fila: operações de inventário/salvamento nunca correm em paralelo (evita duplicação)
@@ -224,6 +229,7 @@ class Player {
     return {
       vip: { tier: v.tier, plan: v.plan, name: v.name, until: v.until, vip1Until: v.vip1Until, vip2Until: v.vip2Until },
       admin: this.isAdmin, role: this.role, masterResets: this.masterResets, absorb: Math.round((this.absorb || 0) * 100),
+      evo: this.evo, className: this.className(), evolutions: G.EVOLUTIONS[this.cls], classQuest: this.classQuest,
       type: 'char', id: this.id, name: this.name, cls: this.cls, ap: this.ap, level: this.level, resets: this.resets,
       stats: this.stats, free: this.free, zen: this.zen, pots: this.pots, settings: this.settings,
       dmg: [this.dmgMin, this.dmgMax], def: this.def, maxHp: this.maxHp, maxMp: this.maxMp, atkMs: this.atkMs,
@@ -231,7 +237,7 @@ class Player {
       items: this.items.map(publicItem), invMax: G.INVENTORY_SIZE,
       skills: this.skills().map((s) => ({ id: s.id, name: s.name, mana: s.mana, cd: s.cd, fx: s.fx, buff: s.buff || null, heal: !!s.heal, aoe: !!s.aoe, on: this.skillOn(s.id) })),
       mode: G.GAME_MODE.name, deathLoss: G.GAME_MODE.deathExpLoss, pvp: this.pvp,
-      allSkills: G.SKILLS[this.cls].filter((s) => s.id !== 'basic').map((s) => ({ id: s.id, name: s.name, lvl: s.lvl || 1, mana: s.mana, cd: s.cd, desc: skillDesc(s) })),
+      allSkills: G.SKILLS[this.cls].filter((s) => s.id !== 'basic').map((s) => ({ id: s.id, name: s.name, lvl: s.lvl || 1, evo: s.evo || 0, evoName: s.evo ? G.EVOLUTIONS[this.cls][s.evo] : null, mana: s.mana, cd: s.cd, desc: skillDesc(s) })),
     };
   }
 }
@@ -286,6 +292,8 @@ class World {
     await DROPS.init(helpers);
     CMDS.init(this, expToNext);
     this.commands = CMDS;
+    await EQUIP.init();
+    await CLS.init(helpers);
     await KUNDUN.init(helpers);
     await INV.init(this, helpers);
     this.invasion = INV;
@@ -297,7 +305,7 @@ class World {
       FROM characters c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1`, [charId]);
     if (!rows[0]) throw new Error('Personagem não encontrado.');
     rows[0].is_admin_user = ADMIN.isAdmin({ username: rows[0].acc_username, email: rows[0].acc_email });
-    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty FROM items WHERE character_id = $1 ORDER BY id', [charId])).rows;
+    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty, eq_slot, locked FROM items WHERE character_id = $1 ORDER BY id', [charId])).rows;
     const p = new Player(rows[0], null, items);
     p.room = 1;
     return p;
@@ -400,7 +408,7 @@ class World {
     }
     if (client.player) await this.leave(client.player);
 
-    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty FROM items WHERE character_id = $1 ORDER BY id', [row.id])).rows;
+    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty, eq_slot, locked FROM items WHERE character_id = $1 ORDER BY id', [row.id])).rows;
     const p = new Player(row, client, items);
     p.room = Math.min(ROOMS, Math.max(1, Math.round(Number(room)) || 1));
     client.player = p;
@@ -482,7 +490,7 @@ class World {
 
   pinfo(p) {
     const w = p.equipped().find((i) => G.ITEM_BASES[i.base] && G.ITEM_BASES[i.base].slot === 'weapon');
-    return { id: p.id, name: p.name, cls: p.cls, ap: p.ap, level: p.level, weaponRarity: w ? w.rarity : 'common', vip: p.vip().tier, eq: gearVisual(p.equipped()) };
+    return { id: p.id, name: p.name, cls: p.cls, ap: p.ap, level: p.level, evo: p.evo, className: p.className(), weaponRarity: w ? w.rarity : 'common', vip: p.vip().tier, eq: gearVisual(p.equipped()) };
   }
 
   // ---------- mensagens do navegador ----------
@@ -520,7 +528,7 @@ class World {
       case 'settings': return this.updateSettings(p, msg.settings || {});
       case 'stat': return this.addStat(p, String(msg.stat), Number(msg.n));
       case 'buy': return p.run(() => this.buy(p, String(msg.item), Number(msg.qty)));
-      case 'equip': return p.run(() => this.equip(p, String(msg.id)));
+      case 'equip': return p.run(() => this.equip(p, String(msg.id), msg.slot ? String(msg.slot) : null));
       case 'unequip': return p.run(() => this.unequip(p, String(msg.id)));
       case 'sell': return p.run(() => this.sell(p, String(msg.id)));
       case 'sellMany': return p.run(() => this.sellMany(p, Array.isArray(msg.ids) ? msg.ids.slice(0, 500).map(String) : []));
@@ -534,6 +542,8 @@ class World {
       case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS])));
       case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
       case 'openBox': return p.run(() => KUNDUN.open(this, p, String(msg.id || '')));
+      case 'cqInfo': return p.send(CLS.info(p, String(msg.npc || ''), DROPS.sources(CLS.QUEST_ITEMS)));
+      case 'cqAct': return p.run(() => CLS.act(this, p, String(msg.action || ''), String(msg.npc || ''), DROPS.sources(CLS.QUEST_ITEMS)));
       case 'pickup': {
         if (p.dead || !p.map || !p.map.ground) return undefined;
         const g = p.map.ground.get(String(msg.gid));
@@ -613,44 +623,60 @@ class World {
     p.send(p.charState());
   }
 
-  async equip(p, id) {
+  // equipar: todas as checagens no servidor; troca de lugar numa transação (nunca dois itens no mesmo lugar)
+  async equip(p, id, wanted) {
     const it = p.items.find((i) => String(i.id) === id);
-    if (!it || it.equipped) return;
-    const err = canUse(p, it);
-    if (err) return p.send({ type: 'log', kind: 'warn', text: err });
-    const slot = G.ITEM_BASES[it.base].slot;
-    const cur = p.items.find((i) => i.equipped && G.ITEM_BASES[i.base].slot === slot);
-    if (cur) {
-      await db.query('UPDATE items SET equipped = FALSE WHERE id = $1 AND character_id = $2 RETURNING id', [cur.id, p.charId]);
-      cur.equipped = false;
-    }
-    await db.query('UPDATE items SET equipped = TRUE WHERE id = $1 AND character_id = $2 RETURNING id', [it.id, p.charId]);
-    it.equipped = true;
+    if (!it) { EQUIP.logDenial(p, null, 'item que não está na bolsa: ' + id); return p.send({ type: 'log', kind: 'warn', text: 'Este item não está na sua bolsa.' }); }
+    if (it.equipped) return undefined;
+    const r = EQUIP.check(p, it, wanted);
+    if (!r.ok) { EQUIP.logDenial(p, it.base, r.reason); return p.send({ type: 'log', kind: 'warn', text: r.reason }); }
+    const cur = p.items.find((i) => i.equipped && EQUIP.eqSlotOf(i) === r.slot);
+    await db.tx(async (q) => {
+      if (cur) await q('UPDATE items SET equipped = FALSE, eq_slot = NULL WHERE id = $1 AND character_id = $2 RETURNING id', [cur.id, p.charId]);
+      const d = await q('UPDATE items SET equipped = TRUE, eq_slot = $3 WHERE id = $1 AND character_id = $2 AND equipped = FALSE RETURNING id', [it.id, p.charId, r.slot]);
+      if (!d.rows[0]) throw new Error('item mudou');
+    });
+    if (cur) { cur.equipped = false; cur.eq_slot = null; }
+    it.equipped = true; it.eq_slot = r.slot;
     this.afterGearChange(p);
+    return undefined;
   }
 
   async unequip(p, id) {
     const it = p.items.find((i) => String(i.id) === id && i.equipped);
     if (!it) return;
-    await db.query('UPDATE items SET equipped = FALSE WHERE id = $1 AND character_id = $2 RETURNING id', [it.id, p.charId]);
-    it.equipped = false;
+    await db.query('UPDATE items SET equipped = FALSE, eq_slot = NULL WHERE id = $1 AND character_id = $2 RETURNING id', [it.id, p.charId]);
+    it.equipped = false; it.eq_slot = null;
     this.afterGearChange(p);
   }
 
+  // melhor equipamento que o personagem pode usar em cada lugar (respeita duas mãos x escudo e os dois anéis)
   async autoEquip(p) {
-    const bySlot = {};
-    for (const it of p.items) {
-      if (canUse(p, it)) continue;
-      const slot = G.ITEM_BASES[it.base].slot;
-      if (!bySlot[slot] || itemScore(it) > itemScore(bySlot[slot])) bySlot[slot] = it;
-    }
+    const usable = p.items.filter((it) => !it.vault && !EQUIP.meets(p, it));
+    const best = (slot, skip = []) => usable.filter((it) => EQUIP.slotsFor(it.base).includes(slot) && !skip.includes(it)).sort((a, b) => itemScore(b) - itemScore(a))[0] || null;
+    const plan = {};
+    for (const sl of ['weapon', 'helm', 'armor', 'pants', 'gloves', 'boots', 'wings', 'necklace']) plan[sl] = best(sl);
+    const curW = p.items.find((i) => i.equipped && EQUIP.eqSlotOf(i) === 'weapon');
+    const weapon = plan.weapon || curW;
+    plan.shield = weapon && G.ITEM_BASES[weapon.base].twoHand ? null : best('shield');
+    plan.ring = best('ring');
+    plan.ring2 = best('ring2', plan.ring ? [plan.ring] : []);
     let changed = 0;
-    for (const [slot, best] of Object.entries(bySlot)) {
-      if (best.equipped) continue;
-      const cur = p.items.find((i) => i.equipped && G.ITEM_BASES[i.base].slot === slot);
-      if (cur) { await db.query('UPDATE items SET equipped = FALSE WHERE id = $1 AND character_id = $2 RETURNING id', [cur.id, p.charId]); cur.equipped = false; }
-      await db.query('UPDATE items SET equipped = TRUE WHERE id = $1 AND character_id = $2 RETURNING id', [best.id, p.charId]);
-      best.equipped = true; changed++;
+    const ops = [];
+    for (const [sl, it] of Object.entries(plan)) {
+      const cur = p.items.find((i) => i.equipped && EQUIP.eqSlotOf(i) === sl);
+      if (!it) { if (sl === 'shield' && cur) ops.push({ off: cur }); continue; }
+      if (cur === it) continue;
+      if (cur && itemScore(cur) >= itemScore(it) && !EQUIP.meets(p, cur)) continue;
+      ops.push({ off: cur, on: it, slot: sl });
+    }
+    if (ops.length) {
+      await db.tx(async (q) => {
+        for (const o of ops) if (o.off) await q('UPDATE items SET equipped = FALSE, eq_slot = NULL WHERE id = $1 AND character_id = $2 RETURNING id', [o.off.id, p.charId]);
+        for (const o of ops) if (o.on) await q('UPDATE items SET equipped = TRUE, eq_slot = $3 WHERE id = $1 AND character_id = $2 RETURNING id', [o.on.id, p.charId, o.slot]);
+      });
+      for (const o of ops) if (o.off) { o.off.equipped = false; o.off.eq_slot = null; }
+      for (const o of ops) if (o.on) { o.on.equipped = true; o.on.eq_slot = o.slot; changed++; }
     }
     p.send({ type: 'log', kind: 'info', text: changed ? `Equipou ${changed} ${changed > 1 ? 'itens melhores' : 'item melhor'}.` : 'Você já usa o melhor equipamento disponível.' });
     this.afterGearChange(p);
@@ -908,7 +934,9 @@ class World {
     const best = (pred) => Object.entries(G.ITEM_BASES).filter(([, b]) => pred(b)).sort((a, b) => b[1].req - a[1].req)[0];
     const out = [];
     for (const k of kinds) { const w = best((b) => b.slot === 'weapon' && b.kind === k); if (w) out.push(w[0]); }
-    for (const slot of ['helm', 'armor', 'gloves', 'boots', 'ring']) { const b = best((x) => x.slot === slot); if (b) out.push(b[0]); }
+    for (const slot of ['helm', 'armor', 'pants', 'gloves', 'boots', 'ring', 'necklace']) { const b = best((x) => x.slot === slot && !x.special); if (b) out.push(b[0]); }
+    const r1 = best((x) => x.slot === 'ring' && !x.special); if (r1) out.push(r1[0]);
+    if (kinds.some((k) => k === 'sword' || k === 'scepter' || k === 'book') && ['dark_knight', 'dark_wizard', 'dark_lord'].includes(cls)) { const sh = best((x) => x.slot === 'shield'); if (sh) out.push(sh[0]); }
     return out.map((base) => ({ base, rarity: 'ancestral', plus: 15 }));
   }
 
@@ -1477,12 +1505,12 @@ class World {
       await db.query(`UPDATE characters SET level=$2, exp=$3, zen=$4, str=$5, agi=$6, vit=$7, ene=$8, cmd=$9, free_points=$10,
         map=$11, pos_x=$12, pos_y=$13, hp=$14, mp=$15, pot_hp=$16, pot_mp=$17, settings=$18, kills=$19, deaths=$20,
         bosses_killed=$21, combat_power=$22, last_farm_map=$23, auto_on=$24, quests=$25, pvp_kills=$26, pvp_deaths=$27, duel_wins=$28, duel_losses=$29, pk_count=$30,
-        resets=$31, master_resets=$32, bonus_points=$33, last_seen_at=now()
+        resets=$31, master_resets=$32, bonus_points=$33, evo=$34, class_quest=$35, last_seen_at=now()
         WHERE id=$1 RETURNING id`,
       [p.charId, p.level, Math.round(p.exp), Math.round(p.zen), p.stats.str, p.stats.agi, p.stats.vit, p.stats.ene, p.stats.cmd, p.free,
         map, p.dead ? 0 : Math.round(p.x), p.dead ? 0 : Math.round(p.y), Math.max(1, Math.round(p.hp)), Math.round(p.mp),
         p.pots.hp, p.pots.mp, JSON.stringify(p.settings), p.kills, p.deaths, p.bossesKilled, p.power, p.lastFarm, p.auto, JSON.stringify(p.quests || {}), p.pvp.kills, p.pvp.deaths, p.pvp.duelW, p.pvp.duelL, p.pvp.pk,
-        p.resets, p.masterResets, p.bonusPoints]);
+        p.resets, p.masterResets, p.bonusPoints, p.evo, p.classQuest ? JSON.stringify(p.classQuest) : null]);
       p.dirty = false; p.lastSave = Date.now();
     }
   }

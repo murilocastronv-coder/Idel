@@ -17,7 +17,8 @@
   const RAR = { common: '#c8c8c8', uncommon: '#5fd35f', rare: '#4aa3ff', epic: '#b45cff', legendary: '#ffb02e', ancestral: '#ff4d4d' };
   const RAR_NAME = { common: 'Comum', uncommon: 'Incomum', rare: 'Raro', epic: 'Épico', legendary: 'Lendário', ancestral: 'Ancestral' };
   const RAR_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancestral'];
-  const SLOT_NAME = { weapon: 'Arma', helm: 'Elmo', armor: 'Armadura', gloves: 'Luvas', boots: 'Botas', ring: 'Anel', wings: 'Asas' };
+  const SLOT_NAME = { helm: 'Elmo', armor: 'Armadura', pants: 'Calças', gloves: 'Luvas', boots: 'Botas', weapon: 'Arma', shield: 'Escudo', wings: 'Asas', necklace: 'Colar', ring: 'Anel', ring2: 'Anel 2' };
+  const STAT_PT = { str: 'Força', agi: 'Agilidade', ene: 'Energia', vit: 'Vitalidade', cmd: 'Comando' };
   const ACCENT = (it) => it.ic || RAR[it.rarity];
   const FX_COLOR = { fire: '#ff7a3d', energy: '#59c7ff', ice: '#bff0ff', arrow: '#efe4c8', arrow3: '#efe4c8', dark: '#c06bff',
     spirit: '#ff7ad9', lightning: '#ffffaa', meteor: '#ff4d1f', slash: '#ffffff', whirl: '#ffffff', heal: '#9affd0', claw: '#ff6060', boss: '#c06bff' };
@@ -82,6 +83,9 @@
       case 'mdel': S.monsters.delete(m.id); return;
       case 'invasion': return onInvasion(m);
       case 'boxResult': return boxResult(m);
+      case 'cqInfo': CQ.info = m; if (S.panel === 'cquest') renderCQ(); return;
+      case 'cqResult': feed(m.text, m.ok ? 'quest' : 'warn'); CQ.busy = false; return;
+      case 'evolved': goldFlash(`${m.className}!`); if (window.Sfx) Sfx.levelUp(); return;
       case 'gdel': S.gitems.delete(m.gid); return;
       case 'chaosInfo': CH.info = m; if (S.panel === 'chaos') renderChaos(); return;
       case 'chaosResult': return chaosResult(m);
@@ -868,6 +872,18 @@
           label('Chaos Machine', x, y - HERO_H * sc - 17 * dpr, '#ff9ad8', 10);
           continue;
         }
+        if (e.kind === 'sevina' || e.kind === 'marlon') {
+          ctx.save(); ctx.globalCompositeOperation = 'lighter';
+          const r2 = 22 * zoom * (1 + 0.06 * Math.sin(now / 260));
+          const g4 = ctx.createRadialGradient(x, y - 14 * zoom, 0, x, y - 14 * zoom, r2);
+          g4.addColorStop(0, e.kind === 'sevina' ? 'rgba(160,220,255,.4)' : 'rgba(255,190,90,.4)'); g4.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g4; ctx.fillRect(x - r2, y - 14 * zoom - r2, r2 * 2, r2 * 2); ctx.restore();
+          if (e.kind === 'sevina') Sprites.hero(ctx, 'fairy_elf', { hair: 1, skin: 0 }, 'idle', now, x, y, sc, true, { equip: { w: null, armor: 'phoenix', helm: null } });
+          else Sprites.hero(ctx, 'dark_knight', { hair: 4, skin: 1 }, 'idle', now, x, y, sc, true, { equip: { helm: 'storm', armor: 'storm', gloves: 'storm', boots: 'storm' } });
+          label(e.name, x, y - HERO_H * sc - 4 * dpr, e.kind === 'sevina' ? '#bfe8ff' : '#ffcf7a');
+          label('Evolução de classe', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
+          continue;
+        }
         Sprites.hero(ctx, 'dark_wizard', { hair: 1, skin: 1 }, 'idle', now, x, y, sc, true);
         label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffd36b');
         label('Loja', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
@@ -1077,7 +1093,10 @@
     }
     // NPCs (loja e Chaos Goblin)
     for (const n of S.map.npcs || []) {
-      if (Math.hypot(n.x - wx, n.y - 10 - wy) < 16) { openPanel(n.kind === 'chaos' ? 'chaos' : 'shop'); return; }
+      if (Math.hypot(n.x - wx, n.y - 10 - wy) < 16) {
+        if (n.kind === 'sevina' || n.kind === 'marlon') { CQ.npc = n.kind; openPanel('cquest'); return; }
+        openPanel(n.kind === 'chaos' ? 'chaos' : 'shop'); return;
+      }
     }
     // tocar num jogador abre o cartão (atacar / duelo)
     let pl = null, pd = 14;
@@ -1180,6 +1199,7 @@
     box.innerHTML = '';
     for (const def of S.char.allSkills) {
       const sk = S.char.skills.find((x) => x.id === def.id);
+      if (!sk && def.evo) continue; // poderes de evolução aparecem quando liberados
       const b = document.createElement('button');
       b.type = 'button';
       if (!sk) {
@@ -1243,6 +1263,7 @@
     else if (name === 'quests') renderQuests();
     else if (name === 'rank') renderRank();
     else if (name === 'chaos') { renderChaos(); send({ type: 'chaosInfo' }); }
+    else if (name === 'cquest') { renderCQ(); send({ type: 'cqInfo', npc: CQ.npc }); }
     else if (name === 'admin') { if (!ADM.open) { ADM.open = true; renderAdmin(); } }
   }
   $$('.menu [data-panel]').forEach((b) => { b.onclick = () => openPanel(b.dataset.panel); });
@@ -1317,7 +1338,7 @@
     $('#bag-count').textContent = `${bag.length}/${c.invMax}`;
     const slots = $('#equip-slots'); slots.innerHTML = '';
     for (const slot of Object.keys(SLOT_NAME)) {
-      const it = c.items.find((i) => i.equipped && i.slot === slot);
+      const it = c.items.find((i) => i.equipped && (i.eqSlot || i.slot) === slot);
       if (it) slots.appendChild(slotButton(it, () => { if (!MS.on) { S.selItem = it.id; renderBag(); } }));
       else { const e = document.createElement('div'); e.className = 'islot empty'; e.innerHTML = `<span class="slotname">${SLOT_NAME[slot]}</span>`; slots.appendChild(e); }
     }
@@ -1346,10 +1367,7 @@
     const box = $('#item-detail');
     const it = S.char.items.find((i) => i.id === S.selItem);
     if (!it) { box.innerHTML = '<p class="muted">Toque em um item para ver detalhes.</p>'; return; }
-    const cls = S.data.classes[S.char.cls];
-    const lvlOk = S.char.level >= it.req;
-    const usable = it.slot !== 'weapon' || (WEAPONS[S.char.cls] || []).includes(it.kind);
-    const cur = S.char.items.find((i) => i.equipped && i.slot === it.slot && i.id !== it.id);
+    const cur = S.char.items.find((i) => i.equipped && i.slot === it.slot && i.id !== it.id && i.eqSlot !== 'ring2');
     let cmp = '';
     if (cur && !it.equipped) {
       const a = (it.stats.dmg ? it.stats.dmg[0] + it.stats.dmg[1] : 0) + (it.stats.def || 0) * 2 + (it.stats.hp || 0) / 4;
@@ -1367,6 +1385,10 @@
       $('[data-act]', box).onclick = () => { S.selItem = null; send({ type: 'sell', id: it.id }); };
       return;
     }
+    if (it.slot === 'quest') {
+      box.innerHTML = `<h3 style="color:${ACCENT(it)}">${esc(it.name)}${it.qty > 1 ? ' ×' + it.qty : ''}</h3><p class="muted">Item de missão</p>${it.desc ? `<p>${esc(it.desc)}</p>` : ''}`;
+      return;
+    }
     if (it.slot === 'box') {
       box.innerHTML = `<h3 style="color:${ACCENT(it)}">${esc(it.name)} ×${fmt.format(it.qty)}</h3>
         <p class="muted">Recompensa da Invasão Dourada</p>
@@ -1378,24 +1400,41 @@
       $('[data-act]', box).onclick = () => { S.selItem = null; send({ type: 'sell', id: it.id }); };
       return;
     }
-    const wingOk = !it.classes || it.classes.includes(S.char.cls);
+    // requisitos: verde = atendido, vermelho = falta (quem decide de verdade é o servidor)
+    const R = it.reqs || {};
+    const ok = (v) => (v ? 'req-ok' : 'req-no');
+    const lines = [];
+    const evoNames = S.char.evolutions || [];
+    if (R.classes) {
+      const names = R.classes.map((k) => (S.data.classes[k] ? S.data.classes[k].name : k));
+      lines.push([R.classes.includes(S.char.cls), `Classe: ${names.length === Object.keys(S.data.classes).length ? 'todas' : names.join(', ')}`]);
+    }
+    if (R.minEvo) lines.push([(S.char.evo || 0) >= R.minEvo, `Evolução: ${evoNames[R.minEvo] || 'evolução ' + R.minEvo}`]);
+    lines.push([S.char.level >= (R.level || it.req), `Nível ${R.level || it.req}`]);
+    for (const k of ['str', 'agi', 'ene', 'vit', 'cmd']) if (R[k]) lines.push([(S.char.stats[k] || 0) >= R[k], `${STAT_PT[k]} ${fmt.format(R[k])}`]);
+    if (R.enabled === false) lines.push([false, 'Item desativado']);
+    if (it.locked) lines.push([false, 'Bloqueado']);
+    const canEq = lines.every(([v]) => v);
     const catTxt = it.cat === 'cape' ? `Capa do Dark Lord · nível ${it.tier}` : it.cat === 'wings' ? `Asa de nível ${it.tier}` : SLOT_NAME[it.slot];
+    const extra = [];
+    if (R.twoHand) extra.push('Duas mãos (sem escudo)');
+    if (it.slot === 'ring') extra.push('Anel esquerdo ou direito');
+    const high = ['epic', 'legendary', 'ancestral'].includes(it.rarity);
     box.innerHTML = `<h3 style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}</h3>
-      <p style="color:${RAR[it.rarity]}">${RAR_NAME[it.rarity]} · ${catTxt}</p>
+      <p style="color:${high ? '#ffd36b' : RAR[it.rarity]}">${RAR_NAME[it.rarity]} · ${catTxt}${it.equipped && it.eqSlot === 'ring2' ? ' · anel direito' : ''}</p>
       <p>${esc(statLine(it.stats))}</p>
-      <p class="${lvlOk ? '' : 'bad'}">Requer nível ${it.req}</p>
-      ${it.classes ? `<p class="${wingOk ? 'muted' : 'bad'}">Classes: ${it.classes.map((k) => esc(S.data.classes[k] ? S.data.classes[k].name : k)).join(', ')}</p>` : ''}
+      <ul class="req-list">${lines.map(([v, t]) => `<li class="${ok(v)}">${v ? '✔' : '✘'} ${esc(t)}</li>`).join('')}${extra.map((t) => `<li class="req-na">• ${esc(t)}</li>`).join('')}</ul>
       ${it.chaos ? '<p style="color:#d8b0ff">Arma do Caos: base para criar asas e a capa do Dark Lord na Chaos Machine (o + e a raridade aumentam a chance).</p>' : ''}
-      ${usable ? '' : `<p class="bad">${esc(cls.name)} não usa esta arma.</p>`}
       ${cmp}${set}
       <div class="row">${it.equipped
         ? '<button class="btn small" type="button" data-act="unequip">Desequipar</button>'
-        : `<button class="btn small btn-gold" type="button" data-act="equip" ${lvlOk && usable && wingOk ? '' : 'disabled'}>Equipar</button>
+        : `<button class="btn small btn-gold" type="button" data-act="equip" ${canEq ? '' : 'disabled'}>Equipar</button>
+           ${it.slot === 'ring' && canEq ? '<button class="btn small" type="button" data-act="equip" data-slot="ring2">No anel direito</button>' : ''}
            <button class="btn small btn-ghost" type="button" data-act="sell">Vender por ${fmt.format(it.value)} Zen</button>`}</div>`;
     $$('[data-act]', box).forEach((b) => {
       b.onclick = () => {
         if (b.dataset.act === 'sell') S.selItem = null;
-        send({ type: b.dataset.act, id: it.id });
+        send({ type: b.dataset.act, id: it.id, slot: b.dataset.slot || (it.slot === 'ring' ? 'ring' : undefined) });
       };
     });
   }
@@ -1431,7 +1470,8 @@
     const names = { str: 'Força', agi: 'Agilidade', vit: 'Vitalidade', ene: 'Energia', cmd: 'Comando' };
     const keys = ['str', 'agi', 'vit', 'ene'].concat(c.cls === 'dark_lord' ? ['cmd'] : []);
     $('#hero-body').innerHTML = `
-      <p>${esc(c.name)} · ${esc(S.data.classes[c.cls].name)} · Nível ${c.level}${c.resets ? ` · ${c.resets} resets` : ''}</p>
+      <p>${esc(c.name)} · <b class="cls-name">${esc(c.className || S.data.classes[c.cls].name)}</b> · Nível ${c.level}${c.resets ? ` · ${c.resets} resets` : ''}</p>
+      ${c.evolutions && c.evo < c.evolutions.length - 1 ? `<p class="muted small">Próxima evolução: ${esc(c.evolutions[c.evo + 1])} (missão com ${c.evo === 0 && !['magic_gladiator', 'dark_lord'].includes(c.cls) ? 'a Priestess Sevina, em Devias' : 'Marlon, em Lorencia'})</p>` : ''}
       <p class="free-pts">${c.free > 0 ? `${c.free} pontos para distribuir` : 'Nenhum ponto livre'}</p>
       <div class="stat-rows">${keys.map((k) => `<div class="stat-row"><span>${names[k]}</span><b>${c.stats[k]}</b>
         <button class="btn small" type="button" data-stat="${k}" data-n="1" ${c.free < 1 ? 'disabled' : ''} aria-label="Adicionar 1 ponto em ${names[k]}">+1</button>
@@ -1447,7 +1487,7 @@
       ${c.fullSet ? '<p style="color:#a8e08a">Bônus de conjunto completo ativo: +10% defesa, +5% dano.</p>' : ''}
       <p>PvP: <b>${c.pvp.kills}</b> vitórias · ${c.pvp.deaths} derrotas · duelos ${c.pvp.duelW}V/${c.pvp.duelL}D${c.pvp.pk ? ` · ${c.pvp.pk}× PK` : ''}</p>
       <h3>Poderes</h3>
-      <ul class="skills-list">${c.allSkills.map((s) => `<li><b>${esc(s.name)}</b> <small class="muted">${c.level >= s.lvl ? 'liberado' : `libera no nível ${s.lvl}`} · ${s.mana} MP · ${(s.cd / 1000).toFixed(0)}s</small><br><small>${esc(s.desc)}</small></li>`).join('')}</ul>
+      <ul class="skills-list">${c.allSkills.map((s) => `<li><b>${esc(s.name)}</b> <small class="muted">${s.evo && (c.evo || 0) < s.evo ? `libera com ${esc(s.evoName)}` : c.level >= s.lvl ? 'liberado' : `libera no nível ${s.lvl}`} · ${s.mana} MP · ${(s.cd / 1000).toFixed(0)}s</small><br><small>${esc(s.desc)}</small></li>`).join('')}</ul>
       <p class="mode-note">Servidor <b>${esc(c.mode)}</b>: subir de nível é difícil e morrer custa ${Math.round(c.deathLoss * 100)}% da EXP do nível.</p>`;
     $$('#hero-body [data-stat]').forEach((b) => { b.onclick = () => send({ type: 'stat', stat: b.dataset.stat, n: Number(b.dataset.n) }); });
     $('#auto-stats').onchange = (e) => send({ type: 'settings', settings: { autoStats: e.target.checked } });
@@ -1712,6 +1752,44 @@
     if (S.panel !== 'chat') feed(m.lines[0], m.ok ? 'quest' : 'warn');
   }
 
+  // ================= Evolução de classe (Sevina e Marlon) =================
+  const CQ = { npc: 'sevina', info: null, busy: false };
+  function renderCQ() {
+    const body = $('#cq-body');
+    const I = CQ.info;
+    if (!I || I.npc !== CQ.npc) { body.innerHTML = '<p class="muted">Carregando…</p>'; $('#cq-title').textContent = CQ.npc === 'marlon' ? 'Marlon' : 'Priestess Sevina'; return; }
+    $('#cq-title').textContent = I.npcName;
+    if (!I.quest) { body.innerHTML = `<p class="cq-class">${esc(I.className)}</p><p>${esc(I.msg)}</p>`; return; }
+    const Q = I.quest;
+    const stepHtml = Q.steps.map((st) => `<li class="${st.done ? 'done' : st.current ? 'cur' : ''}"><span class="cq-ico" data-ico="${st.i}"></span>
+      <span><b>${st.done ? '✔ ' : ''}${st.qty}× ${esc(st.name)}</b><small class="${st.have >= st.qty ? 'req-ok' : 'req-no'}">na bolsa: ${st.have}/${st.qty}</small>${st.where.length ? `<small class="muted">${st.where.map((w) => `<span>${esc(w)}</span>`).join(' · ')}</small>` : ''}</span></li>`).join('');
+    const cur = Q.started && !Q.allDelivered ? Q.steps[Q.step] : null;
+    body.innerHTML = `
+      ${Q.wrongNpc ? `<p class="chaos-warn">Sua missão atual é com ${esc(Q.npcName)}.</p>` : ''}
+      ${!I.atNpc ? `<p class="chaos-warn">Vá até ${esc(I.npcName)}${I.npc === 'sevina' ? ', em Devias' : ', em Lorencia'}.</p>` : ''}
+      <h3>${esc(Q.name)}</h3>
+      <p class="cq-evo"><span>${esc(Q.from)}</span> → <b>${esc(Q.to)}</b></p>
+      <ul class="req-list">${Q.reqs.map((r) => `<li class="${r.ok ? 'req-ok' : 'req-no'}">${r.ok ? '✔' : '✘'} ${esc(r.text)}${r.now ? ` <small>(${esc(r.now)})</small>` : ''}</li>`).join('')}</ul>
+      <h4>Etapas ${Q.started ? `(${Math.min(Q.step, Q.steps.length)}/${Q.steps.length})` : ''}</h4>
+      <ol class="cq-steps">${stepHtml}</ol>
+      <div class="row cq-btns">
+        ${!Q.started ? `<button class="btn btn-gold" type="button" data-cq="start" ${Q.canStart ? '' : 'disabled'}>Iniciar missão</button>` : ''}
+        ${Q.started && !Q.allDelivered ? `<button class="btn btn-gold" type="button" data-cq="deliver" ${cur && cur.have >= cur.qty && I.atNpc ? '' : 'disabled'}>Entregar itens</button>` : ''}
+        ${Q.started ? `<button class="btn btn-gold" type="button" data-cq="complete" ${Q.canComplete ? '' : 'disabled'}>Concluir evolução</button>` : ''}
+        ${Q.started ? '<button class="btn small btn-ghost" type="button" data-cq="abandon">Abandonar</button>' : ''}
+      </div>
+      <p class="muted small">Ao evoluir você mantém nível, EXP, resets, pontos, itens e equipamentos, e libera poderes e equipamentos da nova classe.</p>`;
+    $$('[data-ico]', body).forEach((el) => { const st = Q.steps[Number(el.dataset.ico)]; el.appendChild(chaosIcon({ icon: st.icon, ic: st.ic, rarity: st.rarity }, 30)); });
+    $$('[data-cq]', body).forEach((b) => {
+      b.onclick = () => {
+        if (CQ.busy) return;
+        if (b.dataset.cq === 'abandon' && !b.dataset.sure) { b.dataset.sure = 1; b.textContent = 'Os itens entregues não voltam. Abandonar?'; return; }
+        CQ.busy = true; b.disabled = true;
+        send({ type: 'cqAct', action: b.dataset.cq, npc: CQ.npc });
+      };
+    });
+  }
+
   // ================= Box Kundun =================
   const BOX = { it: null, busy: false, res: null, t0: 0 };
   function openBox(it) {
@@ -1908,7 +1986,7 @@
     p.id = info.id;
     const canAttack = hostileTo(p);
     card.innerHTML = `<button class="close" type="button" aria-label="Fechar">×</button>
-      <b>${(p.flags & 1) ? '<span style="color:#ff6a5a">[PK]</span> ' : ''}${esc(info.name)}</b><small>${esc(cls.name)} · Nível ${info.level}</small>
+      <b>${(p.flags & 1) ? '<span style="color:#ff6a5a">[PK]</span> ' : ''}${esc(info.name)}</b><small>${esc(info.className || cls.name)} · Nível ${info.level}</small>
       <div class="row">
         <button class="btn small ${canAttack ? 'btn-danger' : ''}" type="button" data-act="attack" ${canAttack ? '' : 'disabled'}>Atacar</button>
         <button class="btn small btn-gold" type="button" data-act="duel" ${S.duel ? 'disabled' : ''}>Desafiar para duelo</button>

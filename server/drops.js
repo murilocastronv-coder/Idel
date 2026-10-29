@@ -217,9 +217,12 @@ function overflow(world, p, e, ctx, lctx) {
 }
 
 // monstro derrotado: sorteia para quem matou (o servidor já validou a morte; cada morte é processada uma vez)
+// itens de missão só caem para quem precisa deles agora
+function questOk(p, d) { return !G.ITEM_BASES[d.item].quest || require('./classes').needs(p, d.item); }
+
 function onKill(world, p, m, map) {
   const tier = tierOf(m.T);
-  const got = roll(m.type, m.T, map.id, p.level);
+  const got = roll(m.type, m.T, map.id, p.level).filter((d) => questOk(p, d));
   if (!got.length) return;
   const ctx = { source: m.T.name, mapId: map.id, tier, x: m.x, y: m.y };
   p.run(async () => { for (const d of got) await deliver(world, p, d, ctx); });
@@ -237,7 +240,7 @@ function offline(world, p, def, mapId, kills) {
       const exp = share * Math.min(100, r.chance) / 100 * (0.7 + Math.random() * 0.4);
       let n = Math.floor(exp) + (Math.random() < exp % 1 ? 1 : 0);
       n = Math.min(20, n);
-      for (let i = 0; i < n; i++) found.push({ rule: r, item: r.item, qty: randi(r.qtyMin, r.qtyMax) });
+      for (let i = 0; i < n; i++) { const d = { rule: r, item: r.item, qty: randi(r.qtyMin, r.qtyMax) }; if (questOk(p, d)) found.push(d); }
     }
   }
   return found;

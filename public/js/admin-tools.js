@@ -355,14 +355,99 @@
     }
   }
 
+  // ---------------- Equipamentos por classe e evolução ----------------
+  async function equip(box) {
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    let V;
+    try { V = await X.api('GET', '/api/admin/equip'); } catch (e) { box.innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+    let filter = '';
+    draw();
+    function draw() {
+      const C = V.classes2;
+      const short = (n) => n.split(' ').map((w) => w[0]).join('');
+      const rows = V.items.filter((it) => !filter || it.name.toLowerCase().includes(filter) || it.id.includes(filter) || it.slot === filter);
+      const row = (it) => { const r = it.rule; return `<tr data-base="${it.id}" class="${it.custom ? 'custom' : ''}"><td>${esc(it.name)}<br><small class="muted">${esc(it.id)}</small></td>
+        <td class="adt-cls">${V.classes.map((c) => `<label title="${esc(c.name)}"><input type="checkbox" value="${c.id}" ${r.classes.includes(c.id) ? 'checked' : ''}>${esc(short(c.name))}</label>`).join('')}</td>
+        <td>${sel('minEvo', [[0, 'base'], [1, '1ª'], [2, '2ª']], r.minEvo)}</td><td>${num('level', r.level, 'class="w-xs" min="1"')}</td>
+        ${['str', 'agi', 'ene', 'vit', 'cmd'].map((k) => `<td>${num(k, r[k], 'class="w-xs" min="0"')}</td>`).join('')}
+        <td>${sel('slot', V.slots.map((sl) => [sl, V.slotNames[sl]]), r.slot)}</td><td><input type="checkbox" data-f="enabled" ${r.enabled ? 'checked' : ''}></td>
+        <td class="nowrap"><button class="btn small btn-gold" type="button" data-save>Salvar</button>${it.custom ? ' <button class="btn small" type="button" data-reset>Padrão</button>' : ''}</td></tr>`; };
+      box.innerHTML = `<p class="adt-msg" role="status"></p>
+        <fieldset class="adt-card"><legend>Evolução de classe</legend>
+          <p class="adt-sub">Criar personagem: nível que um herói da conta precisa ter (0 = livre)</p>
+          <div class="adm-row" id="adt-cre">${V.classes.map((c) => `<label>${esc(c.name)} ${num(c.id, C.creation[c.id] || 0, 'min="0"')}</label>`).join('')}</div>
+          ${Object.entries(C.quests).map(([id, q]) => `<div class="adt-q" data-q="${id}"><h4>${esc(q.name)} <small class="muted">(${q.npc === 'sevina' ? 'Priestess Sevina' : 'Marlon'})</small></h4>
+            <label class="adt-check"><input type="checkbox" data-f="enabled" ${q.enabled ? 'checked' : ''}> ativa</label>
+            <div class="adm-row"><label>Nível ${num('level', q.level, 'min="1"')}</label><label>Zen ${num('zen', q.zen, 'min="0" step="1000"')}</label></div>
+            <div class="adt-steps">${q.steps.map((st) => `<div class="adm-row adt-step">${sel('item', [['@class', 'Item da classe (Broken Sword, Soul of Wizard…)'], ...V.questItems.map((x) => [x.id, x.name])], st.item)} × ${num('qty', st.qty, 'min="1" max="10"')} <button class="btn small" type="button" data-del-step>×</button></div>`).join('')}</div>
+            <button class="btn small" type="button" data-add-step>+ etapa</button></div>`).join('')}
+          <button class="btn btn-gold" type="button" id="adt-cls-save">Salvar evolução</button>
+          <h4>Últimas evoluções</h4>
+          <ul class="adm-list adt-log">${V.evolutionsLog.map((e) => `<li>${dt(e.created_at)} · <b>${esc(e.char_name)}</b> → ${esc(e.class_name)} (${esc(e.quest || '')}${e.zen ? ', ' + fmt.format(e.zen) + ' Zen' : ''})</li>`).join('') || '<li class="muted">Nenhuma ainda.</li>'}</ul>
+        </fieldset>
+        <fieldset class="adt-card"><legend>Regras dos equipamentos (${V.items.length} itens)</legend>
+          <p class="muted small">Classes que podem usar, evolução mínima, nível, atributos (Força, Agilidade, Energia, Vitalidade, Comando), lugar no corpo e se o item está ativo. Linhas com fundo diferente têm regra própria; "Padrão" volta ao catálogo.</p>
+          <div class="adm-row"><input id="adt-eq-filter" placeholder="Filtrar (nome, id ou lugar: helm, weapon, ring…)" value="${esc(filter)}"><button class="btn small" type="button" id="adt-eq-go">Filtrar</button></div>
+          <div class="adt-table-wrap adt-eq-wrap"><table class="adt-table adt-rules"><thead><tr><th>Item</th><th>Classes</th><th>Evol.</th><th>Nível</th><th>For</th><th>Agi</th><th>Ene</th><th>Vit</th><th>Cmd</th><th>Lugar</th><th>Ativo</th><th></th></tr></thead>
+            <tbody>${rows.map(row).join('')}</tbody></table></div>
+        </fieldset>
+        <fieldset class="adt-card"><legend>Testar item com uma classe</legend>
+          <div class="adm-row" id="adt-eq-test">${sel('base', V.items.map((it) => [it.id, it.name]), V.items[0].id)}${sel('cls', V.classes.map((c) => [c.id, c.name]), 'dark_knight')}
+            ${sel('evo', [[0, 'base'], [1, '1ª evolução'], [2, '2ª evolução']], 0)}<label>nível ${num('level', 50, 'min="1"')}</label>
+            ${['str', 'agi', 'ene', 'vit', 'cmd'].map((k) => `<label>${k} ${num(k, 100, 'min="0" class="w-xs"')}</label>`).join('')}<button class="btn small" type="button" id="adt-eq-testgo">Testar</button></div>
+          <p id="adt-eq-out"></p>
+        </fieldset>
+        <fieldset class="adt-card"><legend>Importar regras em lote (JSON)</legend>
+          <textarea id="adt-eq-json" rows="5" style="width:100%" placeholder='[{"base":"abyss_sword","classes":["dark_knight"],"minEvo":1,"level":120,"str":300}]'></textarea>
+          <button class="btn small btn-gold" type="button" id="adt-eq-import">Importar</button>
+        </fieldset>
+        <h4>Tentativas recusadas pelo servidor</h4>
+        <ul class="adm-list adt-log">${V.denials.map((d) => `<li>${dt(d.created_at)} · <b>${esc(d.char_name || '?')}</b> · ${esc(d.item || '')} · ${esc(d.reason)}</li>`).join('') || '<li class="muted">Nenhuma.</li>'}</ul>`;
+      const post = async (body) => { try { const r = await X.api('POST', '/api/admin/equip', body); if (r.items) { V = r; draw(); } msg(box, r.message || 'Ok.'); return r; } catch (e) { msg(box, e.message, true); box.scrollIntoView({ block: 'start' }); return null; } };
+      $('#adt-eq-go').onclick = () => { filter = $('#adt-eq-filter').value.trim().toLowerCase(); draw(); };
+      $('#adt-eq-filter').onkeydown = (e) => { if (e.key === 'Enter') $('#adt-eq-go').click(); };
+      $$('[data-base]', box).forEach((tr) => {
+        $('[data-save]', tr).onclick = () => {
+          const r = { classes: $$('.adt-cls input', tr).filter((i) => i.checked).map((i) => i.value) };
+          for (const el of $$('[data-f]', tr)) r[el.dataset.f] = el.type === 'checkbox' ? el.checked : el.dataset.f === 'slot' ? el.value : Number(el.value);
+          post({ op: 'save', base: tr.dataset.base, rule: r });
+        };
+        const rs = $('[data-reset]', tr); if (rs) rs.onclick = () => post({ op: 'reset', base: tr.dataset.base });
+      });
+      $('#adt-eq-testgo').onclick = async () => {
+        const f = {}; for (const el of $$('[data-f]', $('#adt-eq-test'))) f[el.dataset.f] = el.value;
+        try {
+          const r = await X.api('POST', '/api/admin/equip', { op: 'test', base: f.base, cls: f.cls, evo: Number(f.evo), level: Number(f.level), stats: { str: +f.str, agi: +f.agi, ene: +f.ene, vit: +f.vit, cmd: +f.cmd } });
+          $('#adt-eq-out').innerHTML = `<span class="${r.test.ok ? 'req-ok' : 'req-no'}">${esc(r.test.reason)}</span>`;
+        } catch (e) { msg(box, e.message, true); }
+      };
+      $('#adt-eq-import').onclick = () => { let list; try { list = JSON.parse($('#adt-eq-json').value); } catch (_) { return msg(box, 'JSON inválido.', true); } post({ op: 'import', rules: list }); };
+      const bindSteps = () => $$('[data-del-step]', box).forEach((b) => { b.onclick = () => b.closest('.adt-step').remove(); });
+      bindSteps();
+      $$('[data-add-step]', box).forEach((b) => { b.onclick = () => { b.previousElementSibling.insertAdjacentHTML('beforeend', `<div class="adm-row adt-step">${sel('item', [['@class', 'Item da classe'], ...V.questItems.map((x) => [x.id, x.name])], V.questItems[0].id)} × ${num('qty', 1, 'min="1" max="10"')} <button class="btn small" type="button" data-del-step>×</button></div>`); bindSteps(); }; });
+      $('#adt-cls-save').onclick = () => {
+        const c = { creation: {}, quests: {} };
+        for (const el of $$('[data-f]', $('#adt-cre'))) c.creation[el.dataset.f] = Number(el.value);
+        for (const q of $$('[data-q]', box)) {
+          const o = { steps: [] };
+          for (const el of $$(':scope > [data-f], :scope > label [data-f], :scope > .adm-row [data-f]', q)) o[el.dataset.f] = el.type === 'checkbox' ? el.checked : Number(el.value);
+          for (const st of $$('.adt-step', q)) o.steps.push({ item: $('[data-f=item]', st).value, qty: Number($('[data-f=qty]', st).value) });
+          c.quests[q.dataset.q] = o;
+        }
+        post({ op: 'classes', config: c });
+      };
+    }
+  }
+
   function mount(el, ctx) {
     X = ctx;
     el.innerHTML = `
       <details class="adm-sec adt-sec" data-sec="invasion"><summary><h3>♛ Invasão Dourada e Box Kundun</h3></summary><div class="adt-body"></div></details>
+      <details class="adm-sec adt-sec" data-sec="equip"><summary><h3>Equipamentos por classe e evolução</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="chaos"><summary><h3>Chaos Machine (asas e capas)</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="drops"><summary><h3>Drops de materiais e eventos</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="rules"><summary><h3>Comandos, reset e histórico ADM</h3></summary><div class="adt-body"></div></details>`;
-    const fn = { invasion, chaos, drops, rules };
+    const fn = { invasion, equip, chaos, drops, rules };
     $$('.adt-sec', el).forEach((d) => { d.addEventListener('toggle', () => { if (d.open && !d.dataset.loaded) { d.dataset.loaded = 1; fn[d.dataset.sec]($('.adt-body', d)); } }); });
   }
 

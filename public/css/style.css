@@ -345,3 +345,4 @@ details[open] > summary { margin-bottom: 14px; }
 
 .btn-apk { background: #2f7d32; border-color: #1b4d1e; color: #fff; text-decoration: none; }
 .btn-apk:hover { background: #3a9440; }
+.cls-lock { color: var(--bone-dim); font-size: 12px; }

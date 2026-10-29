@@ -158,10 +158,12 @@ const MONSTERS = {
 // Mapas abertos agora (os outros aparecem na galeria como "em breve")
 const WORLD = {
   lorencia: { name: 'Lorencia', theme: 'town', w: 800, h: 560, safe: true, minLevel: 1, spawn: [400, 300],
-    npcs: [{ id: 'shop', name: 'Mercadora Pasi', x: 470, y: 250, kind: 'shop' }, { id: 'chaos', name: 'Chaos Goblin', x: 335, y: 240, kind: 'chaos' }], groups: [] },
+    npcs: [{ id: 'shop', name: 'Mercadora Pasi', x: 470, y: 250, kind: 'shop' }, { id: 'chaos', name: 'Chaos Goblin', x: 335, y: 240, kind: 'chaos' },
+      { id: 'marlon', name: 'Marlon', x: 250, y: 380, kind: 'marlon' }], groups: [] },
   noria: { name: 'Noria', theme: 'noria', w: 1200, h: 800, minLevel: 1, spawn: [120, 400],
     groups: [{ type: 'slime', count: 14 }, { type: 'goblin', count: 7 }, { type: 'goblin_elite', count: 1 }] },
   devias: { name: 'Devias', theme: 'snow', w: 1200, h: 800, minLevel: 10, spawn: [120, 400],
+    npcs: [{ id: 'sevina', name: 'Priestess Sevina', x: 210, y: 330, kind: 'sevina' }],
     groups: [{ type: 'spider', count: 12 }, { type: 'ice_golem', count: 3 }] },
   dungeon: { name: 'Dungeon', theme: 'dungeon', w: 1200, h: 800, minLevel: 25, spawn: [120, 400],
     groups: [{ type: 'skeleton', count: 14 }], boss: { type: 'skeleton_king', x: 950, y: 400 } },
@@ -196,6 +198,8 @@ const SKILLS = {
     { id: 'whirl', name: 'Golpe Giratório', mult: 1.3, mana: 14, cd: 6000, range: 28, aoe: 52, self: true, fx: 'whirl', lvl: 5 },
     { id: 'warcry', name: 'Grito de Guerra', buff: 'dmg', bmult: 1.25, dur: 20000, mana: 20, cd: 40000, fx: 'buff_dmg', lvl: 15 },
     { id: 'thunder', name: 'Lâmina Trovejante', mult: 2.6, mana: 26, cd: 8000, range: 30, aoe: 40, fx: 'lightning', lvl: 30 },
+    { id: 'deathstab', name: 'Golpe Fatal', mult: 3.2, mana: 30, cd: 7000, range: 30, fx: 'slash', lvl: 1, evo: 1 },
+    { id: 'masterfury', name: 'Fúria do Mestre', mult: 2.5, mana: 40, cd: 10000, range: 30, aoe: 72, self: true, fx: 'whirl', lvl: 1, evo: 2 },
   ],
   dark_wizard: [
     { id: 'basic', name: 'Bola de Energia', mult: 1, mana: 0, cd: 0, range: 130, fx: 'energy' },
@@ -203,6 +207,8 @@ const SKILLS = {
     { id: 'meteor', name: 'Meteoro', mult: 1.4, mana: 18, cd: 6000, range: 140, aoe: 56, fx: 'meteor', lvl: 5 },
     { id: 'manashield', name: 'Escudo de Mana', buff: 'def', bmult: 1.5, dur: 20000, mana: 22, cd: 40000, fx: 'buff_def', lvl: 15 },
     { id: 'lightning', name: 'Relâmpago', mult: 2.6, mana: 28, cd: 8000, range: 150, aoe: 50, fx: 'lightning', lvl: 30 },
+    { id: 'inferno', name: 'Inferno', mult: 2.3, mana: 34, cd: 8000, range: 140, aoe: 80, fx: 'fire', lvl: 1, evo: 1 },
+    { id: 'arcanenova', name: 'Nova Arcana', mult: 3.0, mana: 44, cd: 11000, range: 150, aoe: 90, fx: 'lightning', lvl: 1, evo: 2 },
   ],
   fairy_elf: [
     { id: 'basic', name: 'Flecha', mult: 1, mana: 0, cd: 0, range: 135, fx: 'arrow' },
@@ -210,6 +216,8 @@ const SKILLS = {
     { id: 'triple', name: 'Flecha Tripla', mult: 1.2, mana: 14, cd: 5000, range: 140, aoe: 44, fx: 'arrow3', lvl: 5 },
     { id: 'heal', name: 'Cura', heal: 0.25, mana: 20, cd: 10000, fx: 'heal', lvl: 15 },
     { id: 'rain', name: 'Chuva de Flechas', mult: 1.9, mana: 26, cd: 9000, range: 150, aoe: 70, fx: 'arrow3', lvl: 30 },
+    { id: 'piercing', name: 'Flecha Penetrante', mult: 3.1, mana: 30, cd: 7000, range: 160, fx: 'arrow', lvl: 1, evo: 1 },
+    { id: 'queenbless', name: 'Bênção da Rainha', buff: 'dmg', bmult: 1.35, dur: 20000, mana: 30, cd: 45000, fx: 'buff_dmg', lvl: 1, evo: 2 },
   ],
   magic_gladiator: [
     { id: 'basic', name: 'Golpe', mult: 1, mana: 0, cd: 0, range: 26, fx: 'slash' },
@@ -217,6 +225,7 @@ const SKILLS = {
     { id: 'arcane', name: 'Explosão Arcana', mult: 1.4, mana: 18, cd: 6000, range: 120, aoe: 54, fx: 'meteor', lvl: 5 },
     { id: 'double', name: 'Golpe Duplo', mult: 2.4, mana: 16, cd: 5000, range: 30, fx: 'slash', lvl: 15 },
     { id: 'fury', name: 'Fúria Elemental', mult: 2.0, mana: 28, cd: 9000, range: 120, aoe: 64, fx: 'dark', lvl: 30 },
+    { id: 'spiral', name: 'Explosão Espiral', mult: 2.7, mana: 36, cd: 9000, range: 120, aoe: 74, fx: 'dark', lvl: 1, evo: 1 },
   ],
   dark_lord: [
     { id: 'basic', name: 'Golpe de Cetro', mult: 1, mana: 0, cd: 0, range: 34, fx: 'slash' },
@@ -224,6 +233,7 @@ const SKILLS = {
     { id: 'storm', name: 'Tempestade Negra', mult: 1.4, mana: 18, cd: 6000, range: 120, aoe: 56, fx: 'lightning', lvl: 5 },
     { id: 'aura', name: 'Aura do Senhor', buff: 'dmg', bmult: 1.25, dur: 20000, mana: 20, cd: 40000, fx: 'buff_dmg', lvl: 15 },
     { id: 'imperial', name: 'Explosão Imperial', mult: 2.6, mana: 28, cd: 8000, range: 120, aoe: 50, fx: 'meteor', lvl: 30 },
+    { id: 'emperorwrath', name: 'Ira do Imperador', mult: 2.9, mana: 38, cd: 9000, range: 120, aoe: 80, fx: 'meteor', lvl: 1, evo: 1 },
   ],
   summoner: [
     { id: 'basic', name: 'Espírito', mult: 1, mana: 0, cd: 0, range: 130, fx: 'spirit' },
@@ -231,6 +241,8 @@ const SKILLS = {
     { id: 'souls', name: 'Chamado das Almas', mult: 1.4, mana: 18, cd: 6000, range: 135, aoe: 56, fx: 'spirit', lvl: 5 },
     { id: 'weakness', name: 'Maldição da Fraqueza', mult: 2.3, mana: 16, cd: 5000, range: 140, fx: 'dark', lvl: 15 },
     { id: 'spiritstorm', name: 'Tempestade de Espíritos', mult: 2.0, mana: 28, cd: 9000, range: 140, aoe: 66, fx: 'spirit', lvl: 30 },
+    { id: 'bloodchain', name: 'Corrente de Sangue', mult: 3.1, mana: 30, cd: 7000, range: 140, fx: 'dark', lvl: 1, evo: 1 },
+    { id: 'dimension', name: 'Portal Dimensional', mult: 2.8, mana: 42, cd: 10000, range: 140, aoe: 90, fx: 'spirit', lvl: 1, evo: 2 },
   ],
 };
 
@@ -386,6 +398,55 @@ const ITEM_BASES = {
   cape_emperor: { name: 'Cape of Emperor', slot: 'wings', cat: 'cape', tier: 2, icon: 'cape', ic: '#ff3a3a', req: 130, def: 34, wdmg: 39, absorb: 30, rarity: 'ancestral', value: 1500000, special: true, classes: ['dark_lord'] },
 };
 
+// ---------- calças, escudos e colares (novos lugares do equipamento) ----------
+const PANTS = { leather: ['Calças de Couro', 1, 3], bronze: ['Calças de Bronze', 10, 6], scale: ['Calças de Escamas', 22, 10], dragon: ['Calças do Dragão', 32, 15],
+  storm: ['Calças da Tempestade', 50, 23], phoenix: ['Calças da Fênix', 80, 33], abyss: ['Calças do Abismo', 120, 48] };
+for (const [set, [name, req, def]] of Object.entries(PANTS)) ITEM_BASES[`${set}_pants`] = { name, slot: 'pants', icon: 'pants', req, def, set };
+Object.assign(ITEM_BASES, {
+  oak_shield: { name: 'Escudo de Carvalho', slot: 'shield', kind: 'shield', icon: 'shield', req: 1, def: 4 },
+  bronze_shield: { name: 'Escudo de Bronze', slot: 'shield', kind: 'shield', icon: 'shield', req: 20, def: 9 },
+  dragon_shield: { name: 'Escudo do Dragão', slot: 'shield', kind: 'shield', icon: 'shield', req: 45, def: 16 },
+  phoenix_shield: { name: 'Escudo da Fênix', slot: 'shield', kind: 'shield', icon: 'shield', req: 85, def: 26 },
+  abyss_shield: { name: 'Escudo do Abismo', slot: 'shield', kind: 'shield', icon: 'shield', req: 120, def: 36 },
+  necklace_wind: { name: 'Colar do Vento', slot: 'necklace', icon: 'necklace', req: 15, hp: 60, def: 2 },
+  necklace_flame: { name: 'Colar da Chama', slot: 'necklace', icon: 'necklace', req: 60, hp: 220, def: 6 },
+  necklace_abyss: { name: 'Colar do Abismo', slot: 'necklace', icon: 'necklace', req: 120, hp: 520, def: 12 },
+});
+// cajados e arcos ocupam as duas mãos (não deixam usar escudo)
+for (const b of Object.values(ITEM_BASES)) if (b.slot === 'weapon' && (b.kind === 'staff' || b.kind === 'bow')) b.twoHand = true;
+
+// ---------- itens de quest de evolução de classe ----------
+Object.assign(ITEM_BASES, {
+  scroll_of_emperor: { name: 'Scroll of the Emperor', slot: 'quest', icon: 'scroll', ic: '#e8d090', req: 1, stack: 5, rarity: 'epic', value: 1, special: true, quest: true,
+    desc: 'Item da Quest of the Hero. Entregue à Priestess Sevina, em Devias.' },
+  broken_sword: { name: 'Broken Sword', slot: 'quest', icon: 'sword', ic: '#9aa3b5', req: 1, stack: 5, rarity: 'epic', value: 1, special: true, quest: true, questClasses: ['dark_knight'],
+    desc: 'Item da evolução do Dark Knight. Entregue à Priestess Sevina.' },
+  soul_of_wizard: { name: 'Soul of Wizard', slot: 'quest', icon: 'jewel', ic: '#7ab8ff', req: 1, stack: 5, rarity: 'epic', value: 1, special: true, quest: true, questClasses: ['dark_wizard'],
+    desc: 'Item da evolução do Dark Wizard. Entregue à Priestess Sevina.' },
+  tear_of_elf: { name: 'Tear of Elf', slot: 'quest', icon: 'jewel', ic: '#8aff8a', req: 1, stack: 5, rarity: 'epic', value: 1, special: true, quest: true, questClasses: ['fairy_elf'],
+    desc: 'Item da evolução da Fairy Elf. Entregue à Priestess Sevina.' },
+  orb_of_summoning: { name: 'Orb of Summoning', slot: 'quest', icon: 'jewel', ic: '#ff7ad9', req: 1, stack: 5, rarity: 'epic', value: 1, special: true, quest: true, questClasses: ['summoner'],
+    desc: 'Item da evolução da Summoner. Entregue à Priestess Sevina.' },
+  flame_of_dbk: { name: 'Flame of Death Beam Knight', slot: 'quest', icon: 'jewel', ic: '#ff5a2a', req: 1, stack: 5, rarity: 'legendary', value: 1, special: true, quest: true,
+    desc: 'Item da missão avançada de Marlon.' },
+  horn_of_hell_maine: { name: 'Horn of Hell Maine', slot: 'quest', icon: 'jewel', ic: '#b05aff', req: 1, stack: 5, rarity: 'legendary', value: 1, special: true, quest: true,
+    desc: 'Item da missão avançada de Marlon.' },
+  feather_of_phoenix: { name: 'Feather of Phoenix of Darkness', slot: 'quest', icon: 'feather', ic: '#ff3a6a', req: 1, stack: 5, rarity: 'legendary', value: 1, special: true, quest: true,
+    desc: 'Item da missão avançada de Marlon.' },
+});
+
+// nomes das classes em cada evolução
+const EVOLUTIONS = {
+  dark_knight: ['Dark Knight', 'Blade Knight', 'Blade Master'],
+  dark_wizard: ['Dark Wizard', 'Soul Master', 'Grand Master'],
+  fairy_elf: ['Fairy Elf', 'Muse Elf', 'High Elf'],
+  summoner: ['Summoner', 'Bloody Summoner', 'Dimension Master'],
+  magic_gladiator: ['Magic Gladiator', 'Duel Master'],
+  dark_lord: ['Dark Lord', 'Lord Emperor'],
+};
+// lugares do corpo, na ordem da tela
+const EQUIP_SLOTS = ['helm', 'armor', 'pants', 'gloves', 'boots', 'weapon', 'shield', 'wings', 'necklace', 'ring', 'ring2'];
+
 // ---------- Invasão Dourada: caixas abertas na bolsa ----------
 Object.assign(ITEM_BASES, {
   kundun_bronze: { name: 'Box Kundun Bronze', slot: 'box', icon: 'box', ic: '#d08a4a', req: 1, stack: 99, rarity: 'uncommon', value: 2000, special: true, tier: 1,
@@ -427,6 +488,6 @@ const MAX_STACK = 999;
 module.exports = {
   CLASSES, MAPS, RARITIES, ITEMS, LIMITS,
   MONSTERS, WORLD, SKILLS, POINTS_PER_LEVEL, AUTO_STATS, CLASS_WEAPONS, ITEM_BASES, SETS,
-  RARITY_MULT, RARITY_WEIGHTS, SHOP, INVENTORY_SIZE, MAX_STACK, WING_EVOLVE, GAME_MODE, DAILY_POOL, LOGIN_REWARDS, ACHIEVEMENTS,
+  RARITY_MULT, RARITY_WEIGHTS, SHOP, INVENTORY_SIZE, MAX_STACK, WING_EVOLVE, EVOLUTIONS, EQUIP_SLOTS, GAME_MODE, DAILY_POOL, LOGIN_REWARDS, ACHIEVEMENTS,
 };
 
