@@ -287,16 +287,7 @@ const ACHIEVEMENTS = [
   { id: 'streak7', text: 'Entre 7 dias seguidos', stat: 'streak', goal: 7, reward: { item: 'epic' } },
 ];
 
-const POINTS_PER_LEVEL = { dark_knight: 5, dark_wizard: 5, fairy_elf: 5, magic_gladiator: 7, dark_lord: 7, summoner: 5 };
-// Distribuição automática de pontos (pode ser desligada pelo jogador)
-const AUTO_STATS = {
-  dark_knight: { str: 2, agi: 1, vit: 2 },
-  dark_wizard: { ene: 3, agi: 1, vit: 1 },
-  fairy_elf: { agi: 2, str: 2, vit: 1 },
-  magic_gladiator: { str: 3, ene: 3, vit: 1 },
-  dark_lord: { str: 3, cmd: 2, vit: 1, agi: 1 },
-  summoner: { ene: 3, vit: 1, agi: 1 },
-};
+const POINTS_PER_LEVEL = { dark_knight: 5, dark_wizard: 5, fairy_elf: 5, magic_gladiator: 7, dark_lord: 5, summoner: 5 };
 
 const CLASS_WEAPONS = {
   dark_knight: ['sword'], magic_gladiator: ['sword', 'staff'], dark_wizard: ['staff'],
@@ -515,7 +506,7 @@ const MAX_STACK = 999;
 
 module.exports = {
   CLASSES, MAPS, RARITIES, ITEMS, LIMITS,
-  MONSTERS, WORLD, SKILLS, POINTS_PER_LEVEL, AUTO_STATS, CLASS_WEAPONS, ITEM_BASES, SETS,
+  MONSTERS, WORLD, SKILLS, POINTS_PER_LEVEL, CLASS_WEAPONS, ITEM_BASES, SETS,
   RARITY_MULT, RARITY_WEIGHTS, SHOP, INVENTORY_SIZE, MAX_STACK, WING_EVOLVE, EVOLUTIONS, EQUIP_SLOTS, GAME_MODE, DAILY_POOL, LOGIN_REWARDS, ACHIEVEMENTS,
 };
 
