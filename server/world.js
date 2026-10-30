@@ -30,7 +30,7 @@ const PVP_SCALE = 0.7;          // dano entre jogadores é reduzido para lutas d
 const DUEL_MS = 3 * 60 * 1000;
 const PK_MS = 10 * 60 * 1000;
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancestral'];
-const DEFAULT_SETTINGS = { potHp: 0.5, potMp: 0.3, autoStats: true, returnToFarm: true, lootMin: 'common', skills: {} };
+const DEFAULT_SETTINGS = { potHp: 0.5, potMp: 0.3, returnToFarm: true, lootMin: 'common', skills: {} };
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const randi = (a, b) => Math.floor(rand(a, b + 1));
@@ -136,6 +136,7 @@ class Player {
     this.free = row.free_points;
     this.pots = { hp: row.pot_hp, mp: row.pot_mp };
     this.settings = { ...DEFAULT_SETTINGS, ...(row.settings || {}) };
+    delete this.settings.autoStats;
     this.kills = Number(row.kills);
     this.deaths = row.deaths;
     this.bossesKilled = row.bosses_killed;
@@ -565,7 +566,7 @@ class World {
       case 'potion': return this.usePotion(p, msg.kind === 'mp' ? 'mp' : 'hp', Date.now(), true);
       case 'teleport': return this.teleport(p, String(msg.map));
       case 'settings': return this.updateSettings(p, msg.settings || {});
-      case 'stat': return this.addStat(p, String(msg.stat), Number(msg.n));
+      case 'statConfirm': return p.run(() => this.confirmStats(p, msg.allocation || {}));
       case 'buy': return p.run(() => this.buy(p, String(msg.item), Number(msg.qty)));
       case 'equip': return p.run(() => this.equip(p, String(msg.id), msg.slot ? String(msg.slot) : null));
       case 'unequip': return p.run(() => this.unequip(p, String(msg.id)));
@@ -619,40 +620,41 @@ class World {
     const out = p.settings;
     if (typeof s.potHp === 'number') out.potHp = clamp(Math.round(s.potHp * 100) / 100, 0, 0.9);
     if (typeof s.potMp === 'number') out.potMp = clamp(Math.round(s.potMp * 100) / 100, 0, 0.9);
-    if (typeof s.autoStats === 'boolean') out.autoStats = s.autoStats;
+    // Distribuição automática de atributos foi removida definitivamente.
+    delete out.autoStats;
     if (typeof s.returnToFarm === 'boolean') out.returnToFarm = s.returnToFarm;
     if (typeof s.pvpAuto === 'boolean') out.pvpAuto = s.pvpAuto;
     if (RARITY_ORDER.includes(s.lootMin)) out.lootMin = s.lootMin;
     if (s.skills && typeof s.skills === 'object') {
       for (const sk of G.SKILLS[p.cls]) if (typeof s.skills[sk.id] === 'boolean' && sk.id !== 'basic') out.skills[sk.id] = s.skills[sk.id];
     }
-    if (out.autoStats && p.free > 0) this.autoDistribute(p);
     p.dirty = true;
     p.send(p.charState());
   }
 
-  addStat(p, stat, n) {
-    if (!['str', 'agi', 'vit', 'ene', 'cmd'].includes(stat)) return;
-    if (stat === 'cmd' && p.cls !== 'dark_lord') return;
-    n = Math.floor(n);
-    if (!(n >= 1) || n > p.free) return;
-    p.stats[stat] += n; p.free -= n;
-    p.recalc(); p.dirty = true;
-    p.send(p.charState());
-  }
-
-  autoDistribute(p) {
-    const plan = G.AUTO_STATS[p.cls];
-    const total = Object.values(plan).reduce((a, b) => a + b, 0);
-    while (p.free > 0) {
-      for (const [k, w] of Object.entries(plan)) {
-        const n = Math.min(p.free, w);
-        p.stats[k] += n; p.free -= n;
-        if (p.free <= 0) break;
+  async confirmStats(p, allocation) {
+    const allowed = p.cls === 'dark_lord' ? ['str', 'agi', 'vit', 'ene', 'cmd'] : ['str', 'agi', 'vit', 'ene'];
+    const delta = {};
+    let total = 0;
+    for (const key of allowed) {
+      const value = Number(allocation && allocation[key] || 0);
+      if (!Number.isSafeInteger(value) || value < 0 || value > 1000000) {
+        p.send({ type: 'statResult', ok: false, text: 'Distribuição inválida.' }); return;
       }
-      if (total <= 0) break;
+      delta[key] = value; total += value;
     }
-    p.recalc();
+    if (!total) { p.send({ type: 'statResult', ok: false, text: 'Nenhum ponto foi selecionado.' }); return; }
+    if (total > p.free) { p.send({ type: 'statResult', ok: false, text: 'Você não possui pontos suficientes.' }); return; }
+    const values = ['str', 'agi', 'vit', 'ene', 'cmd'].map((k) => delta[k] || 0);
+    const { rows } = await db.query(`UPDATE characters SET
+      str = str + $2, agi = agi + $3, vit = vit + $4, ene = ene + $5, cmd = cmd + $6,
+      free_points = free_points - $7
+      WHERE id = $1 AND free_points >= $7 RETURNING id`, [p.charId, ...values, total]);
+    if (!rows[0]) { p.send({ type: 'statResult', ok: false, text: 'Os pontos disponíveis mudaram. Atualize e tente novamente.' }); return; }
+    for (const k of allowed) p.stats[k] += delta[k] || 0;
+    p.free -= total; p.recalc(); p.dirty = false;
+    p.send({ type: 'statResult', ok: true, text: `${total} pontos distribuídos.` });
+    p.send(p.charState());
   }
 
   async buy(p, item, qty) {

@@ -63,6 +63,7 @@
       case 'enter': return onEnter(m);
       case 's': return onSnap(m);
       case 'char': S.char = m; renderChar(); return;
+      case 'statResult': if (m.ok) S.statDraft = { str: 0, agi: 0, vit: 0, ene: 0, cmd: 0 }; feed(m.text, m.ok ? 'quest' : 'warn'); if (S.panel === 'hero') renderHero(); return;
       case 'pj': S.players.set(m.id, { ...(S.players.get(m.id) || { x: 0, y: 0, rx: null }), info: m }); return;
       case 'pl': S.players.delete(m.id); return;
       case 'reward': if (window.Sfx) Sfx.coin(); return feed(`+${fmt.format(m.exp)} EXP  +${fmt.format(m.zen)} Zen${m.share ? ` (${m.share}% do dano)` : ''}`, '');
@@ -1586,17 +1587,28 @@
   $$('#rank-tabs [data-by]').forEach((t) => { t.onclick = () => { RK.by = t.dataset.by; $('#g-rank-body').innerHTML = ''; renderRank(); }; });
 
   function renderHero() {
-    const c = S.char, me = S.me || {};
+    const c = S.char;
     const names = { str: 'Força', agi: 'Agilidade', vit: 'Vitalidade', ene: 'Energia', cmd: 'Comando' };
     const keys = ['str', 'agi', 'vit', 'ene'].concat(c.cls === 'dark_lord' ? ['cmd'] : []);
+    if (!S.statDraft || S.statDraftCharId !== c.id) {
+      S.statDraftCharId = c.id;
+      S.statDraft = { str: 0, agi: 0, vit: 0, ene: 0, cmd: 0 };
+    }
+    const draft = S.statDraft;
+    const planned = keys.reduce((n, k) => n + draft[k], 0);
+    const left = Math.max(0, c.free - planned);
     $('#hero-body').innerHTML = `
       <p>${esc(c.name)} · <b class="cls-name">${esc(c.className || S.data.classes[c.cls].name)}</b> · Nível ${c.level}${c.resets ? ` · ${c.resets} resets` : ''}</p>
       ${c.evolutions && c.evo < c.evolutions.length - 1 ? `<p class="muted small">Próxima evolução: ${esc(c.evolutions[c.evo + 1])} (missão com ${c.evo === 0 && !['magic_gladiator', 'dark_lord'].includes(c.cls) ? 'a Priestess Sevina, em Devias' : 'Marlon, em Lorencia'})</p>` : ''}
-      <p class="free-pts">${c.free > 0 ? `${c.free} pontos para distribuir` : 'Nenhum ponto livre'}</p>
-      <div class="stat-rows">${keys.map((k) => `<div class="stat-row"><span>${names[k]}</span><b>${c.stats[k]}</b>
-        <button class="btn small" type="button" data-stat="${k}" data-n="1" ${c.free < 1 ? 'disabled' : ''} aria-label="Adicionar 1 ponto em ${names[k]}">+1</button>
-        <button class="btn small" type="button" data-stat="${k}" data-n="${Math.min(10, c.free) || 10}" ${c.free < 1 ? 'disabled' : ''} aria-label="Adicionar até 10 pontos em ${names[k]}">+${Math.min(10, c.free) || 10}</button></div>`).join('')}</div>
-      <label class="cfg-check"><input type="checkbox" id="auto-stats" ${c.settings.autoStats ? 'checked' : ''}> Distribuir pontos automaticamente ao subir de nível</label>
+      <p class="free-pts">${left} pontos disponíveis · ${planned} selecionados</p>
+      <div class="stat-rows">${keys.map((k) => `<div class="stat-row"><span>${names[k]}</span><b>${c.stats[k] + draft[k]}</b>
+        <button class="btn small" type="button" data-stat-plus="${k}" ${left < 10 ? 'disabled' : ''} aria-label="Adicionar 10 pontos em ${names[k]}">+10</button>
+        <button class="btn small" type="button" data-stat-minus="${k}" ${draft[k] < 10 ? 'disabled' : ''} aria-label="Remover 10 pontos de ${names[k]}">−10</button></div>`).join('')}</div>
+      <div class="row" style="gap:8px;margin:10px 0">
+        <button class="btn small btn-gold" type="button" id="stat-confirm" ${planned < 1 ? 'disabled' : ''}>CONFIRMAR</button>
+        <button class="btn small btn-ghost" type="button" id="stat-cancel" ${planned < 1 ? 'disabled' : ''}>CANCELAR</button>
+      </div>
+      <p class="muted small">Atributos só serão atualizados depois de confirmar. A distribuição automática foi removida.</p>
       <div class="derived">
         <div><span>Dano</span><br>${c.dmg[0]}–${c.dmg[1]}</div><div><span>Defesa</span><br>${c.def}</div>
         <div><span>Vida</span><br>${fmt.format(c.maxHp)}</div><div><span>Mana</span><br>${fmt.format(c.maxMp)}</div>
@@ -1609,9 +1621,10 @@
       <h3>Poderes</h3>
       <ul class="skills-list">${c.allSkills.map((s) => `<li><b>${esc(s.name)}</b> <small class="muted">${s.evo && (c.evo || 0) < s.evo ? `libera com ${esc(s.evoName)}` : c.level >= s.lvl ? 'liberado' : `libera no nível ${s.lvl}`} · ${s.mana} MP · ${(s.cd / 1000).toFixed(0)}s</small><br><small>${esc(s.desc)}</small></li>`).join('')}</ul>
       <p class="mode-note">Servidor <b>${esc(c.mode)}</b>: subir de nível é difícil e morrer custa ${Math.round(c.deathLoss * 100)}% da EXP do nível.</p>`;
-    $$('#hero-body [data-stat]').forEach((b) => { b.onclick = () => send({ type: 'stat', stat: b.dataset.stat, n: Number(b.dataset.n) }); });
-    $('#auto-stats').onchange = (e) => send({ type: 'settings', settings: { autoStats: e.target.checked } });
-    void me;
+    $('#hero-body [data-stat-plus]').forEach((b) => { b.onclick = () => { const k = b.dataset.statPlus; if (c.free - Object.values(draft).reduce((a, n) => a + n, 0) >= 10) draft[k] += 10; renderHero(); }; });
+    $('#hero-body [data-stat-minus]').forEach((b) => { b.onclick = () => { draft[b.dataset.statMinus] = Math.max(0, draft[b.dataset.statMinus] - 10); renderHero(); }; });
+    $('#stat-confirm').onclick = () => send({ type: 'statConfirm', allocation: { ...draft } });
+    $('#stat-cancel').onclick = () => { S.statDraft = { str: 0, agi: 0, vit: 0, ene: 0, cmd: 0 }; renderHero(); };
   }
 
   function renderMaps() {
