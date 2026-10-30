@@ -30,7 +30,7 @@ const PVP_SCALE = 0.7;          // dano entre jogadores é reduzido para lutas d
 const DUEL_MS = 3 * 60 * 1000;
 const PK_MS = 10 * 60 * 1000;
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancestral'];
-const DEFAULT_SETTINGS = { potHp: 0.5, potMp: 0.3, autoStats: true, returnToFarm: true, lootMin: 'common', skills: {} };
+const DEFAULT_SETTINGS = { potHp: 0.5, potMp: 0.3, returnToFarm: true, lootMin: 'common', skills: {} };
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const randi = (a, b) => Math.floor(rand(a, b + 1));
@@ -136,6 +136,7 @@ class Player {
     this.free = row.free_points;
     this.pots = { hp: row.pot_hp, mp: row.pot_mp };
     this.settings = { ...DEFAULT_SETTINGS, ...(row.settings || {}) };
+    delete this.settings.autoStats;
     this.kills = Number(row.kills);
     this.deaths = row.deaths;
     this.bossesKilled = row.bosses_killed;
