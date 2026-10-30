@@ -583,8 +583,8 @@ route('POST', '/api/register', async (req, url, res) => {
   const [pwHash, codeHash] = await Promise.all([sec.hashPassword(password), sec.hashPassword(code)]);
   let account;
   try {
-    const { rows } = await db.query(`INSERT INTO accounts (username, email, password_hash, recovery_hash, last_login_at)
-      VALUES ($1,$2,$3,$4, now()) RETURNING id, username`, [username, email, pwHash, codeHash]);
+    const { rows } = await db.query(`INSERT INTO accounts (username, email, password_hash, recovery_hash, last_login_at, vip1_until, vip2_until)
+      VALUES ($1,$2,$3,$4, now(), NULL, NULL) RETURNING id, username`, [username, email, pwHash, codeHash]);
     account = rows[0];
   } catch (e) {
     if (e.code === '23505') {
