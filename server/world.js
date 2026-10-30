@@ -41,6 +41,20 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function expToNext(level) { return Math.floor(100 * Math.pow(level, 2.1) + 200); }
 const XP = () => G.GAME_MODE.expRate;
 
+// Zen de combate: valores limitados no servidor. Overrides por monstro ficam em gamedata.js.
+function monsterZen(T) {
+  const level = Math.max(1, Number(T.level) || 1);
+  const base = Number.isFinite(Number(T.zenReward)) ? Number(T.zenReward)
+    : level < 20 ? 1 : level < 50 ? 2 : level < 100 ? 3 : level < 150 ? 4 : 5;
+  return clamp(Math.round(base), 1, 5);
+}
+function bossZen(T) {
+  const level = Math.max(1, Number(T.level) || 1);
+  const base = Number.isFinite(Number(T.zenReward)) ? Number(T.zenReward)
+    : level < 50 ? 60 : level < 100 ? 70 : level < 150 ? 80 : level < 200 ? 90 : 100;
+  return clamp(Math.round(base), 60, 100);
+}
+
 // ------------------------------------------------------------------ itens
 const WING_PLUS = 1; // cada +1 numa asa/capa: +1% de dano, +1% de absorção e +2 de defesa
 function itemStats(it) {
@@ -796,7 +810,7 @@ class World {
     const totalN = types.reduce((a, t) => a + t.n, 0);
     const avg = (f) => types.reduce((a, t) => a + f(t.T) * t.n, 0) / totalN;
     const mHp = avg((T) => T.hp), mDmg = avg((T) => T.dmg), mExp = avg((T) => T.exp);
-    const mZen = avg((T) => (T.zen[0] + T.zen[1]) / 2), mDrop = avg((T) => T.drop), mLvl = avg((T) => T.level);
+    const mZen = avg((T) => monsterZen(T)), mDrop = avg((T) => T.drop), mLvl = avg((T) => T.level);
     let kills = 0, exp = 0, zen = 0, levels = 0, potsUsed = 0, died = false, elapsed = 0;
     while (elapsed < secs) {
       const dps = ((p.dmgMin + p.dmgMax) / 2) * 1.25 / (p.atkMs / 1000);
@@ -809,7 +823,7 @@ class World {
       }
       elapsed += killTime / 0.6; // eficiência offline de 60%
       if (elapsed > secs) break;
-      kills++; exp += mExp * XP() * pk.exp; zen += mZen * pk.zen;
+      kills++; exp += mExp * XP() * pk.exp; zen += mZen;
       p.exp += mExp * XP() * pk.exp;
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p, true); levels++; }
       if (kills > 50000) break;
@@ -1265,10 +1279,9 @@ class World {
     if (m.T.boss) return this.bossRewards(m, map, killer);
     const p = killer;
     const pk = p.perks();
-    const exp = Math.round(m.T.exp * XP() * pk.exp), zen = Math.round(randi(m.T.zen[0], m.T.zen[1]) * pk.zen);
+    const exp = Math.round(m.T.exp * XP() * pk.exp), zen = monsterZen(m.T);
     p.exp += exp; p.kills++;
-    if (DROPS.cfg().zenDelivery === 'ground') DROPS.spawnGround(map, p, { base: 'zen', qty: zen, source: m.T.name }, m.x, m.y);
-    else p.zen += zen;
+    // Zen de monstros normais é sempre creditado diretamente; bônus VIP/evento não ultrapassam o teto.
     this.quest(p, 'kill', 1); this.quest(p, 'zen', zen);
     if (m.T.elite) this.quest(p, 'elite', 1);
     if (p.kills % 50 === 0 || p.kills === 100) this.achieve(p);
@@ -1288,7 +1301,7 @@ class World {
   grantShare(p, m, share) {
     const pk = p.perks();
     const exp = Math.round(m.T.exp * XP() * pk.exp * share);
-    const zen = Math.round(randi(m.T.zen[0], m.T.zen[1]) * pk.zen * share);
+    const zen = Math.min(5, Math.max(1, Math.round(monsterZen(m.T) * Math.max(0, share))));
     p.exp += exp; p.zen += zen; p.kills++;
     this.quest(p, 'kill', 1); this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
     p.send({ type: 'reward', exp, zen, mon: m.T.name, share: share < 1 ? Math.round(share * 100) : undefined });
@@ -1297,27 +1310,30 @@ class World {
   }
 
   bossRewards(m, map, killer) {
-    const total = [...m.contrib.values()].reduce((a, b) => a + b, 0) || 1;
     const ranked = [...m.contrib.entries()].sort((a, b) => b[1] - a[1]);
-    ranked.forEach(([charId, dmg], i) => {
-      const p = this.players.get(charId);
-      if (!p || p.map !== map) return;
+    const eligible = ranked.map(([charId, dmg]) => ({ p: this.players.get(charId), dmg }))
+      .filter((x) => x.p && x.p.map === map && x.dmg > 0);
+    const total = eligible.reduce((a, x) => a + x.dmg, 0) || 1;
+    // Um único prêmio total por morte de Boss, repartido por contribuição; VIP não multiplica Zen.
+    const pool = bossZen(m.T);
+    let distributed = 0;
+    eligible.forEach(({ p, dmg }, i) => {
       const share = dmg / total;
+      const zen = i === eligible.length - 1 ? pool - distributed : Math.floor(pool * share);
+      distributed += zen;
       const pk = p.perks();
       const exp = Math.round(m.T.exp * XP() * pk.exp * Math.max(0.1, share));
-      const zen = Math.round(randi(m.T.zen[0], m.T.zen[1]) * pk.zen * Math.max(0.1, share));
       p.exp += exp; p.zen += zen; p.bossesKilled++;
       this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
       p.send({ type: 'reward', exp, zen, mon: m.T.name, share: Math.round(share * 100) });
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
       const rolls = i === 0 ? 2 : (share >= 0.1 && Math.random() < 0.5 ? 1 : 0);
       for (let r = 0; r < rolls; r++) { const it = rollItem(m.T.level, 'boss'); it.pos = [Math.round(m.x + rand(-20, 20)), Math.round(m.y + rand(-10, 10))]; p.run(() => this.addItem(p, it)); }
-      // materiais do boss: cada herói que causou pelo menos 10% do dano sorteia uma vez (a morte é processada uma vez só)
       if (i === 0 || share >= 0.1) DROPS.onKill(this, p, m, map);
       p.dirty = true;
-      p.lastSave = 0; // salva no próximo ciclo
+      p.lastSave = 0;
     });
-    const top = ranked[0] && this.players.get(ranked[0][0]);
+    const top = eligible[0] && eligible[0].p;
     this.system(`O ${m.T.name} foi derrotado na Sala ${map.room}${top ? ` — maior dano: ${top.name}` : ''}! Ele volta em 10 minutos.`);
     m.contrib.clear();
   }
