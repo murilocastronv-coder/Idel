@@ -1280,7 +1280,7 @@ class World {
     const p = killer;
     const pk = p.perks();
     const exp = Math.round(m.T.exp * XP() * pk.exp), zen = monsterZen(m.T);
-    p.exp += exp; p.kills++;
+    p.exp += exp; p.kills++; p.zen += zen;
     // Zen de monstros normais é sempre creditado diretamente; bônus VIP/evento não ultrapassam o teto.
     this.quest(p, 'kill', 1); this.quest(p, 'zen', zen);
     if (m.T.elite) this.quest(p, 'elite', 1);
@@ -1301,7 +1301,7 @@ class World {
   grantShare(p, m, share) {
     const pk = p.perks();
     const exp = Math.round(m.T.exp * XP() * pk.exp * share);
-    const zen = Math.min(5, Math.max(1, Math.round(monsterZen(m.T) * Math.max(0, share))));
+    const zen = Math.min(5, Math.max(0, Math.round(monsterZen(m.T) * Math.max(0, share))));
     p.exp += exp; p.zen += zen; p.kills++;
     this.quest(p, 'kill', 1); this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
     p.send({ type: 'reward', exp, zen, mon: m.T.name, share: share < 1 ? Math.round(share * 100) : undefined });
