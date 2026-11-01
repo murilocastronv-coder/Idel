@@ -868,7 +868,7 @@ const server = http.createServer(async (req, res) => {
           const money = (amount / 100).toFixed(2);
           const when = new Date().toLocaleString('pt-BR', { timeZone: 'Europe/Paris' });
           await mail.sendMail({
-            to: 'murilonv@gmail.com',
+            to: 'murilocastronv@gmail.com',
             subject: 'Nova compra VIP — MU Idle Legends',
             text: 'Uma compra VIP foi confirmada.\\nJogador: ' + buyer.username + '\\nPlano: ' + plan.name + '\\nDuração: ' + days + ' dias\\nValor: ' + money + ' ' + VIP.CURRENCY.toUpperCase() + '\\nConta compradora: ' + (buyer.email || 'não informada') + '\\nData: ' + when,
             html: '<div style="font-family:Arial,sans-serif"><h2>Nova compra VIP — MU Idle Legends</h2><p><b>Jogador:</b> ' + String(buyer.username).replace(/[&<>"]/g, '') + '</p><p><b>Plano:</b> ' + plan.name + '</p><p><b>Duração:</b> ' + days + ' dias</p><p><b>Valor:</b> ' + money + ' ' + VIP.CURRENCY.toUpperCase() + '</p><p><b>E-mail da conta:</b> ' + String(buyer.email || 'não informado').replace(/[&<>"]/g, '') + '</p><p><b>Data:</b> ' + when + '</p></div>'
