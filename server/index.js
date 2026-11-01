@@ -859,7 +859,22 @@ const server = http.createServer(async (req, res) => {
         req.on('data', (d) => { n += d.length; if (n > 512 * 1024) { bad(new Error('grande')); req.destroy(); } else ch.push(d); });
         req.on('end', () => ok(Buffer.concat(ch))); req.on('error', bad);
       });
-      const r = await VIP.webhook(raw, req.headers['stripe-signature'], (accId) => { if (world) world.refreshVip(accId).catch(() => {}); });
+      const r = await VIP.webhook(raw, req.headers['stripe-signature'], async (accId, plan, days) => {
+        if (world) world.refreshVip(accId).catch(() => {});
+        try {
+          const { rows } = await db.query('SELECT username, email FROM accounts WHERE id = $1', [accId]);
+          const buyer = rows[0] || { username: 'Conta #' + accId, email: '' };
+          const amount = Number(plan.prices[days] || 0);
+          const money = (amount / 100).toFixed(2);
+          const when = new Date().toLocaleString('pt-BR', { timeZone: 'Europe/Paris' });
+          await mail.sendMail({
+            to: 'murilocastronv@gmail.com',
+            subject: 'Nova compra VIP — MU Idle Legends',
+            text: 'Uma compra VIP foi confirmada.\\nJogador: ' + buyer.username + '\\nPlano: ' + plan.name + '\\nDuração: ' + days + ' dias\\nValor: ' + money + ' ' + VIP.CURRENCY.toUpperCase() + '\\nConta compradora: ' + (buyer.email || 'não informada') + '\\nData: ' + when,
+            html: '<div style="font-family:Arial,sans-serif"><h2>Nova compra VIP — MU Idle Legends</h2><p><b>Jogador:</b> ' + String(buyer.username).replace(/[&<>"]/g, '') + '</p><p><b>Plano:</b> ' + plan.name + '</p><p><b>Duração:</b> ' + days + ' dias</p><p><b>Valor:</b> ' + money + ' ' + VIP.CURRENCY.toUpperCase() + '</p><p><b>E-mail da conta:</b> ' + String(buyer.email || 'não informado').replace(/[&<>"]/g, '') + '</p><p><b>Data:</b> ' + when + '</p></div>'
+          });
+        } catch (e) { console.error('[vip] aviso de compra por e-mail:', e.message); }
+      });
       return sendJson(res, r.code, r.body);
     } catch (e) {
       console.error('[vip] webhook:', e.message);

@@ -15,7 +15,7 @@ const MODES = ['contribution', 'individual', 'lasthit'];
 
 const DEFAULTS = {
   enabled: true,
-  intervalMin: 40,          // uma invasão começa a cada 40 minutos
+  intervalMin: 120,         // uma invasão começa a cada 2 horas
   durationMin: 10,          // quanto tempo os monstros dourados ficam no mundo
   rewardMode: 'contribution',
   minShare: 10,             // % do dano para participar da recompensa
@@ -262,6 +262,9 @@ async function restore() {
 async function init(world, helpers) {
   W = world; H = helpers;
   await SET.load('invasion', DEFAULTS);
+  // Política solicitada: intervalo fixo de 120 minutos, inclusive se houver valor antigo salvo.
+  const current = cfg();
+  if (current.intervalMin !== 120) await SET.save('invasion', { ...current, intervalMin: 120 });
   try { await restore(); } catch (e) { console.error('[invasão] estado:', e.message); nextAt = Date.now() + cfg().intervalMin * 60000; }
   setInterval(() => { tick(); }, 1000).unref();
 }

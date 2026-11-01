@@ -162,7 +162,7 @@ async function deliver(s, onGranted) {
   if (!ins.rows[0]) return 'ja-entregue';
   const row = await grant(acc, plan.id, days);
   console.log(`[vip] ${plan.name} ${days} dias entregue para a conta ${row.username} (sessão ${s.id})`);
-  if (onGranted) onGranted(acc, plan, days);
+  if (onGranted) await onGranted(acc, plan, days);
   return 'entregue';
 }
 
