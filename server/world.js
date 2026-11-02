@@ -1160,9 +1160,10 @@ class World {
 
   async grant(p, reward, label) {
     const parts = [];
-    if (reward.zen) { p.zen += reward.zen; parts.push(`${reward.zen.toLocaleString('pt-BR')} Zen`); }
-    if (reward.pot_hp) { p.pots.hp += reward.pot_hp; parts.push(`${reward.pot_hp} poções de vida`); }
-    if (reward.pot_mp) { p.pots.mp += reward.pot_mp; parts.push(`${reward.pot_mp} poções de mana`); }
+    const rewardScale = p.perks().questReward || 1;
+    if (reward.zen) { const n = Math.round(reward.zen * rewardScale); p.zen += n; parts.push(`${n.toLocaleString('pt-BR')} Zen`); }
+    if (reward.pot_hp) { const n = Math.ceil(reward.pot_hp * rewardScale); p.pots.hp += n; parts.push(`${n} poções de vida`); }
+    if (reward.pot_mp) { const n = Math.ceil(reward.pot_mp * rewardScale); p.pots.mp += n; parts.push(`${n} poções de mana`); }
     if (reward.item) {
       const it = rollItem(Math.max(1, p.level), 'normal');
       it.rarity = reward.item;
@@ -1218,7 +1219,7 @@ class World {
   damageMonster(p, m, mult, crit, now) {
     const bd = p.buffs.dmg && p.buffs.dmg.until > now ? p.buffs.dmg.mult : 1;
     const raw = rand(p.dmgMin, p.dmgMax) * mult * bd * (crit ? 1.5 : 1);
-    const d = Math.max(1, Math.round(raw - m.T.def / 2));
+    const d = Math.max(1, Math.round(raw * p.perks().damage - m.T.def / 2));
     m.hp -= d;
     m.flip = p.x > m.x;
     if (!m.target || m.target.dead || m.target.map !== p.map) m.target = p;
@@ -1277,8 +1278,9 @@ class World {
     if (m.T.boss) return this.bossRewards(m, map, killer);
     const p = killer;
     const pk = p.perks();
-    const exp = Math.round(m.T.exp * XP() * pk.exp), zen = monsterZen(m.T);
+    const exp = Math.round(m.T.exp * XP() * pk.exp), zen = Math.round(monsterZen(m.T) * pk.zen);
     p.exp += exp; p.kills++; p.zen += zen;
+    const heal = Math.round(p.maxHp * pk.healOnKill); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
     // Zen de monstros normais é sempre creditado diretamente; bônus VIP/evento não ultrapassam o teto.
     this.quest(p, 'kill', 1); this.quest(p, 'zen', zen);
     if (m.T.elite) this.quest(p, 'elite', 1);
@@ -1299,7 +1301,7 @@ class World {
   grantShare(p, m, share) {
     const pk = p.perks();
     const exp = Math.round(m.T.exp * XP() * pk.exp * share);
-    const zen = Math.min(5, Math.max(0, Math.round(monsterZen(m.T) * Math.max(0, share))));
+    const zen = Math.min(5, Math.max(0, Math.round(monsterZen(m.T) * Math.max(0, share) * pk.zen)));
     p.exp += exp; p.zen += zen; p.kills++;
     this.quest(p, 'kill', 1); this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
     p.send({ type: 'reward', exp, zen, mon: m.T.name, share: share < 1 ? Math.round(share * 100) : undefined });
@@ -1317,7 +1319,7 @@ class World {
     let distributed = 0;
     eligible.forEach(({ p, dmg }, i) => {
       const share = dmg / total;
-      const zen = i === eligible.length - 1 ? pool - distributed : Math.floor(pool * share);
+      const zen = Math.round((i === eligible.length - 1 ? pool - distributed : Math.floor(pool * share)) * p.perks().zen);
       distributed += zen;
       const pk = p.perks();
       const exp = Math.round(m.T.exp * XP() * pk.exp * Math.max(0.1, share));
@@ -1325,7 +1327,7 @@ class World {
       this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
       p.send({ type: 'reward', exp, zen, mon: m.T.name, share: Math.round(share * 100) });
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
-      const rolls = i === 0 ? 2 : (share >= 0.1 && Math.random() < 0.5 ? 1 : 0);
+      const rolls = (i === 0 ? 2 : (share >= 0.1 && Math.random() < 0.5 ? 1 : 0)) + (Math.random() < Math.min(0.5, (pk.bossDrop - 1) * 0.5) ? 1 : 0);
       for (let r = 0; r < rolls; r++) { const it = rollItem(m.T.level, 'boss'); it.pos = [Math.round(m.x + rand(-20, 20)), Math.round(m.y + rand(-10, 10))]; p.run(() => this.addItem(p, it)); }
       if (i === 0 || share >= 0.1) DROPS.onKill(this, p, m, map);
       p.dirty = true;
