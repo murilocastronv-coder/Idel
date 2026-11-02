@@ -963,6 +963,17 @@
           label(e.kind === 'teleport' ? 'Viajar para outro mapa' : guard ? 'Chaos Castle' : 'Devil Square', x, y - HERO_H * sc - 17 * dpr, guard ? '#ff7a5a' : '#c88aff', 10);
           continue;
         }
+        if (e.kind === 'guild') {
+          ctx.save(); ctx.globalCompositeOperation = 'lighter';
+          const rg = 22 * zoom * (1 + 0.05 * Math.sin(now / 300));
+          const glow = ctx.createRadialGradient(x, y - 14 * zoom, 0, x, y - 14 * zoom, rg);
+          glow.addColorStop(0, 'rgba(255,211,107,.38)'); glow.addColorStop(1, 'rgba(255,211,107,0)');
+          ctx.fillStyle = glow; ctx.fillRect(x - rg, y - 14 * zoom - rg, rg * 2, rg * 2); ctx.restore();
+          Sprites.hero(ctx, 'fairy_elf', { hair: 2, skin: 1 }, 'idle', now, x, y, sc, false, { equip: { armor: 'phoenix', gloves: 'phoenix', boots: 'phoenix' } });
+          label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffe7a0');
+          label('Guildas e membros', x, y - HERO_H * sc - 17 * dpr, '#ffd36b', 10);
+          continue;
+        }
         if (e.kind === 'smith') {
           drawForge(x, y, now);
           const ph = now % 1600, hit = ph < 500;
