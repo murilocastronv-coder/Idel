@@ -112,7 +112,8 @@ function problem(mapId, why) {
 
 function monInfo(mo) {
   return { id: mo.id, type: mo.type, name: mo.T.name, sprite: mo.T.sprite, tint: mo.T.tint || null, size: mo.T.size, scale: mo.T.scale || 1,
-    level: mo.T.level, maxHp: mo.T.hp, boss: !!mo.T.boss, elite: !!mo.T.elite, golden: mo.T.golden || null };
+    level: mo.T.level, maxHp: mo.T.hp, dmgMin: mo.T.dmgMin || Math.max(1, Math.floor(mo.T.dmg * 0.85)), dmgMax: mo.T.dmgMax || Math.ceil(mo.T.dmg * 1.15),
+    defense: mo.T.def || 0, exp: mo.T.exp || 0, training: !!mo.T.training, boss: !!mo.T.boss, elite: !!mo.T.elite, golden: mo.T.golden || null };
 }
 
 function spawnOne(map, type, tier, invId) {

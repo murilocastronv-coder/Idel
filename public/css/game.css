@@ -235,6 +235,26 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .boss-bar.enraged .boss-title { color: #ff6a5a; }
 .boss-bar.enraged .gbar.boss span { background: linear-gradient(#ff5a3a, #a8180a); }
 
+.training-hud, .target-hud {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 5; pointer-events: none;
+  width: max-content; max-width: min(420px, calc(100vw - 24px)); padding: 7px 12px;
+  color: var(--bone); text-align: center; background: rgba(11, 16, 32, .88);
+  border: 2px solid #8a6a3a; box-shadow: inset 0 0 0 1px #e8b84a, 3px 3px 0 rgba(11, 16, 32, .8);
+  font: 600 13px var(--display);
+}
+.training-hud { top: max(88px, calc(env(safe-area-inset-top) + 76px)); }
+.training-hud b, .training-hud small { display: block; }
+.training-hud b { color: var(--gold); }
+.training-hud small { margin-top: 2px; color: var(--bone-dim); font-size: 11px; }
+.target-hud { top: max(143px, calc(env(safe-area-inset-top) + 132px)); font-size: 12px; }
+.target-hud b { color: var(--gold); }
+.target-hud span { color: var(--bone-dim); }
+.training-hud[hidden], .target-hud[hidden] { display: none; }
+@media (max-width: 600px) {
+  .training-hud { top: max(104px, calc(env(safe-area-inset-top) + 92px)); padding: 5px 8px; font-size: 11px; }
+  .target-hud { top: max(150px, calc(env(safe-area-inset-top) + 138px)); padding: 5px 8px; font-size: 10px; }
+}
+
 /* Discord */
 .btn-discord { display: inline-block; background: #5865f2; border: 3px solid #3c45a5; color: #fff; text-decoration: none; padding: 8px 14px; font-weight: 700; }
 .btn-discord:hover { background: #6d78f5; }

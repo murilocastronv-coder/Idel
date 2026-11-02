@@ -37,6 +37,7 @@ const rand = (a, b) => a + Math.random() * (b - a);
 const randi = (a, b) => Math.floor(rand(a, b + 1));
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const insideRect = (p, area) => !!(p && area && p.x >= area.x && p.x <= area.x + area.w && p.y >= area.y && p.y <= area.y + area.h);
 
 // Hard XP: curva pesada (nível 2 = 300 EXP, nível 10 ≈ 12.800, nível 25 ≈ 86.500)
 function expToNext(level) { return Math.floor(100 * Math.pow(level, 2.1) + 200); }
@@ -104,6 +105,12 @@ function rollItem(level, table) {
   if (!pool.length) pool = all.filter(([, b]) => b.req <= Math.max(1, level + 3));
   const [base] = pool[Math.floor(Math.random() * pool.length)];
   return { base, rarity: rollRarity(table), plus: rollPlus(table) };
+}
+function rollTrainingItem(p, level) {
+  const pool = RANDOM_POOL().filter(([base, b]) => b.req <= level + 2 && canUse(p, { base }));
+  if (!pool.length) return null;
+  const [base] = pool[Math.floor(Math.random() * pool.length)];
+  return { base, rarity: rollRarity('normal'), plus: rollPlus('normal') };
 }
 // o que aparece no corpo do herói: arma (item exato), conjunto de cada peça de armadura e asa/capa
 function gearVisual(items) {
@@ -276,7 +283,7 @@ class MapInstance {
     this.events = [];
     let n = 0;
     for (const g of def.groups) {
-      for (let i = 0; i < g.count; i++) this.monsters.push(this.makeMonster(++n, g.type));
+      for (let i = 0; i < g.count; i++) this.monsters.push(this.makeMonster(++n, g.type, undefined, undefined, g.area || null));
     }
     if (def.boss) {
       const m = this.makeMonster(++n, def.boss.type, def.boss.x, def.boss.y);
@@ -284,14 +291,15 @@ class MapInstance {
       this.monsters.push(m);
     }
   }
-  makeMonster(n, type, x, y) {
+  makeMonster(n, type, x, y, area = null) {
     const T = G.MONSTERS[type];
     const def = this.def;
     let hx = x, hy = y;
     if (hx === undefined) {
-      do { hx = rand(80, def.w - 60); hy = rand(80, def.h - 60); } while (Math.hypot(hx - def.spawn[0], hy - def.spawn[1]) < 200);
+      if (area) { hx = rand(area.x + 8, area.x + area.w - 8); hy = rand(area.y + 8, area.y + area.h - 8); }
+      else do { hx = rand(80, def.w - 60); hy = rand(80, def.h - 60); } while (Math.hypot(hx - def.spawn[0], hy - def.spawn[1]) < 200);
     }
-    return { id: 'm' + n, type, T, x: hx, y: hy, hx, hy, hp: T.hp, dead: false, respawnAt: 0, target: null,
+    return { id: 'm' + n, type, T, x: hx, y: hy, hx, hy, trainingArea: area, hp: T.hp, dead: false, respawnAt: 0, target: null,
       nextAtk: 0, wander: null, nextWander: 0, contrib: new Map(), flip: false };
   }
   emit(ev) { this.events.push(ev); }
@@ -535,6 +543,7 @@ class World {
     m.players.set(p.id, p);
     p.send({
       type: 'enter', map: mapId, room: m.room, rooms: ROOMS, name: m.def.name, theme: m.def.theme, w: m.def.w, h: m.def.h, safe: !!m.def.safe,
+      training: m.def.training || null,
       arena: m.def.arena || null, pvp: !!m.def.pvp, margin: m.def.margin || 0,
       npcs: (m.def.npcs || []).filter((n) => VAULT.npcVisible(mapId, n) && UPG.npcVisible(mapId, n)),
       ground: m.ground ? [...m.ground.values()].map((g) => DROPS.publicGround(g)) : [],
@@ -1278,7 +1287,9 @@ class World {
     if (m.T.boss) return this.bossRewards(m, map, killer);
     const p = killer;
     const pk = p.perks();
-    const exp = Math.round(m.T.exp * XP() * pk.exp), zen = Math.round(monsterZen(m.T) * pk.zen);
+    const trainingGap = m.T.training ? p.level - m.T.level : 0;
+    const trainingExpFactor = trainingGap <= 2 ? 1 : trainingGap <= 8 ? 0.7 : trainingGap <= 15 ? 0.35 : 0.15;
+    const exp = Math.round(m.T.exp * XP() * pk.exp * trainingExpFactor), zen = Math.round(monsterZen(m.T) * pk.zen);
     p.exp += exp; p.kills++; p.zen += zen;
     const heal = Math.round(p.maxHp * pk.healOnKill); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
     // Zen de monstros normais é sempre creditado diretamente; bônus VIP/evento não ultrapassam o teto.
@@ -1288,10 +1299,18 @@ class World {
     p.send({ type: 'reward', exp, zen, mon: m.T.name });
     while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
     p.dirty = true;
+    if (m.T.training) {
+      // Itens de apoio são entregues pelos contadores reais do personagem.
+      if (Math.random() < 0.12) p.pots.hp++;
+      if (Math.random() < 0.08) p.pots.mp++;
+      p.send(p.charState());
+    }
     if (Math.random() < Math.min(0.95, m.T.drop * pk.drop)) {
-      const it = rollItem(m.T.level, 'normal');
-      it.pos = [Math.round(m.x), Math.round(m.y)];
-      p.run(() => this.addItem(p, it));
+      const it = m.T.training ? rollTrainingItem(p, m.T.level) : rollItem(m.T.level, 'normal');
+      if (it) {
+        it.pos = [Math.round(m.x), Math.round(m.y)];
+        p.run(() => this.addItem(p, it));
+      }
     }
     DROPS.onKill(this, p, m, map);
     m.contrib.clear();
@@ -1342,8 +1361,11 @@ class World {
   }
 
   hurtPlayer(m, p, now) {
+    if (m.trainingArea && !insideRect(p, m.trainingArea)) return;
     const db = p.buffs.def && p.buffs.def.until > now ? p.buffs.def.mult : 1;
-    const d = Math.max(1, Math.round((m.T.dmg * rand(0.85, 1.15) - p.def * db / 2) * (1 - (p.absorb || 0))));
+    const low = Number.isFinite(Number(m.T.dmgMin)) ? Number(m.T.dmgMin) : Number(m.T.dmg) * 0.85;
+    const high = Number.isFinite(Number(m.T.dmgMax)) ? Number(m.T.dmgMax) : Number(m.T.dmg) * 1.15;
+    const d = Math.max(1, Math.round((rand(low, high) - p.def * db / 2) * (1 - (p.absorb || 0))));
     p.hp -= d; p.hurtAt = now;
     p.map.emit({ k: 'h', a: m.id, t: p.id, d, fx: m.T.boss ? 'boss' : 'claw' });
     if (p.hp <= 0) this.killPlayer(p, now, m);
@@ -1403,10 +1425,10 @@ class World {
   tickMonster(m, map, now, dt) {
     if (m.dead) { if (now >= m.respawnAt) this.respawnMonster(map, m); return; }
     let t = m.target;
-    if (t && (t.dead || t.map !== map || !map.players.has(t.id))) t = m.target = null;
+    if (t && (t.dead || t.map !== map || !map.players.has(t.id) || (m.trainingArea && !insideRect(t, m.trainingArea)))) t = m.target = null;
     if (!t && m.T.aggro) {
       let best = null, bd = m.T.aggro;
-      for (const p of map.players.values()) { if (p.dead) continue; const d = dist(m, p); if (d < bd) { bd = d; best = p; } }
+      for (const p of map.players.values()) { if (p.dead || (m.trainingArea && !insideRect(p, m.trainingArea))) continue; const d = dist(m, p); if (d < bd) { bd = d; best = p; } }
       if (best) t = m.target = best;
     }
     const step = m.T.speed * dt * (m.enraged ? 1.25 : 1);
@@ -1435,7 +1457,7 @@ class World {
       }
     }
     if (t) {
-      if (Math.hypot(m.x - m.hx, m.y - m.hy) > 260) { // fugiu longe demais: volta e cura
+      if (!m.trainingArea && Math.hypot(m.x - m.hx, m.y - m.hy) > 260) { // fugiu longe demais: volta e cura
         m.target = null; m.hp = m.T.hp; m.contrib.clear(); m.wander = { x: m.hx, y: m.hy }; return;
       }
       const d = dist(m, t);
@@ -1447,7 +1469,10 @@ class World {
     if (m.hp < m.T.hp) m.hp = Math.min(m.T.hp, m.hp + m.T.hp * 0.02 * dt);
     if (now >= m.nextWander) {
       m.nextWander = now + rand(2500, 6000);
-      m.wander = Math.random() < 0.6 ? { x: clamp(m.hx + rand(-60, 60), 20, map.def.w - 20), y: clamp(m.hy + rand(-60, 60), 20, map.def.h - 20) } : null;
+      m.wander = Math.random() < 0.6 ? {
+        x: clamp(m.hx + rand(-60, 60), m.trainingArea ? m.trainingArea.x + 4 : 20, m.trainingArea ? m.trainingArea.x + m.trainingArea.w - 4 : map.def.w - 20),
+        y: clamp(m.hy + rand(-40, 40), m.trainingArea ? m.trainingArea.y + 4 : 20, m.trainingArea ? m.trainingArea.y + m.trainingArea.h - 4 : map.def.h - 20),
+      } : null;
     }
     if (m.wander) {
       const d = Math.hypot(m.wander.x - m.x, m.wander.y - m.y);
@@ -1477,6 +1502,8 @@ class World {
       if (Q.normalize(p)) { this.achieve(p); p.questsDirty = true; p.send({ type: 'log', kind: 'info', text: 'Novo dia: missões diárias renovadas e prêmio de login liberado!' }); }
     }
     if (p.questsDirty && (!p.lastQuestSend || now - p.lastQuestSend > 1500)) { p.questsDirty = false; p.lastQuestSend = now; p.send(Q.state(p)); }
+    const trainingCombat = !!(map.def.training && insideRect(p, map.def.training.area));
+    if (!trainingCombat && p.target && p.target.trainingArea) p.target = null;
     // regeneração: rápida na cidade, lenta no campo
     const fast = map.def.safe && !p.duel;
     const regen = fast ? 0.08 : 0.004;
@@ -1499,7 +1526,7 @@ class World {
       const range = DROPS.cfg().pickupRange;
       const near = DROPS.ownedNear(p, map, range);
       if (near) { DROPS.pickup(this, p, near); if (p.pickTarget === near.gid) { p.pickTarget = null; p.moveTo = null; } }
-      else if (p.auto && !p.moveTo && !(p.target && p.target.isPlayer) && !(map.def.safe && !p.duel)) {
+      else if (p.auto && !p.moveTo && !(p.target && p.target.isPlayer) && !(map.def.safe && !p.duel && !trainingCombat)) {
         const far = DROPS.ownedNear(p, map, 320);
         if (far && !(p.target && p.target.target === p && dist(p, p.target) < 60)) { this.stepToward(p, far, PLAYER_SPEED * dt); return; }
       }
@@ -1508,7 +1535,7 @@ class World {
     if (p.moveTo) { this.stepToward(p, p.moveTo, PLAYER_SPEED * dt); if (dist(p, p.moveTo) < 2) p.moveTo = null; return; }
     // evento com área segura diminuindo: o automático volta para dentro antes de lutar
     if (p.auto && map.def.arena) { const e = ARENA.escape(p); if (e) { p.target = null; this.stepToward(p, e, PLAYER_SPEED * dt); return; } }
-    if (map.def.safe && !p.duel) return;
+    if (map.def.safe && !p.duel && !trainingCombat) return;
 
     // escolhe alvo
     if (p.target && (p.target.isPlayer ? !this.hostile(p, p.target) : (p.target.dead || !map.monsters.includes(p.target)))) p.target = null;
@@ -1518,10 +1545,10 @@ class World {
       for (const o of map.players.values()) { if (!this.hostile(p, o)) continue; const d = dist(p, o); if (d < bd) { bd = d; best = o; } }
       p.target = best;
     }
-    if (!p.target && p.auto && !map.def.safe) {
+    if (!p.target && p.auto && (!map.def.safe || trainingCombat)) {
       let best = null, bd = Infinity;
       for (const m of map.monsters) {
-        if (m.dead) continue;
+        if (m.dead || (map.def.safe && (!m.trainingArea || !insideRect(p, m.trainingArea)))) continue;
         let d = dist(p, m);
         if (m.target === p) d -= 200; // prioriza quem está atacando
         if (m.T.boss && p.level < m.T.level - 5) d += 2000; // evita o boss quando fraco
@@ -1577,6 +1604,7 @@ class World {
       const cds = {};
       for (const [k, v] of Object.entries(p.cds)) if (v > now) cds[k] = v - now;
       p.send({ type: 's', P, M, ev, boss, me: {
+        x: Math.round(p.x), y: Math.round(p.y),
         hp: Math.round(p.hp), mp: Math.round(p.mp), maxHp: p.maxHp, maxMp: p.maxMp, level: p.level,
         exp: Math.round(p.exp), next: expToNext(p.level), zen: p.zen, pots: p.pots, auto: p.auto, free: p.free, pvpOn: !!p.settings.pvpOn,
         target: p.target ? p.target.id : null, cds, dead: p.dead, respawnIn: p.dead ? Math.max(0, p.respawnAt - now) : 0,

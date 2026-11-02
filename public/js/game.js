@@ -12,7 +12,7 @@
     gitems: new Map(), goldFx: [], inv: null,
     data: null, char: null, me: null, map: null, ground: null,
     players: new Map(), monsters: new Map(), fx: [], floats: [], clickMark: null,
-    boss: null, chatUnread: 0, panel: null, selItem: null, rarFilter: 'all', youId: null,
+    boss: null, chatUnread: 0, panel: null, selItem: null, rarFilter: 'all', youId: null, trainingInside: false,
   };
   const RAR = { common: '#c8c8c8', uncommon: '#5fd35f', rare: '#4aa3ff', epic: '#b45cff', legendary: '#ffb02e', ancestral: '#ff4d4d' };
   const RAR_NAME = { common: 'Comum', uncommon: 'Incomum', rare: 'Raro', epic: 'Épico', legendary: 'Lendário', ancestral: 'Ancestral' };
@@ -123,7 +123,7 @@
   function onEnter(m) {
     joined = true;
     centerMsg(null);
-    S.map = m; S.youId = m.you;
+    S.map = m; S.youId = m.you; S.trainingInside = false;
     S.monsters = new Map(m.monsters.map((mo) => [mo.id, { ...mo, x: 0, y: 0, rx: null, ry: null, hp: mo.maxHp, dead: false }]));
     const keep = S.players.get(m.you);
     S.players = new Map(m.players.map((p) => [p.id, { info: p, x: 0, y: 0, rx: null }]));
@@ -424,6 +424,37 @@
       for (let i = 0; i < 50; i++) { const x = r() * W, y = r() * H; px(x - 1, y - 4, 3, 6, '#e8e0d0'); disc(x, y - 6, 5, '#3a7ad8'); disc(x - 1, y - 7, 3, '#7ab8ff'); px(x - 2, y - 8, 2, 2, '#ffffff'); }
       for (let i = 0; i < 70; i++) tree(r() * W, r() * H, 1, false, r() < 0.25);
       for (let i = 0; i < 18; i++) crystal(r() * W, r() * H, ['#7a3ac0', '#f0d8ff'], '192,107,255');
+      if (m.training && m.training.area) {
+        const a = m.training.area, ax = a.x * GS, ay = a.y * GS, aw = a.w * GS, ah = a.h * GS;
+        // Clareira cercada com faixas de terra: uma área de treino legível sem mexer nas rotas da cidade.
+        px(ax + 4, ay + 4, aw - 8, ah - 8, 'rgba(32,76,36,.72)');
+        px(ax + 12, ay + 14, aw - 24, ah - 28, '#52633b');
+        px(ax + 16, ay + 18, aw - 32, ah - 36, '#657247');
+        for (let lane = 0; lane < 5; lane++) {
+          const ly = ay + (lane + 0.5) * ah / 5;
+          px(ax + 24, ly, aw - 48, 2, '#8a7444'); px(ax + 24, ly + 2, aw - 48, 1, '#b09559');
+          for (let k = 0; k < 16; k++) px(ax + 30 + r() * (aw - 60), ly + (r() - 0.5) * 12, 2, 2, k % 2 ? '#9b8851' : '#7e7548');
+        }
+        // Cerca de madeira segmentada com uma entrada aberta para a trilha oeste.
+        const rail = (x, y, w, h) => { px(x, y, w, h, '#493019'); px(x, y, w, Math.max(2, h / 3), '#b08045'); px(x, y + h - 2, w, 2, '#302116'); };
+        rail(ax + 8, ay + 8, aw - 16, 6); rail(ax + 8, ay + ah - 14, aw - 16, 6);
+        rail(ax + 8, ay + 8, 6, ah - 16); rail(ax + aw - 14, ay + 8, 6, ah - 16);
+        for (let k = 0; k < 12; k++) {
+          const x = ax + 12 + k * (aw - 24) / 11;
+          px(x, ay + 2, 5, 18, '#4a2e18'); px(x, ay + 2, 2, 18, '#a0703d');
+          px(x, ay + ah - 20, 5, 18, '#4a2e18'); px(x, ay + ah - 20, 2, 18, '#a0703d');
+        }
+        for (let k = 0; k < 9; k++) {
+          const y = ay + 12 + k * (ah - 24) / 8;
+          px(ax + 2, y, 18, 5, '#4a2e18'); px(ax + 2, y, 18, 2, '#a0703d');
+          px(ax + aw - 20, y, 18, 5, '#4a2e18'); px(ax + aw - 20, y, 18, 2, '#a0703d');
+        }
+        // Marco de entrada e placa em pixel art.
+        px(ax + 2, ay + ah / 2 - 16, 18, 32, '#4a2e18'); px(ax + 2, ay + ah / 2 - 16, 4, 32, '#b08045');
+        px(ax + 16, ay + 18, 116, 22, '#37251b'); px(ax + 18, ay + 20, 112, 18, '#8a622f');
+        px(ax + 23, ay + 24, 6, 10, '#e8b84a'); px(ax + 33, ay + 24, 4, 10, '#f3e4b1'); px(ax + 40, ay + 24, 4, 10, '#f3e4b1');
+        px(ax + aw - 34, ay + ah - 30, 10, 16, '#5a3a20'); px(ax + aw - 36, ay + ah - 32, 14, 4, '#b08045');
+      }
     } else if (m.theme === 'snow') {
       for (let i = 0; i < W * H / 900; i++) px(r() * W, r() * H, 2 + r() * 6, 1, r() < 0.5 ? '#dfe8f4' : '#ffffff');
       for (let i = 0; i < 8; i++) {
@@ -1285,6 +1316,17 @@
   }
   function renderHud() {
     const me = S.me; if (!me) return;
+    const area = S.map && S.map.training && S.map.training.area;
+    const inTraining = !!(area && Number.isFinite(me.x) && Number.isFinite(me.y) && me.x >= area.x && me.x <= area.x + area.w && me.y >= area.y && me.y <= area.y + area.h);
+    $('#training-hud').hidden = !inTraining;
+    if (inTraining && !S.trainingInside) alertBanner('ÁREA DE TREINAMENTO — NÓRIA · Nível recomendado: 1–10');
+    S.trainingInside = inTraining;
+    const target = me.target && S.monsters.get(me.target);
+    const targetHud = $('#target-hud');
+    if (target && !target.dead) {
+      targetHud.hidden = false;
+      targetHud.innerHTML = `<b>${esc(target.name)} · Nv. ${target.level}</b><br><span>HP ${fmt.format(Math.max(0, target.hp))}/${fmt.format(target.maxHp)} · EXP ${fmt.format(target.exp || 0)} · Ataque ${target.dmgMin}–${target.dmgMax} · Defesa ${target.defense}</span>`;
+    } else targetHud.hidden = true;
     setBar('#hp-fill', '#hp-text', me.hp, me.maxHp);
     setBar('#mp-fill', '#mp-text', me.mp, me.maxMp);
     const pct = me.next ? me.exp / me.next * 100 : 0;
@@ -1295,7 +1337,7 @@
     $('#pot-mp').textContent = fmt.format(me.pots.mp);
     const ab = $('#btn-auto');
     ab.setAttribute('aria-pressed', me.auto);
-    $('#auto-state').textContent = me.auto ? (S.map && S.map.safe ? 'na cidade' : 'lutando') : 'desligado';
+    $('#auto-state').textContent = me.auto ? (inTraining ? 'treinando' : S.map && S.map.safe ? 'na cidade' : 'lutando') : 'desligado';
     $('#pts-badge').hidden = !(me.free > 0);
     const pb = $('#btn-pvp');
     pb.setAttribute('aria-pressed', !!me.pvpOn);

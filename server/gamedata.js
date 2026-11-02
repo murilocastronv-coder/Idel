@@ -110,6 +110,13 @@ const LIMITS = { maxCharactersPerAccount: 5, maxLevel: 1000 };
 // Monstros: atributos usados pelo servidor (autoridade do combate)
 const MONSTERS = {
   slime: { name: 'Geleia Verde', sprite: 'slime', level: 1, hp: 40, dmg: 4, def: 0, exp: 14, zen: [5, 15], speed: 28, range: 18, atkMs: 1600, aggro: 0, drop: 0.08, size: 1 },
+  // Nória — área de treinamento. Os atributos são locais a estes cinco tipos e
+  // não mudam a progressão nem os drops dos outros mapas.
+  noria_bull_fighter: { name: 'Bull Fighter', sprite: 'goblin', tint: '#c8843f', level: 1, hp: 40, dmg: 4, dmgMin: 3, dmgMax: 5, def: 1, exp: 15, zenReward: 1, speed: 30, range: 18, atkMs: 1700, aggro: 48, drop: 0.12, size: 1, respawnMs: 5000, training: true },
+  noria_hound: { name: 'Hound', sprite: 'lava_hound', tint: '#8a6b58', level: 2, hp: 55, dmg: 5, dmgMin: 4, dmgMax: 6, def: 2, exp: 20, zenReward: 1, speed: 34, range: 18, atkMs: 1650, aggro: 54, drop: 0.13, size: 1, respawnMs: 6000, training: true },
+  noria_budge_dragon: { name: 'Budge Dragon', sprite: 'goblin_elite', tint: '#b57a37', level: 4, hp: 80, dmg: 7, dmgMin: 6, dmgMax: 9, def: 3, exp: 30, zenReward: 2, speed: 38, range: 19, atkMs: 1600, aggro: 60, drop: 0.14, size: 1, respawnMs: 8000, training: true },
+  noria_spider: { name: 'Spider', sprite: 'spider', tint: '#7a5b3e', level: 6, hp: 110, dmg: 10, dmgMin: 8, dmgMax: 12, def: 5, exp: 45, zenReward: 2, speed: 42, range: 19, atkMs: 1550, aggro: 66, drop: 0.15, size: 1, respawnMs: 10000, training: true },
+  noria_elite_bull_fighter: { name: 'Elite Bull Fighter', sprite: 'goblin_elite', tint: 'elite', level: 8, hp: 150, dmg: 13, dmgMin: 11, dmgMax: 15, def: 7, exp: 65, zenReward: 3, speed: 44, range: 20, atkMs: 1500, aggro: 76, drop: 0.18, size: 1.2, elite: true, respawnMs: 15000, training: true },
   goblin: { name: 'Goblin', sprite: 'goblin', level: 4, hp: 95, dmg: 8, def: 2, exp: 32, zen: [10, 30], speed: 42, range: 20, atkMs: 1400, aggro: 70, drop: 0.10, size: 1 },
   spider: { name: 'Aranha Sombria', sprite: 'spider', level: 10, hp: 280, dmg: 17, def: 6, exp: 100, zen: [30, 80], speed: 55, range: 20, atkMs: 1300, aggro: 90, drop: 0.12, size: 1 },
   goblin_elite: { name: 'Chefe Goblin', sprite: 'goblin', tint: 'elite', level: 14, hp: 900, dmg: 30, def: 12, exp: 380, zen: [120, 260], speed: 45, range: 24, atkMs: 1500, aggro: 110, drop: 0.35, size: 1.5, elite: true },
@@ -162,6 +169,7 @@ const WORLD = {
       { id: 'marlon', name: 'Marlon', x: 250, y: 380, kind: 'marlon' }, { id: 'vault', name: 'Baú Pessoal', x: 565, y: 290, kind: 'vault' },
       { id: 'castle_guard', name: 'Guarda do Chaos Castle', x: 640, y: 360, kind: 'castle_guard' }, { id: 'smith', name: 'Ferreiro Mestre', x: 210, y: 195, kind: 'smith' }, { id: 'charon', name: 'Charon', x: 160, y: 300, kind: 'charon' }], groups: [] },
   noria: { name: 'Noria', theme: 'noria', w: 1200, h: 800, minLevel: 1, safe: true, spawn: [120, 400],
+    training: { title: 'ÁREA DE TREINAMENTO — NÓRIA', minLevel: 1, maxLevel: 10, area: { x: 850, y: 485, w: 330, h: 255 } },
     npcs: [
       { id: 'hanzo', name: 'Hanzo, o Ferreiro', x: 280, y: 330, kind: 'smith' },
       { id: 'pasi', name: 'Pasi, a Feiticeira', x: 360, y: 330, kind: 'shop' },
@@ -172,7 +180,13 @@ const WORLD = {
       { id: 'quests', name: 'Marlon, Mestre de Missões', x: 760, y: 330, kind: 'marlon' },
       { id: 'teleport', name: 'Guardião do Portal', x: 840, y: 330, kind: 'teleport' },
       { id: 'guild', name: 'Mestre de Guildas', x: 920, y: 330, kind: 'guild' },
-    ], groups: [] },
+    ], groups: [
+      { type: 'noria_bull_fighter', count: 15, area: { x: 870, y: 495, w: 290, h: 42 } },
+      { type: 'noria_hound', count: 12, area: { x: 870, y: 543, w: 290, h: 42 } },
+      { type: 'noria_budge_dragon', count: 10, area: { x: 870, y: 591, w: 290, h: 42 } },
+      { type: 'noria_spider', count: 8, area: { x: 870, y: 639, w: 290, h: 42 } },
+      { type: 'noria_elite_bull_fighter', count: 5, area: { x: 870, y: 687, w: 290, h: 42 } },
+    ] },
   devias: { name: 'Devias', theme: 'snow', w: 1200, h: 800, minLevel: 10, safe: true, spawn: [120, 400],
     npcs: [{ id: 'sevina', name: 'Priestess Sevina', x: 210, y: 330, kind: 'sevina' }, { id: 'vault', name: 'Baú Pessoal', x: 170, y: 460, kind: 'vault', optional: true }],
     groups: [{ type: 'spider', count: 12 }, { type: 'ice_golem', count: 3 }] },
