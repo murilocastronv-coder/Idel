@@ -50,7 +50,7 @@ const CLASSES = {
 const MAPS = [
   { id: 'lorencia', name: 'Lorencia', type: 'Cidade inicial', level: 1, safe: true, playable: true },
   { id: 'noria', name: 'Noria', type: 'Cidade segura · floresta dos elfos', level: 1, safe: true, playable: true },
-  { id: 'devias', name: 'Devias', type: 'Região congelada', level: 10, playable: true },
+  { id: 'devias', name: 'Devias', type: 'Cidade segura · região congelada', level: 10, safe: true, playable: true },
   { id: 'dungeon', name: 'Dungeon', type: 'Masmorra · Boss: Rei Esqueleto', level: 25, playable: true },
   { id: 'elbeland', name: 'Elbeland', type: 'Cidade nas nuvens', level: 30, safe: true },
   { id: 'dungeon_2', name: 'Dungeon 2', type: 'Masmorra de lava', level: 35, playable: true },
@@ -172,7 +172,7 @@ const WORLD = {
       { id: 'quests', name: 'Marlon, Mestre de Missões', x: 760, y: 330, kind: 'marlon' },
       { id: 'teleport', name: 'Guardião do Portal', x: 840, y: 330, kind: 'teleport' },
     ], groups: [] },
-  devias: { name: 'Devias', theme: 'snow', w: 1200, h: 800, minLevel: 10, spawn: [120, 400],
+  devias: { name: 'Devias', theme: 'snow', w: 1200, h: 800, minLevel: 10, safe: true, spawn: [120, 400],
     npcs: [{ id: 'sevina', name: 'Priestess Sevina', x: 210, y: 330, kind: 'sevina' }, { id: 'vault', name: 'Baú Pessoal', x: 170, y: 460, kind: 'vault', optional: true }],
     groups: [{ type: 'spider', count: 12 }, { type: 'ice_golem', count: 3 }] },
   dungeon: { name: 'Dungeon', theme: 'dungeon', w: 1200, h: 800, minLevel: 25, spawn: [120, 400],
