@@ -492,6 +492,8 @@ Object.assign(ITEM_BASES, {
     desc: 'Caixa da Invasão Dourada. Mais Zen, equipamentos raros com adicionais, joias, materiais de criação e chance de equipamento épico.' },
   kundun_ouro: { name: 'Box Kundun Ouro', slot: 'box', icon: 'box', ic: '#ffc83a', req: 1, stack: 99, rarity: 'epic', value: 40000, special: true, tier: 3,
     desc: 'Caixa da Invasão Dourada. Equipamentos épicos, lendários e ancestrais, asas e capas, joias raras e materiais poderosos.' },
+  kundun_promo: { name: 'Box Kundun Promocional', slot: 'box', icon: 'box', ic: '#ef4350', req: 1, stack: 99, rarity: 'epic', value: 5000, special: true, tier: 2,
+    desc: 'Caixa promocional com equipamentos raros e épicos semi-full, melhorias limitadas até +8 e materiais. Não contém itens lendários nem ancestrais.' },
 });
 
 // asa de nível 1 -> asa de nível 2 (o Magic Gladiator transforma Satan/Heaven em Darkness)
