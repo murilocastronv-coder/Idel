@@ -289,7 +289,7 @@ route('POST', '/api/premium-store/claim', async (req) => {
   const acc = await requireAccount(req);
   limit(req, 'premium-claim', 10, 60 * 1000, String(acc.id));
   const body = await readJson(req);
-  try { await STORE.claim({ accountId:acc.id, orderId:Number(body.orderId), charId:String(body.charId || ''), world }); return { ok:true, orders:await STORE.pending(acc.id) }; }
+  try { const claimed=await STORE.claim({ accountId:acc.id, orderId:Number(body.orderId), charId:String(body.charId || ''), world }); return { ...claimed, orders:await STORE.pending(acc.id) }; }
   catch (e) { throw new HttpError(400, e.message); }
 });
 
