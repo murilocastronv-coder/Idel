@@ -1711,22 +1711,59 @@
   }
   function bindVip(root) { $$('[data-vip]', root).forEach((b) => { b.onclick = () => buyVip(b.dataset.vip, Number(b.dataset.days), b); }); }
 
+
+  async function renderPremiumStore(root) {
+    const holder = $('#premium-store', root);
+    if (!holder) return;
+    holder.innerHTML = '<p class="muted">Carregando conjuntos…</p>';
+    try {
+      const data = await admApi('GET', '/api/premium-store');
+      holder.innerHTML = '<section class="premium-shop"><h3>Conjuntos semi-full</h3><p class="muted small">30 conjuntos sazonais. Itens acima dos drops comuns, sem atributos full. Após o pagamento, resgate no personagem escolhido.</p>' +
+        ((data.orders || []).length ? '<div class="premium-orders"><b>Pedidos prontos para resgatar</b>' + data.orders.map(o => '<div class="row"><span>' + esc(o.product) + ' · ' + brl.format(o.amount_cents / 100) + '</span><button class="btn small btn-gold" type="button" data-premium-claim="' + o.id + '">Resgatar neste personagem</button></div>').join('') + '</div>' : '') +
+        '<div class="premium-grid">' + data.catalog.map(p => '<article class="premium-card" style="--set-tone:' + esc(p.tone) + '">' +
+          '<canvas width="72" height="72" data-premium-icon="' + esc(p.id) + '"></canvas><div><b>' + esc(p.name) + '</b>' +
+          '<small>' + p.pieces + ' peças · nível ' + p.req + '+ · melhoria +' + p.plus + ' · todas as classes</small><span>' + brl.format(p.price / 100) + '</span>' +
+          '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled ? ' disabled' : '') + '>' + (data.enabled ? 'Comprar conjunto' : 'Pagamento indisponível') + '</button></div></article>').join('') + '</div></section>';
+      $('[data-premium-icon]', holder).forEach((canvas, i) => PA.drawIcon(canvas.getContext('2d'), ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, data.catalog[i] ? data.catalog[i].tone : '#d82f3f'));
+      $('[data-premium-buy]', holder).forEach(btn => { btn.onclick = async () => {
+        btn.disabled = true;
+        try {
+          const res = await fetch('/api/premium-store/checkout', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-Requested-With':'mui'}, body:JSON.stringify({product:btn.dataset.premiumBuy, back:'/game.html?c=' + encodeURIComponent(charId)}) });
+          const j = await res.json().catch(()=>({}));
+          if (!res.ok || !j.url) throw new Error(j.error || 'Não foi possível iniciar a compra.');
+          location.href = j.url;
+        } catch(e) { feed(e.message,'warn'); btn.disabled=false; }
+      }; });
+      $('[data-premium-claim]', holder).forEach(btn => { btn.onclick = async () => {
+        btn.disabled=true;
+        try {
+          const res=await fetch('/api/premium-store/claim',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'mui'},body:JSON.stringify({orderId:Number(btn.dataset.premiumClaim),charId:S.char.id})});
+          const j=await res.json().catch(()=>({}));
+          if(!res.ok) throw new Error(j.error||'Não foi possível resgatar.');
+          feed('Conjunto resgatado para '+S.char.name+'.','info'); renderPremiumStore(root);
+        } catch(e) { feed(e.message,'warn'); btn.disabled=false; }
+      }; });
+    } catch (e) { holder.innerHTML = '<p class="muted">' + esc(e.message) + '</p>'; }
+  }
+
   function renderShop() {
     const body = $('#shop-body');
     if (!S.map || !S.map.safe) {
-      body.innerHTML = vipHtml() + '<p>A Mercadora Pasi fica na praça de Lorencia.</p><button class="btn btn-gold" type="button" id="go-town">Teleportar para Lorencia</button>';
+      body.innerHTML = vipHtml() + '<p>A Mercadora Pasi fica na praça de Lorencia.</p><button class="btn btn-gold" type="button" id="go-town">Teleportar para Lorencia</button><div id="premium-store"></div>';
       $('#go-town').onclick = () => { send({ type: 'teleport', map: 'lorencia' }); };
       bindVip(body);
+      renderPremiumStore(body);
       return;
     }
     body.innerHTML = vipHtml() + `<p>Seu Zen: <b>${fmt.format(S.char.zen)}</b></p>` + Object.entries(S.data.shop).map(([id, s]) => `
       <div class="shop-item"><canvas width="36" height="36" data-icon="${id === 'pot_hp' ? 'potion_hp' : 'potion_mp'}"></canvas>
         <div><b>${esc(s.name)}</b> — ${s.price} Zen<br><small class="muted">${esc(s.desc)} · você tem ${fmt.format(id === 'pot_hp' ? S.char.pots.hp : S.char.pots.mp)}</small></div>
         <div class="row">${[10, 50, 100].map((q) => `<button class="btn small" type="button" data-buy="${id}" data-q="${q}" ${S.char.zen < q * s.price ? 'disabled' : ''}>${q}× · ${fmt.format(q * s.price)}</button>`).join('')}</div>
-      </div>`).join('') + '<p class="muted">Para vender itens, abra a Bolsa e toque no item.</p>';
+      </div>`).join('') + '<p class="muted">Para vender itens, abra a Bolsa e toque no item.</p><div id="premium-store"></div>';
     $$('#shop-body canvas[data-icon]').forEach((c) => PA.drawIcon(c.getContext('2d'), c.dataset.icon, 0, 0, 3, '#3a7aff'));
     $$('#shop-body [data-buy]').forEach((b) => { b.onclick = () => send({ type: 'buy', item: b.dataset.buy, qty: Number(b.dataset.q) }); });
     bindVip(body);
+    renderPremiumStore(body);
   }
 
   // ---------- painel do administrador (o servidor confere a conta em toda ação) ----------
@@ -1759,7 +1796,7 @@
       </section>
       <section class="adm-sec"><h3>Ações rápidas</h3>
         <div class="adm-grid">
-          <button class="btn btn-gold" type="button" data-adm="kit">Melhor equipamento (ancestral +15)</button>
+          <button class="btn btn-gold" type="button" data-adm="kit">Melhor equipamento (ancestral +15)</button><button class="btn btn-gold" type="button" data-adm="festive">Dar set Especial Christmas completo</button>
           <button class="btn btn-gold" type="button" data-adm="maxlevel">Nível máximo (${D.maxLevel})</button>
           <button class="btn btn-gold" type="button" data-adm="maxstats">Atributos no máximo</button>
         </div>
@@ -1778,6 +1815,10 @@
         <p class="muted small">Stripe: chave ${st.key ? '✔' : '✘'} · webhook ${st.webhook ? '✔' : '✘'} · modo <b>${esc(st.mode)}</b><br>Endereço do webhook: <code>${esc(st.url)}</code><br>Vendas: ${D.revenue.count} · ${brl.format(D.revenue.cents / 100)}</p>
         <div class="adm-prices">${D.plans.map((p) => `<div><b style="color:${p.color}">${esc(p.name)}</b>${D.days.map((d) => `<label>${d} dias R$ <input type="number" step="0.01" min="1" data-price="${p.id}" data-d="${d}" value="${(p.prices[d] / 100).toFixed(2)}"></label>`).join('')}<ul class="small">${p.perks.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div>
         <button class="btn small" type="button" id="adm-save-prices">Salvar preços</button>
+        <h4>Loja semi-full (30 sets · R$ 45 a R$ 90)</h4>
+        <p class="muted small">Preços validados pelo servidor. A compra fica resgatável após a confirmação do Stripe.</p>
+        <div class="premium-admin">${D.premiumSets.map(p => '<label><span>'+esc(p.name)+'</span><input type="number" step="0.01" min="45" max="90" data-premium-price="'+p.id+'" value="'+(p.price/100).toFixed(2)+'"><input type="checkbox" data-premium-enabled="'+p.id+'" '+(p.enabled?'checked':'')+' aria-label="Ativar '+esc(p.name)+'"></label>').join('')}</div>
+        <button class="btn small" type="button" id="adm-save-premium">Salvar loja de conjuntos</button>
         <h4>Dar ou remover VIP</h4>
         <div class="adm-row"><input id="adm-vip-user" placeholder="Nome de usuário da conta" maxlength="32" aria-label="Nome de usuário da conta">
           <select id="adm-vip-plan" aria-label="Plano">${D.plans.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select>
@@ -1821,6 +1862,11 @@
       const prices = {};
       $$('[data-price]', body).forEach((i) => { (prices[i.dataset.price] = prices[i.dataset.price] || {})[i.dataset.d] = Math.round(Number(i.value) * 100); });
       try { const r = await admApi('POST', '/api/admin/vip-prices', { prices }); admMsg(r.message); S.data.vip.plans = r.plans; } catch (e) { admMsg(e.message, true); }
+    };
+    $('#adm-save-premium').onclick = async () => {
+      const products = {};
+      $('[data-premium-price]', body).forEach(i => { const key=i.dataset.premiumPrice; products[key]={price:Math.round(Number(i.value)*100),enabled:!!$('[data-premium-enabled="'+key+'"]',body)?.checked}; });
+      try { const r=await admApi('POST','/api/admin/premium-store',{products}); admMsg(r.message); ADM.data.premiumSets=r.products; } catch(e) { admMsg(e.message,true); }
     };
     const vip = async (days) => {
       try { const r = await admApi('POST', '/api/admin/vip', { username: $('#adm-vip-user').value.trim(), plan: $('#adm-vip-plan').value, days }); admMsg(r.message); setTimeout(() => { if (S.panel === 'admin') renderAdmin(); }, 900); }
