@@ -1741,13 +1741,22 @@
     holder.innerHTML = '<p class="muted">Carregando conjuntos…</p>';
     try {
       const data = await admApi('GET', '/api/premium-store');
-      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/special-christmas-pixel-art.svg" alt="Set natalino em pixel art 2D" loading="lazy"><div><h3>Conjuntos semi-full</h3><b>Especial Christmas</b><p class="muted small">Armadura natalina, asas, pingente, dois anéis, espada, arco e escudo.</p></div></div><p class="muted small">30 conjuntos sazonais. Itens acima dos drops comuns, sem atributos full. Após o pagamento, resgate no personagem escolhido.</p>' +
+      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/special-christmas-pixel-art.svg" alt="Set natalino em pixel art 2D" loading="lazy"><div><h3>Conjuntos semi-full</h3><b>Especial Christmas</b><p class="muted small">Armadura natalina, asas, pingente, dois anéis, espada, arco e escudo.</p></div></div><p class="muted small">30 conjuntos semi-full e pacotes promocionais de Box Kundun com itens raros e épicos, sem atributos full. Após o pagamento, resgate no personagem escolhido.</p>' +
         ((data.orders || []).length ? '<div class="premium-orders"><b>Pedidos prontos para resgatar</b>' + data.orders.map(o => '<div class="row"><span>' + esc(o.product) + ' · ' + brl.format(o.amount_cents / 100) + '</span><button class="btn small btn-gold" type="button" data-premium-claim="' + o.id + '">Resgatar neste personagem</button></div>').join('') + '</div>' : '') +
-        '<div class="premium-grid">' + data.catalog.map(p => '<article class="premium-card" style="--set-tone:' + esc(p.tone) + '">' +
-          '<canvas width="72" height="72" data-premium-icon="' + esc(p.id) + '"></canvas><div><b>' + esc(p.name) + '</b>' +
-          '<small>' + p.pieces + ' peças · nível ' + p.req + '+ · melhoria +' + p.plus + ' · todas as classes</small><span>' + brl.format(p.price / 100) + '</span>' +
-          '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled ? ' disabled' : '') + '>' + (data.enabled ? 'Comprar conjunto' : 'Pagamento indisponível') + '</button></div></article>').join('') + '</div></section>';
-      $$('[data-premium-icon]', holder).forEach((canvas, i) => PA.drawIcon(canvas.getContext('2d'), ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, data.catalog[i] ? data.catalog[i].tone : '#d82f3f'));
+        '<div class="premium-grid">' + data.catalog.map(p => {
+          const isBox = p.type === 'box';
+          const detail = isBox
+            ? p.qty + ' caixas · itens raros/épicos · até +' + (p.qty >= 30 ? '8' : '8') + ' · semi-full'
+            : p.pieces + ' peças · nível ' + p.req + '+ · melhoria +' + p.plus + ' · todas as classes';
+          return '<article class="premium-card" style="--set-tone:' + esc(p.tone) + '">' +
+            '<canvas width="72" height="72" data-premium-icon="' + esc(p.id) + '"></canvas><div><b>' + esc(p.name) + '</b>' +
+            '<small>' + detail + '</small><span>' + brl.format(p.price / 100) + '</span>' +
+            '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled ? ' disabled' : '') + '>' + (data.enabled ? (isBox ? 'Comprar caixas' : 'Comprar conjunto') : 'Pagamento indisponível') + '</button></div></article>';
+        }).join('') + '</div></section>';
+      $('[data-premium-icon]', holder).forEach((canvas, i) => {
+        const product = data.catalog[i];
+        PA.drawIcon(canvas.getContext('2d'), product && product.type === 'box' ? 'box' : ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, product ? product.tone : '#d82f3f');
+      });
       $$('[data-premium-buy]', holder).forEach(btn => { btn.onclick = async () => {
         btn.disabled = true;
         try {
@@ -1763,7 +1772,7 @@
           const res=await fetch('/api/premium-store/claim',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'mui'},body:JSON.stringify({orderId:Number(btn.dataset.premiumClaim),charId:S.char.id})});
           const j=await res.json().catch(()=>({}));
           if(!res.ok) throw new Error(j.error||'Não foi possível resgatar.');
-          feed('Conjunto resgatado para '+S.char.name+'.','info'); renderPremiumStore(root);
+          feed((j.type==='box' ? j.qty+' Boxes Kundun resgatadas para ' : 'Conjunto resgatado para ')+S.char.name+'.','info'); renderPremiumStore(root);
         } catch(e) { feed(e.message,'warn'); btn.disabled=false; }
       }; });
     } catch (e) { holder.innerHTML = '<p class="muted">' + esc(e.message) + '</p>'; }
