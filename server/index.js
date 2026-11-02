@@ -152,6 +152,13 @@ function liveStats() {
   if (ws) for (const c of ws.clients) { visitors++; if (c.meta.accountId) players.add(c.meta.accountId); }
   return { online: players.size, inWorld: world ? world.online() : 0, visitors, accounts: accountsCount, characters: charactersCount, serverTime: Date.now() };
 }
+function activeWorldAccountIds() {
+  return world ? new Set([...world.players.values()].map((p) => String(p.accountId))) : new Set();
+}
+function statusLiveStats() {
+  const activeAccounts = activeWorldAccountIds().size;
+  return { ...liveStats(), online: activeAccounts, inWorld: activeAccounts, activeAccounts };
+}
 let statsTimer = null;
 function pushStats() {
   if (statsTimer) return;
@@ -180,17 +187,16 @@ const TZ = process.env.GAME_TZ || 'America/Sao_Paulo';
 let peakOnline = 0;
 async function sampleStats() {
   const s = liveStats();
-  peakOnline = Math.max(peakOnline, s.online);
-  const ids = new Set();
-  if (ws) for (const c of ws.clients) if (c.meta.accountId) ids.add(Number(c.meta.accountId));
-  await db.query('INSERT INTO stats_samples (online, in_world, visitors) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING ts', [s.online, s.inWorld, s.visitors]);
-  await markActive([...ids]);
+  const ids = [...activeWorldAccountIds()].map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  peakOnline = Math.max(peakOnline, ids.length);
+  await db.query('INSERT INTO stats_samples (online, in_world, visitors) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING ts', [ids.length, ids.length, s.visitors]);
+  await markGameActive(ids);
   await db.query("DELETE FROM stats_samples WHERE ts < now() - interval '120 days' RETURNING ts");
 }
-async function markActive(ids) {
-  const list = ids.filter((n) => Number.isInteger(n) && n > 0);
+async function markGameActive(ids) {
+  const list = [...new Set(ids.filter((n) => Number.isInteger(n) && n > 0))];
   if (!list.length) return;
-  await db.query(`INSERT INTO activity_days (day, account_id)
+  await db.query(`INSERT INTO game_activity_days (day, account_id)
     SELECT (now() AT TIME ZONE $1)::date, a FROM unnest(ARRAY[${list.join(',')}]::int[]) AS a
     ON CONFLICT DO NOTHING RETURNING account_id`, [TZ]);
 }
@@ -205,10 +211,10 @@ async function buildStatus() {
       (SELECT count(*) FROM accounts WHERE created_at > now() - interval '7 days')::int AS accounts_7d,
       (SELECT count(*) FROM accounts WHERE created_at > now() - interval '30 days')::int AS accounts_30d,
       (SELECT count(*) FROM accounts WHERE created_at > now() - interval '14 days' AND created_at <= now() - interval '7 days')::int AS accounts_prev7d,
-      (SELECT count(*) FROM activity_days WHERE day = (now() AT TIME ZONE $1)::date)::int AS active_today,
-      (SELECT count(DISTINCT account_id) FROM activity_days WHERE day > (now() AT TIME ZONE $1)::date - 7)::int AS active_7d,
-      (SELECT count(DISTINCT account_id) FROM activity_days WHERE day > (now() AT TIME ZONE $1)::date - 30)::int AS active_30d,
-      (SELECT count(DISTINCT account_id) FROM activity_days WHERE day > (now() AT TIME ZONE $1)::date - 14 AND day <= (now() AT TIME ZONE $1)::date - 7)::int AS active_prev7d,
+      (SELECT count(*) FROM game_activity_days WHERE day = (now() AT TIME ZONE $1)::date)::int AS active_today,
+      (SELECT count(DISTINCT account_id) FROM game_activity_days WHERE day > (now() AT TIME ZONE $1)::date - 7)::int AS active_7d,
+      (SELECT count(DISTINCT account_id) FROM game_activity_days WHERE day > (now() AT TIME ZONE $1)::date - 30)::int AS active_30d,
+      (SELECT count(DISTINCT account_id) FROM game_activity_days WHERE day > (now() AT TIME ZONE $1)::date - 14 AND day <= (now() AT TIME ZONE $1)::date - 7)::int AS active_prev7d,
       (SELECT coalesce(max(online), 0) FROM stats_samples)::int AS peak_online,
       (SELECT coalesce(max(online), 0) FROM stats_samples WHERE ts > now() - interval '24 hours')::int AS peak_24h,
       (SELECT coalesce(max(level), 0) FROM characters)::int AS top_level,
@@ -222,7 +228,7 @@ async function buildStatus() {
     SELECT to_char(d.day, 'YYYY-MM-DD') AS day,
       (SELECT count(*) FROM accounts a WHERE (a.created_at AT TIME ZONE $1)::date = d.day)::int AS new_accounts,
       (SELECT count(*) FROM characters c WHERE (c.created_at AT TIME ZONE $1)::date = d.day)::int AS new_characters,
-      (SELECT count(*) FROM activity_days x WHERE x.day = d.day)::int AS active,
+      (SELECT count(*) FROM game_activity_days x WHERE x.day = d.day)::int AS active,
       (SELECT coalesce(max(s.online), 0) FROM stats_samples s WHERE (s.ts AT TIME ZONE $1)::date = d.day)::int AS peak_online,
       (SELECT count(*) FROM accounts a WHERE (a.created_at AT TIME ZONE $1)::date <= d.day)::int AS total_accounts
     FROM days d ORDER BY d.day`);
@@ -237,7 +243,7 @@ async function buildStatus() {
   if (world) for (const m of world.maps.values()) if (m.players.size) maps.push({ id: m.key || `${m.room}:${m.id}`, name: m.def.arena ? m.def.name : `${m.def.name} · Sala ${m.room}`, players: m.players.size });
   maps.sort((a, b) => b.players - a.players);
   return {
-    live: { ...liveStats(), peakSinceBoot: peakOnline, uptimeSec: Math.round((Date.now() - STARTED_AT) / 1000) },
+    live: { ...statusLiveStats(), peakSinceBoot: peakOnline, uptimeSec: Math.round((Date.now() - STARTED_AT) / 1000) },
     totals, daily, hourly, classes, levels, maps, tz: TZ, generatedAt: Date.now(),
   };
 }
@@ -249,7 +255,7 @@ route('GET', '/api/status', async (req) => {
   if (!acc) throw new HttpError(401, 'Faça login para continuar.');
   if (!canSeeStatus(acc)) throw new HttpError(403, 'Acesso restrito.');
   if (!statusCache || Date.now() - statusAt > 30000) { statusCache = await buildStatus(); statusAt = Date.now(); }
-  return { ...statusCache, live: { ...statusCache.live, ...liveStats(), peakSinceBoot: peakOnline, uptimeSec: Math.round((Date.now() - STARTED_AT) / 1000) } };
+  return { ...statusCache, live: { ...statusCache.live, ...statusLiveStats(), peakSinceBoot: peakOnline, uptimeSec: Math.round((Date.now() - STARTED_AT) / 1000) } };
 });
 
 route('GET', '/api/gamedata', async () => ({
@@ -645,7 +651,6 @@ route('POST', '/api/login', async (req, url, res) => {
     throw new HttpError(401, 'Usuário ou senha incorretos.');
   }
   await db.query('UPDATE accounts SET last_login_at = now() WHERE id = $1 RETURNING id', [acc.id]);
-  markActive([Number(acc.id)]).catch(() => {});
   await createSession(res, req, acc.id, !!body.remember);
   await audit(acc.id, 'login', req);
   return { ok: true, username: acc.username };
@@ -972,12 +977,14 @@ ws.on('connection', (client) => {
     let data;
     try { data = JSON.parse(msg); } catch (_) { return; }
     if (!data || typeof data.type !== 'string' || !world) return;
-    world.handle(client, data).catch((e) => {
+    world.handle(client, data).then(() => {
+      // Só registra atividade após o servidor confirmar a entrada do personagem no mundo.
+      if (data.type === 'join' && client.player && client.player.accountId) markGameActive([Number(client.player.accountId)]).catch(() => {});
+    }).catch((e) => {
       console.error('[world] erro:', e);
       client.send({ type: 'log', kind: 'warn', text: 'Erro no servidor ao processar a ação.' });
     });
     if (data.type === 'join' || data.type === 'leave') pushStats();
-    if (data.type === 'join' && client.meta.accountId) markActive([Number(client.meta.accountId)]).catch(() => {});
   });
   pushStats();
 });
