@@ -16,6 +16,7 @@ const db = require('./db');
 const sec = require('./security');
 const mail = require('./mail');
 const VIP = require('./vip');
+const STORE = require('./premium-shop');
 const ADMIN = require('./admin');
 const game = require('./gamedata');
 const { WSServer } = require('./ws');
@@ -257,6 +258,7 @@ route('GET', '/api/gamedata', async () => ({
     monsters: [...w.groups.map((g) => game.MONSTERS[g.type].name), ...(w.boss ? [game.MONSTERS[w.boss.type].name + ' (boss)'] : [])] })),
   shop: game.SHOP, sets: game.SETS, classRules: CLS.publicRules(),
   vip: { plans: VIP.publicPlans(), days: VIP.DAYS, currency: VIP.CURRENCY, enabled: VIP.enabled() },
+  premiumSets: STORE.publicCatalog(),
 }));
 
 // ---------------- VIP (compra) e administração ----------------
@@ -270,6 +272,25 @@ route('POST', '/api/vip/checkout', async (req) => {
   catch (e) { throw new HttpError(e.status || 500, e.message); }
   await audit(acc.id, 'vip_checkout', req, { plan: body.plan, days });
   return { ok: true, url: r.url };
+});
+
+route('GET', '/api/premium-store', async (req) => {
+  const acc = await requireAccount(req);
+  return { catalog: STORE.publicCatalog(), orders: await STORE.pending(acc.id), enabled: VIP.enabled() };
+});
+route('POST', '/api/premium-store/checkout', async (req) => {
+  const acc = await requireAccount(req);
+  limit(req, 'premium-checkout', 5, 60 * 1000, String(acc.id));
+  const body = await readJson(req);
+  try { return { ok: true, ...(await STORE.checkout({ account:acc, productId:String(body.product || ''), baseUrl:publicUrl(req), back:body.back })) }; }
+  catch (e) { throw new HttpError(e.status || 400, e.message); }
+});
+route('POST', '/api/premium-store/claim', async (req) => {
+  const acc = await requireAccount(req);
+  limit(req, 'premium-claim', 10, 60 * 1000, String(acc.id));
+  const body = await readJson(req);
+  try { await STORE.claim({ accountId:acc.id, orderId:Number(body.orderId), charId:String(body.charId || ''), world }); return { ok:true, orders:await STORE.pending(acc.id) }; }
+  catch (e) { throw new HttpError(400, e.message); }
 });
 
 async function requireAdmin(req) {
@@ -296,6 +317,7 @@ route('GET', '/api/admin/overview', async (req) => {
       mode: /^(sk|rk)_test_/.test(process.env.STRIPE_SECRET_KEY || '') ? 'teste' : process.env.STRIPE_SECRET_KEY ? 'real' : 'desligado' },
     vips, payments: pays, revenue: { cents: Number(sum.total), count: sum.n },
     items: Object.entries(game.ITEM_BASES).map(([id, b]) => ({ id, name: b.name, slot: b.slot, kind: b.kind || null, req: b.req })),
+    premiumSets: STORE.publicCatalog(true),
     rarities: ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancestral'], maxLevel: game.LIMITS.maxLevel,
   };
 });
@@ -317,6 +339,9 @@ route('POST', '/api/admin/action', async (req) => {
       const list = Array.from({ length: qty }, () => ({ base: String(body.base), rarity: String(body.rarity), plus: body.plus }));
       const got = await world.adminGiveItems(c.id, list);
       msg = `${got.length}× ${got[0].name} enviado(s) para ${c.name}.`;
+    } else if (a === 'festive') {
+      const got = await world.adminGiveItems(c.id, STORE.itemList('festive_01'));
+      msg = `Set Especial Christmas completo (${got.length} peças) enviado para ${c.name}.`;
     } else if (a === 'kit') {
       const got = await world.adminGiveItems(c.id, world.bestKit(c.cls));
       msg = `Melhor equipamento (${got.length} itens ancestrais +15) enviado para ${c.name}.`;
@@ -527,6 +552,13 @@ route('POST', '/api/admin/vip-all', async (req) => {
   world.system(`🎁 Presente para todos: ${names} por ${days} dia${days > 1 ? 's' : ''}!`);
   return { ok: true, message: `${names}: +${days} dias para ${n} conta(s).` };
 });
+route('POST', '/api/admin/premium-store', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 32 * 1024);
+  const products = await STORE.saveConfig(body.products || {});
+  await audit(acc.id, 'admin_premium_store', req, { count:products.length });
+  return { ok:true, message:'Preços e disponibilidade dos conjuntos salvos.', products };
+}));
 route('POST', '/api/admin/vip-prices', async (req) => {
   const acc = await requireAdmin(req);
   const body = await readJson(req);
@@ -874,6 +906,9 @@ const server = http.createServer(async (req, res) => {
             html: '<div style="font-family:Arial,sans-serif"><h2>Nova compra VIP — MU Idle Legends</h2><p><b>Jogador:</b> ' + String(buyer.username).replace(/[&<>"]/g, '') + '</p><p><b>Plano:</b> ' + plan.name + '</p><p><b>Duração:</b> ' + days + ' dias</p><p><b>Valor:</b> ' + money + ' ' + VIP.CURRENCY.toUpperCase() + '</p><p><b>E-mail da conta:</b> ' + String(buyer.email || 'não informado').replace(/[&<>"]/g, '') + '</p><p><b>Data:</b> ' + when + '</p></div>'
           });
         } catch (e) { console.error('[vip] aviso de compra por e-mail:', e.message); }
+      }, async (session) => {
+        const result = await STORE.webhook(session);
+        if (result === 'entregue') console.log(`[premium-store] pedido pago recebido: ${session.id}`);
       });
       return sendJson(res, r.code, r.body);
     } catch (e) {
@@ -958,6 +993,7 @@ setInterval(() => {
   await db.migrate();
   await refreshCounts();
   await VIP.loadPrices();
+  await STORE.init();
   world = new World();
   await world.init();
   // amostra a cada 5 minutos (e logo após iniciar)
