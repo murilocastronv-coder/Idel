@@ -187,7 +187,10 @@
       t.hurtUntil = now + 160;
       const color = ev.t === S.youId ? '#ff6b5b' : ev.c ? '#ffb02e' : '#ffffff';
       const ranged = RANGED.has(ev.fx) && a && !ev.aoe;
-      const delay = ranged ? 220 : 0;
+      const attackMeta = a && (a.info ? Sprites.frames('heroes', a.info.cls, 'attack') : a.sprite ? Sprites.frames('monsters', monSprite(a), 'attack') : null);
+      const impactFrame = attackMeta ? Math.min(attackMeta.frames - 1, attackMeta.impactFrame ?? 2) : 2;
+      const delay = ranged ? 220 : (a ? Math.round(impactFrame * 1000 / (attackMeta && attackMeta.fps || 12)) : 0);
+      t.hurtUntil = now + delay + 160;
       if (ranged) S.fx.push({ kind: 'proj', from: a, to: t, sprite: PROJ[ev.fx] || 'proj_energy', t0: now, dur: delay });
       else if (!ev.aoe && a && ev.a[0] === 'p' && a.info) {
         S.fx.push({ kind: 'crescent', at: t, from: a, sprite: a.info.cls === 'dark_lord' ? 'crescent_fire' : a.info.cls === 'magic_gladiator' ? 'crescent_dark' : 'crescent_energy', t0: now, dur: 240 });
@@ -195,8 +198,11 @@
       S.fx.push({ kind: 'impact', at: t, sprite: IMPACT[ev.fx] || 'impact_energy', t0: now + delay, dur: 260 });
       S.floats.push({ at: t, text: ev.c ? `${ev.d}!` : String(ev.d), color, big: !!ev.c, t0: now + delay });
       if (window.Sfx) {
-        if (ev.a === S.youId) { if (ranged || ev.fx !== 'slash') Sfx.cast(ev.fx); if (ev.c) Sfx.crit(); else Sfx.hit(false); }
-        else if (ev.t === S.youId) Sfx.hurt();
+        setTimeout(() => {
+          if (!window.Sfx) return;
+          if (ev.a === S.youId) { if (ranged || ev.fx !== 'slash') Sfx.cast(ev.fx); if (ev.c) Sfx.crit(); else Sfx.hit(false); }
+          else if (ev.t === S.youId) Sfx.hurt();
+        }, delay);
       }
       if (ev.a === S.youId && ev.c) shake(3, 160);
       if (ev.t === S.youId && S.me && ev.d > S.me.maxHp * 0.08) { S.hurtFlash = now; shake(4, 200); }
@@ -896,9 +902,28 @@
   function animOf(e, now) {
     if (e.dyingAt) return ['death', now - e.dyingAt, true];
     if (now < (e.attackUntil || 0)) return ['attack', now - (e.attackStart || now), true];
-    if (now < (e.hurtUntil || 0) && e.info) return ['hit', 0, true];
-    if ((e.speed || 0) > 10) return ['walk', now + e.phase, false];
+    if (now < (e.hurtUntil || 0)) return ['hit', 0, true];
+    const speed = e.speed || 0;
+    if (speed > 65) return ['run', now + e.phase, false];
+    if (speed > 10) return ['walk', now + e.phase, false];
     return ['idle', now + e.phase, false];
+  }
+
+  // Poeira pixelada sincronizada com o passo, sem adicionar spritesheets ou pesar o celular.
+  function drawRunPuff(x, y, now, phase, flip, color) {
+    const step = (now / 105 + (phase || 0) / 170) % 1;
+    if (step > 0.42) return;
+    const side = flip ? 1 : -1;
+    const fade = (1 - step / 0.42) * 0.34;
+    ctx.save();
+    ctx.globalAlpha = fade;
+    ctx.fillStyle = color || '#d8c59a';
+    for (let i = 0; i < 3; i++) {
+      const lift = step * (8 + i * 2) * zoom;
+      const spread = (i * 3 + step * 5) * zoom;
+      ctx.fillRect(Math.round(x + side * spread), Math.round(y - 2 * dpr - lift), Math.max(1, Math.round((2 - i * 0.35) * dpr)), Math.max(1, Math.round(dpr)));
+    }
+    ctx.restore();
   }
   function shadowAt(x, y, w) {
     ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x, y, w, w * 0.32, 0, 0, Math.PI * 2); ctx.fill();
@@ -1025,6 +1050,7 @@
         if (e.id === myTarget && !e.dead) { ctx.strokeStyle = '#ffd36b'; ctx.lineWidth = dpr * 2; ctx.beginPath(); ctx.ellipse(x, y, w, w * 0.34, 0, 0, Math.PI * 2); ctx.stroke(); }
         shadowAt(x, y, w * 0.8);
         const hurt = now < (e.hurtUntil || 0) && !e.dyingAt;
+        if (act === 'run') drawRunPuff(x, y, now, e.phase, e.flip, '#b9a486');
         Sprites.monster(ctx, name, act, t, x, y, sc * (e.scale || 1), !e.flip, { once, white: hurt && (now - e.hurtUntil) > -90, tint: e.tint && e.tint[0] === '#' ? e.tint : null });
         if (e.dead) continue;
         const top = y - h - 6 * dpr;
@@ -1058,6 +1084,7 @@
           ctx.beginPath(); ctx.ellipse(x, y, 13 * zoom, 4 * zoom, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
         }
         const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : undefined;
+        if (act === 'run') drawRunPuff(x, y, now, e.phase, e.flip, '#c9b98f');
         Sprites.hero(ctx, info.cls, info.ap, act, t, x, y, sc, e.flip, { once, equip: eq });
         if (e.dead) continue;
         const top = y - HERO_H * sc - 4 * dpr;
