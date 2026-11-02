@@ -132,7 +132,7 @@ function expire(map, now) {
 // cabe na bolsa?
 function fits(p, e) {
   if (e.base === 'zen') return true;
-  if (isStack(e.base) && p.items.some((i) => i.base === e.base && !i.equipped && (Number(i.qty) || 1) < G.MAX_STACK)) return true;
+  if (isStack(e.base) && p.items.some((i) => i.base === e.base && !i.equipped && (Number(i.qty) || 1) < Math.min(Number(G.MAX_STACK) || 999, Number(G.ITEM_BASES[e.base].stack) || Number(G.MAX_STACK) || 999))) return true;
   return H.bagUsed(p) < G.INVENTORY_SIZE;
 }
 
