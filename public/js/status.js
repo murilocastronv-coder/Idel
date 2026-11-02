@@ -129,8 +129,8 @@
   function render() {
     if (!data) return;
     const L = data.live, S = data.totals;
-    $('#t-online').textContent = fmt.format(L.online);
-    $('#t-online-sub').textContent = `${fmt.format(L.inWorld)} ${T('no mundo')} · ${fmt.format(L.visitors)} ${T('no site')}`;
+    $('#t-online').textContent = fmt.format(L.activeAccounts ?? L.inWorld ?? 0);
+    $('#t-online-sub').textContent = `${fmt.format(L.visitors)} ${T('no site')}`;
     $('#t-accounts').textContent = fmt.format(S.accounts);
     $('#t-accounts-sub').textContent = `+${fmt.format(S.accounts_today)} ${T('hoje')}`;
     $('#t-chars').textContent = fmt.format(S.characters);
