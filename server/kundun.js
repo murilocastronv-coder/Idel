@@ -6,7 +6,7 @@ const db = require('./db');
 const G = require('./gamedata');
 const SET = require('./settings');
 
-const BOXES = ['kundun_bronze', 'kundun_prata', 'kundun_ouro'];
+const BOXES = ['kundun_bronze', 'kundun_prata', 'kundun_ouro', 'kundun_promo'];
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancestral'];
 const KINDS = ['zen', 'pot', 'item', 'material', 'chaosweapon', 'wing1', 'wing2', 'cape'];
 const HIGH = ['legendary', 'ancestral'];
@@ -45,6 +45,13 @@ const DEFAULTS = {
     { kind: 'wing2', w: 0.2 },
     { kind: 'cape', w: 0.3 },
   ],
+  // Caixa semi-full de loja: só raros/épicos e adicionais moderados; sem drops full.
+  kundun_promo: [
+    { kind: 'item', w: 58, rarity: 'rare', plusMin: 3, plusMax: 6 },
+    { kind: 'item', w: 32, rarity: 'epic', plusMin: 4, plusMax: 8 },
+    { kind: 'material', w: 7, item: 'jewel_of_chaos', min: 1, max: 3 },
+    { kind: 'zen', w: 3, min: 25000, max: 100000 },
+  ],
 };
 
 let H = null;
@@ -69,7 +76,7 @@ function equipFor(level, kinds) {
 
 // sorteia o conteúdo (sem entregar)
 function roll(box, p) {
-  const list = cfg()[box];
+  const list = cfg()[box] || DEFAULTS[box];
   const e = pick(list);
   const plus = () => Math.min(15, randi(e.plusMin || 0, Math.max(e.plusMin || 0, e.plusMax || 0)));
   switch (e.kind) {
@@ -167,7 +174,7 @@ const KIND_PT = { zen: 'Zen', pot: 'Poções', material: 'Materiais', chaosweapo
 const RAR_PT = { common: 'comuns', uncommon: 'incomuns', rare: 'raros', epic: 'épicos', legendary: 'lendários', ancestral: 'ancestrais' };
 function contents(box) {
   const out = [];
-  for (const e of cfg()[box] || []) {
+  for (const e of (cfg()[box] || DEFAULTS[box] || [])) {
     let t;
     if (e.kind === 'item') t = `Equipamentos ${RAR_PT[e.rarity] || e.rarity}${e.plusMax ? ` (até +${e.plusMax})` : ''}`;
     else if (e.kind === 'material') t = G.ITEM_BASES[e.item] ? G.ITEM_BASES[e.item].name : e.item;
