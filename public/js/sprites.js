@@ -160,7 +160,7 @@
       if (path) blit(opts.white ? recolored('L:' + path, img(path), meta, false, null, true) : img(path), E.pieces.indexOf(name));
     };
     // asas/capa: folha própria (quadro maior), um bloco por classe; nível 2 brilha
-    const WG = S.manifest.wings, wk = eq.wings, wblk = WG && wk ? WG.classes.indexOf(cls) : -1;
+    const WG = S.manifest.wings, wk = eq.wings, wblk = WG && wk ? Math.max(0, WG.classes.indexOf(cls)) : -1;
     const wing = (path, glow) => {
       if (!path || wblk < 0) return;
       const im = opts.white ? recolored('L:' + path, img(path), meta, false, null, true) : img(path);
