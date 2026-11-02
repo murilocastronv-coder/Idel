@@ -39,6 +39,16 @@ const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const insideRect = (p, area) => !!(p && area && p.x >= area.x && p.x <= area.x + area.w && p.y >= area.y && p.y <= area.y + area.h);
 
+function autoFarmMapId(p) {
+  const last = p.lastFarm && G.WORLD[p.lastFarm];
+  if (last && p.level >= last.minLevel && !last.safe && !last.arena && !last.pvp) return p.lastFarm;
+  if (p.level <= 10 && G.WORLD.noria && G.WORLD.noria.training) return 'noria';
+  const options = Object.entries(G.WORLD)
+    .filter(([, def]) => def.groups && def.groups.length && !def.safe && !def.arena && !def.pvp && p.level >= def.minLevel)
+    .sort((a, b) => b[1].minLevel - a[1].minLevel);
+  return options[0]?.[0] || (G.WORLD.noria && G.WORLD.noria.training ? 'noria' : null);
+}
+
 // Hard XP: curva pesada (nível 2 = 300 EXP, nível 10 ≈ 12.800, nível 25 ≈ 86.500)
 function expToNext(level) { return Math.floor(100 * Math.pow(level, 2.1) + 200); }
 const XP = () => G.GAME_MODE.expRate;
@@ -593,7 +603,37 @@ class World {
         if (m) { p.target = m; p.moveTo = null; }
         return;
       }
-      case 'auto': p.auto = !!msg.on; p.dirty = true; if (!p.auto) p.target = null; return;
+      case 'auto': {
+        p.auto = !!msg.on; p.dirty = true;
+        if (!p.auto) { p.target = null; p.moveTo = null; return; }
+        // Cidades seguras não têm monstros de farm: guie o personagem para Nória
+        // (área inicial) ou para o último mapa de caça desbloqueado.
+        if (p.map && p.map.def.safe && !p.duel) {
+          const training = p.map.def.training;
+          if (training && (p.level <= training.maxLevel || autoFarmMapId(p) === p.map.id)) {
+            const a = training.area;
+            if (!insideRect(p, a)) {
+              p.target = null;
+              p.moveTo = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+              p.send({ type: 'log', kind: 'info', text: 'Modo AUTO: indo para a área de treinamento.' });
+            }
+            return;
+          }
+          const dest = autoFarmMapId(p);
+          if (dest && dest !== p.map.id) {
+            const def = G.WORLD[dest];
+            this.enterMap(p, dest);
+            if (def.training) {
+              const a = def.training.area;
+              p.moveTo = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+            }
+            p.send({ type: 'log', kind: 'info', text: `Modo AUTO: indo caçar em ${def.name}.` });
+          } else if (!dest) {
+            p.send({ type: 'log', kind: 'warn', text: 'Não há mapa de caça desbloqueado para seu nível.' });
+          }
+        }
+        return;
+      }
       case 'potion': return this.usePotion(p, msg.kind === 'mp' ? 'mp' : 'hp', Date.now(), true);
       case 'teleport': return this.teleport(p, String(msg.map));
       case 'settings': return this.updateSettings(p, msg.settings || {});

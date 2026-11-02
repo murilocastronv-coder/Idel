@@ -1423,7 +1423,8 @@
     $('#pot-mp').textContent = fmt.format(me.pots.mp);
     const ab = $('#btn-auto');
     ab.setAttribute('aria-pressed', me.auto);
-    $('#auto-state').textContent = me.auto ? (inTraining ? 'treinando' : S.map && S.map.safe ? 'na cidade' : 'lutando') : 'desligado';
+    const headingToTraining = !!(me.auto && area && S.map && S.map.safe && !inTraining);
+    $('#auto-state').textContent = me.auto ? (inTraining ? 'treinando' : headingToTraining ? 'indo à área' : S.map && S.map.safe ? 'na cidade' : 'lutando') : 'desligado';
     $('#pts-badge').hidden = !(me.free > 0);
     const pb = $('#btn-pvp');
     pb.setAttribute('aria-pressed', !!me.pvpOn);
