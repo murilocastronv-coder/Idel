@@ -108,7 +108,9 @@
       case 'quests': S.quests = m; $('#quest-badge').hidden = !m.claimable; if (S.panel === 'quests') renderQuests(); return;
       case 'offline': return showOffline(m);
       case 'chat': return addChat(m, true);
-      case 'chatlog': $('#chat-lines').innerHTML = ''; m.lines.forEach((l) => addChat(l, false)); return;
+      case 'chatlog': CHAT_CHANNELS.forEach((c) => { CHAT_LOGS[c] = []; }); m.lines.forEach((l) => addChat(l, false)); return;
+      case 'social': if (m.action === 'partyChanged') { send({ type: 'social', area: 'party', action: 'info' }); return; } if (m.action === 'info') { S.social = m; renderSocialInfo(); return; } return;
+      case 'socialInvite': { const ok = window.confirm(m.kind === 'guild' ? `${m.from} convidou você para a guilda ${m.guildName}. Aceitar?` : `${m.from} convidou você para a party. Aceitar?`); send({ type: 'social', area: m.kind, action: ok ? 'accept' : 'decline' }); return; }
       case 'kicked': S.kicked = true; centerMsg(esc(m.reason), true); return;
       case 'left': location.href = backHome(); return;
       case 'error':
@@ -1181,6 +1183,7 @@
     for (const n of S.map.npcs || []) {
       if (Math.hypot(n.x - wx, n.y - 10 - wy) < 16) {
         if (n.kind === 'sevina' || n.kind === 'marlon') { CQ.npc = n.kind; openPanel('cquest'); return; }
+        if (n.kind === 'guild') { openPanel('guild'); return; }
         if (n.kind === 'vault') { if (S.panel !== 'vault') openPanel('vault'); return; }
         if (n.kind === 'smith') { if (S.panel !== 'smith') openPanel('smith'); return; }
         if (n.kind === 'teleport') { openPanel('maps'); return; }
@@ -1361,6 +1364,7 @@
     else if (name === 'arena') renderArena();
     else if (name === 'smith') renderSmith();
     else if (name === 'cquest') { renderCQ(); send({ type: 'cqInfo', npc: CQ.npc }); }
+    else if (name === 'guild') send({ type: 'social', area: 'guild', action: 'info' });
     else if (name === 'admin') { if (!ADM.open) { ADM.open = true; renderAdmin(); } }
   }
   $$('.menu [data-panel]').forEach((b) => { b.onclick = () => openPanel(b.dataset.panel); });
@@ -1845,29 +1849,55 @@
 
   // ================= chat =================
   function addChat(l, notify) {
-    const li = document.createElement('li');
-    if (!l.from) { li.className = 'sys'; li.textContent = l.en && window.I18N && I18N.lang === 'en' ? l.en : l.text; if (/DOURAD|Dourad|Golden|GOLDEN/.test(l.text)) li.classList.add('gold'); }
-    else {
-      if (l.vipTier === 1 || l.vipTier === 2) {
-        const tag = document.createElement('span'); tag.className = 'chat-vip vip-' + l.vipTier;
-        tag.textContent = l.vipTier === 2 ? '[VIP PLATINUM] ' : '[VIP GOLD] '; li.appendChild(tag);
-      }
-      const b = document.createElement('b'); b.textContent = l.from + ': '; li.appendChild(b); li.append(l.text);
-    }
-    const ul = $('#chat-lines'); ul.appendChild(li);
-    while (ul.children.length > 80) ul.firstChild.remove();
-    ul.scrollTop = ul.scrollHeight;
+    const channel = CHAT_CHANNELS.includes(l.channel) ? l.channel : (l.from ? 'global' : 'information');
+    CHAT_LOGS[channel].push(l);
+    if (CHAT_LOGS[channel].length > 100) CHAT_LOGS[channel].shift();
+    if (channel === activeChatChannel) paintChat();
     if (notify && S.panel !== 'chat') {
       if (!l.from) feed(l.en && window.I18N && I18N.lang === 'en' ? l.en : l.text, /Dourad|DOURAD/.test(l.text) ? 'gold' : 'lvl');
       else { S.chatUnread++; $('#chat-badge').hidden = false; }
     }
   }
+  const CHAT_CHANNELS = ['local','global','private','guild','party','information'];
+  const CHAT_LOGS = Object.fromEntries(CHAT_CHANNELS.map((c) => [c, []]));
+  let activeChatChannel = 'global';
+  function paintChat() {
+    const ul = $('#chat-lines'); ul.replaceChildren();
+    for (const l of CHAT_LOGS[activeChatChannel]) {
+      const li = document.createElement('li');
+      if (!l.from) { li.className = 'sys'; li.textContent = l.en && window.I18N && I18N.lang === 'en' ? l.en : l.text; if (/DOURAD|Dourad|Golden|GOLDEN/.test(l.text)) li.classList.add('gold'); }
+      else {
+        if (l.vipTier === 1 || l.vipTier === 2) {
+          const tag = document.createElement('span'); tag.className = 'chat-vip vip-' + l.vipTier;
+          tag.textContent = l.vipTier === 2 ? '[VIP PLATINUM] ' : '[VIP GOLD] '; li.appendChild(tag);
+        }
+        const b = document.createElement('b'); b.textContent = l.from + ': '; li.appendChild(b); li.append(l.text);
+      }
+      ul.appendChild(li);
+    }
+    ul.scrollTop = ul.scrollHeight;
+    $('#chat-title').textContent = 'Chat · ' + ({local:'Local',global:'Global',private:'Privado',guild:'Guilda',party:'Party',information:'Informações'}[activeChatChannel]);
+    $('#chat-target').hidden = activeChatChannel !== 'private';
+    $$('.chat-tabs [data-chat-channel]').forEach((b) => b.classList.toggle('active', b.dataset.chatChannel === activeChatChannel));
+  }
+  function renderSocialInfo() {
+    if (!S.social) return;
+    const g = S.social.guild, party = S.social.party;
+    $('#social-summary').textContent = `Guilda: ${g ? g.name + ' · ' + g.members + ' membro(s)' : 'nenhuma'} · Party: ${party ? party.members.join(', ') : 'nenhuma'}`;
+  }
+  $$('.chat-tabs [data-chat-channel]').forEach((b) => { b.onclick = () => { activeChatChannel = b.dataset.chatChannel; paintChat(); }; });
+  $$('[data-social]').forEach((b) => {
+    b.onclick = () => {
+      const [area, action] = b.dataset.social.split(':');
+      const target = area === 'guild' && action === 'create' ? $('#guild-name').value : area === 'guild' ? $('#guild-target').value : $('#party-target').value;
+      send({ type: 'social', area, action, target });
+    };
+  });
   $('#chat-form').addEventListener('submit', (e) => {
     e.preventDefault();
-    const inp = e.target.text;
-    const v = inp.value.trim();
+    const inp = e.target.text, v = inp.value.trim();
     if (v.startsWith('/')) { sendCmd(v); chatSys(v, 'cmd'); }
-    else if (v) send({ type: 'chat', text: inp.value });
+    else if (v) send({ type: 'chat', text: inp.value, channel: activeChatChannel, target: $('#chat-target').value });
     inp.value = '';
   });
   function sendCmd(text) { send({ type: 'cmd', text, nonce: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) }); }
