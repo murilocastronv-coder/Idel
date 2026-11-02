@@ -72,7 +72,11 @@
   }
 
   function frameOf(meta, action, t, once) {
-    const a = meta.actions[action] || meta.actions.idle;
+    // A corrida reutiliza os frames desenhados de caminhada numa cadência maior,
+    // evitando sprites repetidos e mantendo compatíveis os equipamentos em camadas.
+    let a = meta.actions[action];
+    if (!a && action === 'run' && meta.actions.walk) a = { ...meta.actions.walk, fps: Math.max(12, meta.actions.walk.fps || 0) };
+    a = a || meta.actions.idle;
     const n = a.frames;
     let f = Math.floor((t / 1000) * a.fps);
     f = once ? Math.min(n - 1, f) : ((f % n) + n) % n;
