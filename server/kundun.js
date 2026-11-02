@@ -55,7 +55,7 @@ const DEFAULTS = {
 };
 
 let H = null;
-function cfg() { return SET.get('kundun', DEFAULTS); }
+function cfg() { return { ...DEFAULTS, ...(SET.get('kundun', DEFAULTS) || {}) }; }
 async function init(helpers) { H = helpers; await SET.load('kundun', DEFAULTS); }
 
 const randi = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
