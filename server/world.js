@@ -125,6 +125,11 @@ function publicItem(it) {
     rarity: it.rarity, plus: it.plus, equipped: !!it.equipped, eqSlot: it.equipped ? EQUIP.eqSlotOf(it) : null, reqs: EQUIP.reqs(it.base), locked: !!it.locked,
     stats: itemStats(it), value: itemValue(it) };
 }
+function stackLimit(base) {
+  const max = Number(G.MAX_STACK) || 999;
+  const configured = Number((G.ITEM_BASES[base] || {}).stack) || max;
+  return Math.min(max, configured);
+}
 function bagUsed(p) { return p.items.filter((i) => !i.equipped).length; }
 
 function skillDesc(s) {
@@ -866,11 +871,12 @@ class World {
   // material empilhável: completa as pilhas que já existem e cria novas se precisar. Devolve quanto entrou.
   async giveMaterial(p, base, qty, opts = {}) {
     let left = Math.max(0, Math.round(qty));
+    const limit = stackLimit(base);
     let got = 0;
     let last = null;
     for (const st of p.items.filter((i) => i.base === base && !i.equipped).sort((a, b) => Number(a.id) - Number(b.id))) {
       if (left <= 0) break;
-      const room = G.MAX_STACK - (Number(st.qty) || 1);
+      const room = limit - (Number(st.qty) || 1);
       if (room <= 0) continue;
       const n = Math.min(room, left);
       const { rows } = await db.query('UPDATE items SET qty = qty + $3 WHERE id = $1 AND character_id = $2 AND qty + $3 <= $4 RETURNING qty', [st.id, p.charId, n, G.MAX_STACK]);
@@ -878,7 +884,7 @@ class World {
       st.qty = Number(rows[0].qty); left -= n; got += n; last = st;
     }
     while (left > 0 && bagUsed(p) < G.INVENTORY_SIZE) {
-      const n = Math.min(G.MAX_STACK, left);
+      const n = Math.min(limit, left);
       const b = G.ITEM_BASES[base];
       const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus, qty) VALUES ($1,$2,$3,0,$4)
         RETURNING id, base, rarity, plus, equipped, qty`, [p.charId, base, b.rarity || 'common', n]);
