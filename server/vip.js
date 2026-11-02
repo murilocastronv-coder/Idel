@@ -166,11 +166,15 @@ async function deliver(s, onGranted) {
   return 'entregue';
 }
 
-async function webhook(raw, sigHeader, onGranted) {
+async function webhook(raw, sigHeader, onGranted, onOther) {
   if (!verifySig(raw, sigHeader)) return { code: 400, body: { error: 'assinatura inválida' } };
   const ev = JSON.parse(raw.toString('utf8'));
   const o = ev.data && ev.data.object;
   if ((ev.type === 'checkout.session.completed' || ev.type === 'checkout.session.async_payment_succeeded') && o && o.payment_status === 'paid') {
+    if (o.metadata && o.metadata.game === 'muidle-premium') {
+      const result = onOther ? await onOther(o) : 'outro-produto';
+      return { code: 200, body: { received: true, result } };
+    }
     const r = await deliver(o, onGranted);
     return { code: 200, body: { received: true, result: r } };
   }
