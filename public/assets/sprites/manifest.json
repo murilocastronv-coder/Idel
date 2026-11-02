@@ -1,5 +1,5 @@
 {
- "version": 5,
+ "version": 6,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",
@@ -23,7 +23,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -34,6 +35,11 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
    "hairKeys": null,
@@ -65,7 +71,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -76,6 +83,11 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
    "hairKeys": null,
@@ -107,7 +119,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -118,6 +131,11 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
    "hairKeys": [
@@ -175,7 +193,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -186,6 +205,11 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
    "hairKeys": null,
@@ -217,7 +241,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -228,6 +253,11 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
    "hairKeys": null,
@@ -259,7 +289,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -270,6 +301,11 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
    "hairKeys": [
@@ -329,7 +365,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -340,9 +377,14 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
-   "scale": 1.0
+   "scale": 1
   },
   "goblin": {
    "sheet": "monsters/goblin.png",
@@ -366,7 +408,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -377,9 +420,14 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
-   "scale": 1.0
+   "scale": 1
   },
   "goblin_elite": {
    "sheet": "monsters/goblin_elite.png",
@@ -403,7 +451,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -414,6 +463,11 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
    "scale": 1.25
@@ -440,7 +494,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -451,6 +506,11 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
    "scale": 1.25
@@ -477,7 +537,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -488,9 +549,14 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
-   "scale": 1.0
+   "scale": 1
   },
   "spider": {
    "sheet": "monsters/spider.png",
@@ -514,7 +580,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -525,9 +592,14 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
-   "scale": 1.0
+   "scale": 1
   },
   "skeleton": {
    "sheet": "monsters/skeleton.png",
@@ -551,7 +623,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -562,9 +635,14 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
-   "scale": 1.0
+   "scale": 1
   },
   "skeleton_king": {
    "sheet": "monsters/skeleton_king.png",
@@ -588,7 +666,8 @@
     "attack": {
      "row": 2,
      "frames": 4,
-     "fps": 12
+     "fps": 12,
+     "impactFrame": 2
     },
     "hit": {
      "row": 3,
@@ -599,6 +678,11 @@
      "row": 4,
      "frames": 4,
      "fps": 6
+    },
+    "run": {
+     "row": 1,
+     "frames": 4,
+     "fps": 12
     }
    },
    "scale": 1.5
