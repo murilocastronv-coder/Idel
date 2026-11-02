@@ -518,6 +518,7 @@ class World {
       for (const o of p.map.players.values()) o.send({ type: 'pl', id: p.id });
     }
     p.map = m;
+    if (m.def.safe && p.settings.pvpOn) { p.settings.pvpOn = false; p.dirty = true; }
     const [sx, sy] = pos || m.def.spawn;
     p.x = clamp(sx + (pos ? 0 : rand(-20, 20)), 20, m.def.w - 20);
     p.y = clamp(sy + (pos ? 0 : rand(-20, 20)), 20, m.def.h - 20);
@@ -1046,6 +1047,10 @@ class World {
   }
 
   setPvp(p, on, now) {
+    if (on && p.map && p.map.def.safe) {
+      p.settings.pvpOn = false; p.dirty = true;
+      return p.send({ type: 'log', kind: 'warn', text: 'PvP desativado nesta cidade segura.' });
+    }
     if (on === !!p.settings.pvpOn) return;
     const lastFight = Math.max(p.pvpHitAt || 0, p.pvpAtkAt || 0);
     if (!on && now - lastFight < 10000) {
