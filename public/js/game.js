@@ -1015,6 +1015,7 @@
       }
       const [x, y] = toScreen(e.rx, e.ry);
       const [act, t, once] = animOf(e, now);
+      const runBob = act === 'run' ? Math.round(Math.abs(Math.sin((now + (e.phase || 0)) * 0.018)) * 1.5 * zoom) : 0;
       e.hpShow = e.hpShow === undefined ? e.hp : e.hpShow + (e.hp - e.hpShow) * 0.25;
       if (kind === 'm') {
         const name = monSprite(e);
@@ -1051,7 +1052,7 @@
         shadowAt(x, y, w * 0.8);
         const hurt = now < (e.hurtUntil || 0) && !e.dyingAt;
         if (act === 'run') drawRunPuff(x, y, now, e.phase, e.flip, '#b9a486');
-        Sprites.monster(ctx, name, act, t, x, y, sc * (e.scale || 1), !e.flip, { once, white: hurt && (now - e.hurtUntil) > -90, tint: e.tint && e.tint[0] === '#' ? e.tint : null });
+        Sprites.monster(ctx, name, act, t, x, y - runBob, sc * (e.scale || 1), !e.flip, { once, white: hurt && (now - e.hurtUntil) > -90, tint: e.tint && e.tint[0] === '#' ? e.tint : null });
         if (e.dead) continue;
         const top = y - h - 6 * dpr;
         if (e.golden) {
@@ -1085,7 +1086,7 @@
         }
         const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : undefined;
         if (act === 'run') drawRunPuff(x, y, now, e.phase, e.flip, '#c9b98f');
-        Sprites.hero(ctx, info.cls, info.ap, act, t, x, y, sc, e.flip, { once, equip: eq });
+        Sprites.hero(ctx, info.cls, info.ap, act, t, x, y - runBob, sc, e.flip, { once, equip: eq });
         if (e.dead) continue;
         const top = y - HERO_H * sc - 4 * dpr;
         hpBar(x, top, 16 * zoom, e.hpShow / e.maxHp, isMe ? '#6aa84f' : (e.flags & 1) ? '#ff5a4a' : '#4aa3ff');
