@@ -166,14 +166,27 @@
       const im = opts.white ? recolored('L:' + path, img(path), meta, false, null, true) : img(path);
       if (!im) return;
       const sx = f * WG.fw, sy = (wblk * WG.rowsPerClass + row) * WG.fh;
-      const dx = -Math.round(WG.pivot[0] * scale), dy = -Math.round(WG.pivot[1] * scale), w = Math.round(WG.fw * scale), h = Math.round(WG.fh * scale);
-      if (glow && !opts.white) { ctx.save(); ctx.shadowColor = glow; ctx.shadowBlur = 7 * scale; ctx.drawImage(im, sx, sy, WG.fw, WG.fh, dx, dy, w, h); ctx.restore(); }
-      else ctx.drawImage(im, sx, sy, WG.fw, WG.fh, dx, dy, w, h);
+      const w = Math.round(WG.fw * scale), h = Math.round(WG.fh * scale);
+      const flap = Math.sin((Number(t) || 0) / 520);
+      const spread = 0.91 + (flap + 1) * 0.045;
+      const bob = Math.round(flap * 1.5 * scale);
+      const cx = -Math.round(WG.pivot[0] * scale) + w / 2;
+      const cy = -Math.round(WG.pivot[1] * scale) + h / 2 + bob;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(spread, 1);
+      if (glow && !opts.white) { ctx.shadowColor = glow; ctx.shadowBlur = 7 * scale; }
+      ctx.drawImage(im, sx, sy, WG.fw, WG.fh, -w / 2, -h / 2, w, h);
+      ctx.restore();
     };
-    if (wk && WG) wing(WG.sheets[wk], WG.glow && WG.glow[wk]);
+    // Itens sazonais e asas adicionadas sem spritesheet próprio usam uma asa 2D compatível.
+    const wingKey = WG && wk && WG.sheets[wk] ? wk : 'wings_dragon';
+    const wingPath = WG && (WG.sheets[wingKey] || Object.values(WG.sheets)[0]);
+    if (wk && WG) wing(wingPath, WG.glow && WG.glow[wingKey]);
     blit(back, 0);
     piece('boots'); piece('armor_mid'); piece('gloves_mid');
-    if (wk && WG && WG.over) wing(WG.over[wk], null);
+    const wingOver = WG && wk && WG.over && (WG.over[wk] || WG.over[wingKey]);
+    if (wk && wingOver) wing(wingOver, null);
     piece('helm');
     const wb = eq.w === undefined ? S.manifest.weapons.defaults[cls] : eq.w;
     const wi = W && wb ? W.list.indexOf(wb) : -1;
