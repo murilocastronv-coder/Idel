@@ -210,6 +210,8 @@ async function buildStatus() {
       (SELECT count(*) FROM accounts WHERE (created_at AT TIME ZONE $1)::date = (now() AT TIME ZONE $1)::date)::int AS accounts_today,
       (SELECT count(*) FROM accounts WHERE created_at > now() - interval '7 days')::int AS accounts_7d,
       (SELECT count(*) FROM accounts WHERE created_at > now() - interval '30 days')::int AS accounts_30d,
+      (SELECT count(*) FROM accounts WHERE created_at <= now() - interval '7 days')::int AS accounts_base_7d,
+      (SELECT count(DISTINCT account_id) FROM payments WHERE provider = 'stripe' AND status = 'paid' AND plan IN ('vip1','vip2') AND account_id IS NOT NULL)::int AS vip_buyers,
       (SELECT count(*) FROM accounts WHERE created_at > now() - interval '14 days' AND created_at <= now() - interval '7 days')::int AS accounts_prev7d,
       (SELECT count(*) FROM game_activity_days WHERE day = (now() AT TIME ZONE $1)::date)::int AS active_today,
       (SELECT count(DISTINCT account_id) FROM game_activity_days WHERE day > (now() AT TIME ZONE $1)::date - 7)::int AS active_7d,
