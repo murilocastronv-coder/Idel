@@ -789,7 +789,8 @@ class World {
     if (p.mutedUntil > now) return p.send({ type: 'log', kind: 'warn', text: `Você está silenciado no chat por mais ${Math.ceil((p.mutedUntil - now) / 60000)} min.` });
     if (p.lastChat && now - p.lastChat < 1200) return p.send({ type: 'log', kind: 'warn', text: 'Calma: espere um pouco para enviar outra mensagem.' });
     p.lastChat = now;
-    const line = { from: p.name, cls: p.cls, text: t, t: now };
+    const vip = p.vip();
+    const line = { from: p.name, cls: p.cls, vipTier: vip.tier, text: t, t: now };
     this.chat.push(line); if (this.chat.length > 60) this.chat.shift();
     for (const o of this.players.values()) o.send({ type: 'chat', ...line });
   }
