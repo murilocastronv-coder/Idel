@@ -1,0 +1,45 @@
+/* Visual polish for the 2D pixel-art world. Keeps the native pixel grid crisp. */
+#world {
+  image-rendering: pixelated;
+  filter: saturate(1.12) contrast(1.045);
+}
+
+/* Sharper, more jewel-like item previews with rarity-colored framing. */
+.ii-icon {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(255, 224, 138, .12), transparent 68%),
+    linear-gradient(145deg, #222943 0%, #101426 72%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 231, 160, .16),
+    inset 0 -8px 16px rgba(0, 0, 0, .34),
+    0 0 12px color-mix(in srgb, var(--r) 34%, transparent);
+}
+
+.ii-icon::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--r) 58%, transparent);
+  opacity: .72;
+}
+
+.ii-icon canvas {
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .55));
+}
+
+#minimap {
+  image-rendering: pixelated;
+  box-shadow: 0 0 14px rgba(113, 190, 125, .16), inset 0 0 0 1px rgba(255, 231, 160, .12);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ii-icon { transition: box-shadow .18s ease, border-color .18s ease, transform .18s ease; }
+  .ii-icon:hover {
+    transform: translateY(-1px);
+    box-shadow: inset 0 0 0 1px rgba(255, 231, 160, .24), 0 0 18px color-mix(in srgb, var(--r) 48%, transparent);
+  }
+}
