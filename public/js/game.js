@@ -1847,7 +1847,13 @@
   function addChat(l, notify) {
     const li = document.createElement('li');
     if (!l.from) { li.className = 'sys'; li.textContent = l.en && window.I18N && I18N.lang === 'en' ? l.en : l.text; if (/DOURAD|Dourad|Golden|GOLDEN/.test(l.text)) li.classList.add('gold'); }
-    else { const b = document.createElement('b'); b.textContent = l.from + ': '; li.appendChild(b); li.append(l.text); }
+    else {
+      if (l.vipTier === 1 || l.vipTier === 2) {
+        const tag = document.createElement('span'); tag.className = 'chat-vip vip-' + l.vipTier;
+        tag.textContent = l.vipTier === 2 ? '[VIP PLATINUM] ' : '[VIP GOLD] '; li.appendChild(tag);
+      }
+      const b = document.createElement('b'); b.textContent = l.from + ': '; li.appendChild(b); li.append(l.text);
+    }
     const ul = $('#chat-lines'); ul.appendChild(li);
     while (ul.children.length > 80) ul.firstChild.remove();
     ul.scrollTop = ul.scrollHeight;
