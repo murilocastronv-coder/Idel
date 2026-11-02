@@ -171,6 +171,7 @@ const WORLD = {
       { id: 'events', name: 'Guarda dos Eventos', x: 680, y: 330, kind: 'castle_guard' },
       { id: 'quests', name: 'Marlon, Mestre de Missões', x: 760, y: 330, kind: 'marlon' },
       { id: 'teleport', name: 'Guardião do Portal', x: 840, y: 330, kind: 'teleport' },
+      { id: 'guild', name: 'Mestre de Guildas', x: 920, y: 330, kind: 'guild' },
     ], groups: [] },
   devias: { name: 'Devias', theme: 'snow', w: 1200, h: 800, minLevel: 10, safe: true, spawn: [120, 400],
     npcs: [{ id: 'sevina', name: 'Priestess Sevina', x: 210, y: 330, kind: 'sevina' }, { id: 'vault', name: 'Baú Pessoal', x: 170, y: 460, kind: 'vault', optional: true }],
