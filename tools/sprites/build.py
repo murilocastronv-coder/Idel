@@ -50,12 +50,23 @@ def rgb(c):
     return list(c[:3])
 
 
+def runtime_actions(actions):
+    """Preserva no manifest as temporizações usadas pelo cliente."""
+    walk = actions.get('walk')
+    if walk:
+        actions['run'] = {'row': walk['row'], 'frames': walk['frames'], 'fps': max(12, walk.get('fps', 12))}
+    attack = actions.get('attack')
+    if attack:
+        attack['impactFrame'] = min(2, attack['frames'] - 1)
+    return actions
+
+
 def main():
     os.makedirs(os.path.join(OUT, 'heroes'), exist_ok=True)
     os.makedirs(os.path.join(OUT, 'monsters'), exist_ok=True)
     os.makedirs(os.path.join(OUT, 'effects'), exist_ok=True)
     os.makedirs(PREVIEW, exist_ok=True)
-    manifest = {'version': 5, 'heroes': {}, 'monsters': {}, 'effects': {},
+    manifest = {'version': 6, 'heroes': {}, 'monsters': {}, 'effects': {},
                 'skinKeys': [list(c) for c in ramp5(heroes.SKIN)]}
     pivot = (heroes.BUILD['cx'], heroes.FOOT_Y)
 
@@ -66,7 +77,7 @@ def main():
         hk = None
         if cls in heroes.HAIR_DEFAULT:
             hk = [list(c) for c in ramp5(heroes.hair_ramp(heroes.HAIR_DEFAULT[cls]))]
-        manifest['heroes'][cls] = {'sheet': path, 'fw': heroes.FW, 'fh': heroes.FH, 'pivot': list(pivot), 'actions': meta,
+        manifest['heroes'][cls] = {'sheet': path, 'fw': heroes.FW, 'fh': heroes.FH, 'pivot': list(pivot), 'actions': runtime_actions(meta),
                                    'hairKeys': hk, 'defaultHair': heroes.HAIR_DEFAULT.get(cls)}
 
     # camadas do herói (corpo / braço da frente), peças de armadura e armas — equipamento visível
@@ -149,7 +160,7 @@ def main():
         img, meta = sheet(fn, fw, fh, pv, rotate_death=rot)
         path = f'monsters/{name}.png'
         img.save(os.path.join(OUT, path))
-        manifest['monsters'][name] = {'sheet': path, 'fw': fw, 'fh': fh, 'pivot': list(pv), 'actions': meta, 'scale': scale}
+        manifest['monsters'][name] = {'sheet': path, 'fw': fw, 'fh': fh, 'pivot': list(pv), 'actions': runtime_actions(meta), 'scale': scale}
 
     fx_list = []
     for k in ['fire', 'ice', 'energy', 'arrow', 'dark', 'spirit']:
