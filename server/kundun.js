@@ -207,7 +207,8 @@ function sanitize(input) {
       }
       if (e.kind === 'item' || e.kind === 'chaosweapon') {
         if (!RARITY_ORDER.includes(e.rarity)) throw new Error(`${lbl}: raridade inválida.`);
-        o.rarity = e.rarity; o.plusMin = n(e.plusMin || 0, 0, 15, '+ mínimo'); o.plusMax = n(e.plusMax || 0, o.plusMin, 15, '+ máximo');
+        if (box === 'kundun_promo' && !['rare', 'epic'].includes(e.rarity)) throw new Error(`${lbl}: a caixa promocional aceita apenas itens raros ou épicos.`);
+        o.rarity = e.rarity; o.plusMin = n(e.plusMin || 0, 0, 8, box === 'kundun_promo' ? '+ mínimo (máximo 8)' : '+ mínimo'); o.plusMax = n(e.plusMax || 0, o.plusMin, box === 'kundun_promo' ? 8 : 15, box === 'kundun_promo' ? '+ máximo (máximo 8)' : '+ máximo');
       }
       return o;
     });
