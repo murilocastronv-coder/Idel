@@ -494,6 +494,7 @@ class World {
   async leave(p) {
     if (!this.players.has(p.charId) || this.players.get(p.charId) !== p) return;
     this.players.delete(p.charId);
+    SOCIAL.onLeave(p);
     TRADE.drop(p);
     ARENA.onLeave(p);
     if (p.duel) this.endDuel(null, null, 'draw', p);
