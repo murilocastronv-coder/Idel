@@ -148,6 +148,7 @@ async function act(world,p,msg) {
 async function chat(world,p,request) {
   W=world;
   const text=String(request.text||'').replace(/[\u0000-\u001f]/g,'').trim().slice(0,120);
+  if (request.channel === 'information') return send(p,'log',{kind:'warn',text:'O canal Informações é reservado ao servidor.'});
   const channel=SOCIAL_CHANNELS.has(request.channel)?request.channel:'global';
   if (!text) return;
   if (text.startsWith('/')) return world.commands ? world.commands.run(p,text) : undefined;
@@ -192,4 +193,19 @@ function messageInfo(world,text,en) {
   world.chat.push(line); if (world.chat.length>60) world.chat.shift();
   for (const p of world.players.values()) send(p,'chat',line);
 }
-module.exports={init(world){W=world;},act,chat,messageInfo,info};
+function onLeave(p) {
+  const party = activeParty(p.charId);
+  if (!party) return;
+  party.members.delete(p.charId); partyOf.delete(p.charId);
+  if (party.leader === p.charId) {
+    const next = party.members.values().next().value;
+    parties.delete(party.leader);
+    if (next) {
+      parties.set(next, party.members);
+      for (const member of party.members) partyOf.set(member, next);
+      broadcastParty(next, 'social', { action: 'partyChanged' });
+    }
+  } else broadcastParty(party.leader, 'social', { action: 'partyChanged' });
+  pruneParty(party.leader);
+}
+module.exports={init(world){W=world;},act,chat,messageInfo,info,onLeave};
