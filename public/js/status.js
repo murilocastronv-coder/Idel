@@ -149,6 +149,13 @@
     const c3 = pct(S.accounts, before);
     $('#cmp-month').innerHTML = `${T('Crescimento em 30 dias')}<b>+${fmt.format(S.accounts_30d)}<span class="delta ${c3.cls}">${c3.txt}</span></b><small>${T('ativos no mês')}: ${fmt.format(S.active_30d)}</small>`;
 
+    const pctText = (n, d) => d > 0 ? `${new Intl.NumberFormat(LOC, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(n / d * 100)}%` : '—';
+    const signupBase = Math.max(0, Number(S.accounts_base_7d) || 0);
+    $('#rate-signup').innerHTML = `Criação de contas (7 dias)<b>${pctText(S.accounts_7d, signupBase)} <span class="delta flat">+${fmt.format(S.accounts_7d)}</span></b><small>novas contas ÷ base existente no início do período</small>`;
+    $('#rate-vip').innerHTML = `Conversão VIP (total)<b>${pctText(S.vip_buyers, S.accounts)}</b><small>${fmt.format(S.vip_buyers)} contas com compra Stripe aprovada ÷ ${fmt.format(S.accounts)} contas</small>`;
+    $('#rate-active-today').innerHTML = `Ativos no jogo hoje<b>${pctText(S.active_today, S.accounts)}</b><small>${fmt.format(S.active_today)} contas únicas dentro do mundo ÷ total de contas</small>`;
+    $('#rate-active-7d').innerHTML = `Ativos no jogo (7 dias)<b>${pctText(S.active_7d, S.accounts)}</b><small>${fmt.format(S.active_7d)} contas únicas ÷ total de contas</small>`;
+
     const D = data.daily;
     line($('#c-total'), D.map((d) => ({ l: dayLabel(d.day), t: dayLong(d.day), v: d.total_accounts })), { label: T('Total de contas'), unit: T('contas'), head: [T('Dia'), T('Contas')] });
     bars($('#c-new'), D.map((d) => ({ l: dayLabel(d.day), t: dayLong(d.day), v: d.new_accounts })), { label: T('Novas contas por dia'), unit: T('novas contas'), head: [T('Dia'), T('Novas contas')] });
