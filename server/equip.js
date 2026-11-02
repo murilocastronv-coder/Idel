@@ -23,7 +23,9 @@ const equipable = (b) => b && SLOTS.includes(b.slot === 'ring' ? 'ring' : b.slot
 function defaultRule(base) {
   const b = G.ITEM_BASES[base];
   const r = { classes: CLASSES.slice(), minEvo: 0, level: b.req || 1, str: 0, agi: 0, ene: 0, vit: 0, cmd: 0, slot: b.slot, enabled: true };
-  if (b.slot === 'weapon') {
+  if (b.classes) {
+    r.classes = b.classes.slice();
+  } else if (b.slot === 'weapon') {
     r.classes = CLASSES.filter((c) => (G.CLASS_WEAPONS[c] || []).includes(b.kind));
     const st = STAT_OF_KIND[b.kind];
     if (st) r[st] = Math.round((b.req || 1) * 2 + 10);
