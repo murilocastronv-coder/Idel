@@ -1330,7 +1330,7 @@ class World {
       this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
       p.send({ type: 'reward', exp, zen, mon: m.T.name, share: Math.round(share * 100) });
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
-      const rolls = (i === 0 ? 2 : (share >= 0.1 && Math.random() < 0.5 ? 1 : 0)) + (Math.random() < Math.min(0.5, (pk.bossDrop - 1) * 0.5) ? 1 : 0);
+      const rolls = (i === 0 ? 2 : (share >= 0.1 && Math.random() < 0.5 ? 1 : 0)) + (Math.random() < Math.min(0.5, pk.bossDrop - 1) ? 1 : 0);
       for (let r = 0; r < rolls; r++) { const it = rollItem(m.T.level, 'boss'); it.pos = [Math.round(m.x + rand(-20, 20)), Math.round(m.y + rand(-10, 10))]; p.run(() => this.addItem(p, it)); }
       if (i === 0 || share >= 0.1) DROPS.onKill(this, p, m, map);
       p.dirty = true;
