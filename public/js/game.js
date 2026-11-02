@@ -736,12 +736,35 @@
     ctx.globalAlpha = 1;
   }
 
-  // ---------- itens caindo no chão ----------
+  // ---------- ícones de itens e sprites sazonais ----------
   const iconCache = new Map();
+  const christmasSprite = new Image();
+  christmasSprite.src = '/assets/special-christmas-pixel-art.svg';
+  christmasSprite.onload = () => { iconCache.clear(); if (typeof renderInventory === 'function' && S.panel === 'inventory') renderInventory(); };
+  const christmasCrops = {
+    helm:[5,5,66,66], armor:[72,5,66,67], pants:[138,5,65,68], gloves:[205,17,53,49], boots:[263,5,57,67],
+    wings:[0,70,108,58], pendant:[99,68,58,61], ring1:[158,74,44,53], ring2:[202,72,48,53], sword:[252,66,68,66],
+    bow:[5,124,76,67], shield:[155,125,74,65]
+  };
+  function drawItemIcon(ctx, item, x, y, scale, fallbackColor) {
+    const part = String(item.base || '').match(/^festive_\\d+_(\\w+)$/);
+    const crop = part && christmasCrops[part[1]];
+    const size = scale * 10;
+    if (crop && christmasSprite.complete && christmasSprite.naturalWidth) {
+      const [sx,sy,sw,sh] = crop;
+      const ratio = Math.min(size / sw, size / sh);
+      const dw = sw * ratio, dh = sh * ratio;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(christmasSprite, sx, sy, sw, sh, x + (size-dw)/2, y + (size-dh)/2, dw, dh);
+      return;
+    }
+    PA.drawIcon(ctx, item.icon, x, y, scale, fallbackColor || item.ic || RAR[item.rarity] || '#c8c8c8');
+  }
+  christmasSprite.onerror = () => { christmasSprite.src = ''; };
   function itemIcon(item) {
-    const k = item.icon + item.rarity + (item.ic || '');
+    const k = (item.base || item.icon) + item.rarity + (item.ic || '');
     let c = iconCache.get(k);
-    if (!c) { c = document.createElement('canvas'); c.width = 48; c.height = 48; PA.drawIcon(c.getContext('2d'), item.icon, 6, 6, 3, item.ic || RAR[item.rarity] || '#c8c8c8'); iconCache.set(k, c); }
+    if (!c) { c = document.createElement('canvas'); c.width = 48; c.height = 48; drawItemIcon(c.getContext('2d'), item, 6, 6, 3); iconCache.set(k, c); }
     return c;
   }
   // itens no chão (materiais com dono e tempo)
@@ -1412,7 +1435,7 @@
 
   function iconCanvas(it) {
     const c = document.createElement('canvas'); c.width = 48; c.height = 48;
-    PA.drawIcon(c.getContext('2d'), it.icon, 3, 3, 3, ACCENT(it));
+    drawItemIcon(c.getContext('2d'), it, 3, 3, 3, ACCENT(it));
     return c;
   }
   function slotButton(it, onClick) {
@@ -2695,7 +2718,7 @@
   const FAIL_TXT = { lose_all: 'Se falhar: perde o item principal, os materiais e o Zen.', keep_main: 'Se falhar: o item principal volta para a bolsa; perde os materiais e o Zen.', keep_items: 'Se falhar: só o Zen é cobrado; os itens voltam.' };
   function chaosIcon(it, size = 40) {
     const c = document.createElement('canvas'); c.width = 48; c.height = 48; c.style.width = c.style.height = size + 'px';
-    PA.drawIcon(c.getContext('2d'), it.icon, 3, 3, 3, it.ic || RAR[it.rarity] || '#c8c8c8');
+    drawItemIcon(c.getContext('2d'), it, 3, 3, 3, it.ic || RAR[it.rarity] || '#c8c8c8');
     return c;
   }
   function renderChaos() {
