@@ -1753,7 +1753,7 @@
             '<small>' + detail + '</small><span>' + brl.format(p.price / 100) + '</span>' +
             '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled ? ' disabled' : '') + '>' + (data.enabled ? (isBox ? 'Comprar caixas' : 'Comprar conjunto') : 'Pagamento indisponível') + '</button></div></article>';
         }).join('') + '</div></section>';
-      $('[data-premium-icon]', holder).forEach((canvas, i) => {
+      Array.from(holder.querySelectorAll('[data-premium-icon]')).forEach((canvas, i) => {
         const product = data.catalog[i];
         PA.drawIcon(canvas.getContext('2d'), product && product.type === 'box' ? 'box' : ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, product ? product.tone : '#d82f3f');
       });
