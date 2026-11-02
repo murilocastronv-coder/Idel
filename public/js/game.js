@@ -740,7 +740,7 @@
   const iconCache = new Map();
   const christmasSprite = new Image();
   christmasSprite.src = '/assets/special-christmas-pixel-art.svg';
-  christmasSprite.onload = () => { iconCache.clear(); if (typeof renderInventory === 'function' && S.panel === 'inventory') renderInventory(); };
+  christmasSprite.onload = () => { iconCache.clear(); if (typeof renderBag === 'function' && S.panel === 'bag') renderBag(); };
   const christmasCrops = {
     helm:[5,5,66,66], armor:[72,5,66,67], pants:[138,5,65,68], gloves:[205,17,53,49], boots:[263,5,57,67],
     wings:[0,70,108,58], pendant:[99,68,58,61], ring1:[158,74,44,53], ring2:[202,72,48,53], sword:[252,66,68,66],
