@@ -1724,8 +1724,8 @@
           '<canvas width="72" height="72" data-premium-icon="' + esc(p.id) + '"></canvas><div><b>' + esc(p.name) + '</b>' +
           '<small>' + p.pieces + ' peças · nível ' + p.req + '+ · melhoria +' + p.plus + ' · todas as classes</small><span>' + brl.format(p.price / 100) + '</span>' +
           '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled ? ' disabled' : '') + '>' + (data.enabled ? 'Comprar conjunto' : 'Pagamento indisponível') + '</button></div></article>').join('') + '</div></section>';
-      $('[data-premium-icon]', holder).forEach((canvas, i) => PA.drawIcon(canvas.getContext('2d'), ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, data.catalog[i] ? data.catalog[i].tone : '#d82f3f'));
-      $('[data-premium-buy]', holder).forEach(btn => { btn.onclick = async () => {
+      $$('[data-premium-icon]', holder).forEach((canvas, i) => PA.drawIcon(canvas.getContext('2d'), ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, data.catalog[i] ? data.catalog[i].tone : '#d82f3f'));
+      $$('[data-premium-buy]', holder).forEach(btn => { btn.onclick = async () => {
         btn.disabled = true;
         try {
           const res = await fetch('/api/premium-store/checkout', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-Requested-With':'mui'}, body:JSON.stringify({product:btn.dataset.premiumBuy, back:'/game.html?c=' + encodeURIComponent(charId)}) });
@@ -1734,7 +1734,7 @@
           location.href = j.url;
         } catch(e) { feed(e.message,'warn'); btn.disabled=false; }
       }; });
-      $('[data-premium-claim]', holder).forEach(btn => { btn.onclick = async () => {
+      $$('[data-premium-claim]', holder).forEach(btn => { btn.onclick = async () => {
         btn.disabled=true;
         try {
           const res=await fetch('/api/premium-store/claim',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'mui'},body:JSON.stringify({orderId:Number(btn.dataset.premiumClaim),charId:S.char.id})});
@@ -1865,7 +1865,7 @@
     };
     $('#adm-save-premium').onclick = async () => {
       const products = {};
-      $('[data-premium-price]', body).forEach(i => { const key=i.dataset.premiumPrice; products[key]={price:Math.round(Number(i.value)*100),enabled:!!$('[data-premium-enabled="'+key+'"]',body)?.checked}; });
+      $$('[data-premium-price]', body).forEach(i => { const key=i.dataset.premiumPrice; products[key]={price:Math.round(Number(i.value)*100),enabled:!!$('[data-premium-enabled="'+key+'"]',body)?.checked}; });
       try { const r=await admApi('POST','/api/admin/premium-store',{products}); admMsg(r.message); ADM.data.premiumSets=r.products; } catch(e) { admMsg(e.message,true); }
     };
     const vip = async (days) => {
