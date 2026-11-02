@@ -1303,6 +1303,7 @@ class World {
     const exp = Math.round(m.T.exp * XP() * pk.exp * share);
     const zen = Math.min(5, Math.max(0, Math.round(monsterZen(m.T) * Math.max(0, share) * pk.zen)));
     p.exp += exp; p.zen += zen; p.kills++;
+    const heal = Math.round(p.maxHp * pk.healOnKill); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; p.map.emit({ k: 'heal', t: p.id, d: recovered }); }
     this.quest(p, 'kill', 1); this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
     p.send({ type: 'reward', exp, zen, mon: m.T.name, share: share < 1 ? Math.round(share * 100) : undefined });
     while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
@@ -1314,16 +1315,18 @@ class World {
     const eligible = ranked.map(([charId, dmg]) => ({ p: this.players.get(charId), dmg }))
       .filter((x) => x.p && x.p.map === map && x.dmg > 0);
     const total = eligible.reduce((a, x) => a + x.dmg, 0) || 1;
-    // Um único prêmio total por morte de Boss, repartido por contribuição; VIP não multiplica Zen.
+    // O Zen base do Boss é dividido por contribuição; os bônus VIP são aplicados depois da divisão.
     const pool = bossZen(m.T);
     let distributed = 0;
     eligible.forEach(({ p, dmg }, i) => {
       const share = dmg / total;
-      const zen = Math.round((i === eligible.length - 1 ? pool - distributed : Math.floor(pool * share)) * p.perks().zen);
-      distributed += zen;
+      const baseZen = i === eligible.length - 1 ? pool - distributed : Math.floor(pool * share);
+      distributed += baseZen;
       const pk = p.perks();
+      const zen = Math.round(baseZen * pk.zen);
       const exp = Math.round(m.T.exp * XP() * pk.exp * Math.max(0.1, share));
       p.exp += exp; p.zen += zen; p.bossesKilled++;
+      const heal = Math.round(p.maxHp * pk.healOnKill); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
       this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
       p.send({ type: 'reward', exp, zen, mon: m.T.name, share: Math.round(share * 100) });
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
