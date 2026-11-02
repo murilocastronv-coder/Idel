@@ -1718,7 +1718,7 @@
     holder.innerHTML = '<p class="muted">Carregando conjuntos…</p>';
     try {
       const data = await admApi('GET', '/api/premium-store');
-      holder.innerHTML = '<section class="premium-shop"><h3>Conjuntos semi-full</h3><p class="muted small">30 conjuntos sazonais. Itens acima dos drops comuns, sem atributos full. Após o pagamento, resgate no personagem escolhido.</p>' +
+      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/special-christmas-pixel-art.svg" alt="Set natalino em pixel art 2D" loading="lazy"><div><h3>Conjuntos semi-full</h3><b>Especial Christmas</b><p class="muted small">Armadura natalina, asas, pingente, dois anéis, espada, arco e escudo.</p></div></div><p class="muted small">30 conjuntos sazonais. Itens acima dos drops comuns, sem atributos full. Após o pagamento, resgate no personagem escolhido.</p>' +
         ((data.orders || []).length ? '<div class="premium-orders"><b>Pedidos prontos para resgatar</b>' + data.orders.map(o => '<div class="row"><span>' + esc(o.product) + ' · ' + brl.format(o.amount_cents / 100) + '</span><button class="btn small btn-gold" type="button" data-premium-claim="' + o.id + '">Resgatar neste personagem</button></div>').join('') + '</div>' : '') +
         '<div class="premium-grid">' + data.catalog.map(p => '<article class="premium-card" style="--set-tone:' + esc(p.tone) + '">' +
           '<canvas width="72" height="72" data-premium-icon="' + esc(p.id) + '"></canvas><div><b>' + esc(p.name) + '</b>' +
