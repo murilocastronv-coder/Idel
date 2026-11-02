@@ -41,6 +41,10 @@ function inCombat(p) {
   return Date.now() - t < COMBAT_MS;
 }
 
+function stackLimit(base) {
+  const configured = Number((G.ITEM_BASES[base] || {}).stack) || 0;
+  return configured > 0 ? Math.min(Number(G.MAX_STACK) || 999, configured) : 0;
+}
 function category(base) {
   const b = G.ITEM_BASES[base] || {};
   if (b.slot === 'weapon' || b.slot === 'shield') return 'weapon';
@@ -177,40 +181,141 @@ async function doAct(world, p, msg) {
       const it = p.items.find((i) => String(i.id) === String(msg.id));
       if (!it) return say(false, deny(p, owner, no, 'Este item não está na sua bolsa.', 'put item fora da bolsa: ' + msg.id));
       const why = storable(it);
-      if (why) return say(false, deny(p, owner, no, why, `${it.base}: ${why}`));
+      if (why) return say(false, deny(p, owner, no, why, it.base + ': ' + why));
       const data = await load(p, no);
-      if (data.items.length >= data.capacity) return say(false, 'O baú está cheio.');
-      const used = new Set(data.items.map((r) => r.vault_pos));
-      let pos = msg.pos === undefined || msg.pos === null ? -1 : Math.floor(Number(msg.pos));
-      if (pos >= 0) {
-        if (!(pos < data.capacity)) return say(false, deny(p, owner, no, 'Posição inválida.', 'pos ' + msg.pos));
-        if (used.has(pos)) return say(false, 'Este espaço já está ocupado.');
-      } else { pos = 0; while (used.has(pos)) pos++; }
-      await db.tx(async (q) => {
-        const u = await q(`UPDATE items SET vault_owner = $3, vault_no = $4, vault_pos = $5, vault_at = now()
-          WHERE id = $1 AND character_id = $2 AND vault_no IS NULL AND equipped = FALSE AND locked = FALSE RETURNING id`, [it.id, p.charId, owner, no, pos]);
-        if (!u.rows[0]) throw new Error('O item mudou. Tente de novo.');
-        await q('UPDATE vaults SET updated_at = now() WHERE owner = $1 RETURNING owner', [owner]);
-      });
-      p.items = p.items.filter((i) => i !== it);
-      log(p, owner, no, 'put', { itemId: it.id, item: it.base, qty: Number(it.qty) || 1, detail: `${it.rarity}${it.plus ? ' +' + it.plus : ''} → lugar ${pos + 1}` });
-      say(true, `${G.ITEM_BASES[it.base].name} guardado no baú.`);
+      const posArg = msg.pos === undefined || msg.pos === null ? null : Math.floor(Number(msg.pos));
+      if (posArg !== null && !(posArg >= 0 && posArg < data.capacity)) return say(false, deny(p, owner, no, 'Posição inválida.', 'pos ' + msg.pos));
+      const limit = stackLimit(it.base);
+      if (limit) {
+        const result = await db.tx(async (q) => {
+          await q('SELECT owner FROM vaults WHERE owner = $1 FOR UPDATE', [owner]);
+          const source = (await q('SELECT qty FROM items WHERE id = $1 AND character_id = $2 AND vault_no IS NULL AND equipped = FALSE AND locked = FALSE FOR UPDATE', [it.id, p.charId])).rows[0];
+          if (!source) throw new Error('O item mudou. Tente de novo.');
+          const sourceQty = Math.max(1, Number(source.qty) || 1);
+          let left = sourceQty, merged = 0;
+          const updates = [];
+          const targets = (await q('SELECT id, qty FROM items WHERE vault_owner = $1 AND vault_no = $2 AND base = $3 AND rarity = $4 AND plus = $5 AND locked = FALSE ORDER BY vault_pos FOR UPDATE', [owner, no, it.base, it.rarity, Number(it.plus) || 0])).rows;
+          for (const target of targets) {
+            if (left <= 0) break;
+            const room = Math.max(0, limit - (Number(target.qty) || 1));
+            if (!room) continue;
+            const add = Math.min(room, left);
+            const u = await q('UPDATE items SET qty = qty + $2 WHERE id = $1 AND vault_owner = $3 AND vault_no = $4 AND qty + $2 <= $5 RETURNING qty', [target.id, add, owner, no, limit]);
+            if (!u.rows[0]) continue;
+            updates.push({ id: String(target.id), qty: Number(u.rows[0].qty) });
+            left -= add; merged += add;
+          }
+          let sourceMoved = false, placed = null;
+          if (left > 0) {
+            const positions = (await q('SELECT vault_pos FROM items WHERE vault_owner = $1 AND vault_no = $2', [owner, no])).rows;
+            const used = new Set(positions.map((r) => Number(r.vault_pos)));
+            if (positions.length < data.capacity) {
+              if (posArg !== null && !used.has(posArg)) placed = posArg;
+              else { for (let n = 0; n < data.capacity; n++) if (!used.has(n)) { placed = n; break; } }
+            }
+            if (placed !== null) {
+              const u = await q('UPDATE items SET vault_owner = $3, vault_no = $4, vault_pos = $5, vault_at = now(), qty = $6 WHERE id = $1 AND character_id = $2 AND vault_no IS NULL AND equipped = FALSE AND locked = FALSE RETURNING id', [it.id, p.charId, owner, no, placed, left]);
+              if (!u.rows[0]) throw new Error('O item mudou. Tente de novo.');
+              sourceMoved = true;
+            } else if (merged > 0) {
+              const u = await q('UPDATE items SET qty = $3 WHERE id = $1 AND character_id = $2 AND vault_no IS NULL RETURNING id', [it.id, p.charId, left]);
+              if (!u.rows[0]) throw new Error('O item mudou. Tente de novo.');
+            } else {
+              throw new Error('O baú está cheio e não há espaço nas pilhas existentes.');
+            }
+          } else {
+            const u = await q('DELETE FROM items WHERE id = $1 AND character_id = $2 AND vault_no IS NULL RETURNING id', [it.id, p.charId]);
+            if (!u.rows[0]) throw new Error('O item mudou. Tente de novo.');
+          }
+          await q('UPDATE vaults SET updated_at = now() WHERE owner = $1 RETURNING owner', [owner]);
+          return { sourceQty, left, merged, sourceMoved, updates, moved: sourceQty - (sourceMoved ? 0 : left) };
+        });
+        for (const u of result.updates) { const target = data.items.find((x) => String(x.id) === u.id); if (target) target.qty = u.qty; }
+        if (result.sourceMoved || result.left === 0) p.items = p.items.filter((i) => i !== it);
+        else it.qty = result.left;
+        log(p, owner, no, 'put', { itemId: it.id, item: it.base, qty: result.moved, detail: 'empilhado no baú' + (result.left && !result.sourceMoved ? '; ' + result.left + ' permaneceram na bolsa' : '') });
+        say(true, result.left && !result.sourceMoved
+          ? 'Guardadas ' + result.moved + ' unidades; ' + result.left + ' ficaram na bolsa por falta de espaço no baú.'
+          : G.ITEM_BASES[it.base].name + ' ×' + result.sourceQty + ' guardado/empilhado no baú.');
+      } else {
+        if (data.items.length >= data.capacity) return say(false, 'O baú está cheio.');
+        const used = new Set(data.items.map((r) => r.vault_pos));
+        let pos = posArg === null ? -1 : posArg;
+        if (pos >= 0) {
+          if (used.has(pos)) return say(false, 'Este espaço já está ocupado.');
+        } else { pos = 0; while (used.has(pos)) pos++; }
+        await db.tx(async (q) => {
+          await q('SELECT owner FROM vaults WHERE owner = $1 FOR UPDATE', [owner]);
+          const u = await q('UPDATE items SET vault_owner = $3, vault_no = $4, vault_pos = $5, vault_at = now() WHERE id = $1 AND character_id = $2 AND vault_no IS NULL AND equipped = FALSE AND locked = FALSE RETURNING id', [it.id, p.charId, owner, no, pos]);
+          if (!u.rows[0]) throw new Error('O item mudou. Tente de novo.');
+          await q('UPDATE vaults SET updated_at = now() WHERE owner = $1 RETURNING owner', [owner]);
+        });
+        p.items = p.items.filter((i) => i !== it);
+        log(p, owner, no, 'put', { itemId: it.id, item: it.base, qty: Number(it.qty) || 1, detail: it.rarity + (it.plus ? ' +' + it.plus : '') + ' → lugar ' + (pos + 1) });
+        say(true, G.ITEM_BASES[it.base].name + ' guardado no baú.');
+      }
     } else if (a === 'take') {
       const data = await load(p, no);
       const r = data.items.find((x) => String(x.id) === String(msg.id));
       if (!r) return say(false, deny(p, owner, no, 'Este item não está neste baú.', 'take item fora do baú: ' + msg.id));
-      if (H.bagUsed(p) >= G.INVENTORY_SIZE) return say(false, 'Sua bolsa está cheia. Libere um espaço para retirar.');
       if (G.ITEM_BASES[r.base] && G.ITEM_BASES[r.base].slot === 'quest' && !cfg().allowQuestItems && owner.startsWith('a:')) return say(false, 'Itens de missão ficam com o personagem.');
-      const got = await db.tx(async (q) => {
-        const u = await q(`UPDATE items SET character_id = $2, vault_owner = NULL, vault_no = NULL, vault_pos = NULL, vault_at = NULL, equipped = FALSE, eq_slot = NULL
-          WHERE id = $1 AND vault_owner = $3 AND vault_no = $4 RETURNING id, base, rarity, plus, equipped, qty, eq_slot, locked`, [r.id, p.charId, owner, no]);
-        if (!u.rows[0]) throw new Error('O item mudou. Tente de novo.');
-        await q('UPDATE vaults SET updated_at = now() WHERE owner = $1 RETURNING owner', [owner]);
-        return u.rows[0];
-      });
-      p.items.push(got);
-      log(p, owner, no, 'take', { itemId: r.id, item: r.base, qty: Number(r.qty) || 1, detail: `${r.rarity}${r.plus ? ' +' + r.plus : ''}` });
-      say(true, `${G.ITEM_BASES[r.base].name} voltou para a sua bolsa.`);
+      const limit = stackLimit(r.base);
+      if (limit) {
+        const result = await db.tx(async (q) => {
+          await q('SELECT owner FROM vaults WHERE owner = $1 FOR UPDATE', [owner]);
+          const source = (await q('SELECT qty FROM items WHERE id = $1 AND vault_owner = $2 AND vault_no = $3 FOR UPDATE', [r.id, owner, no])).rows[0];
+          if (!source) throw new Error('O baú mudou. Tente de novo.');
+          const sourceQty = Math.max(1, Number(source.qty) || 1);
+          let left = sourceQty, merged = 0;
+          const updates = [];
+          const targets = (await q('SELECT id, qty FROM items WHERE character_id = $1 AND vault_no IS NULL AND equipped = FALSE AND locked = FALSE AND base = $2 AND rarity = $3 AND plus = $4 ORDER BY id FOR UPDATE', [p.charId, r.base, r.rarity, Number(r.plus) || 0])).rows;
+          for (const target of targets) {
+            if (left <= 0) break;
+            const room = Math.max(0, limit - (Number(target.qty) || 1));
+            if (!room) continue;
+            const add = Math.min(room, left);
+            const u = await q('UPDATE items SET qty = qty + $2 WHERE id = $1 AND character_id = $3 AND qty + $2 <= $4 RETURNING qty', [target.id, add, p.charId, limit]);
+            if (!u.rows[0]) continue;
+            updates.push({ id: String(target.id), qty: Number(u.rows[0].qty) });
+            left -= add; merged += add;
+          }
+          const freeSlots = Math.max(0, G.INVENTORY_SIZE - H.bagUsed(p));
+          let sourceMoved = false;
+          if (left > 0 && freeSlots > 0) {
+            const u = await q('UPDATE items SET character_id = $2, vault_owner = NULL, vault_no = NULL, vault_pos = NULL, vault_at = NULL, equipped = FALSE, eq_slot = NULL, qty = $5 WHERE id = $1 AND vault_owner = $3 AND vault_no = $4 RETURNING id', [r.id, p.charId, owner, no, left]);
+            if (!u.rows[0]) throw new Error('O baú mudou. Tente de novo.');
+            sourceMoved = true;
+          } else if (left > 0 && merged > 0) {
+            const u = await q('UPDATE items SET qty = $2 WHERE id = $1 AND vault_owner = $3 AND vault_no = $4 RETURNING id', [r.id, left, owner, no]);
+            if (!u.rows[0]) throw new Error('O baú mudou. Tente de novo.');
+          } else if (left > 0) {
+            throw new Error('Sua bolsa está cheia e não há espaço nas pilhas existentes.');
+          } else {
+            const u = await q('DELETE FROM items WHERE id = $1 AND vault_owner = $2 AND vault_no = $3 RETURNING id', [r.id, owner, no]);
+            if (!u.rows[0]) throw new Error('O baú mudou. Tente de novo.');
+          }
+          await q('UPDATE vaults SET updated_at = now() WHERE owner = $1 RETURNING owner', [owner]);
+          return { sourceQty, left, merged, sourceMoved, updates, moved: sourceQty - (sourceMoved ? 0 : left) };
+        });
+        for (const u of result.updates) { const target = p.items.find((x) => String(x.id) === u.id); if (target) target.qty = u.qty; }
+        if (result.sourceMoved) p.items.push({ ...r, qty: result.left, equipped: false, eq_slot: null, locked: !!r.locked });
+        log(p, owner, no, 'take', { itemId: r.id, item: r.base, qty: result.moved, detail: 'empilhado na bolsa' + (result.left && !result.sourceMoved ? '; ' + result.left + ' permaneceram no baú' : '') });
+        say(true, result.left && !result.sourceMoved
+          ? 'Retiradas ' + result.moved + ' unidades; ' + result.left + ' ficaram no baú por falta de espaço na bolsa.'
+          : G.ITEM_BASES[r.base].name + ' ×' + result.sourceQty + ' retirado/empilhado na bolsa.');
+      } else {
+        if (H.bagUsed(p) >= G.INVENTORY_SIZE) return say(false, 'Sua bolsa está cheia. Libere um espaço para retirar.');
+        const got = await db.tx(async (q) => {
+          await q('SELECT owner FROM vaults WHERE owner = $1 FOR UPDATE', [owner]);
+          const u = await q('UPDATE items SET character_id = $2, vault_owner = NULL, vault_no = NULL, vault_pos = NULL, vault_at = NULL, equipped = FALSE, eq_slot = NULL WHERE id = $1 AND vault_owner = $3 AND vault_no = $4 RETURNING id, base, rarity, plus, equipped, qty, eq_slot, locked', [r.id, p.charId, owner, no]);
+          if (!u.rows[0]) throw new Error('O item mudou. Tente de novo.');
+          await q('UPDATE vaults SET updated_at = now() WHERE owner = $1 RETURNING owner', [owner]);
+          return u.rows[0];
+        });
+        p.items.push(got);
+        log(p, owner, no, 'take', { itemId: r.id, item: r.base, qty: Number(r.qty) || 1, detail: r.rarity + (r.plus ? ' +' + r.plus : '') });
+        say(true, G.ITEM_BASES[r.base].name + ' voltou para a sua bolsa.');
+      }
     } else if (a === 'move') {
       const data = await load(p, no);
       const r = data.items.find((x) => String(x.id) === String(msg.id));
