@@ -207,12 +207,38 @@
   </section>
 
   <section class="panel window" id="panel-chat" hidden aria-labelledby="chat-title">
-    <header><h2 id="chat-title">Chat global</h2><a class="discord-mini" href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Discord</a><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <header><h2 id="chat-title">Chat · Global</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <nav class="chat-tabs" aria-label="Canais do chat">
+      <button type="button" data-chat-channel="local">Local</button><button type="button" class="active" data-chat-channel="global">Global</button>
+      <button type="button" data-chat-channel="private">Privado</button><button type="button" data-chat-channel="guild">Guilda</button>
+      <button type="button" data-chat-channel="party">Party</button><button type="button" data-chat-channel="information">Informações</button>
+    </nav>
     <ul class="chat-lines" id="chat-lines"></ul>
     <form class="chat-form" id="chat-form" autocomplete="off">
+      <input id="chat-target" maxlength="20" placeholder="Nome do jogador" aria-label="Destinatário" hidden>
       <input name="text" maxlength="120" placeholder="Escreva para todos…" aria-label="Mensagem">
       <button class="btn small btn-gold" type="submit">Enviar</button>
     </form>
+  </section>
+
+  <section class="panel window" id="panel-guild" hidden aria-labelledby="guild-title">
+    <header><h2 id="guild-title">Guilda e Party</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <p id="social-summary" class="social-summary">Carregando seus grupos…</p>
+    <div class="social-columns">
+      <section><h3>Guilda</h3><label>Nome da guilda <input id="guild-name" maxlength="20"></label>
+        <button class="btn small btn-gold" data-social="guild:create">Criar guilda</button>
+        <label>Convidar jogador <input id="guild-target" maxlength="20"></label>
+        <button class="btn small" data-social="guild:invite">Convidar</button>
+        <button class="btn small" data-social="guild:accept">Aceitar convite</button>
+        <button class="btn small btn-danger" data-social="guild:leave">Sair / desfazer</button>
+      </section>
+      <section><h3>Party</h3><button class="btn small btn-gold" data-social="party:create">Criar party</button>
+        <label>Convidar jogador <input id="party-target" maxlength="20"></label>
+        <button class="btn small" data-social="party:invite">Convidar</button>
+        <button class="btn small" data-social="party:accept">Aceitar convite</button>
+        <button class="btn small btn-danger" data-social="party:leave">Sair da party</button>
+      </section>
+    </div>
   </section>
 
   <dialog class="window dialog box-dialog" id="box-dialog" aria-labelledby="box-title">
