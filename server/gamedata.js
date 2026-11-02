@@ -551,7 +551,7 @@ const WING_EVOLVE = { wings_satan: 'wings_dragon', wings_heaven: 'wings_soul', w
        ...(slot === 'wings' ? { cat:'wings', tier:1, def:10+Math.floor(pack.req/8), wdmg:10+Math.floor(pack.req/10), absorb:10+Math.floor(pack.req/12), rarity:'epic' } : {}),
        ...(slot === 'ring' ? { hp:70+pack.req*2 } : {}),
        ...(slot === 'necklace' ? { hp:80+pack.req*2, def:3+Math.floor(pack.req/30) } : {}),
-       req, set:setId, special:true, seasonal:'christmas', color:pack.tone, classes:Object.keys(CLASSES),
+       req, set:setId, special:true, seasonal:'christmas', color:pack.tone, ic:pack.tone, classes:Object.keys(CLASSES),
      };
    }
  }
@@ -565,7 +565,7 @@ const SETS = {
   phoenix: { name: 'Fênix', bonus: 'Conjunto completo: +10% defesa e +5% dano' },
   abyss: { name: 'Abismo', bonus: 'Conjunto completo: +10% defesa e +5% dano' },
 };
-for (const p of PREMIUM_SET_PACKS) SETS[p.id] = { name: p.name, bonus: '5 peças: defesa e dano aprimorados; conjunto sazonal cosmético.' };
+for (const p of PREMIUM_SET_PACKS) SETS[p.id] = { name: p.name, bonus: '5 peças: defesa e dano aprimorados; conjunto sazonal cosmético.', color:p.tone, seasonal:true };
 
 const RARITY_MULT = { common: 1, uncommon: 1.15, rare: 1.35, epic: 1.6, legendary: 2, ancestral: 2.6 };
 const RARITY_WEIGHTS = {
