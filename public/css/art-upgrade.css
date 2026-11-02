@@ -36,6 +36,27 @@
   box-shadow: 0 0 14px rgba(113, 190, 125, .16), inset 0 0 0 1px rgba(255, 231, 160, .12);
 }
 
+/* Molduras e barras com mais profundidade sem suavizar a malha pixelada. */
+.hud-me, .map-name, .boss-bar, .panel, .window {
+  box-shadow: inset 0 0 0 1px rgba(255, 231, 160, .11), 0 5px 18px rgba(2, 5, 15, .36);
+}
+.gbar { overflow: hidden; box-shadow: inset 0 2px 3px rgba(0, 0, 0, .72), 0 0 0 1px rgba(255, 255, 255, .025); }
+.gbar.hp span { background: linear-gradient(180deg, #ff8272 0%, #e0473a 44%, #9f1d1c 100%); box-shadow: inset 0 1px 0 rgba(255, 230, 210, .48), 0 0 10px rgba(238, 61, 49, .26); }
+.gbar.mp span { background: linear-gradient(180deg, #a4ddff 0%, #4a8aff 42%, #193b91 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .46), 0 0 10px rgba(74, 138, 255, .28); }
+.xpbar span { background: linear-gradient(180deg, #fff0a0 0%, #ffd36b 44%, #b47522 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .58), 0 0 12px rgba(255, 211, 107, .32); }
+.panel > header { padding-bottom: 7px; border-bottom: 1px solid rgba(232, 184, 74, .22); }
+.panel > header h2 { color: #ffe7a0; text-shadow: 0 1px 0 #4b3514, 0 0 10px rgba(232, 184, 74, .16); }
+.menu button { background: linear-gradient(180deg, rgba(41, 52, 84, .96), rgba(11, 16, 32, .96)); transition: color .15s ease, border-color .15s ease, filter .15s ease; }
+.menu button:hover, .menu button:focus-visible { color: #ffe7a0; border-color: #d6ad50; filter: brightness(1.12); outline: none; }
+.act:hover, .btn:hover { filter: brightness(1.12); }
+.boss-bar { border-color: #7d5794; background: linear-gradient(180deg, rgba(33, 22, 51, .94), rgba(11, 16, 32, .94)); }
+.boss-bar .gbar.boss span { background: linear-gradient(180deg, #f3c5ff 0%, #c06bff 44%, #642399 100%); box-shadow: 0 0 12px rgba(192, 107, 255, .45); }
+.islot::after { transition: box-shadow .18s ease; }
+.islot:hover::after { box-shadow: inset 0 0 0 2px var(--r, #ffe7a0), inset 0 0 14px color-mix(in srgb, var(--r, #ffe7a0) 24%, transparent); }
+@media (prefers-reduced-motion: reduce) {
+  .menu button, .act, .btn, .ii-icon, .islot::after { transition: none !important; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .ii-icon { transition: box-shadow .18s ease, border-color .18s ease, transform .18s ease; }
   .ii-icon:hover {

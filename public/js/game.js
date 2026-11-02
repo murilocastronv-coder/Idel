@@ -12,7 +12,7 @@
     gitems: new Map(), goldFx: [], inv: null,
     data: null, char: null, me: null, map: null, ground: null,
     players: new Map(), monsters: new Map(), fx: [], floats: [], clickMark: null,
-    boss: null, chatUnread: 0, panel: null, selItem: null, rarFilter: 'all', youId: null, trainingInside: false,
+    boss: null, chatUnread: 0, panel: null, selItem: null, rarFilter: 'all', youId: null, trainingInside: false, hitParticles: [],
   };
   const RAR = { common: '#c8c8c8', uncommon: '#5fd35f', rare: '#4aa3ff', epic: '#b45cff', legendary: '#ffb02e', ancestral: '#ff4d4d' };
   const RAR_NAME = { common: 'Comum', uncommon: 'Incomum', rare: 'Raro', epic: 'Épico', legendary: 'Lendário', ancestral: 'Ancestral' };
@@ -128,7 +128,7 @@
     const keep = S.players.get(m.you);
     S.players = new Map(m.players.map((p) => [p.id, { info: p, x: 0, y: 0, rx: null }]));
     S.players.set(m.you, keep && keep.info ? { ...keep, rx: null } : { info: null, x: 0, y: 0, rx: null });
-    S.fx = []; S.floats = []; S.drops = []; S.dangers = []; S.parts = [];
+    S.fx = []; S.floats = []; S.drops = []; S.dangers = []; S.parts = []; S.hitParticles = [];
     S.gitems = new Map((m.ground || []).map((g) => [g.gid, { ...g, t0: performance.now() }]));
     S.enterAt = performance.now(); S.camInit = false;
     const wInfo = S.data && S.data.world.find((w) => w.id === m.map);
@@ -191,6 +191,10 @@
       const impactFrame = attackMeta ? Math.min(attackMeta.frames - 1, attackMeta.impactFrame ?? 2) : 2;
       const delay = ranged ? 220 : (a ? Math.round(impactFrame * 1000 / (attackMeta && attackMeta.fps || 12)) : 0);
       t.hurtUntil = now + delay + 160;
+      t.hitAt = now + delay;
+      t.hitDir = a && Number.isFinite(a.rx) && Number.isFinite(t.rx) ? (t.rx >= a.rx ? 1 : -1) : (Math.random() < .5 ? -1 : 1);
+      const hitColors = { fire: '#ff9a3a', meteor: '#ff6a2a', ice: '#9beaff', lightning: '#e0b7ff', energy: '#8bdcff', arrow: '#fff0b0', arrow3: '#ffd36b', dark: '#d68aff', spirit: '#ff9acb', slash: '#fff4cf', whirl: '#c7e7ff', claw: '#ff887a', boss: '#d1a0ff' };
+      burstHitPixels(t, hitColors[ev.fx] || (ev.c ? '#ffd36b' : '#ffffff'), ev.c ? 14 : 7, now + delay);
       if (ranged) S.fx.push({ kind: 'proj', from: a, to: t, sprite: PROJ[ev.fx] || 'proj_energy', t0: now, dur: delay });
       else if (!ev.aoe && a && ev.a[0] === 'p' && a.info) {
         S.fx.push({ kind: 'crescent', at: t, from: a, sprite: a.info.cls === 'dark_lord' ? 'crescent_fire' : a.info.cls === 'magic_gladiator' ? 'crescent_dark' : 'crescent_energy', t0: now, dur: 240 });
@@ -633,9 +637,10 @@
 
   // ---------- qualidade gráfica ----------
   const QUALITY = {
-    baixa: { parts: 20, lights: false, sway: false },
-    media: { parts: 60, lights: true, sway: true },
-    alta: { parts: 140, lights: true, sway: true },
+    baixa: { parts: 18, lights: false, sway: false, atmosphere: false },
+    media: { parts: 52, lights: true, sway: true, atmosphere: false },
+    alta: { parts: 112, lights: true, sway: true, atmosphere: true },
+    ultra: { parts: 180, lights: true, sway: true, atmosphere: true },
   };
   const qStore = (() => { try { return window.localStorage; } catch (_) { return null; } })();
   let quality = (() => { try { return qStore && qStore.getItem('mui_quality'); } catch (_) { return null; } })() || (window.innerWidth < 700 ? 'media' : 'alta');
@@ -649,10 +654,17 @@
     const x = camX + Math.random() * vw, y = camY + Math.random() * vh;
     const p = { x, y, t: 0 };
     switch (theme) {
-      case 'town': Object.assign(p, { kind: 'leaf', vx: 6 + Math.random() * 8, vy: 4 + Math.random() * 6, life: 6 + Math.random() * 4, col: ['#6ab84e', '#c8a83a', '#9ac85a'][(Math.random() * 3) | 0], s: 2 }); break;
-      case 'noria': Object.assign(p, Math.random() < 0.5
-        ? { kind: 'leaf', vx: 4 + Math.random() * 6, vy: 5 + Math.random() * 5, life: 7, col: ['#ff9ad0', '#ffc0e4'][(Math.random() * 2) | 0], s: 2 }
-        : { kind: 'spark', vx: (Math.random() - 0.5) * 4, vy: -2 - Math.random() * 4, life: 3 + Math.random() * 3, col: ['#9ad8ff', '#d8a0ff', '#fff2a8'][(Math.random() * 3) | 0], s: 2 }); break;
+      case 'town': Object.assign(p, Math.random() < 0.08
+        ? { kind: 'bird', vx: 18 + Math.random() * 16, vy: (Math.random() - 0.5) * 3, life: 5 + Math.random() * 4, col: '#283642', s: 2 }
+        : { kind: 'leaf', vx: 6 + Math.random() * 8, vy: 4 + Math.random() * 6, life: 6 + Math.random() * 4, col: ['#6ab84e', '#c8a83a', '#9ac85a'][(Math.random() * 3) | 0], s: 2 }); break;
+      case 'noria': {
+        const roll = Math.random();
+        Object.assign(p, roll < 0.13
+          ? { kind: 'butterfly', vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 7, life: 5 + Math.random() * 3, col: ['#ff9ad0', '#aeeaff', '#ffe08a'][(Math.random() * 3) | 0], s: 3 }
+          : roll < 0.55 ? { kind: 'leaf', vx: 4 + Math.random() * 6, vy: 5 + Math.random() * 5, life: 7, col: ['#ff9ad0', '#ffc0e4'][(Math.random() * 2) | 0], s: 2 }
+          : { kind: 'spark', vx: (Math.random() - 0.5) * 4, vy: -2 - Math.random() * 4, life: 3 + Math.random() * 3, col: ['#9ad8ff', '#d8a0ff', '#fff2a8'][(Math.random() * 3) | 0], s: 2 });
+        break;
+      }
       case 'snow': Object.assign(p, { kind: 'snow', y: camY - 4, vx: 10 + Math.random() * 10, vy: 22 + Math.random() * 22, life: 12, col: '#ffffff', s: Math.random() < 0.3 ? 3 : 2 }); break;
       case 'lava': Object.assign(p, Math.random() < 0.7
         ? { kind: 'ember', y: camY + vh + 4, vx: (Math.random() - 0.5) * 8, vy: -20 - Math.random() * 25, life: 4 + Math.random() * 3, col: ['#ff8a2a', '#ffd36b', '#ff4d1f'][(Math.random() * 3) | 0], s: 2 }
@@ -663,7 +675,9 @@
       case 'water': Object.assign(p, { kind: 'spark', y: camY + vh + 4, vx: (Math.random() - 0.5) * 4, vy: -10 - Math.random() * 14, life: 6, col: ['#bff8ff', '#7ae0ff'][(Math.random() * 2) | 0], s: Math.random() < 0.3 ? 3 : 2 }); break;
       case 'tower': Object.assign(p, { kind: 'spark', vx: (Math.random() - 0.5) * 5, vy: -4 - Math.random() * 6, life: 4, col: ['#d08aff', '#ffffff'][(Math.random() * 2) | 0], s: 2 }); break;
       case 'desert': Object.assign(p, { kind: 'dust', x: camX - 6, vx: 40 + Math.random() * 30, vy: (Math.random() - 0.5) * 6, life: 8, col: '#e8c890', s: 2 }); break;
-      case 'sky': Object.assign(p, Math.random() < 0.6
+      case 'sky': Object.assign(p, Math.random() < 0.2
+        ? { kind: 'bird', x: camX - 6, vx: 24 + Math.random() * 14, vy: (Math.random() - 0.5) * 3, life: 7, col: '#4a5267', s: 3 }
+        : Math.random() < 0.5
         ? { kind: 'dust', x: camX - 6, vx: 18 + Math.random() * 12, vy: (Math.random() - 0.5) * 4, life: 10, col: '#ffffff', s: 3 }
         : { kind: 'leaf', y: camY - 4, vx: 6, vy: 10 + Math.random() * 8, life: 10, col: '#fff2a8', s: 2 }); break;
       case 'darkforest': Object.assign(p, { kind: 'spark', vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 6, life: 4 + Math.random() * 3, col: ['#c8ff6a', '#6affb8'][(Math.random() * 2) | 0], s: 2 }); break;
@@ -675,13 +689,14 @@
   function updateParticles(dt, now, vw, vh) {
     const Q = QUALITY[quality];
     const theme = S.map.theme;
-    const want = Q.parts;
+    const weakDevice = (navigator.deviceMemory && navigator.deviceMemory <= 3) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+    const want = Math.max(12, Math.round(Q.parts * (weakDevice ? 0.72 : 1)));
     while (S.parts.length < want) { const p = spawnParticle(theme, vw, vh); if (!p) break; p.t = Math.random() * p.life * 0.5; S.parts.push(p); }
     ctx.save();
     for (let i = S.parts.length - 1; i >= 0; i--) {
       const p = S.parts[i];
       p.t += dt;
-      const sway = p.kind === 'leaf' || p.kind === 'snow' ? Math.sin(now / 600 + i) * 8 : 0;
+      const sway = ['leaf', 'snow', 'butterfly'].includes(p.kind) ? Math.sin(now / 600 + i) * 8 : 0;
       p.x += (p.vx + sway) * dt; p.y += p.vy * dt;
       const out = p.x < camX - 20 || p.x > camX + vw + 20 || p.y < camY - 30 || p.y > camY + vh + 30;
       if (p.t > p.life || out) { const np = spawnParticle(theme, vw, vh); if (np) S.parts[i] = np; else S.parts.splice(i, 1); continue; }
@@ -691,7 +706,15 @@
       ctx.fillStyle = p.col;
       const [sx, sy] = toScreen(p.x, p.y);
       const sz = p.s * dpr * (zoom >= 4 * dpr ? 1.5 : 1);
-      ctx.fillRect(sx, sy, sz, sz);
+      if (p.kind === 'butterfly') {
+        const flap = Math.abs(Math.sin(now / 68 + i * 2)) * sz;
+        ctx.fillRect(sx - sz - flap, sy - sz, sz, sz); ctx.fillRect(sx + flap, sy - sz, sz, sz);
+        ctx.fillStyle = '#fff4d0'; ctx.fillRect(sx - dpr, sy - sz, 2 * dpr, 2 * sz);
+        ctx.fillStyle = p.col; ctx.fillRect(sx - sz * 2, sy, sz, sz); ctx.fillRect(sx + sz, sy, sz, sz);
+      } else if (p.kind === 'bird') {
+        const wing = Math.sin(now / 55 + i * 3) > 0 ? -sz : sz;
+        ctx.fillRect(sx - sz, sy, sz * 2, Math.max(1, dpr)); ctx.fillRect(sx - sz * 2, sy + wing, sz, Math.max(1, dpr)); ctx.fillRect(sx + sz, sy + wing, sz, Math.max(1, dpr));
+      } else ctx.fillRect(sx, sy, sz, sz);
     }
     ctx.restore();
     // névoa fria em Devias
@@ -708,12 +731,70 @@
     }
   }
 
+  const ATMOSPHERE = { town: '230,185,112', noria: '105,204,139', snow: '126,189,255', dungeon: '190,125,92', lava: '255,96,42', water: '70,196,224', tower: '175,120,255', desert: '255,196,117', sky: '190,221,255', darkforest: '112,255,168', void: '194,92,255', castle: '255,145,102', devilsq: '213,92,255' };
+  function drawAtmosphere(now) {
+    const Q = QUALITY[quality];
+    if (!S.map || !Q.atmosphere) return;
+    const col = ATMOSPHERE[S.map.theme];
+    if (col) {
+      ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = quality === 'ultra' ? 0.055 : 0.032;
+      ctx.fillStyle = `rgb(${col})`; ctx.fillRect(0, 0, cv.width, cv.height); ctx.restore();
+    }
+    const v = ctx.createRadialGradient(cv.width * 0.5, cv.height * 0.46, Math.min(cv.width, cv.height) * 0.24, cv.width * 0.5, cv.height * 0.46, Math.max(cv.width, cv.height) * 0.72);
+    v.addColorStop(0, 'rgba(7,10,20,0)'); v.addColorStop(1, 'rgba(5,8,18,.24)');
+    ctx.fillStyle = v; ctx.fillRect(0, 0, cv.width, cv.height);
+    if (S.map.theme === 'water' && quality === 'ultra') {
+      ctx.save(); ctx.globalAlpha = 0.12; ctx.fillStyle = '#c8f6ff';
+      for (let i = 0; i < 28; i++) {
+        const x = ((i * 79 + now * (0.018 + (i % 3) * 0.004)) % (cv.width + 30)) - 15;
+        const y = (i * 47 + Math.sin(now / 600 + i) * 8) % cv.height;
+        ctx.fillRect(Math.round(x), Math.round(y), (i % 4 + 2) * dpr, dpr);
+      }
+      ctx.restore();
+    }
+  }
+
+  function burstHitPixels(target, color, count, startAt) {
+    if (!target || S.hitParticles.length > 360) return;
+    const x = Number.isFinite(target.rx) ? target.rx : target.x, y = (Number.isFinite(target.ry) ? target.ry : target.y) - 18;
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2, speed = 18 + Math.random() * 58;
+      S.hitParticles.push({ x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed - 12, t0: startAt, life: 0.24 + Math.random() * 0.3, color, size: Math.random() < .25 ? 2 : 1 });
+    }
+  }
+  function drawHitParticles(now, dt) {
+    const Q = QUALITY[quality];
+    const keep = [];
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (const p of S.hitParticles) {
+      const age = (now - p.t0) / 1000;
+      if (age < 0) { keep.push(p); continue; }
+      if (age >= p.life) continue;
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 45 * dt;
+      ctx.globalAlpha = Math.max(0, 1 - age / p.life);
+      ctx.fillStyle = p.color;
+      const [x, y] = toScreen(p.x, p.y), pxSize = p.size * dpr;
+      ctx.fillRect(Math.round(x), Math.round(y), pxSize, pxSize);
+      if (Q.lights && p.size > 1) { ctx.globalAlpha *= .28; ctx.fillRect(Math.round(x - pxSize), Math.round(y - pxSize), pxSize * 3, pxSize * 3); }
+      keep.push(p);
+    }
+    ctx.restore(); S.hitParticles = keep;
+  }
+
   // ---------- luz e escuridão ----------
   const lightCv = document.createElement('canvas');
   function drawLighting(now, me) {
     const Q = QUALITY[quality];
     const dark = DARKNESS[S.map.theme] || 0;
     const vis = (S.lights || []).filter((l) => l.x + l.r > camX && l.x - l.r < camX + cv.width / zoom && l.y + l.r > camY && l.y - l.r < camY + cv.height / zoom);
+    if (Q.lights) S.players.forEach((player) => {
+      const equipment = player.info && player.info.eq;
+      if (!equipment || player.rx < camX - 120 || player.rx > camX + cv.width / zoom + 120 || player.ry < camY - 120 || player.ry > camY + cv.height / zoom + 120) return;
+      const glowByRarity = { uncommon: '95,220,120', rare: '90,170,255', epic: '190,100,255', legendary: '255,190,70', ancestral: '255,90,120' };
+      const rarity = equipment.wr || (equipment.wp >= 9 ? 'legendary' : equipment.wp >= 6 ? 'rare' : null);
+      const glow = glowByRarity[rarity] || (equipment.wings ? '130,220,255' : null);
+      if (glow) vis.push({ x: player.rx, y: player.ry - 24, r: equipment.wings ? 94 : 70, color: glow, flicker: .12, ph: (player.phase || 0) });
+    });
     if (dark > 0) {
       const k = 0.5;
       if (lightCv.width !== Math.ceil(cv.width * k)) { lightCv.width = Math.ceil(cv.width * k); lightCv.height = Math.ceil(cv.height * k); }
@@ -933,6 +1014,8 @@
       drawFx(now);
       drawLighting(now, me);
       updateParticles(dt, now, vw, vh);
+      drawHitParticles(now, dt);
+      drawAtmosphere(now);
       drawFloats(now);
       // tela vermelha rápida quando o herói leva um golpe forte
       if (S.hurtFlash && now - S.hurtFlash < 260) {
@@ -1070,6 +1153,9 @@
       const [x, y] = toScreen(e.rx, e.ry);
       const [act, t, once] = animOf(e, now);
       const runBob = act === 'run' ? Math.round(Math.abs(Math.sin((now + (e.phase || 0)) * 0.018)) * 1.5 * zoom) : 0;
+      const idleBob = act === 'idle' ? Math.sin((now + (e.phase || 0)) / 390) * 0.55 * zoom : 0;
+      const recoilAge = (now - (e.hitAt || 0)) / 1000;
+      const recoil = recoilAge >= 0 && recoilAge < .18 ? Math.sin((recoilAge / .18) * Math.PI) * (e.hitDir || 1) * 2.1 * zoom : 0;
       e.hpShow = e.hpShow === undefined ? e.hp : e.hpShow + (e.hp - e.hpShow) * 0.25;
       if (kind === 'm') {
         const name = monSprite(e);
@@ -1106,7 +1192,7 @@
         shadowAt(x, y, w * 0.8);
         const hurt = now < (e.hurtUntil || 0) && !e.dyingAt;
         if (act === 'run') drawRunPuff(x, y, now, e.phase, e.flip, '#b9a486');
-        Sprites.monster(ctx, name, act, t, x, y - runBob, sc * (e.scale || 1), !e.flip, { once, white: hurt && (now - e.hurtUntil) > -90, tint: e.tint && e.tint[0] === '#' ? e.tint : null });
+        Sprites.monster(ctx, name, act, t, x + recoil, y - runBob - idleBob, sc * (e.scale || 1), !e.flip, { once, white: hurt && (now - e.hurtUntil) > -90, tint: e.tint && e.tint[0] === '#' ? e.tint : null });
         if (e.dead) continue;
         const top = y - h - 6 * dpr;
         if (e.golden) {
@@ -1140,7 +1226,7 @@
         }
         const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : undefined;
         if (act === 'run') drawRunPuff(x, y, now, e.phase, e.flip, '#c9b98f');
-        Sprites.hero(ctx, info.cls, info.ap, act, t, x, y - runBob, sc, e.flip, { once, equip: eq });
+        Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - runBob - idleBob, sc, e.flip, { once, equip: eq });
         if (e.dead) continue;
         const top = y - HERO_H * sc - 4 * dpr;
         hpBar(x, top, 16 * zoom, e.hpShow / e.maxHp, isMe ? '#6aa84f' : (e.flags & 1) ? '#ff5a4a' : '#4aa3ff');
@@ -1981,7 +2067,7 @@
         <small class="muted">Itens abaixo disso viram Zen na hora.</small></div>
       <label class="cfg-check"><input type="checkbox" id="cfg-pvp" ${st.pvpAuto ? 'checked' : ''}> Atacar jogadores inimigos automaticamente (Vulcanus ou PvP ligado)</label>
       <div class="cfg-row"><label for="cfg-quality">Qualidade gráfica</label>
-        <select id="cfg-quality"><option value="baixa">Baixa (celular fraco)</option><option value="media">Média</option><option value="alta">Alta</option></select></div>
+        <select id="cfg-quality"><option value="baixa">Baixa (celular fraco)</option><option value="media">Média</option><option value="alta">Alta</option><option value="ultra">Ultra (mais efeitos)</option></select></div>
       <div class="cfg-row"><label for="cfg-vol">Volume <b id="cfg-vol-v"></b></label><input type="range" id="cfg-vol" min="0" max="100" step="5"></div>
       <label class="cfg-check"><input type="checkbox" id="cfg-mute"> Sem som</label>
       <h3>Habilidades no automático</h3>
