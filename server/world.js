@@ -17,6 +17,7 @@ const CLS = require('./classes');
 const ARENA = require('./arena');
 const UPG = require('./upgrade');
 const TRADE = require('./trade');
+const SOCIAL = require('./social');
 
 const TICK_MS = 100;
 const SAVE_EVERY_MS = 20000;
@@ -317,6 +318,7 @@ class World {
     await VAULT.init(helpers);
     await UPG.init({ ...helpers, itemStats });
     TRADE.init(this, helpers);
+    SOCIAL.init(this);
     await INV.init(this, helpers);
     this.invasion = INV;
     this.expToNext = expToNext;
@@ -587,7 +589,8 @@ class World {
       case 'sell': return p.run(() => this.sell(p, String(msg.id)));
       case 'sellMany': return p.run(() => this.sellMany(p, Array.isArray(msg.ids) ? msg.ids.slice(0, 500).map(String) : []));
       case 'autoequip': return p.run(() => this.autoEquip(p));
-      case 'chat': return this.chatMsg(p, msg.text);
+      case 'chat': return SOCIAL.chat(this, p, msg);
+      case 'social': return SOCIAL.act(this, p, msg);
       case 'claim': return p.run(() => this.claim(p, String(msg.kind), String(msg.id || '')));
       case 'duel': return this.duelRequest(p, String(msg.id));
       case 'duelAnswer': return this.duelAnswer(p, String(msg.id), !!msg.accept);
@@ -780,27 +783,9 @@ class World {
     p.send(p.charState());
   }
 
-  chatMsg(p, text) {
-    const t = String(text || '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, 120);
-    if (!t) return;
-    // comandos nunca vão para o chat público
-    if (t.startsWith('/')) return this.commands ? this.commands.run(p, t) : undefined;
-    const now = Date.now();
-    if (p.mutedUntil > now) return p.send({ type: 'log', kind: 'warn', text: `Você está silenciado no chat por mais ${Math.ceil((p.mutedUntil - now) / 60000)} min.` });
-    if (p.lastChat && now - p.lastChat < 1200) return p.send({ type: 'log', kind: 'warn', text: 'Calma: espere um pouco para enviar outra mensagem.' });
-    p.lastChat = now;
-    const vip = p.vip();
-    const line = { from: p.name, cls: p.cls, vipTier: vip.tier, text: t, t: now };
-    this.chat.push(line); if (this.chat.length > 60) this.chat.shift();
-    for (const o of this.players.values()) o.send({ type: 'chat', ...line });
-  }
+  chatMsg(p, text, channel = 'global', target = '') { return SOCIAL.chat(this, p, { text, channel, target }); }
 
-  system(text, en) {
-    const line = { from: null, text, t: Date.now() };
-    if (en) line.en = en;
-    this.chat.push(line); if (this.chat.length > 60) this.chat.shift();
-    for (const o of this.players.values()) o.send({ type: 'chat', ...line });
-  }
+  system(text, en) { return SOCIAL.messageInfo(this, text, en); }
 
   // ---------- progresso offline (calculado só com o relógio do servidor) ----------
   async offlineProgress(p, row) {
