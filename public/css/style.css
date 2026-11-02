@@ -346,3 +346,22 @@ details[open] > summary { margin-bottom: 14px; }
 .btn-apk { background: #2f7d32; border-color: #1b4d1e; color: #fff; text-decoration: none; }
 .btn-apk:hover { background: #3a9440; }
 .cls-lock { color: var(--bone-dim); font-size: 12px; }
+
+
+/* Conjuntos sazonais premium */
+.premium-shop{margin:22px 0;padding:16px;border:1px solid rgba(239,195,96,.35);border-radius:12px;background:linear-gradient(155deg,rgba(40,24,26,.94),rgba(17,20,29,.95));}
+.premium-art-wrap{display:flex;align-items:center;gap:16px;margin-bottom:18px;padding:12px;border-radius:10px;background:radial-gradient(ellipse at 22% 50%,rgba(210,45,58,.2),transparent 65%);}
+.premium-art{width:min(320px,40%);height:auto;image-rendering:pixelated;border:1px solid rgba(239,195,96,.24);border-radius:8px;background:#16141a;}
+.premium-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;}
+.premium-card{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid color-mix(in srgb,var(--set-tone),transparent 48%);border-radius:9px;background:linear-gradient(135deg,color-mix(in srgb,var(--set-tone),transparent 90%),rgba(10,13,20,.9));}
+.premium-card canvas{flex:0 0 72px;image-rendering:pixelated;background:rgba(0,0,0,.28);border-radius:8px;}
+.premium-card>div{display:flex;flex-direction:column;gap:5px;min-width:0;}
+.premium-card small{color:var(--muted,#b5ad9d);}
+.premium-card span{color:#f2cf78;font-weight:700;}
+.premium-orders{margin:12px 0;padding:12px;border:1px solid rgba(119,206,145,.35);border-radius:8px;}
+.premium-orders .row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;}
+.premium-admin{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;max-height:340px;overflow:auto;padding:8px;}
+.premium-admin label{display:flex;align-items:center;gap:7px;padding:5px;border-bottom:1px solid rgba(255,255,255,.08);}
+.premium-admin label span{flex:1;font-size:.85em;}
+.premium-admin input[type=number]{width:74px;}
+@media(max-width:620px){.premium-art-wrap{align-items:flex-start;flex-direction:column}.premium-art{width:100%;max-width:320px}.premium-grid{grid-template-columns:1fr}.premium-orders .row{align-items:flex-start;flex-direction:column}}
