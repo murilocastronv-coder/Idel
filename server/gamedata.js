@@ -497,6 +497,66 @@ Object.assign(ITEM_BASES, {
 // asa de nível 1 -> asa de nível 2 (o Magic Gladiator transforma Satan/Heaven em Darkness)
 const WING_EVOLVE = { wings_satan: 'wings_dragon', wings_heaven: 'wings_soul', wings_elf: 'wings_spirit', wings_curse: 'wings_despair' };
 
+
+ // Coleção de conjuntos premium: equipamentos semi-full e universais por classe.
+ const PREMIUM_SET_PACKS = [
+  { id: 'festive_01', name: 'Especial Christmas', price: 4500, req: 20, plus: 4, tone: #db3039 },
+  { id: 'festive_02', name: 'Noel Rubi', price: 4655, req: 23, plus: 5, tone: #55c7f2 },
+  { id: 'festive_03', name: 'Noel Glacial', price: 4810, req: 26, plus: 6, tone: #4cbd72 },
+  { id: 'festive_04', name: 'Noel Esmeralda', price: 4966, req: 29, plus: 7, tone: #e6b744 },
+  { id: 'festive_05', name: 'Noel Dourado', price: 5121, req: 32, plus: 8, tone: #c277e8 },
+  { id: 'festive_06', name: 'Noel Aurora', price: 5276, req: 35, plus: 4, tone: #db3039 },
+  { id: 'festive_07', name: 'Noel Carmesim', price: 5431, req: 38, plus: 5, tone: #55c7f2 },
+  { id: 'festive_08', name: 'Noel Celestial', price: 5586, req: 41, plus: 6, tone: #4cbd72 },
+  { id: 'festive_09', name: 'Noel Sombrio', price: 5741, req: 44, plus: 7, tone: #e6b744 },
+  { id: 'festive_10', name: 'Noel Prateado', price: 5897, req: 47, plus: 8, tone: #c277e8 },
+  { id: 'festive_11', name: 'Noel Estelar', price: 6052, req: 50, plus: 4, tone: #db3039 },
+  { id: 'festive_12', name: 'Noel Canela', price: 6207, req: 53, plus: 5, tone: #55c7f2 },
+  { id: 'festive_13', name: 'Noel Boreal', price: 6362, req: 56, plus: 6, tone: #4cbd72 },
+  { id: 'festive_14', name: 'Noel Cristal', price: 6517, req: 59, plus: 7, tone: #e6b744 },
+  { id: 'festive_15', name: 'Noel Encantado', price: 6672, req: 62, plus: 8, tone: #c277e8 },
+  { id: 'festive_16', name: 'Noel Flamejante', price: 6828, req: 65, plus: 4, tone: #db3039 },
+  { id: 'festive_17', name: 'Noel Lunar', price: 6983, req: 68, plus: 5, tone: #55c7f2 },
+  { id: 'festive_18', name: 'Noel Imperial', price: 7138, req: 71, plus: 6, tone: #4cbd72 },
+  { id: 'festive_19', name: 'Noel Festivo', price: 7293, req: 74, plus: 7, tone: #e6b744 },
+  { id: 'festive_20', name: 'Noel Majestoso', price: 7448, req: 77, plus: 8, tone: #c277e8 },
+  { id: 'festive_21', name: 'Noel Nevasca', price: 7603, req: 80, plus: 4, tone: #db3039 },
+  { id: 'festive_22', name: 'Noel Guardião', price: 7759, req: 83, plus: 5, tone: #55c7f2 },
+  { id: 'festive_23', name: 'Noel Fênix', price: 7914, req: 86, plus: 6, tone: #4cbd72 },
+  { id: 'festive_24', name: 'Noel Dracônico', price: 8069, req: 89, plus: 7, tone: #e6b744 },
+  { id: 'festive_25', name: 'Noel Élfico', price: 8224, req: 92, plus: 8, tone: #c277e8 },
+  { id: 'festive_26', name: 'Noel Arcano', price: 8379, req: 95, plus: 4, tone: #db3039 },
+  { id: 'festive_27', name: 'Noel Real', price: 8534, req: 98, plus: 5, tone: #55c7f2 },
+  { id: 'festive_28', name: 'Noel Sagrado', price: 8690, req: 101, plus: 6, tone: #4cbd72 },
+  { id: 'festive_29', name: 'Noel Místico', price: 8845, req: 104, plus: 7, tone: #e6b744 },
+  { id: 'festive_30', name: 'Noel Lendário', price: 9000, req: 107, plus: 8, tone: #c277e8 },
+  { id: 'festive_31', name: 'Noel Supremo', price: 9155, req: 110, plus: 4, tone: #db3039 }
+ ];
+ const PREMIUM_PARTS = [
+   ['helm','Elmo'],['armor','Armadura'],['pants','Calças'],['gloves','Luvas'],['boots','Botas'],
+   ['wings','Asas'],['necklace','Pingente'],['ring','Anel'],['ring','Anel'],['weapon','Espada de Natal'],['weapon','Arco de Natal'],['shield','Escudo de Natal'],
+ ];
+ for (const pack of PREMIUM_SET_PACKS) {
+   const setId = pack.id;
+   for (let n=0;n<PREMIUM_PARTS.length;n++) {
+     const [slot,label] = PREMIUM_PARTS[n];
+     const id = `${setId}_${['helm','armor','pants','gloves','boots','wings','pendant','ring1','ring2','sword','bow','shield'][n]}`;
+     const weapon = slot === 'weapon';
+     const kind = n === 10 ? 'bow' : weapon ? 'sword' : undefined;
+     const req = pack.req;
+     ITEM_BASES[id] = {
+       name: `${pack.name} — ${label}`, slot, icon: ({helm:'helm',armor:'armor',pants:'pants',gloves:'gloves',boots:'boots',wings:'wings',necklace:'necklace',ring:'ring',weapon:kind,shield:'shield'})[slot] || 'armor',
+       ...(weapon ? { kind, dmg: n === 10 ? [32+Math.floor(n/2),47+Math.floor(n/2)] : [35+Math.floor(n/2),51+Math.floor(n/2)] } : {}),
+       ...(slot === 'shield' ? { kind:'shield', def:14+Math.floor(n/2) } : {}),
+       ...(slot !== 'weapon' && slot !== 'wings' && slot !== 'ring' && slot !== 'necklace' && slot !== 'shield' ? { def: Math.max(2,Math.round((req/3)+(n*1.8))) } : {}),
+       ...(slot === 'wings' ? { cat:'wings', tier:1, def:10+Math.floor(pack.req/8), wdmg:10+Math.floor(pack.req/10), absorb:10+Math.floor(pack.req/12), rarity:'epic' } : {}),
+       ...(slot === 'ring' ? { hp:70+pack.req*2 } : {}),
+       ...(slot === 'necklace' ? { hp:80+pack.req*2, def:3+Math.floor(pack.req/30) } : {}),
+       req, set:setId, special:true, seasonal:'christmas', color:pack.tone, classes:Object.keys(CLASSES),
+     };
+   }
+ }
+
 const SETS = {
   leather: { name: 'Couro', bonus: 'Conjunto completo: +10% defesa e +5% dano' },
   bronze: { name: 'Bronze', bonus: 'Conjunto completo: +10% defesa e +5% dano' },
@@ -506,6 +566,7 @@ const SETS = {
   phoenix: { name: 'Fênix', bonus: 'Conjunto completo: +10% defesa e +5% dano' },
   abyss: { name: 'Abismo', bonus: 'Conjunto completo: +10% defesa e +5% dano' },
 };
+for (const p of PREMIUM_SET_PACKS) SETS[p.id] = { name: p.name, bonus: '5 peças: defesa e dano aprimorados; conjunto sazonal cosmético.' };
 
 const RARITY_MULT = { common: 1, uncommon: 1.15, rare: 1.35, epic: 1.6, legendary: 2, ancestral: 2.6 };
 const RARITY_WEIGHTS = {
@@ -523,7 +584,7 @@ const INVENTORY_SIZE = 40;
 const MAX_STACK = 999;
 
 module.exports = {
-  CLASSES, MAPS, RARITIES, ITEMS, LIMITS,
+  CLASSES, MAPS, RARITIES, ITEMS, LIMITS, PREMIUM_SET_PACKS, PREMIUM_PARTS,
   MONSTERS, WORLD, SKILLS, POINTS_PER_LEVEL, AUTO_STATS, CLASS_WEAPONS, ITEM_BASES, SETS,
   RARITY_MULT, RARITY_WEIGHTS, SHOP, INVENTORY_SIZE, MAX_STACK, WING_EVOLVE, EVOLUTIONS, EQUIP_SLOTS, GAME_MODE, DAILY_POOL, LOGIN_REWARDS, ACHIEVEMENTS,
 };
