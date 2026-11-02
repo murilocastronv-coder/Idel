@@ -391,7 +391,8 @@ async function doAct(world, p, msg) {
     }
   } catch (e) {
     console.error('[vault]', p.name, a, e.message);
-    say(false, /mudou/.test(e.message) ? e.message : 'Não foi possível concluir. Nada foi alterado.');
+    const clearError = /mudou/.test(e.message) || e.message === 'O baú está cheio e não há espaço nas pilhas existentes.' || e.message === 'Sua bolsa está cheia e não há espaço nas pilhas existentes.';
+    say(false, clearError ? e.message : 'Não foi possível concluir. Nada foi alterado.');
   }
   return undefined;
 }
