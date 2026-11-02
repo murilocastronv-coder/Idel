@@ -948,7 +948,7 @@
           label('Evolução de classe', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
           continue;
         }
-        if (e.kind === 'castle_guard' || e.kind === 'charon') {
+        if (e.kind === 'castle_guard' || e.kind === 'charon' || e.kind === 'teleport') {
           const guard = e.kind === 'castle_guard';
           ctx.save(); ctx.globalCompositeOperation = 'lighter';
           const r3 = 22 * zoom * (1 + 0.07 * Math.sin(now / 240));
@@ -958,7 +958,7 @@
           if (guard) Sprites.hero(ctx, 'dark_knight', { hair: 0, skin: 1 }, 'idle', now, x, y, sc, true, { equip: { helm: 'abyss', armor: 'abyss', gloves: 'abyss', boots: 'abyss' } });
           else Sprites.hero(ctx, 'dark_wizard', { hair: 3, skin: 0 }, 'idle', now, x, y, sc, false, { equip: { armor: 'abyss', helm: 'abyss' } });
           label(e.name, x, y - HERO_H * sc - 4 * dpr, guard ? '#ffb0a0' : '#d8b0ff');
-          label(guard ? 'Chaos Castle' : 'Devil Square', x, y - HERO_H * sc - 17 * dpr, guard ? '#ff7a5a' : '#c88aff', 10);
+          label(e.kind === 'teleport' ? 'Viajar para outro mapa' : guard ? 'Chaos Castle' : 'Devil Square', x, y - HERO_H * sc - 17 * dpr, guard ? '#ff7a5a' : '#c88aff', 10);
           continue;
         }
         if (e.kind === 'smith') {
@@ -1183,6 +1183,7 @@
         if (n.kind === 'sevina' || n.kind === 'marlon') { CQ.npc = n.kind; openPanel('cquest'); return; }
         if (n.kind === 'vault') { if (S.panel !== 'vault') openPanel('vault'); return; }
         if (n.kind === 'smith') { if (S.panel !== 'smith') openPanel('smith'); return; }
+        if (n.kind === 'teleport') { openPanel('maps'); return; }
         if (n.kind === 'castle_guard' || n.kind === 'charon') { AR.kind = n.kind === 'charon' ? 'devil' : 'castle'; if (S.panel === 'arena') renderPanel('arena'); else openPanel('arena'); send({ type: 'arena', action: 'info', kind: AR.kind }); return; }
         openPanel(n.kind === 'chaos' ? 'chaos' : 'shop'); return;
       }
