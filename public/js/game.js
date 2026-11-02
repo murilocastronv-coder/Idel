@@ -1421,7 +1421,7 @@
     b.type = 'button'; b.className = 'islot' + (MS.on ? (picked ? ' picked' : '') : (S.selItem === it.id ? ' sel' : ''));
     if (MS.on && !it.equipped) b.setAttribute('aria-pressed', picked);
     b.style.setProperty('--r', RAR[it.rarity]);
-    b.setAttribute('aria-label', `${it.name}${it.plus ? ' +' + it.plus : ''}, ${RAR_NAME[it.rarity]}`);
+    b.setAttribute('aria-label', `${it.name}${it.plus ? ' +' + it.plus : ''}${it.stack && it.qty > 1 ? ', ' + fmt.format(it.qty) + ' unidades' : ''}, ${RAR_NAME[it.rarity]}`);
     b.appendChild(iconCanvas(it));
     if (it.plus) b.insertAdjacentHTML('beforeend', `<span class="plus">+${it.plus}</span>`);
     if (it.stack) b.insertAdjacentHTML('beforeend', `<span class="qty">${it.qty > 999 ? '999+' : it.qty}</span>`);
@@ -2445,7 +2445,14 @@
       const it = byPos.get(pos);
       let b;
       if (it) {
-        b = slotButton(it, () => { VT.sel = VT.sel && VT.sel.id === it.id ? null : { from: 'vault', id: it.id }; renderVault(); });
+        b = slotButton(it, () => {
+          const selectedBagItem = VT.sel && VT.sel.from === 'bag' && S.char ? S.char.items.find((x) => String(x.id) === String(VT.sel.id)) : null;
+          if (selectedBagItem && selectedBagItem.stack && it.stack && selectedBagItem.base === it.base && selectedBagItem.rarity === it.rarity && Number(selectedBagItem.plus || 0) === Number(it.plus || 0)) {
+            vaultSend({ action: 'put', id: selectedBagItem.id, pos });
+            VT.sel = null; return;
+          }
+          VT.sel = VT.sel && VT.sel.id === it.id ? null : { from: 'vault', id: it.id }; renderVault();
+        });
         b.classList.toggle('sel', !!(VT.sel && VT.sel.id === it.id));
         b.classList.remove('picked');
         if (VT.filter !== 'all' && vaultCat(it) !== VT.filter) b.classList.add('dim');
@@ -2481,7 +2488,14 @@
     $('#vault-bagcount').textContent = `${bag.length}/${S.char.invMax}`;
     const bg = $('#vault-bag'); bg.innerHTML = '';
     bag.sort((a, b) => RAR_ORDER.indexOf(b.rarity) - RAR_ORDER.indexOf(a.rarity) || b.req - a.req).forEach((it) => {
-      const b = slotButton(it, () => { VT.sel = VT.sel && VT.sel.id === it.id ? null : { from: 'bag', id: it.id }; renderVault(); });
+      const b = slotButton(it, () => {
+        const selectedVaultItem = VT.sel && VT.sel.from === 'vault' && D ? D.items.find((x) => String(x.id) === String(VT.sel.id)) : null;
+        if (selectedVaultItem && selectedVaultItem.stack && it.stack && selectedVaultItem.base === it.base && selectedVaultItem.rarity === it.rarity && Number(selectedVaultItem.plus || 0) === Number(it.plus || 0)) {
+          vaultSend({ action: 'take', id: selectedVaultItem.id });
+          VT.sel = null; return;
+        }
+        VT.sel = VT.sel && VT.sel.id === it.id ? null : { from: 'bag', id: it.id }; renderVault();
+      });
       b.classList.toggle('sel', !!(selBag && VT.sel.id === it.id)); b.classList.remove('picked');
       b.draggable = true;
       b.ondragstart = (e) => { e.dataTransfer.setData('text/plain', JSON.stringify({ from: 'bag', id: it.id })); };
