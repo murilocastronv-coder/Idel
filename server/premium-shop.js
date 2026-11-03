@@ -3,6 +3,8 @@
 const crypto = require('crypto');
 const db = require('./db');
 const G = require('./gamedata');
+const UPG = require('./upgrade');
+const CHAOS = require('./chaos');
 const KEY = () => process.env.STRIPE_SECRET_KEY || '';
 const CURRENCY = 'brl';
 const RESET_STATUS = require('./reset-status');
@@ -20,11 +22,34 @@ function findProduct(id) {
   return BOX_PROMOS.find((p) => p.id === id) || (id === STAT_RESET.id ? STAT_RESET : null);
 }
 
+function setAttributes(pack) {
+  const id = pack.id, plus = pack.plus;
+  const scaled = (suffix, field, rarity = 'rare') => {
+    const baseId = `${id}_${suffix}`, b = G.ITEM_BASES[baseId] || {}, value = b[field];
+    const m = (G.RARITY_MULT[rarity] || 1) * UPG.mult(baseId, suffix === 'wings' ? 0 : plus);
+    return Array.isArray(value) ? value.map((x) => Math.round(x * m)) : Math.round((Number(value) || 0) * m);
+  };
+  const defense = ['helm','armor','pants','gloves','boots'].reduce((sum, slot) => sum + scaled(slot, 'def'), 0);
+  const sword = scaled('sword', 'dmg');
+  const bow = scaled('bow', 'dmg');
+  const accessoryHp = ['ring1','ring2','pendant'].reduce((sum, slot) => sum + scaled(slot, 'hp'), 0);
+  const wing = G.ITEM_BASES[`${id}_wings`] || {}, wingScale = (CHAOS.cfg().rarityAttributes || {}).epic || { def:100, wdmg:100, absorb:100 };
+  const wingDef = Math.round((wing.def || 0) * wingScale.def / 100), wingDmg = Math.round((wing.wdmg || 0) * wingScale.wdmg / 100), wingAbsorb = Math.round((wing.absorb || 0) * wingScale.absorb / 100);
+  return {
+    'Defesa total (5 peças)': defense,
+    'Dano da espada': `${sword[0]}–${sword[1]}`,
+    'Dano do arco': `${bow[0]}–${bow[1]}`,
+    'Defesa do escudo': scaled('shield','def'),
+    'Vida dos acessórios': accessoryHp,
+    'Asas (defesa / dano / absorção)': `${wingDef} / ${wingDmg} / ${wingAbsorb}%`,
+  };
+}
+
 function publicCatalog(admin = false) {
   const sets = G.PREMIUM_SET_PACKS.map((p) => {
     const c = config[p.id] || {};
     return { id:p.id, name:p.name, price:Number.isInteger(c.price)?c.price:p.price, enabled:c.enabled !== false,
-      req:p.req, plus:p.plus, tone:p.tone, pieces:12, type:'set', admin };
+      req:p.req, plus:p.plus, tier:p.tier, tone:p.tone, pieces:12, type:'set', attributes:setAttributes(p), excellentOptions:'2–4 opções Excellent semi-full por peça', admin };
   });
   const boxes = BOX_PROMOS.map((p) => ({ ...p, enabled:true, pieces:p.qty, req:1, plus:0, admin }));
   return sets.concat(boxes, [{ ...STAT_RESET, enabled:true, pieces:1, req:1, plus:0, admin }]);
@@ -46,6 +71,11 @@ async function saveConfig(input) {
     const price = Math.round(Number(raw.price ?? old.price ?? p.price));
     if (!Number.isInteger(price) || price < 4500 || price > 9000) throw new Error('Cada conjunto deve custar de R$ 45,00 a R$ 90,00.');
     next[p.id] = { price, enabled: raw.enabled === undefined ? old.enabled !== false : raw.enabled === true };
+  }
+  let previousPrice = 0;
+  for (const p of G.PREMIUM_SET_PACKS) {
+    if (next[p.id].price <= previousPrice) throw new Error('A loja deve manter preços crescentes: conjuntos mais caros precisam ter atributos melhores.');
+    previousPrice = next[p.id].price;
   }
   await db.query(`INSERT INTO game_settings(key,value,updated_at) VALUES('premium_sets',$1::jsonb,now())
     ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value,updated_at=now()`, [JSON.stringify(next)]);

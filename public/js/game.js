@@ -2552,7 +2552,7 @@
     holder.innerHTML = '<p class="muted">Carregando conjuntos…</p>';
     try {
       const data = await admApi('GET', '/api/premium-store');
-      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/special-christmas-pixel-art.svg" alt="Set natalino em pixel art 2D" loading="lazy"><div><h3>Conjuntos semi-full</h3><b>Especial Christmas</b><p class="muted small">Armadura natalina, asas, pingente, dois anéis, espada, arco e escudo.</p></div></div><p class="muted small">30 conjuntos semi-full e pacotes promocionais de Box Kundun com itens raros e épicos, sem atributos full. O primeiro reset de status é grátis; cada reset adicional custa R$ 5,00.</p>' +
+      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/special-christmas-pixel-art.svg" alt="Set natalino em pixel art 2D" loading="lazy"><div><h3>Conjuntos semi-full</h3><b>Especial Christmas</b><p class="muted small">Armadura natalina, asas, pingente, dois anéis, espada, arco e escudo.</p></div></div><p class="muted small">30 conjuntos semi-full e pacotes promocionais de Box Kundun com itens raros e épicos, sem atributos full. Os atributos dos conjuntos aumentam junto com o preço; até o tier inicial supera os equipamentos base de monstros e bosses. Confira os seis atributos antes de comprar. O primeiro reset de status é grátis; cada reset adicional custa R$ 5,00.</p>' +
         ((data.orders || []).length ? '<div class="premium-orders"><b>Pedidos prontos para resgatar</b>' + data.orders.map(o => '<div class="row"><span>' + esc(o.product) + ' · ' + brl.format(o.amount_cents / 100) + '</span><button class="btn small btn-gold" type="button" data-premium-claim="' + o.id + '">Resgatar neste personagem</button></div>').join('') + '</div>' : '') +
         '<div class="premium-grid">' + data.catalog.map(p => {
           const isBox = p.type === 'box';
@@ -2560,9 +2560,10 @@
             : isBox
               ? p.qty + ' caixas · itens raros/épicos · até +8 · semi-full'
               : p.pieces + ' peças · nível ' + p.req + '+ · melhoria +' + p.plus + ' · todas as classes';
+          const attrsHtml = p.type === 'set' ? '<details class="premium-stats"><summary>Ver os 6 atributos antes de comprar</summary><ul>' + Object.entries(p.attributes || {}).map(([label, value]) => '<li><span>' + esc(label) + '</span><b>' + esc(value) + '</b></li>').join('') + '</ul><small>Excellent semi-full: cada peça recebe 2–4 opções aleatórias, definidas no resgate.</small></details>' : '';
           return '<article class="premium-card" style="--set-tone:' + esc(p.tone) + '">' +
             '<canvas width="72" height="72" data-premium-icon="' + esc(p.id) + '"></canvas><div><b>' + esc(p.name) + '</b>' +
-            '<small>' + detail + '</small><span>' + brl.format(p.price / 100) + '</span>' +
+            '<small>' + detail + '</small>' + attrsHtml + '<span>' + brl.format(p.price / 100) + '</span>' +
             '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled || (p.type === 'reset' && !(RSI.info && !RSI.info.free)) ? ' disabled' : '') + '>' + (p.type === 'reset' && RSI.info && RSI.info.free ? 'Use o reset grátis no Herói' : data.enabled ? (p.type === 'reset' ? 'Comprar reset · R$ 5,00' : isBox ? 'Comprar caixas' : 'Comprar conjunto') : 'Pagamento indisponível') + '</button>' + (p.type === 'set' ? '<button class="btn small premium-preview-trigger" type="button" data-premium-preview="' + esc(p.id) + '">Ver no personagem</button>' : '') + '</div></article>';
         }).join('') + '</div></section>';
       Array.from(holder.querySelectorAll('[data-premium-icon]')).forEach((canvas, i) => {
@@ -2574,7 +2575,7 @@
         if (!product) return;
         const dialog = document.createElement('dialog');
         dialog.className = 'premium-preview-dialog';
-        dialog.innerHTML = '<div class="premium-preview-head"><div><b>Prévia no personagem</b><small>' + esc(product.name) + '</small></div><button class="btn small" type="button" data-preview-close aria-label="Fechar">✕</button></div><canvas width="260" height="280" aria-label="Prévia do equipamento no personagem"></canvas><p class="muted small">Prévia visual aproximada com os sprites atuais e a aparência do seu personagem. Não equipa nem compra o item.</p><button class="btn small btn-gold" type="button" data-preview-close>Fechar prévia</button>';
+        dialog.innerHTML = '<div class="premium-preview-head"><div><b>Prévia no personagem</b><small>' + esc(product.name) + '</small></div><button class="btn small" type="button" data-preview-close aria-label="Fechar">✕</button></div><canvas width="260" height="280" aria-label="Prévia do equipamento no personagem"></canvas><p class="muted small">Prévia visual aproximada com os sprites atuais e a aparência do seu personagem. Não equipa nem compra o item.</p><ul class="premium-preview-stats">' + Object.entries(product.attributes || {}).map(([label, value]) => '<li><span>' + esc(label) + '</span><b>' + esc(value) + '</b></li>').join('') + '</ul><small>Excellent semi-full: 2–4 opções aleatórias por peça.</small><button class="btn small btn-gold" type="button" data-preview-close>Fechar prévia</button>';
         document.body.appendChild(dialog);
         const close = () => { if (dialog.open) dialog.close(); dialog.remove(); };
         dialog.querySelectorAll('[data-preview-close]').forEach(b => { b.onclick = close; });

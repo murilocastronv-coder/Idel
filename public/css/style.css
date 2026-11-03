@@ -386,3 +386,14 @@ details[open] > summary { margin-bottom: 14px; }
 .premium-preview-head small{color:#d1c5a8}
 .premium-preview-dialog canvas{display:block;width:min(260px,72vw);height:auto;max-height:48vh;margin:0 auto 8px;image-rendering:pixelated;border:1px solid rgba(239,195,96,.3);background:#11182b;border-radius:8px}
 .premium-preview-dialog p{margin:8px 0}
+
+
+/* Atributos do pacote visíveis antes do checkout */
+.premium-stats{width:100%;padding:7px 8px;border:1px solid rgba(239,195,96,.34);border-radius:7px;background:rgba(5,9,19,.48)}
+.premium-stats summary{cursor:pointer;color:#f0cf7a;font-weight:700}
+.premium-stats ul,.premium-preview-stats{list-style:none;margin:8px 0;padding:0;display:grid;gap:5px}
+.premium-stats li,.premium-preview-stats li{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(255,255,255,.08);padding:3px 0}
+.premium-stats li span,.premium-preview-stats li span{color:#c8c0ae}
+.premium-stats li b,.premium-preview-stats li b{color:#ffdf87;text-align:right}
+.premium-stats small{display:block;color:#c9bfa9;margin-top:8px}
+.premium-preview-stats{max-height:150px;overflow:auto;text-align:left;font-size:.88rem}

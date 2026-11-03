@@ -556,7 +556,11 @@ const WING_EVOLVE = { wings_satan: 'wings_dragon', wings_heaven: 'wings_soul', w
    ['helm','Elmo'],['armor','Armadura'],['pants','Calças'],['gloves','Luvas'],['boots','Botas'],
    ['wings','Asas'],['necklace','Pingente'],['ring','Anel'],['ring','Anel'],['weapon','Espada de Natal'],['weapon','Arco de Natal'],['shield','Escudo de Natal'],
  ];
- for (const pack of PREMIUM_SET_PACKS) {
+ for (let packIndex = 0; packIndex < PREMIUM_SET_PACKS.length; packIndex++) {
+   const pack = PREMIUM_SET_PACKS[packIndex];
+   const tier = packIndex + 1;
+   pack.tier = tier;
+   pack.plus = 5 + Math.floor(((tier - 1) * 10) / (PREMIUM_SET_PACKS.length - 1));
    const setId = pack.id;
    for (let n=0;n<PREMIUM_PARTS.length;n++) {
      const [slot,label] = PREMIUM_PARTS[n];
@@ -566,12 +570,12 @@ const WING_EVOLVE = { wings_satan: 'wings_dragon', wings_heaven: 'wings_soul', w
      const req = pack.req;
      ITEM_BASES[id] = {
        name: `${pack.name} — ${label}`, slot, icon: ({helm:'helm',armor:'armor',pants:'pants',gloves:'gloves',boots:'boots',wings:'wings',necklace:'necklace',ring:'ring',weapon:kind,shield:'shield'})[slot] || 'armor',
-       ...(weapon ? { kind, dmg: n === 10 ? [32+Math.floor(n/2),47+Math.floor(n/2)] : [35+Math.floor(n/2),51+Math.floor(n/2)] } : {}),
-       ...(slot === 'shield' ? { kind:'shield', def:14+Math.floor(n/2) } : {}),
-       ...(slot !== 'weapon' && slot !== 'wings' && slot !== 'ring' && slot !== 'necklace' && slot !== 'shield' ? { def: Math.max(2,Math.round((req/3)+(n*1.8))) } : {}),
-       ...(slot === 'wings' ? { cat:'wings', tier:1, def:10+Math.floor(pack.req/8), wdmg:10+Math.floor(pack.req/10), absorb:10+Math.floor(pack.req/12), rarity:'epic' } : {}),
-       ...(slot === 'ring' ? { hp:70+pack.req*2 } : {}),
-       ...(slot === 'necklace' ? { hp:80+pack.req*2, def:3+Math.floor(pack.req/30) } : {}),
+       ...(weapon ? { kind, dmg: n === 10 ? [95 + tier * 4, 135 + tier * 5] : [100 + tier * 4, 140 + tier * 5] } : {}),
+       ...(slot === 'shield' ? { kind:'shield', def:38 + tier } : {}),
+       ...(slot === 'helm' ? { def:50 + tier * 2 } : slot === 'armor' ? { def:85 + tier * 3 } : slot === 'pants' ? { def:52 + tier * 2 } : slot === 'gloves' ? { def:33 + tier } : slot === 'boots' ? { def:38 + tier } : {}),
+       ...(slot === 'wings' ? { cat:'wings', tier, def:36 + tier, wdmg:27 + tier, absorb:27 + tier, rarity:'epic' } : {}),
+       ...(slot === 'ring' ? { hp:630 + tier * 15 } : {}),
+       ...(slot === 'necklace' ? { hp:530 + tier * 12, def:38 + tier } : {}),
        req, set:setId, special:true, seasonal:'christmas', color:pack.tone, ic:pack.tone, classes:Object.keys(CLASSES),
      };
    }
