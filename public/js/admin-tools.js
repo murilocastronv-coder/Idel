@@ -646,9 +646,64 @@
     draw();
   }
 
+  // ---------------- Mercado com dinheiro real ----------------
+  const money = (v, c) => (c === 'brl' ? 'R$ ' + (v / 100).toFixed(2).replace('.', ',') : c === 'usd' ? 'US$ ' + (v / 100).toFixed(2) : fmt.format(v) + ' Zen');
+  async function market(box) {
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    let V;
+    try { V = await X.api('GET', '/api/admin/market'); } catch (e) { box.innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+    const draw = () => {
+      const tot = (c) => V.totals.find((t) => t.currency === c) || { sold: 0, volume: 0, fees: 0 };
+      const act = (c) => (V.active.find((t) => t.currency === c) || { n: 0 }).n;
+      box.innerHTML = `<p class="adt-msg" role="status"></p>
+        <p class="muted small">Stripe ${V.stripe ? 'ligado' : '<b class="bad">desligado (faltam as chaves)</b>'} · vendedores com Stripe conectado: ${V.sellers.ready}/${V.sellers.n} · comissão por Pix cobrada a partir de ${money(V.limit, 'brl')}, prazo de ${V.graceH} h antes do bloqueio.</p>
+        <table class="adt-table"><thead><tr><th>Moeda</th><th>À venda</th><th>Vendidos</th><th>Volume</th><th>Comissão (10%)</th></tr></thead><tbody>
+          ${['brl', 'usd', 'zen'].map((c) => { const t = tot(c); return `<tr><td>${c.toUpperCase()}</td><td>${act(c)}</td><td>${t.sold}</td><td>${money(Number(t.volume), c)}</td><td>${money(Number(t.fees), c)}</td></tr>`; }).join('')}
+        </tbody></table>
+        <h4>Carteiras: comissões a receber, dólares a pagar e bloqueios</h4>
+        <div class="adm-row"><label>Conta <input type="text" id="adt-mk-user" placeholder="usuário"></label><button class="btn small" type="button" id="adt-mk-find">Abrir carteira</button></div>
+        ${V.wallets.length ? `<table class="adt-table"><thead><tr><th>Conta</th><th>Deve de comissão</th><th>Dólar a pagar</th><th>Como receber</th><th>Situação</th><th></th></tr></thead><tbody>
+          ${V.wallets.map((w) => `<tr data-acc="${w.account}"><td>${esc(w.username)}<br><small class="muted">${esc(w.email || '')}</small></td><td>${money(w.dueBrl, 'brl')}</td><td>${money(w.usdOwed, 'usd')}</td>
+            <td><small>${esc(w.payoutInfo || '—')}${w.pixKey ? `<br>Pix: ${esc(w.pixKey)}` : ''}</small></td><td>${w.blocked ? '<b class="bad">Bloqueado</b>' : w.dueBrl >= V.limit ? `Prazo até ${dt(w.deadline)}` : 'Ok'}</td>
+            <td class="adt-actions">${w.usdOwed > 0 ? '<button class="btn small" type="button" data-op="usdPaid">Paguei US$</button>' : ''}${w.dueBrl > 0 ? '<button class="btn small" type="button" data-op="forgive">Perdoar R$</button>' : ''}
+              <button class="btn small" type="button" data-op="${w.blocked ? 'unblock' : 'block'}">${w.blocked ? 'Desbloquear' : 'Bloquear'}</button></td></tr>`).join('')}
+        </tbody></table>` : '<p class="muted">Nenhuma carteira com saldo, dívida ou bloqueio.</p>'}
+        <h4>Compras por Pix esperando o vendedor</h4>
+        ${V.pix.length ? `<table class="adt-table"><thead><tr><th>Item</th><th>Valor</th><th>Vendedor</th><th>Comprador</th><th>Comprador avisou que pagou</th><th></th></tr></thead><tbody>
+          ${V.pix.map((x) => `<tr data-listing="${x.id}"><td>${esc(x.item)}</td><td>${money(x.price, 'brl')}</td><td>${esc(x.seller)}</td><td>${esc(x.buyer || '?')}</td><td>${x.paidAt ? dt(x.paidAt) : 'não'}</td>
+            <td class="adt-actions"><button class="btn small" type="button" data-op="pixDeliver">Entregar item</button><button class="btn small" type="button" data-op="pixRelease">Cancelar reserva</button></td></tr>`).join('')}
+        </tbody></table>` : '<p class="muted">Nenhuma compra por Pix aberta.</p>'}
+        <h4>Últimas vendas</h4>
+        ${V.sales.length ? `<table class="adt-table"><thead><tr><th>Quando</th><th>Item</th><th>Preço</th><th>Comissão</th><th>Forma</th><th>Vendedor → comprador</th></tr></thead><tbody>
+          ${V.sales.map((x) => `<tr><td>${dt(x.at)}</td><td>${esc(x.item)}</td><td>${money(x.price, x.currency)}</td><td>${money(x.fee, x.currency)}</td><td>${{ zen: 'Zen', connect: 'Stripe do vendedor', pix: 'Pix', platform: 'Seu Stripe (US$)' }[x.mode] || x.mode}</td><td>${esc(x.seller)} → ${esc(x.buyer || '?')}</td></tr>`).join('')}
+        </tbody></table>` : '<p class="muted">Nenhuma venda ainda.</p>'}`;
+      const post = async (body) => { try { const r = await X.api('POST', '/api/admin/market', body); V = r; draw(); msg(box, r.message); } catch (e) { msg(box, e.message, true); } };
+      $('#adt-mk-find').onclick = () => post({ op: 'findAccount', username: $('#adt-mk-user').value.trim() });
+      $$('[data-op]', box).forEach((b) => {
+        b.onclick = () => {
+          const tr = b.closest('tr'), op = b.dataset.op;
+          if (op === 'usdPaid' || op === 'forgive') {
+            const v = prompt(op === 'usdPaid' ? 'Quanto você pagou em dólar? (ex.: 12.50)' : 'Quanto perdoar em reais? (ex.: 5,00)');
+            if (!v) return;
+            const cents = Math.round(Number(String(v).replace(',', '.')) * 100);
+            if (!(cents > 0)) return msg(box, 'Valor inválido.', true);
+            const note = op === 'usdPaid' ? prompt('Observação (como pagou, comprovante):') || '' : '';
+            return post({ op, account: tr.dataset.acc, amount: cents, note });
+          }
+          if (op === 'block') { const note = prompt('Motivo do bloqueio:', 'comissão do mercado não paga'); if (note === null) return; return post({ op, account: tr.dataset.acc, note }); }
+          if (op === 'unblock') return post({ op, account: tr.dataset.acc });
+          if (op === 'pixDeliver' && !confirm('Entregar o item ao comprador e lançar a comissão para o vendedor?')) return;
+          return post({ op, listing: tr.dataset.listing });
+        };
+      });
+    };
+    draw();
+  }
+
   function mount(el, ctx) {
     X = ctx;
     el.innerHTML = `
+      <details class="adm-sec adt-sec" data-sec="market"><summary><h3>💰 Mercado com dinheiro real (R$ e US$)</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="invasion"><summary><h3>♛ Invasão Dourada e Box Kundun</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="equip"><summary><h3>Equipamentos por classe e evolução</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="vault"><summary><h3>Baú Pessoal</h3></summary><div class="adt-body"></div></details>
@@ -658,7 +713,7 @@
       <details class="adm-sec adt-sec" data-sec="excellent"><summary><h3>Opções Excellent semi-full</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="drops"><summary><h3>Drops de materiais e eventos</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="rules"><summary><h3>Comandos, reset e histórico ADM</h3></summary><div class="adt-body"></div></details>`;
-    const fn = { invasion, arena, upgrade, equip, vault, chaos, excellent, drops, rules };
+    const fn = { market, invasion, arena, upgrade, equip, vault, chaos, excellent, drops, rules };
     $$('.adt-sec', el).forEach((d) => { d.addEventListener('toggle', () => { if (d.open && !d.dataset.loaded) { d.dataset.loaded = 1; fn[d.dataset.sec]($('.adt-body', d)); } }); });
   }
 

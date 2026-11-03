@@ -6,6 +6,7 @@
 const db = require('./db');
 const G = require('./gamedata');
 const REAL = require('./market-real');
+const WALLET = require('./market-wallet');
 
 const FEE = 0.10;
 const MAX_ACTIVE = 10;
@@ -17,6 +18,7 @@ let W = null, H = null;
 function init(world, helpers) {
   W = world; H = helpers;
   REAL.init(world, helpers);
+  WALLET.init(world, helpers);
   // anúncios vencidos voltam para o vendedor coletar
   setInterval(() => {
     db.query("UPDATE market_listings SET status = 'expired', closed_at = now() WHERE status = 'active' AND expires_at < now()").catch((e) => console.error('[mercado] expirar', e.message));
@@ -25,7 +27,8 @@ function init(world, helpers) {
 
 const nameOf = (base) => (G.ITEM_BASES[base] || {}).name || base;
 const fmt = (n) => Math.round(n).toLocaleString('pt-BR');
-const feeOf = (price, cur) => (cur === 'brl' ? REAL.feeOf(price) : Math.floor(price * FEE));
+const feeOf = (price, cur) => (cur === 'brl' || cur === 'usd' ? REAL.feeOf(price) : Math.floor(price * FEE));
+const moneyOf = (v, cur) => (cur === 'brl' ? REAL.brl(v) : cur === 'usd' ? WALLET.usd(v) : `${fmt(v)} Zen`);
 function sellable(it) {
   const b = G.ITEM_BASES[it.base];
   if (!b) return 'Item desconhecido.';
@@ -37,7 +40,7 @@ function sellable(it) {
 }
 function view(r) {
   const it = H.publicItem({ id: 'L' + r.id, base: r.base, rarity: r.rarity, plus: r.plus, qty: r.qty, excellent_options: r.excellent_options, equipped: false });
-  return { id: String(r.id), item: it, price: Number(r.price), fee: Number(r.fee) || feeOf(Number(r.price), r.currency), cur: r.currency || 'zen', seller: r.seller_name, sellerId: String(r.seller_char),
+  return { id: String(r.id), item: it, price: Number(r.price), fee: Number(r.fee) || feeOf(Number(r.price), r.currency), cur: r.currency || 'zen', mode: r.pay_mode || (r.currency === 'zen' ? 'zen' : 'connect'), seller: r.seller_name, sellerId: String(r.seller_char),
     status: r.status, buyer: r.buyer_name || null, collected: !!r.collected, expires: r.expires_at ? new Date(r.expires_at).getTime() : 0, closed: r.closed_at ? new Date(r.closed_at).getTime() : 0 };
 }
 
@@ -59,10 +62,10 @@ async function browse(p, msg) {
       if (cat === 'material') return b.slot === 'material' || c === 'material' || c === 'jewel';
       return !['weapon', 'helm', 'armor', 'pants', 'gloves', 'boots', 'shield', 'ring', 'pendant', 'wings', 'material'].includes(b.slot);
     }).map(([id]) => id);
-    if (!bases.length) return p.send({ type: 'market', view: 'browse', cur: msg.cur === 'brl' ? 'brl' : 'zen', rows: [], page, more: false, fee: FEE, real: REAL.enabled() });
+    if (!bases.length) return p.send({ type: 'market', view: 'browse', cur: ['brl', 'usd'].includes(msg.cur) ? msg.cur : 'zen', rows: [], page, more: false, fee: FEE, real: REAL.enabled() });
   }
   const args = [PAGE + 1, page * PAGE];
-  const cur = msg.cur === 'brl' ? 'brl' : 'zen';
+  const cur = ['brl', 'usd'].includes(msg.cur) ? msg.cur : 'zen';
   args.push(cur);
   let where = `status = 'active' AND expires_at > now() AND currency = $${args.length}`;
   if (bases) { args.push(bases.join(',')); where += ` AND base = ANY(string_to_array($${args.length}, ','))`; }
@@ -74,7 +77,12 @@ async function browse(p, msg) {
 async function mine(p) {
   const { rows } = await db.query(`SELECT * FROM market_listings WHERE seller_char = $1 AND (status = 'active' OR NOT collected OR closed_at > now() - interval '3 days')
     ORDER BY (status = 'active') DESC, (NOT collected AND status <> 'active') DESC, id DESC LIMIT 60`, [p.charId]);
-  p.send({ type: 'market', view: 'mine', rows: rows.map(view), fee: FEE, max: MAX_ACTIVE, hours: DURATION_H, myZen: p.zen, real: REAL.enabled() });
+  const buying = (await db.query("SELECT * FROM market_listings WHERE reserved_char = $1 AND status = 'reserved' AND pay_mode = 'pix' ORDER BY id DESC LIMIT 10", [p.charId])).rows
+    .map((r) => ({ ...view(r), pixKey: r.pix_key, paid: !!r.buyer_paid_at }));
+  const out = rows.map((r) => ({ ...view(r), buyer: r.status === 'reserved' ? null : r.buyer_name, paid: !!r.buyer_paid_at }));
+  for (const r of rows) if (r.status === 'reserved' && r.reserved_char) out.find((x) => x.id === String(r.id)).reservedBy = (await db.query('SELECT name FROM characters WHERE id = $1', [r.reserved_char])).rows[0]?.name || '?';
+  p.send({ type: 'market', view: 'mine', rows: out, buying, fee: FEE, max: MAX_ACTIVE, hours: DURATION_H, myZen: p.zen, real: REAL.enabled() });
+  WALLET.send(p).catch(() => {});
 }
 
 async function list(world, p, msg) {
@@ -82,15 +90,25 @@ async function list(world, p, msg) {
   const it = p.items.find((i) => String(i.id) === String(msg.item));
   if (!it) return say('Este item não está na sua bolsa.');
   const why = sellable(it); if (why) return say(why);
-  const cur = msg.cur === 'brl' ? 'brl' : 'zen';
+  const cur = ['brl', 'usd'].includes(msg.cur) ? msg.cur : 'zen';
   const price = Math.floor(Number(msg.price));
-  let seller = null;
+  let seller = null, mode = 'zen', pixKey = null;
+  if (WALLET.isBlocked(p)) return say('Sua conta está bloqueada no mercado. Pague a comissão pendente (Minhas vendas) para voltar a vender.');
   if (cur === 'brl') {
     if (!Number.isFinite(price) || price < REAL.MIN_CENTS) return say(`O preço mínimo em reais é ${REAL.brl(REAL.MIN_CENTS)}.`);
     if (price > REAL.MAX_CENTS) return say(`O preço máximo em reais é ${REAL.brl(REAL.MAX_CENTS)}.`);
-    const sf = await REAL.sellerForListing(p);
-    if (sf.error) return say(sf.error);
-    seller = sf.seller;
+    const srow = REAL.enabled() ? await REAL.sellerRow(p.accountId) : null;
+    if (srow && REAL.ready(srow)) { seller = srow; mode = 'connect'; }
+    else {
+      const w = await WALLET.wallet(p.accountId);
+      if (!w.pix_key) return say('Para vender em reais, conecte sua conta Stripe ou cadastre sua chave Pix (aba Vender → R$).');
+      mode = 'pix'; pixKey = w.pix_key;
+    }
+  } else if (cur === 'usd') {
+    if (!REAL.enabled()) return say('Vendas em dólar ainda não estão ligadas no servidor.');
+    if (!Number.isFinite(price) || price < WALLET.USD_MIN) return say(`O preço mínimo em dólar é ${WALLET.usd(WALLET.USD_MIN)}.`);
+    if (price > WALLET.USD_MAX) return say(`O preço máximo em dólar é ${WALLET.usd(WALLET.USD_MAX)}.`);
+    mode = 'platform';
   } else {
     if (!Number.isFinite(price) || price < 1) return say('Coloque um preço em Zen.');
     if (price > MAX_PRICE) return say(`O preço máximo é ${fmt(MAX_PRICE)} Zen.`);
@@ -108,10 +126,10 @@ async function list(world, p, msg) {
         ? await q('DELETE FROM items WHERE id = $1 AND character_id = $2 AND qty = $3 AND equipped = FALSE AND locked = FALSE AND vault_no IS NULL RETURNING id', [it.id, p.charId, have])
         : await q('UPDATE items SET qty = qty - $3 WHERE id = $1 AND character_id = $2 AND qty = $4 AND vault_no IS NULL RETURNING id', [it.id, p.charId, qty, have]);
       if (!u.rows[0]) throw new Error('item mudou');
-      const r = await q(`INSERT INTO market_listings (seller_char, seller_name, base, rarity, plus, qty, excellent_options, price, fee, expires_at, currency, seller_account, stripe_account)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, now() + ($10 || ' hours')::interval, $11, $12, $13) RETURNING *`,
+      const r = await q(`INSERT INTO market_listings (seller_char, seller_name, base, rarity, plus, qty, excellent_options, price, fee, expires_at, currency, seller_account, stripe_account, pay_mode, pix_key)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, now() + ($10 || ' hours')::interval, $11, $12, $13, $14, $15) RETURNING *`,
         [p.charId, p.name, it.base, it.rarity || 'common', it.plus || 0, qty, JSON.stringify(it.excellent_options || []), price, feeOf(price, cur), String(DURATION_H),
-          cur, p.accountId, seller ? seller.stripe_account : null]);
+          cur, p.accountId, seller ? seller.stripe_account : null, mode, pixKey]);
       return r.rows[0];
     });
   } catch (e) {
@@ -121,8 +139,8 @@ async function list(world, p, msg) {
   if (whole) p.items = p.items.filter((i) => i !== it); else it.qty = have - qty;
   p.dirty = true;
   p.send(p.charState());
-  const money = (v) => (cur === 'brl' ? REAL.brl(v) : `${fmt(v)} Zen`);
-  p.send({ type: 'marketMsg', ok: true, text: `${qty > 1 ? qty + '× ' : ''}${nameOf(it.base)}${it.plus ? ' +' + it.plus : ''} anunciado por ${money(price)}. Você recebe ${money(price - feeOf(price, cur))}${cur === 'brl' ? ' direto na sua conta Stripe' : ''} quando vender.` });
+  const how = mode === 'connect' ? ' direto na sua conta Stripe' : mode === 'pix' ? ' (o comprador paga o seu Pix e a comissão de 10% fica para pagar depois)' : mode === 'platform' ? ' no seu saldo em dólar (o administrador faz o pagamento)' : '';
+  p.send({ type: 'marketMsg', ok: true, text: `${qty > 1 ? qty + '× ' : ''}${nameOf(it.base)}${it.plus ? ' +' + it.plus : ''} anunciado por ${moneyOf(price, cur)}. Você recebe ${moneyOf(mode === 'pix' ? price : price - feeOf(price, cur), cur)}${how} quando vender.` });
   return mine(p);
 }
 
@@ -132,7 +150,16 @@ async function buy(world, p, msg) {
   if (!Number.isFinite(id)) return say('Anúncio inválido.');
   const r = (await db.query('SELECT * FROM market_listings WHERE id = $1', [id])).rows[0];
   if (!r || r.status !== 'active' || new Date(r.expires_at).getTime() < Date.now()) return say('Este anúncio não está mais à venda.');
-  if (r.currency === 'brl') return REAL.act(p, { ...msg, action: 'buyReal' });
+  if (WALLET.isBlocked(p)) return say('Sua conta está bloqueada no mercado. Pague a comissão pendente (Minhas vendas) para voltar a comprar.');
+  if (r.currency !== 'zen') {
+    if (WALLET.isBlocked(p)) return say('Sua conta está bloqueada no mercado. Pague a comissão pendente para voltar a comprar.');
+    if (String(r.seller_account) === String(p.accountId)) return say('Você não pode comprar um item da sua própria conta.');
+    if (Number(msg.price) !== Number(r.price)) return say('O preço mudou. Confira de novo.');
+    const mode = r.pay_mode || 'connect';
+    if (mode === 'platform') return WALLET.buyUsd(p, r);
+    if (mode === 'pix') return WALLET.buyPix(p, r);
+    return REAL.act(p, { ...msg, action: 'buyReal' });
+  }
   if (String(r.seller_char) === String(p.charId)) return say('Você não pode comprar o seu próprio anúncio. Use "Minhas vendas" para cancelar.');
   const price = Number(r.price);
   if (Number(msg.price) !== price) return say('O preço mudou. Confira de novo.');
@@ -184,7 +211,7 @@ async function collect(world, p, msg, quiet) {
   if (!rows.length) { if (!quiet) say('Não há nada para coletar.'); return mine(p); }
   let zen = 0; const got = []; let full = false;
   for (const r of rows) {
-    if (r.status === 'sold' && r.currency === 'brl') continue; // dinheiro real já foi para a conta Stripe
+    if (r.status === 'sold' && r.currency !== 'zen') continue; // dinheiro real não passa pelo Zen
     if (r.status === 'sold') {
       const gain = Number(r.price) - Number(r.fee);
       try {
@@ -220,7 +247,12 @@ async function collect(world, p, msg, quiet) {
 function act(world, p, msg) {
   if (p.trade) return p.send({ type: 'marketMsg', ok: false, text: 'Termine a troca antes de usar o mercado.' });
   const a = String(msg.action || '');
+  if (a === 'buyReal') { msg = { ...msg, action: 'buy' }; return buy(world, p, msg); }
   const real = REAL.act(p, msg); if (real) return real;
+  if (a === 'wallet') return WALLET.send(p);
+  if (a === 'setInfo') return WALLET.setInfo(p, msg);
+  if (a === 'payNow') return WALLET.payNow(p);
+  if (a === 'pixPaid' || a === 'pixCancel' || a === 'pixConfirm') return WALLET.pixAction(p, msg);
   if (a === 'browse') return browse(p, msg);
   if (a === 'mine') return mine(p);
   if (a === 'list') return list(world, p, msg);
@@ -237,4 +269,4 @@ async function stats() {
   return rows[0];
 }
 
-module.exports = { init, act, stats, FEE };
+module.exports = { init, act, stats, FEE, mineFor: (p) => mine(p), isBlocked: (p) => WALLET.isBlocked(p) };

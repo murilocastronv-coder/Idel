@@ -63,3 +63,10 @@
 .mk-row .pr b.brl { color: #9affd0; }
 .mk-stripe { margin-bottom: 8px; border-color: #635bff; background: rgba(99, 91, 255, .12); }
 .mk-stripe select { background: #0b1020; color: #f0e6cc; border: 2px solid var(--edge); padding: 4px 6px; }
+.mk-wallet { margin-bottom: 8px; border-color: #c8a03a; background: rgba(200, 160, 58, .12); }
+.mk-wallet.bad { border-color: #ff5a4a; background: rgba(255, 70, 50, .14); }
+.mk-pix { margin-bottom: 8px; border-color: #32bcad; background: rgba(50, 188, 173, .12); }
+.mk-pix .pix-key, .mk-row code { background: #0b1020; padding: 3px 6px; border: 1px solid var(--edge); font-size: 12px; word-break: break-all; }
+.mk-sell input[type="text"], #mk-pixkey, #mk-payout { flex: 1 1 200px; min-width: 0; background: #0b1020; color: #f0e6cc; border: 2px solid var(--edge); padding: 6px 8px; }
+.adt-sec[data-sec="market"] .adt-table { display: block; overflow-x: auto; max-width: 100%; }
+.adt-sec[data-sec="market"] .adt-actions { display: flex; gap: 4px; flex-wrap: wrap; }

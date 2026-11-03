@@ -685,7 +685,9 @@ class World {
       case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS, ...[1, 2, 3, 4, 5, 6, 7].flatMap((n) => ['devil_eye_' + n, 'devil_key_' + n])])));
       case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
       case 'openBox': return p.run(() => KUNDUN.open(this, p, String(msg.id || '')));
-      case 'trade': return p.run(() => TRADE.act(this, p, msg));
+      case 'trade':
+        if (MARKET.isBlocked(p) && (msg.action === 'invite' || (msg.action === 'answer' && msg.accept))) return p.send({ type: 'log', kind: 'warn', text: 'Sua conta está bloqueada no mercado e nas trocas até pagar a comissão pendente (Mercado → Minhas vendas).' });
+        return p.run(() => TRADE.act(this, p, msg));
       case 'market': return p.run(() => MARKET.act(this, p, msg));
       case 'vault': return p.run(() => VAULT.act(this, p, msg));
       case 'arena': return p.run(() => ARENA.act(this, p, msg));

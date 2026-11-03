@@ -488,6 +488,16 @@ route('POST', '/api/admin/arena', bad(async (req) => {
   CMDS.log(who, 'panel:arena:' + body.op, null, { kind, minutes: body.minutes }, null, null, 'ok', message, null);
   return { ok: true, message, ...(await world.arena.adminView()) };
 }));
+// ---- Mercado com dinheiro real: comissões, saldos em dólar, Pix e bloqueios (Super ADM) ----
+const MARKET_WALLET = require('./market-wallet');
+route('GET', '/api/admin/market', async (req) => { await requireAdmin(req); return { ok: true, ...(await MARKET_WALLET.adminView()) }; });
+route('POST', '/api/admin/market', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 16 * 1024);
+  const message = await MARKET_WALLET.adminOp(body, acc.username);
+  CMDS.log({ accountId: acc.id, name: acc.username, role: 'superadmin' }, 'panel:market:' + body.op, null, body, null, null, 'ok', message, null);
+  return { ok: true, message, ...(await MARKET_WALLET.adminView()) };
+}));
 // ---- Aprimoramento +0 a +15 e Ferreiro Mestre (Super ADM) ----
 const UPG = require('./upgrade');
 route('GET', '/api/admin/upgrade', async (req, url) => {

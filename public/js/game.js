@@ -92,6 +92,8 @@
       case 'trade': return onTrade(m);
       case 'market': MK.data = m; MK.busy = false; if (m.view === 'mine') mkBadge(m.rows); if (S.panel === 'market' && (MK.tab === m.view || (MK.tab === 'sell' && m.view === 'mine' && MK.listed))) { if (MK.listed) { MK.listed = false; MK.tab = 'mine'; } renderMarket(); } return;
       case 'marketStripe': MK.stripe = m; MK.busy = false; if (S.panel === 'market') renderMarket(); return;
+      case 'marketWallet': MK.wallet = m; if (S.panel === 'market') renderMarket(); return;
+      case 'marketPix': MK.pix = m; MK.busy = false; if (S.panel === 'market') renderMarket(); return;
       case 'marketOpen': MK.busy = false; if (m.text) { mkMsg(m.text, true); feed(m.text, 'quest'); } if (m.url && (/^https:\/\/([a-z0-9-]+\.)*stripe\.com\//.test(m.url) || /^http:\/\/localhost/.test(m.url))) location.assign(m.url); return;
       case 'marketMsg': MK.busy = false; if (!m.ok) MK.listed = false; mkMsg(m.text, m.ok); feed(m.text, m.ok ? 'quest' : 'warn'); if (S.panel === 'market') renderMarket(); return;
       case 'tradeMsg': tradeStatus(m.text, true); feed(m.text, 'warn'); return;
@@ -1977,7 +1979,7 @@
     else if (name === 'rank') renderRank();
     else if (name === 'chaos') { renderChaos(); send({ type: 'chaosInfo' }); }
     else if (name === 'vault') renderVault();
-    else if (name === 'market') { MK.msg = null; mkLoad(MK.tab); renderMarket(); }
+    else if (name === 'market') { MK.msg = null; mkLoad(MK.tab); send({ type: 'market', action: 'wallet' }); renderMarket(); }
     else if (name === 'arena') renderArena();
     else if (name === 'smith') renderSmith();
     else if (name === 'cquest') { renderCQ(); send({ type: 'cqInfo', npc: CQ.npc }); }
@@ -1988,37 +1990,71 @@
   $$('.panel [data-close]').forEach((b) => { b.onclick = closePanel; });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
 
-  // ================= mercado entre jogadores (Zen) =================
-  const MK = { tab: 'browse', data: null, q: '', cat: '', rarity: '', sort: 'asc', page: 0, sel: null, busy: false, msg: null, listed: false, cur: 'zen', sellCur: 'zen', stripe: null };
-  const mkMoney = (v, cur) => (cur === 'brl' ? 'R$ ' + (v / 100).toFixed(2).replace('.', ',') : `${fmt.format(v)} Zen`);
+  // ================= mercado entre jogadores (Zen, R$ e US$) =================
+  const MK = { tab: 'browse', data: null, q: '', cat: '', rarity: '', sort: 'asc', page: 0, sel: null, busy: false, msg: null, listed: false, cur: 'zen', sellCur: 'zen', stripe: null, wallet: null, pix: null };
+  const mkMoney = (v, cur) => (cur === 'brl' ? 'R$ ' + (v / 100).toFixed(2).replace('.', ',') : cur === 'usd' ? 'US$ ' + (v / 100).toFixed(2) : `${fmt.format(v)} Zen`);
   const mkSend = (o) => { MK.busy = true; send({ type: 'market', ...o }); };
+  const CUR_LABEL = { zen: 'Zen', brl: 'R$ (Real)', usd: 'US$ (Dólar)' };
   function mkFilters() { return { q: MK.q, cat: MK.cat, rarity: MK.rarity, sort: MK.sort, page: MK.page, cur: MK.cur }; }
-  function mkLoad(tab) { if (tab === 'browse') mkSend({ action: 'browse', ...mkFilters() }); else if (tab === 'mine') mkSend({ action: 'mine' }); else if (tab === 'sell') send({ type: 'market', action: 'stripeStatus' }); }
+  function mkLoad(tab) {
+    if (tab === 'browse') mkSend({ action: 'browse', ...mkFilters() });
+    else if (tab === 'mine') mkSend({ action: 'mine' });
+    else if (tab === 'sell') { send({ type: 'market', action: 'stripeStatus' }); send({ type: 'market', action: 'wallet' }); }
+  }
   function mkMsg(text, ok) { MK.msg = text ? { text, ok } : null; }
-  function mkBadge(rows) { const n = (rows || []).filter((r) => r.status !== 'active' && r.status !== 'reserved' && !r.collected).length; const b = $('#mk-badge'); if (b) { b.hidden = !n; b.textContent = n || ''; } }
+  function mkBadge(rows) { const n = (rows || []).filter((r) => r.status !== 'active' && r.status !== 'reserved' && !r.collected).length + (rows || []).filter((r) => r.status === 'reserved' && r.mode === 'pix').length; const b = $('#mk-badge'); if (b) { b.hidden = !n; b.textContent = n || ''; } }
   function mkIcon(it) { const d = document.createElement('div'); d.className = 'ic'; d.style.setProperty('--r', RAR[it.rarity]); d.appendChild(iconCanvas(it)); d.onclick = () => openItemInfo(it, 'market'); return d; }
+  function mkBtn(label, cls, fn, off) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small ' + (cls || ''); b.textContent = label; b.disabled = MK.busy || !!off; b.onclick = fn; return b; }
   function mkRow(r, right) {
-    const row = document.createElement('div'); row.className = 'mk-row' + (r.status && r.status !== 'active' ? ' done' : '');
+    const row = document.createElement('div'); row.className = 'mk-row' + (r.status && r.status !== 'active' && r.status !== 'reserved' ? ' done' : '');
     const it = r.item;
     row.appendChild(mkIcon(it));
     const nm = document.createElement('div'); nm.className = 'nm';
     nm.innerHTML = `<b style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}${it.qty > 1 ? ' ×' + fmt.format(it.qty) : ''}</b><small>${RAR_NAME[it.rarity] || ''}${it.excellent ? ' · Excellent' : ''}${it.req ? ' · Nv. ' + it.req : ''} · ${right.sub}</small>`;
     row.appendChild(nm);
-    const pr = document.createElement('div'); pr.className = 'pr'; pr.innerHTML = `<b class="${r.cur === 'brl' ? 'brl' : ''}">${mkMoney(r.price, r.cur)}</b>`;
-    if (right.btn) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small ' + (right.cls || ''); b.textContent = right.btn; b.disabled = MK.busy || !!right.off; b.onclick = right.fn; pr.appendChild(b); }
+    const pr = document.createElement('div'); pr.className = 'pr'; pr.innerHTML = `<b class="${r.cur === 'zen' ? '' : 'brl'}">${mkMoney(r.price, r.cur)}</b>`;
+    for (const bt of right.btns || (right.btn ? [{ label: right.btn, cls: right.cls, fn: right.fn, off: right.off }] : [])) pr.appendChild(mkBtn(bt.label, bt.cls, bt.fn, bt.off));
     row.appendChild(pr);
     return row;
   }
   const mkLeft = (ms) => { const h = Math.max(0, Math.round((ms - Date.now()) / 3600000)); return h >= 1 ? `${h}h` : `${Math.max(1, Math.round((ms - Date.now()) / 60000))} min`; };
+  const payHow = (r) => (r.cur === 'zen' ? '' : r.mode === 'pix' ? ' · Pix' : r.mode === 'platform' ? ' · cartão' : ' · cartão');
+  // aviso de comissão / bloqueio, mostrado em todas as abas
+  function walletBanner(body) {
+    const w = MK.wallet; if (!w) return;
+    if (!w.blocked && w.dueBrl < w.limit && !w.usdOwed) return;
+    const b = document.createElement('div'); b.className = 'mk-sell mk-wallet' + (w.blocked ? ' bad' : '');
+    const parts = [];
+    if (w.blocked) parts.push(`<b>Conta BLOQUEADA no mercado e nas trocas</b>${w.blockNote ? ` (${esc(w.blockNote)})` : ''}.`);
+    if (w.dueBrl > 0) parts.push(`Comissão pendente: <b>${mkMoney(w.dueBrl, 'brl')}</b>${!w.blocked && w.dueBrl >= w.limit && w.deadline ? ` · pague até ${new Date(w.deadline).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} para não ser bloqueado` : ''}.`);
+    if (w.usdOwed > 0) parts.push(`Seu saldo de vendas em dólar: <b>${mkMoney(w.usdOwed, 'usd')}</b> (o administrador faz o pagamento${w.payoutInfo ? '' : ' — cadastre como quer receber na aba Vender → US$'}).`);
+    b.innerHTML = `<div class="row"><span>${parts.join(' ')}</span>${w.dueBrl >= w.limit || (w.blocked && w.dueBrl > 0) ? '<button class="btn btn-gold small" type="button" id="mk-paynow">Pagar comissão</button>' : ''}</div>`;
+    body.appendChild(b);
+    setTimeout(() => { const pb = $('#mk-paynow'); if (pb) pb.onclick = () => mkSend({ action: 'payNow' }); }, 0);
+  }
   function renderMarket() {
     $$('.mk-tabs [data-mk]').forEach((b) => { b.classList.toggle('active', b.dataset.mk === MK.tab); b.setAttribute('aria-selected', b.dataset.mk === MK.tab); b.onclick = () => { MK.tab = b.dataset.mk; MK.msg = null; mkLoad(MK.tab); renderMarket(); }; });
     $('#market-zen').textContent = S.char ? `· ${fmt.format(S.me ? S.me.zen ?? S.char.zen : S.char.zen)} Zen` : '';
     const msg = $('#mk-msg'); msg.hidden = !MK.msg; if (MK.msg) { msg.textContent = MK.msg.text; msg.classList.toggle('bad', !MK.msg.ok); }
     const body = $('#market-body'); body.innerHTML = '';
+    walletBanner(body);
+    // instruções do Pix logo depois de reservar
+    if (MK.pix) {
+      const px = MK.pix, pb = document.createElement('div'); pb.className = 'mk-sell mk-pix';
+      pb.innerHTML = `<b>Pague ${mkMoney(px.amount, 'brl')} no Pix de ${esc(px.seller)}</b><div class="row"><code class="pix-key">${esc(px.key)}</code><button class="btn small" type="button" id="mk-pixcopy">Copiar chave</button></div>
+        <p class="muted" style="margin:0">Item: ${esc(px.item)}. Depois de pagar, toque em "Já paguei". O item chega na sua bolsa quando o vendedor confirmar (reservado por ${px.hours} h).</p>
+        <div class="row"><button class="btn btn-gold small" type="button" id="mk-pixpaid">Já paguei</button><button class="btn small" type="button" id="mk-pixclose">Fechar</button></div>`;
+      body.appendChild(pb);
+      setTimeout(() => {
+        $('#mk-pixcopy').onclick = () => { try { navigator.clipboard.writeText(px.key); mkMsg('Chave Pix copiada.', true); } catch (_) { /* sem área de transferência */ } renderMarket(); };
+        $('#mk-pixpaid').onclick = () => { MK.pix = null; mkSend({ action: 'pixPaid', id: px.id }); };
+        $('#mk-pixclose').onclick = () => { MK.pix = null; renderMarket(); };
+      }, 0);
+    }
     const d = MK.data && MK.data.view === MK.tab && (MK.tab !== 'browse' || (MK.data.cur || 'zen') === MK.cur) ? MK.data : null;
     if (MK.tab === 'browse') {
       const cs = document.createElement('div'); cs.className = 'mk-cur';
-      cs.innerHTML = `<button type="button" data-cur="zen" class="${MK.cur === 'zen' ? 'on' : ''}">Itens por Zen</button><button type="button" data-cur="brl" class="${MK.cur === 'brl' ? 'on' : ''}">Itens por R$ (dinheiro real)</button>`;
+      cs.innerHTML = ['zen', 'brl', 'usd'].map((c) => `<button type="button" data-cur="${c}" class="${MK.cur === c ? 'on' : ''}">Itens por ${CUR_LABEL[c]}</button>`).join('');
       body.appendChild(cs);
       $$('[data-cur]', cs).forEach((b) => { b.onclick = () => { MK.cur = b.dataset.cur; MK.page = 0; MK.data = null; mkLoad('browse'); renderMarket(); }; });
       const f = document.createElement('div'); f.className = 'mk-filters';
@@ -2036,10 +2072,13 @@
       else if (!d.rows.length) list.innerHTML = '<p class="mk-empty">Nenhum item à venda com esses filtros.</p>';
       else d.rows.forEach((r) => {
         const own = S.char && ('p' + r.sellerId === String(S.char.id) || r.sellerId === String(S.char.id));
-        list.appendChild(mkRow(r, { sub: `${esc(r.seller)} · ${mkLeft(r.expires)}`, btn: own ? 'Seu' : 'Comprar', cls: 'btn-gold', off: own, fn: () => {
-          if (r.cur === 'brl') tradeDialog(`<h3>Comprar ${esc(r.item.name)}${r.item.plus ? ' +' + r.item.plus : ''} com dinheiro real?</h3><p>Preço: <b style="color:#9affd0">${mkMoney(r.price, 'brl')}</b> · vendedor ${esc(r.seller)}</p><p class="muted">Você vai para a página segura do Stripe pagar com cartão. O item fica reservado para você por 30 minutos e chega na bolsa assim que o pagamento for confirmado.</p>`,
-            [{ label: 'Pagar com cartão', cls: 'btn-gold', fn: () => mkSend({ action: 'buyReal', id: r.id, price: r.price }) }, { label: 'Cancelar' }]);
-          else tradeDialog(`<h3>Comprar ${esc(r.item.name)}${r.item.plus ? ' +' + r.item.plus : ''}?</h3><p>Preço: <b style="color:#ffd36b">${fmt.format(r.price)} Zen</b> · vendedor ${esc(r.seller)}</p>`,
+        list.appendChild(mkRow(r, { sub: `${esc(r.seller)} · ${mkLeft(r.expires)}${payHow(r)}`, btn: own ? 'Seu' : 'Comprar', cls: 'btn-gold', off: own, fn: () => {
+          const name = `${esc(r.item.name)}${r.item.plus ? ' +' + r.item.plus : ''}`;
+          if (r.cur !== 'zen' && r.mode === 'pix') tradeDialog(`<h3>Comprar ${name} por Pix?</h3><p>Preço: <b style="color:#9affd0">${mkMoney(r.price, 'brl')}</b> · vendedor ${esc(r.seller)}</p><p class="muted">Você paga direto no Pix do vendedor. O item fica reservado para você e chega na sua bolsa quando ele confirmar que recebeu.</p>`,
+            [{ label: 'Comprar por Pix', cls: 'btn-gold', fn: () => mkSend({ action: 'buy', id: r.id, price: r.price }) }, { label: 'Cancelar' }]);
+          else if (r.cur !== 'zen') tradeDialog(`<h3>Comprar ${name} com dinheiro real?</h3><p>Preço: <b style="color:#9affd0">${mkMoney(r.price, r.cur)}</b> · vendedor ${esc(r.seller)}</p><p class="muted">Você vai para a página segura do Stripe pagar com cartão. O item fica reservado por 30 minutos e chega na sua bolsa sozinho assim que o pagamento for confirmado.</p>`,
+            [{ label: 'Pagar com cartão', cls: 'btn-gold', fn: () => mkSend({ action: 'buy', id: r.id, price: r.price }) }, { label: 'Cancelar' }]);
+          else tradeDialog(`<h3>Comprar ${name}?</h3><p>Preço: <b style="color:#ffd36b">${fmt.format(r.price)} Zen</b> · vendedor ${esc(r.seller)}</p>`,
             [{ label: 'Comprar', cls: 'btn-gold', fn: () => mkSend({ action: 'buy', id: r.id, price: r.price, back: mkFilters() }) }, { label: 'Cancelar' }]);
         } }));
       });
@@ -2058,44 +2097,64 @@
       bag.forEach((it) => { const b = slotButton(it, () => { MK.sel = it.id; renderMarket(); }); if (it.id === MK.sel) b.classList.add('sel'); grid.appendChild(b); });
       if (!bag.length) grid.innerHTML = '<p class="muted" style="grid-column:1/-1">Nenhum item da bolsa pode ser vendido agora.</p>';
       const cs = document.createElement('div'); cs.className = 'mk-cur';
-      cs.innerHTML = `<button type="button" data-scur="zen" class="${MK.sellCur === 'zen' ? 'on' : ''}">Vender por Zen</button><button type="button" data-scur="brl" class="${MK.sellCur === 'brl' ? 'on' : ''}">Vender por R$ (Stripe)</button>`;
+      cs.innerHTML = ['zen', 'brl', 'usd'].map((c) => `<button type="button" data-scur="${c}" class="${MK.sellCur === c ? 'on' : ''}">Vender em ${CUR_LABEL[c]}</button>`).join('');
       body.appendChild(cs);
-      $$('[data-scur]', cs).forEach((b) => { b.onclick = () => { MK.sellCur = b.dataset.scur; if (MK.sellCur === 'brl') send({ type: 'market', action: 'stripeStatus' }); renderMarket(); }; });
-      const real = MK.sellCur === 'brl', st = MK.stripe;
-      if (real) {
+      $$('[data-scur]', cs).forEach((b) => { b.onclick = () => { MK.sellCur = b.dataset.scur; if (MK.sellCur !== 'zen') mkLoad('sell'); renderMarket(); }; });
+      const cur = MK.sellCur, real = cur !== 'zen', st = MK.stripe, w = MK.wallet;
+      let mode = cur === 'zen' ? 'zen' : cur === 'usd' ? 'platform' : null;
+      if (real && w && w.blocked) { body.insertAdjacentHTML('beforeend', '<p class="mk-empty">Sua conta está bloqueada: pague a comissão pendente para voltar a vender.</p>'); return; }
+      if (cur === 'brl') {
         const sb = document.createElement('div'); sb.className = 'mk-sell mk-stripe';
-        if (!st) sb.innerHTML = '<p class="muted" style="margin:0">Verificando sua conta Stripe…</p>';
-        else if (!st.enabled) sb.innerHTML = '<p style="margin:0">As vendas com dinheiro real ainda não estão ligadas no servidor.</p>';
-        else if (st.ready) sb.innerHTML = `<div class="row"><span>✔ Conta Stripe conectada (${esc(st.countries[st.country] || st.country)}). Cada venda cai direto na sua conta; o jogo fica com 10%.</span><button class="btn small" type="button" id="mk-dash">Ver meus recebimentos</button></div>`;
-        else if (st.connected) sb.innerHTML = `<div class="row"><span>Seu cadastro no Stripe ainda não terminou${st.details && !st.payouts ? ' (o Stripe está analisando ou falta a conta bancária)' : ''}.</span><button class="btn btn-gold small" type="button" id="mk-connect">Continuar cadastro no Stripe</button><button class="btn small" type="button" id="mk-recheck">Verificar de novo</button></div>`;
-        else sb.innerHTML = `<p style="margin:0">Para vender por reais, conecte uma conta Stripe: é nela que você recebe o dinheiro automaticamente quando alguém compra (o jogo fica com 10% de comissão).</p>
-          <div class="row"><label>País da sua conta bancária <select id="mk-country">${Object.entries(st.countries).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label><button class="btn btn-gold" type="button" id="mk-connect">Conectar conta Stripe</button></div>`;
+        if (!st || !w) sb.innerHTML = '<p class="muted" style="margin:0">Verificando suas formas de recebimento…</p>';
+        else if (st.enabled && st.ready) { mode = 'connect'; sb.innerHTML = `<div class="row"><span>✔ Conta Stripe conectada (${esc(st.countries[st.country] || st.country)}). Cada venda cai direto na sua conta; o jogo desconta 10% na hora.</span><button class="btn small" type="button" id="mk-dash">Ver meus recebimentos</button></div>`; }
+        else {
+          if (w.pixKey) mode = 'pix';
+          sb.innerHTML = `<p style="margin:0"><b>Receber por Pix:</b> o comprador paga direto na sua chave Pix e você confirma no jogo. A comissão de 10% vai acumulando; quando chegar a ${mkMoney(w.limit, 'brl')} você recebe um link para pagar (prazo de ${w.graceH} h, senão a conta é bloqueada no mercado e nas trocas).</p>
+            <div class="row"><input id="mk-pixkey" maxlength="120" placeholder="Sua chave Pix (CPF, e-mail, telefone ou aleatória)" value="${esc(w.pixKey)}"><button class="btn small" type="button" id="mk-pixsave">Salvar chave</button></div>
+            ${st.enabled ? `<p class="muted" style="margin:0">Ou conecte uma conta Stripe para receber por cartão com a comissão descontada automaticamente${st.connected ? ' (seu cadastro ainda não terminou)' : ''}:</p>
+            <div class="row">${st.connected ? '' : `<select id="mk-country">${Object.entries(st.countries).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select>`}<button class="btn small" type="button" id="mk-connect">${st.connected ? 'Continuar cadastro no Stripe' : 'Conectar conta Stripe'}</button>${st.connected ? '<button class="btn small" type="button" id="mk-recheck">Verificar de novo</button>' : ''}</div>` : ''}`;
+        }
         body.appendChild(sb);
-        setTimeout(() => {
-          const c = $('#mk-connect'); if (c) c.onclick = () => { const sel = $('#mk-country'); mkSend({ action: 'stripeConnect', country: sel ? sel.value : '' }); };
-          const d2 = $('#mk-dash'); if (d2) d2.onclick = () => mkSend({ action: 'stripeDashboard' });
-          const rc = $('#mk-recheck'); if (rc) rc.onclick = () => { MK.stripe = null; send({ type: 'market', action: 'stripeStatus' }); renderMarket(); };
-        }, 0);
-        if (!st || !st.ready) return;
+      } else if (cur === 'usd') {
+        const sb = document.createElement('div'); sb.className = 'mk-sell mk-stripe';
+        if (!w || !st) sb.innerHTML = '<p class="muted" style="margin:0">Carregando…</p>';
+        else if (!st.enabled) { mode = null; sb.innerHTML = '<p style="margin:0">As vendas em dólar ainda não estão ligadas no servidor.</p>'; }
+        else sb.innerHTML = `<p style="margin:0"><b>Venda em dólar:</b> o comprador paga com cartão no Stripe do jogo e recebe o item na hora. Você fica com 90% no seu saldo em dólar e o administrador faz o pagamento.</p>
+          <div class="row"><input id="mk-payout" maxlength="200" placeholder="Como quer receber (PayPal, Wise, Pix…) e o endereço" value="${esc(w.payoutInfo)}"><button class="btn small" type="button" id="mk-payoutsave">Salvar</button></div>`;
+        body.appendChild(sb);
       }
-      body.insertAdjacentHTML('beforeend', `<p class="muted" style="margin:0 0 6px">Escolha um item da bolsa e o preço${real ? ' em reais' : ''}. O item fica guardado no anúncio por 48 horas; a comissão do mercado é 10% da venda.</p>`);
+      setTimeout(() => {
+        const c = $('#mk-connect'); if (c) c.onclick = () => { const sel = $('#mk-country'); mkSend({ action: 'stripeConnect', country: sel ? sel.value : '' }); };
+        const d2 = $('#mk-dash'); if (d2) d2.onclick = () => mkSend({ action: 'stripeDashboard' });
+        const rc = $('#mk-recheck'); if (rc) rc.onclick = () => { MK.stripe = null; send({ type: 'market', action: 'stripeStatus' }); renderMarket(); };
+        const ps = $('#mk-pixsave'); if (ps) ps.onclick = () => mkSend({ action: 'setInfo', pixKey: $('#mk-pixkey').value });
+        const po = $('#mk-payoutsave'); if (po) po.onclick = () => mkSend({ action: 'setInfo', payoutInfo: $('#mk-payout').value });
+      }, 0);
+      if (!mode) return;
+      const minC = cur === 'brl' ? (st ? st.min : 500) : cur === 'usd' ? (w ? w.usdMin : 100) : 1;
+      body.insertAdjacentHTML('beforeend', `<p class="muted" style="margin:0 0 6px">Escolha um item da bolsa e o preço em ${CUR_LABEL[cur]}. O item fica guardado no anúncio por 48 horas; a comissão do mercado é 10% da venda.</p>`);
       body.appendChild(grid);
       const it = bag.find((i) => i.id === MK.sel);
       const box = document.createElement('div'); box.className = 'mk-sell';
       if (!it) box.innerHTML = '<p class="muted" style="margin:0">Toque em um item acima.</p>';
       else {
         box.innerHTML = `<div class="row"><b style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}</b><button class="btn small btn-ghost" type="button" id="mk-info">Detalhes</button></div>
-          <div class="row">${it.stack ? `<label>Qtd. <input type="number" id="mk-qty" min="1" max="${it.qty}" value="${it.qty}" style="width:90px"></label>` : ''}<input type="number" id="mk-price" min="${real ? (st.min / 100) : 1}" step="${real ? '0.01' : '1'}" placeholder="${real ? `Preço em R$ (mín. ${(st.min / 100).toFixed(2).replace('.', ',')})` : 'Preço em Zen'}" inputmode="${real ? 'decimal' : 'numeric'}">
+          <div class="row">${it.stack ? `<label>Qtd. <input type="number" id="mk-qty" min="1" max="${it.qty}" value="${it.qty}" style="width:90px"></label>` : ''}<input type="number" id="mk-price" min="${real ? minC / 100 : 1}" step="${real ? '0.01' : '1'}" placeholder="${real ? `Preço em ${cur === 'brl' ? 'R$' : 'US$'} (mín. ${mkMoney(minC, cur)})` : 'Preço em Zen'}" inputmode="${real ? 'decimal' : 'numeric'}">
           <button class="btn btn-gold" type="button" id="mk-list">Anunciar</button></div><p class="mk-sum" id="mk-sum">Coloque o preço para ver quanto você recebe.</p>`;
         const val = () => (real ? Math.round(Number(String($('#mk-price').value).replace(',', '.')) * 100) : Math.floor(Number($('#mk-price').value)));
-        const sum = () => { const v = val(); const fee = real ? Math.max(1, Math.round(v * 0.1)) : Math.floor(v * 0.1); $('#mk-sum').innerHTML = v > 0 ? `Preço ${mkMoney(v, MK.sellCur)} · comissão 10%: ${mkMoney(fee, MK.sellCur)} · você recebe <b>${mkMoney(v - fee, MK.sellCur)}</b>${real ? ' na sua conta Stripe' : ''}` : 'Coloque o preço para ver quanto você recebe.'; };
+        const sum = () => {
+          const v = val(); const fee = real ? Math.max(1, Math.round(v * 0.1)) : Math.floor(v * 0.1);
+          const where = mode === 'connect' ? ' na sua conta Stripe' : mode === 'pix' ? ' no seu Pix' : mode === 'platform' ? ' no seu saldo em dólar' : '';
+          $('#mk-sum').innerHTML = v > 0 ? (mode === 'pix' ? `Preço ${mkMoney(v, cur)} · você recebe <b>${mkMoney(v, cur)}</b> no seu Pix e fica devendo a comissão de ${mkMoney(fee, cur)}`
+            : `Preço ${mkMoney(v, cur)} · comissão 10%: ${mkMoney(fee, cur)} · você recebe <b>${mkMoney(v - fee, cur)}</b>${where}`) : 'Coloque o preço para ver quanto você recebe.';
+        };
         setTimeout(() => {
           $('#mk-price').oninput = sum;
           $('#mk-info').onclick = () => openItemInfo(it, 'market');
           $('#mk-list').onclick = () => {
             const price = val(); const qty = $('#mk-qty') ? Math.floor(Number($('#mk-qty').value)) : 1;
-            if (!(price > 0)) { mkMsg(real ? 'Coloque um preço em reais.' : 'Coloque um preço em Zen.', false); renderMarket(); return; }
-            MK.listed = true; mkSend({ action: 'list', item: it.id, price, qty, cur: MK.sellCur });
+            if (!(price > 0)) { mkMsg('Coloque um preço.', false); renderMarket(); return; }
+            MK.listed = true; mkSend({ action: 'list', item: it.id, price, qty, cur });
           };
         }, 0);
       }
@@ -2103,6 +2162,14 @@
     } else {
       const list = document.createElement('div'); list.className = 'mk-list';
       const rows = d ? d.rows : null;
+      // compras por Pix esperando o vendedor
+      if (d && d.buying && d.buying.length) {
+        const bx = document.createElement('div'); bx.className = 'mk-list'; bx.style.marginBottom = '8px';
+        bx.insertAdjacentHTML('beforeend', '<p class="muted" style="margin:0">Suas compras por Pix esperando o vendedor confirmar:</p>');
+        d.buying.forEach((r) => bx.appendChild(mkRow(r, { sub: `Pix: <code>${esc(r.pixKey || '')}</code> · ${esc(r.seller)}${r.paid ? ' · você avisou que pagou' : ''}`,
+          btns: [...(r.paid ? [] : [{ label: 'Já paguei', cls: 'btn-gold', fn: () => mkSend({ action: 'pixPaid', id: r.id }) }]), { label: 'Cancelar', fn: () => mkSend({ action: 'pixCancel', id: r.id }) }] })));
+        body.appendChild(bx);
+      }
       const pending = rows ? rows.filter((r) => r.status !== 'active' && r.status !== 'reserved' && !r.collected) : [];
       if (pending.length) {
         const zen = pending.filter((r) => r.status === 'sold').reduce((a, r) => a + r.price - r.fee, 0), items = pending.filter((r) => r.status !== 'sold').length;
@@ -2114,9 +2181,15 @@
       if (!rows) list.innerHTML = '<p class="mk-empty">Carregando…</p>';
       else if (!rows.length) list.innerHTML = '<p class="mk-empty">Você não tem anúncios. Use a aba Vender.</p>';
       else rows.forEach((r) => {
-        const st = r.status === 'active' ? `à venda · termina em ${mkLeft(r.expires)}` : r.status === 'reserved' ? 'um comprador está pagando agora' : r.status === 'sold' ? `vendido para ${esc(r.buyer || '?')} · ${r.cur === 'brl' ? `${mkMoney(r.price - r.fee, 'brl')} enviados à sua conta Stripe` : r.collected ? 'Zen coletado' : `receber ${fmt.format(r.price - r.fee)} Zen`}` : `${r.status === 'expired' ? 'expirou' : 'cancelado'} · ${r.collected ? 'item devolvido' : 'item para coletar'}`;
-        list.appendChild(mkRow(r, r.status === 'reserved' ? { sub: st } : r.status === 'active' ? { sub: st, btn: 'Cancelar', fn: () => mkSend({ action: 'cancel', id: r.id }) }
-          : !r.collected ? { sub: st, btn: 'Coletar', cls: 'btn-gold', fn: () => mkSend({ action: 'collect', id: r.id }) } : { sub: st }));
+        let right;
+        if (r.status === 'reserved' && r.mode === 'pix') right = { sub: `${esc(r.reservedBy || 'um comprador')} vai pagar por Pix${r.paid ? ' · <b>avisou que pagou</b>' : ''}`,
+          btns: [{ label: 'Recebi o Pix', cls: 'btn-gold', fn: () => tradeDialog(`<h3>Confirmar que recebeu ${mkMoney(r.price, 'brl')}?</h3><p class="muted">Confira no app do seu banco antes. O item vai para ${esc(r.reservedBy || 'o comprador')} e a comissão de ${mkMoney(r.fee, 'brl')} é somada à sua conta.</p>`, [{ label: 'Confirmar', cls: 'btn-gold', fn: () => mkSend({ action: 'pixConfirm', id: r.id }) }, { label: 'Voltar' }]) },
+            { label: 'Não recebi', fn: () => mkSend({ action: 'pixCancel', id: r.id }) }] };
+        else if (r.status === 'reserved') right = { sub: 'um comprador está pagando agora' };
+        else if (r.status === 'active') right = { sub: `à venda · termina em ${mkLeft(r.expires)}${payHow(r)}`, btn: 'Cancelar', fn: () => mkSend({ action: 'cancel', id: r.id }) };
+        else if (r.status === 'sold') right = { sub: `vendido para ${esc(r.buyer || '?')} · ${r.cur === 'zen' ? (r.collected ? 'Zen coletado' : `receber ${fmt.format(r.price - r.fee)} Zen`) : r.mode === 'pix' ? `pago no seu Pix (comissão ${mkMoney(r.fee, 'brl')})` : r.mode === 'platform' ? `${mkMoney(r.price - r.fee, 'usd')} no seu saldo em dólar` : `${mkMoney(r.price - r.fee, r.cur)} enviados à sua conta Stripe`}`, ...(r.cur === 'zen' && !r.collected ? { btn: 'Coletar', cls: 'btn-gold', fn: () => mkSend({ action: 'collect', id: r.id }) } : {}) };
+        else right = { sub: `${r.status === 'expired' ? 'expirou' : 'cancelado'} · ${r.collected ? 'item devolvido' : 'item para coletar'}`, ...(!r.collected ? { btn: 'Coletar', cls: 'btn-gold', fn: () => mkSend({ action: 'collect', id: r.id }) } : {}) };
+        list.appendChild(mkRow(r, right));
       });
       if (d) body.insertAdjacentHTML('beforeend', `<p class="muted" style="margin:0 0 6px">${rows.filter((r) => r.status === 'active' || r.status === 'reserved').length}/${d.max} anúncios ativos.</p>`);
       body.appendChild(list);

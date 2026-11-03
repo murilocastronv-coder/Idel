@@ -159,7 +159,7 @@ async function checkout(p, msg) {
 // reservas vencidas: encerra o Checkout no Stripe e devolve o anúncio para a vitrine
 async function releaseExpired() {
   if (!KEY()) return;
-  const { rows } = await db.query("SELECT id, checkout_id FROM market_listings WHERE status = 'reserved' AND reserved_until < now() LIMIT 50");
+  const { rows } = await db.query("SELECT id, checkout_id FROM market_listings WHERE status = 'reserved' AND reserved_until < now() AND COALESCE(pay_mode, 'connect') <> 'pix' LIMIT 50");
   for (const r of rows) {
     if (r.checkout_id) {
       try { await stripe('POST', `/v1/checkout/sessions/${encodeURIComponent(r.checkout_id)}/expire`, {}); }
@@ -177,6 +177,7 @@ async function releaseExpired() {
 // pagamento confirmado pelo Stripe → entrega o item (uma única vez)
 async function webhook(s) {
   const md = s.metadata || {};
+  if (md.kind === 'commission' || md.kind === 'platform') return require('./market-wallet').webhook(s);
   const id = Number(md.listing), buyer = Number(md.buyer), amt = Number(md.amt);
   if (!id || !buyer) return 'metadados-invalidos';
   if (String(s.currency).toLowerCase() !== CURRENCY || Number(s.amount_total) !== amt) { console.error(`[mercado real] valor diferente na sessão ${s.id}`); return 'valor-diferente'; }
@@ -210,4 +211,4 @@ function act(p, msg) {
   return null;
 }
 
-module.exports = { init, act, webhook, sellerForListing, enabled, feeOf, MIN_CENTS, MAX_CENTS, CURRENCY, FEE, brl };
+module.exports = { init, act, webhook, sellerForListing, sellerRow, ready, enabled, feeOf, MIN_CENTS, MAX_CENTS, CURRENCY, FEE, brl, stripe, BASE, KEY, HOLD_MIN };
