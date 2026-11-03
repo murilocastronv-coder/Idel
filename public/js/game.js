@@ -1842,7 +1842,7 @@
     const ab = $('#btn-auto');
     ab.setAttribute('aria-pressed', me.auto);
     const headingToTraining = !!(me.auto && area && S.map && S.map.safe && !inTraining);
-    $('#auto-state').textContent = me.auto ? (inTraining ? 'treinando' : headingToTraining ? 'indo à área' : S.map && S.map.safe ? 'na cidade' : 'lutando') : 'desligado';
+    $('#auto-state').textContent = me.auto ? (inTraining ? 'treinando' : headingToTraining ? 'indo à área' : S.map && S.map.safe && !(S.monsters.size && !area) ? 'na cidade' : 'lutando') : 'desligado';
     $('#pts-badge').hidden = !(me.free > 0);
     const pb = $('#btn-pvp');
     pb.setAttribute('aria-pressed', !!me.pvpOn);

@@ -40,6 +40,14 @@ const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const insideRect = (p, area) => !!(p && area && p.x >= area.x && p.x <= area.x + area.w && p.y >= area.y && p.y <= area.y + area.h);
 
+// Cidades iniciais com monstros (Nória na área de treino, Devias no mapa todo): qualquer nível pode lutar lá.
+// PvP continua proibido nas cidades; só a luta contra monstros é liberada.
+function monsterCombatAt(p, def) {
+  if (!def || !def.safe) return false;
+  if (def.training) return insideRect(p, def.training.area);
+  return !!(def.groups && def.groups.length);
+}
+
 function autoFarmMapId(p) {
   const last = p.lastFarm && G.WORLD[p.lastFarm];
   if (last && p.level >= last.minLevel && !last.safe && !last.arena && !last.pvp) return p.lastFarm;
@@ -617,7 +625,7 @@ class World {
           else p.send({ type: 'log', kind: 'warn', text: 'Na cidade não há PvP. Desafie para um duelo ou vá para fora da cidade.' });
           return;
         }
-        if (p.map.def.safe) return;
+        if (p.map.def.safe && !monsterCombatAt(p, p.map.def)) return;
         const m = p.map.monsters.find((mo) => mo.id === msg.id && !mo.dead);
         if (m) { p.target = m; p.moveTo = null; }
         return;
@@ -628,6 +636,8 @@ class World {
         // Cidades seguras não têm monstros de farm: guie o personagem para Nória
         // (área inicial) ou para o último mapa de caça desbloqueado.
         if (p.map && p.map.def.safe && !p.duel) {
+          // já está numa cidade com monstros (área de treino ou Devias): luta ali mesmo, em qualquer nível
+          if (monsterCombatAt(p, p.map.def)) return;
           const training = p.map.def.training;
           if (training && (p.level <= training.maxLevel || autoFarmMapId(p) === p.map.id)) {
             const a = training.area;
@@ -1579,7 +1589,7 @@ class World {
       if (Q.normalize(p)) { this.achieve(p); p.questsDirty = true; p.send({ type: 'log', kind: 'info', text: 'Novo dia: missões diárias renovadas e prêmio de login liberado!' }); }
     }
     if (p.questsDirty && (!p.lastQuestSend || now - p.lastQuestSend > 1500)) { p.questsDirty = false; p.lastQuestSend = now; p.send(Q.state(p)); }
-    const trainingCombat = !!(map.def.training && insideRect(p, map.def.training.area));
+    const trainingCombat = monsterCombatAt(p, map.def);
     if (!trainingCombat && p.target && p.target.trainingArea) p.target = null;
     // regeneração: rápida na cidade, lenta no campo
     const fast = map.def.safe && !p.duel;
@@ -1625,7 +1635,7 @@ class World {
     if (!p.target && p.auto && (!map.def.safe || trainingCombat)) {
       let best = null, bd = Infinity;
       for (const m of map.monsters) {
-        if (m.dead || (map.def.safe && (!m.trainingArea || !insideRect(p, m.trainingArea)))) continue;
+        if (m.dead || (m.trainingArea && !insideRect(p, m.trainingArea))) continue;
         let d = dist(p, m);
         if (m.target === p) d -= 200; // prioriza quem está atacando
         if (m.T.boss && p.level < m.T.level - 5) d += 2000; // evita o boss quando fraco
