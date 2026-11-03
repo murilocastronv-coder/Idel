@@ -791,7 +791,7 @@
       const equipment = player.info && player.info.eq;
       if (!equipment || player.rx < camX - 120 || player.rx > camX + cv.width / zoom + 120 || player.ry < camY - 120 || player.ry > camY + cv.height / zoom + 120) return;
       const glowByRarity = { uncommon: '95,220,120', rare: '90,170,255', epic: '190,100,255', legendary: '255,190,70', ancestral: '255,90,120' };
-      const rarity = equipment.wr || (equipment.wp >= 9 ? 'legendary' : equipment.wp >= 6 ? 'rare' : null);
+      const rarity = equipment.wingRarity || equipment.wr || (equipment.wp >= 9 ? 'legendary' : equipment.wp >= 6 ? 'rare' : null);
       const glow = glowByRarity[rarity] || (equipment.wings ? '130,220,255' : null);
       if (glow) vis.push({ x: player.rx, y: player.ry - 24, r: equipment.wings ? 94 : 70, color: glow, flicker: .12, ph: (player.phase || 0) });
     });
@@ -1469,7 +1469,7 @@
     $('#me-name').textContent = c.name;
     const meP = S.players.get(S.youId) || { rx: null };
     meP.info = { id: c.id, name: c.name, cls: c.cls, ap: c.ap, level: c.level, weaponRarity: (c.items.find((i) => i.equipped && i.slot === 'weapon') || {}).rarity, vip: c.vip ? c.vip.tier : 0,
-      eq: (() => { const o = { w: null }; for (const i of c.items) { if (!i.equipped) continue; if (i.slot === 'weapon') { o.w = i.base; o.wr = i.rarity; o.wp = i.plus || 0; } else if (i.slot === 'wings') o.wings = i.base; else if (i.set && Sprites.ARMOR.includes(i.slot)) o[i.slot] = i.set; } return o; })() };
+      eq: (() => { const o = { w: null }; for (const i of c.items) { if (!i.equipped) continue; if (i.slot === 'weapon') { o.w = i.base; o.wr = i.rarity; o.wp = i.plus || 0; } else if (i.slot === 'wings') { o.wings = i.base; o.wingRarity = i.rarity; o.wingPlus = i.plus || 0; } else if (i.set && Sprites.ARMOR.includes(i.slot)) o[i.slot] = i.set; } return o; })() };
     S.players.set(S.youId || c.id, meP);
     renderSkills();
     if (S.panel === 'chaos') { clearTimeout(CH.t); CH.t = setTimeout(() => send({ type: 'chaosInfo' }), 250); }
@@ -2420,6 +2420,9 @@
     if (st.hp) rows.push(['Vida', `+${st.hp}`]);
     if (st.wdmg) rows.push(['Dano extra', `+${st.wdmg}%`]);
     if (st.absorb) rows.push(['Absorção', `${st.absorb}%`]);
+    if (Array.isArray(it.excellentOptions) && it.excellentOptions.length) {
+      rows.push(['Opções Excellent', it.excellentOptions.map((o) => `${o.name} +${o.value}${o.unit || ''}`).join(' · ')]);
+    }
     if (equipable) rows.push(['Aprimoramento', `+${it.plus || 0}`]);
     if (it.stack) rows.push(['Quantidade', fmt.format(it.qty)]);
     const req = [];
@@ -2444,12 +2447,12 @@
         const avg = (x) => (x.dmg ? (x.dmg[0] + x.dmg[1]) / 2 : 0);
         const line = (label, va, vb, suf = '') => { if (!va && !vb) return ''; const d = Math.round((va - vb) * 10) / 10; return `<tr><td>${label}</td><td>${fmt.format(Math.round(va))}${suf}</td><td>${fmt.format(Math.round(vb))}${suf}</td><td class="${d > 0 ? 'up' : d < 0 ? 'down' : 'same'}">${d > 0 ? '+' : ''}${fmt.format(d)}${suf}</td></tr>`; };
         cmp = `<h4>Comparação com o seu ${esc(cur.name)}${cur.plus ? ' +' + cur.plus : ''}</h4><table class="ii-cmp"><thead><tr><th></th><th>Este</th><th>Seu</th><th>Diferença</th></tr></thead><tbody>
-          ${line('Dano médio', avg(a), avg(b))}${line('Defesa', a.def || 0, b.def || 0)}${line('Vida', a.hp || 0, b.hp || 0)}${line('Dano extra', a.wdmg || 0, b.wdmg || 0, '%')}${line('Absorção', a.absorb || 0, b.absorb || 0, '%')}${line('Aprimoramento', it.plus || 0, cur.plus || 0)}
+          ${line('Dano médio', avg(a), avg(b))}${line('Defesa', a.def || 0, b.def || 0)}${line('Vida', a.hp || 0, b.hp || 0)}${line('Dano extra', a.wdmg || 0, b.wdmg || 0, '%')}${line('Absorção', a.absorb || 0, b.absorb || 0, '%')}${line('Chance crítica', a.critChance || 0, b.critChance || 0, '%')}${line('Dano crítico', a.critDamage || 0, b.critDamage || 0, '%')}${line('Reflexão', a.reflect || 0, b.reflect || 0, '%')}${line('Redução de dano', a.reduction || 0, b.reduction || 0, '%')}${line('Velocidade de ataque', a.attackSpeed || 0, b.attackSpeed || 0)}${line('Aprimoramento', it.plus || 0, cur.plus || 0)}
           </tbody></table>`;
       }
     }
     return `<h3 style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}${it.stack && it.qty > 1 ? ' ×' + fmt.format(it.qty) : ''}</h3>
-      <p><span class="ii-rar" style="color:${RAR[it.rarity]};border-color:${RAR[it.rarity]}">${RAR_NAME[it.rarity]}</span> · ${esc(typeTxt)} · ${equipable ? 'equipável' : it.slot === 'box' ? 'abre na bolsa' : 'não equipável'}</p>
+      <p><span class="ii-rar" style="color:${RAR[it.rarity]};border-color:${RAR[it.rarity]}">${RAR_NAME[it.rarity]}</span>${it.excellent ? ` · Excellent semi-full (${it.excellentOptions.length} opções)` : ''} · ${esc(typeTxt)} · ${equipable ? 'equipável' : it.slot === 'box' ? 'abre na bolsa' : 'não equipável'}</p>
       ${rows.length ? `<table class="ii-stats">${rows.map(([k, v]) => `<tr><td>${k}</td><td>${esc(v)}</td></tr>`).join('')}</table>` : ''}
       ${req.length ? `<ul class="req-list">${req.map(([ok, t]) => `<li class="${ok ? 'req-ok' : 'req-no'}">${ok ? '✔' : '✘'} ${esc(t)}</li>`).join('')}</ul>` : ''}
       ${it.desc ? `<p class="ii-desc">${esc(it.desc)}</p>` : ''}
@@ -2723,8 +2726,8 @@
     const R = it.reqs || {};
     const reqTxt = [R.level || it.req ? `nível ${R.level || it.req}` : '', ...['str', 'agi', 'ene', 'vit', 'cmd'].filter((k) => R[k]).map((k) => `${STAT_PT[k]} ${fmt.format(R[k])}`)].filter(Boolean).join(' · ');
     det.innerHTML = `<h3 style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}${it.stack ? ' ×' + fmt.format(it.qty) : ''}</h3>
-      <p style="color:${RAR[it.rarity]}">${RAR_NAME[it.rarity]} · ${esc(SLOT_NAME[it.slot] || (it.slot === 'material' ? 'Material' : it.slot === 'box' ? 'Caixa' : it.slot === 'quest' ? 'Item de missão' : ''))}</p>
-      ${statLine(it.stats || {}) ? `<p>${esc(statLine(it.stats))}</p>` : ''}${it.desc ? `<p class="muted">${esc(it.desc)}</p>` : ''}
+      <p style="color:${RAR[it.rarity]}">${RAR_NAME[it.rarity]}${it.excellent ? ` · Excellent semi-full (${it.excellentOptions.length})` : ''} · ${esc(SLOT_NAME[it.slot] || (it.slot === 'material' ? 'Material' : it.slot === 'box' ? 'Caixa' : it.slot === 'quest' ? 'Item de missão' : ''))}</p>
+      ${statLine(it.stats || {}) ? `<p>${esc(statLine(it.stats))}</p>` : ''}${it.excellentOptions && it.excellentOptions.length ? `<ul class="ii-restr">${it.excellentOptions.map((o) => `<li style="color:${RAR[it.rarity]}">${esc(o.name)} +${o.value}${esc(o.unit || '')}</li>`).join('')}</ul>` : ''}${it.desc ? `<p class="muted">${esc(it.desc)}</p>` : ''}
       ${reqTxt && it.slot !== 'material' ? `<p class="muted">Requisitos: ${esc(reqTxt)}</p>` : ''}
       <div class="row">${VT.sel.from === 'bag'
         ? '<button class="btn small btn-gold" type="button" data-v="put">Guardar no baú</button>'
@@ -2898,7 +2901,7 @@
       ${r.id === 'wing1' || r.id === 'wing2' ? '<p class="chaos-luck">🎲 Resultado aleatório: qualquer classe pode receber qualquer asa, conforme as chances acima. A classe só importa na hora de equipar.</p>' : ''}
       <h4>${r.mode === 'evolve' ? 'Escolha o item para evoluir' : r.mode === 'pair' ? "Escolha o Devil's Eye" : r.id === 'wing2' ? 'Escolha a asa de nível 1' : 'Escolha a Arma do Caos'}</h4>
       ${r.mode === 'pair' ? `<p class="muted small"><span>O Devil's Eye e o Devil's Key precisam ter o mesmo nível (+1 a +7).</span> <span>Chance: +1 a +4: ${r.rates.low}% · +5 a +7: ${r.rates.high}%.</span></p>`
-    : `<p class="muted small"><span>Aceita: ${r.main.bases.map((b) => esc(b.name)).join(', ')}${r.main.minPlus ? ` (+${r.main.minPlus} ou mais)` : ''}.</span> <span>O + e a raridade aumentam a chance.</span></p>`}
+    : `<p class="muted small"><span>Aceita: ${r.main.bases.map((b) => esc(b.name)).join(', ')}${r.main.minPlus ? ` (+${r.main.minPlus} ou mais)` : ''}.</span> <span>${r.id === 'wing2' ? 'A asa nova começa em +0, preserva a raridade e exige nível 120.' : r.id === 'wing1' ? 'A asa recebe modelo e raridade aleatórios; todas exigem nível 120.' : 'O + e a raridade aumentam a chance.'}</span></p>`}
       <div class="chaos-cands" id="chaos-cands">${r.candidates.length ? '' : '<p class="muted">Nenhum na bolsa.</p>'}</div>
       ${missing.length ? `<ul class="chaos-missing">${missing.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
       <button class="btn btn-gold chaos-go" type="button" id="chaos-do" ${missing.length || CH.busy ? 'disabled' : ''}>${r.mode === 'evolve' ? 'Evoluir' : 'Combinar'}${sel ? ` (${sel.chance}%)` : ''}</button>
@@ -2942,7 +2945,7 @@
       box.innerHTML = '';
       box.className = 'chaos-result ' + (m.success ? 'win' : 'lose');
       if (m.item) box.appendChild(chaosIcon(m.item, 64));
-      box.insertAdjacentHTML('beforeend', `<b>${m.success ? 'Sucesso!' : 'Falhou'}</b><p>${esc(m.text)}</p>${m.lost && m.lost.length ? `<small>Perdeu: ${m.lost.map(esc).join(', ')}</small>` : ''}${m.kept ? '<small>O item principal voltou para a bolsa.</small>' : ''}<button class="btn small" type="button">OK</button>`);
+      box.insertAdjacentHTML('beforeend', `<b>${m.success ? 'Sucesso!' : 'Falhou'}</b><p>${esc(m.text)}</p>${m.item ? `<small style="color:${RAR[m.item.rarity]}">${RAR_NAME[m.item.rarity]} · ${m.item.tier === 2 ? 'Asa nível 2' : 'Asa nível 1'} · requisito: nível 120</small>` : ''}${m.lost && m.lost.length ? `<small>Perdeu: ${m.lost.map(esc).join(', ')}</small>` : ''}${m.kept ? '<small>O item principal voltou para a bolsa.</small>' : ''}<button class="btn small" type="button">OK</button>`);
       box.hidden = false;
       $('button', box).onclick = () => { box.hidden = true; };
       if (window.Sfx) { if (m.success) Sfx.levelUp(); else Sfx.warn(); }

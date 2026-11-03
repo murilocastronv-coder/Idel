@@ -18,6 +18,7 @@ const ARENA = require('./arena');
 const UPG = require('./upgrade');
 const TRADE = require('./trade');
 const SOCIAL = require('./social');
+const EXCELLENT = require('./excellent');
 
 const TICK_MS = 100;
 const SAVE_EVERY_MS = 20000;
@@ -74,7 +75,8 @@ function itemStats(it) {
   if (!b) return {};
   if (b.slot === 'wings') {
     const wb = UPG.wingBonus(it.plus || 0);
-    return { def: b.def + wb.def, wdmg: b.wdmg + wb.wdmg, absorb: Math.min(60, b.absorb + wb.absorb) };
+    const scale = (CHAOS.cfg().rarityAttributes || {})[it.rarity] || { def: 100, wdmg: 100, absorb: 100 };
+    return { def: Math.round((b.def + wb.def) * scale.def / 100), wdmg: Math.round((b.wdmg + wb.wdmg) * scale.wdmg / 100), absorb: Math.min(60, Math.round((b.absorb + wb.absorb) * scale.absorb / 100)) };
   }
   if (b.slot === 'material' || b.slot === 'box' || b.slot === 'quest') return {};
   // bônus do aprimoramento (+0 a +15) por tipo de equipamento, configurável no painel
@@ -83,6 +85,7 @@ function itemStats(it) {
   if (b.dmg) out.dmg = [Math.round(b.dmg[0] * m), Math.round(b.dmg[1] * m)];
   if (b.def) out.def = Math.round(b.def * m);
   if (b.hp) out.hp = Math.round(b.hp * m);
+  for (const [k, v] of Object.entries(EXCELLENT.effects(it.excellent_options))) out[k] = (out[k] || 0) + v;
   return out;
 }
 function itemScore(it) {
@@ -129,7 +132,7 @@ function gearVisual(items) {
     const b = G.ITEM_BASES[it.base];
     if (!b) continue;
     if (b.slot === 'weapon') { out.w = it.base; out.wr = it.rarity; out.wp = it.plus || 0; }
-    else if (b.slot === 'wings') out.wings = it.base;
+    else if (b.slot === 'wings') { out.wings = it.base; out.wingRarity = it.rarity; out.wingPlus = it.plus || 0; }
     else if (['helm', 'armor', 'gloves', 'boots'].includes(b.slot) && b.set) out[b.slot] = b.set;
   }
   return out;
@@ -140,6 +143,7 @@ function publicItem(it) {
     cat: b.cat || (b.slot === 'material' ? 'material' : null), tier: b.tier || 0, event: b.event || null, classes: b.classes || null, chaos: !!b.chaos, desc: b.desc || null,
     qty: Math.max(1, Number(it.qty) || 1), stack: b.stack || 0, contents: b.slot === 'box' ? KUNDUN.contents(it.base) : undefined,
     rarity: it.rarity, plus: it.plus, equipped: !!it.equipped, eqSlot: it.equipped ? EQUIP.eqSlotOf(it) : null, reqs: EQUIP.reqs(it.base), locked: !!it.locked,
+    excellentOptions: Array.isArray(it.excellent_options) ? it.excellent_options : [], excellent: Array.isArray(it.excellent_options) && it.excellent_options.length > 0,
     stats: itemStats(it), value: itemValue(it) };
 }
 function stackLimit(base) {
@@ -220,7 +224,7 @@ class Player {
   recalc() {
     const s = this.stats, c = this.cls, lv = this.level;
     const eq = this.equipped();
-    let wdmg = [1, 2], def = 0, hpBonus = 0, wingDmg = 0, absorb = 0;
+    let wdmg = [1, 2], def = 0, hpBonus = 0, wingDmg = 0, absorb = 0, damagePct = 0, reducePct = 0, reflectPct = 0, critChance = 0, critDamage = 0, attackSpeed = 0, hpOnKill = 0, mpOnKill = 0, defenseSuccess = 0, jewelLuck = 0;
     const setCount = {};
     for (const it of eq) {
       const st = itemStats(it);
@@ -228,6 +232,10 @@ class Player {
       def += st.def || 0;
       hpBonus += st.hp || 0;
       wingDmg += st.wdmg || 0; absorb += st.absorb || 0;
+      damagePct += st.damagePct || 0; reducePct += st.reduction || 0; reflectPct += st.reflect || 0;
+      critChance += st.critChance || 0; critDamage += st.critDamage || 0; attackSpeed += st.attackSpeed || 0;
+      hpOnKill += st.hpOnKill || 0; mpOnKill += st.mpOnKill || 0;
+      defenseSuccess += st.defenseSuccess || 0; jewelLuck += st.jewelLuck || 0;
       const b = G.ITEM_BASES[it.base];
       if (b && b.set) setCount[b.set] = (setCount[b.set] || 0) + 1;
     }
@@ -241,16 +249,22 @@ class Player {
       case 'dark_lord': base = [s.str / 7 + s.cmd / 10, s.str / 5 + s.cmd / 8]; break;
       default: base = [s.ene / 6, s.ene / 4];
     }
-    const dmgMul = (fullSet ? 1.05 : 1) * (1 + wingDmg / 100);
-    this.absorb = Math.min(0.6, absorb / 100);
+    const dmgMul = (fullSet ? 1.05 : 1) * (1 + (wingDmg + damagePct) / 100);
+    this.absorb = Math.min(0.6, (absorb + reducePct) / 100);
+    this.reflect = Math.min(0.25, reflectPct / 100);
+    this.dodge = Math.min(0.35, defenseSuccess / 100);
+    this.jewelLuck = Math.min(25, jewelLuck);
     this.dmgMin = Math.max(1, Math.round((base[0] + wdmg[0]) * dmgMul));
     this.dmgMax = Math.max(this.dmgMin + 1, Math.round((base[1] + wdmg[1]) * dmgMul));
     this.def = Math.round((s.agi / 4 + def) * (fullSet ? 1.1 : 1));
     this.fullSet = fullSet;
     this.maxHp = Math.round(80 + s.vit * 5 + lv * 6 + hpBonus);
     this.maxMp = Math.round(30 + s.ene * 2 + lv * 2);
-    this.atkMs = Math.max(450, 1100 - s.agi * 3);
-    this.crit = Math.min(0.25, 0.05 + s.agi / 2000);
+    this.atkMs = Math.max(350, 1100 - s.agi * 3 - attackSpeed);
+    this.crit = Math.min(0.5, 0.05 + s.agi / 2000 + critChance / 100);
+    this.critDmg = 1.5 + critDamage / 100;
+    this.hpOnKill = Math.min(25, hpOnKill);
+    this.mpOnKill = Math.min(25, mpOnKill);
     this.power = Math.round((this.dmgMin + this.dmgMax) * 4 + this.def * 3 + this.maxHp / 2 + lv * 5);
     if (this.hp > this.maxHp) this.hp = this.maxHp;
     if (this.mp > this.maxMp) this.mp = this.maxMp;
@@ -331,6 +345,7 @@ class World {
 
   async init() {
     const helpers = { publicItem, bagUsed, itemValue, rollRarity, rollPlus };
+    await EXCELLENT.init(helpers);
     await CHAOS.init(helpers);
     await DROPS.init(helpers);
     CMDS.init(this, expToNext);
@@ -373,7 +388,7 @@ class World {
       FROM characters c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1`, [charId]);
     if (!rows[0]) throw new Error('Personagem não encontrado.');
     rows[0].is_admin_user = ADMIN.isAdmin({ username: rows[0].acc_username, email: rows[0].acc_email });
-    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty, eq_slot, locked FROM items WHERE character_id = $1 AND vault_no IS NULL ORDER BY id', [charId])).rows;
+    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty, eq_slot, locked, excellent_options FROM items WHERE character_id = $1 AND vault_no IS NULL ORDER BY id', [charId])).rows;
     const p = new Player(rows[0], null, items);
     p.room = 1;
     return p;
@@ -477,7 +492,11 @@ class World {
     }
     if (client.player) await this.leave(client.player);
 
-    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty, eq_slot, locked FROM items WHERE character_id = $1 AND vault_no IS NULL ORDER BY id', [row.id])).rows;
+    const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty, eq_slot, locked, excellent_options FROM items WHERE character_id = $1 AND vault_no IS NULL ORDER BY id', [row.id])).rows;
+    if (Number(row.level) < 120) for (const it of items) if (it.equipped && G.ITEM_BASES[it.base] && G.ITEM_BASES[it.base].slot === 'wings') {
+      await db.query('UPDATE items SET equipped = FALSE, eq_slot = NULL WHERE id = $1 AND character_id = $2 RETURNING id', [it.id, row.id]);
+      it.equipped = false; it.eq_slot = null;
+    }
     const p = new Player(row, client, items);
     p.room = Math.min(ROOMS, Math.max(1, Math.round(Number(room)) || 1));
     client.player = p;
@@ -905,8 +924,8 @@ class World {
       if (!silent) p.send({ type: 'log', kind: 'zen', text: `${G.ITEM_BASES[it.base].name} vendido automaticamente: +${v} Zen` });
       return null;
     }
-    const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus) VALUES ($1,$2,$3,$4)
-      RETURNING id, base, rarity, plus, equipped, qty`, [p.charId, it.base, it.rarity, it.plus]);
+    const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus, excellent_options) VALUES ($1,$2,$3,$4,'[]'::jsonb)
+      RETURNING id, base, rarity, plus, equipped, qty, excellent_options`, [p.charId, it.base, it.rarity, it.plus]);
     p.items.push(rows[0]);
     this.quest(p, 'loot', 1);
     if (['legendary', 'ancestral'].includes(it.rarity)) { p.quests.life = p.quests.life || {}; p.quests.life.legendary = (p.quests.life.legendary || 0) + 1; this.achieve(p); }
@@ -952,8 +971,9 @@ class World {
   // item comum de drop especial (arma do Caos): vai para a bolsa se houver lugar. Devolve a linha ou null.
   async giveItemRow(p, it, opts = {}) {
     if (bagUsed(p) >= G.INVENTORY_SIZE) return null;
-    const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus) VALUES ($1,$2,$3,$4)
-      RETURNING id, base, rarity, plus, equipped, qty`, [p.charId, it.base, it.rarity, it.plus || 0]);
+    const excellent = opts.excellent === true ? EXCELLENT.roll(it.base) : [];
+    const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus, excellent_options) VALUES ($1,$2,$3,$4,$5)
+      RETURNING id, base, rarity, plus, equipped, qty, excellent_options`, [p.charId, it.base, it.rarity, it.plus || 0, JSON.stringify(excellent)]);
     p.items.push(rows[0]);
     p.dirty = true;
     if (!opts.silent && p.client) {
@@ -1008,7 +1028,7 @@ class World {
   }
 
   // itens escolhidos pelo administrador (vão para a bolsa, sem virar Zen); materiais empilham
-  async adminGiveItems(charId, list) {
+  async adminGiveItems(charId, list, opts = {}) {
     const clean = [];
     for (const it of list) {
       const b = G.ITEM_BASES[it.base];
@@ -1025,7 +1045,7 @@ class World {
       if (rows.length + newStacks > free) throw new Error(`Bolsa sem espaço: ${free} lugar(es) livre(s).`);
       const added = [];
       for (const [k, n] of Object.entries(stacks)) { await this.giveMaterial(p, k, n, { silent: true }); added.push({ id: 'x', base: k, rarity: G.ITEM_BASES[k].rarity, plus: 0, qty: n }); }
-      for (const it of rows) { const r = await this.giveItemRow(p, it, { silent: true }); if (r) added.push(r); }
+      for (const it of rows) { const r = await this.giveItemRow(p, it, { silent: true, excellent: opts.excellent === true }); if (r) added.push(r); }
       p.send({ type: 'log', kind: 'quest', text: `O administrador enviou ${clean.length} item(ns) para a sua bolsa.` });
       return added.map(publicItem);
     });
@@ -1048,6 +1068,10 @@ class World {
     return this.editChar(charId, async (p, online) => {
       while (p.level < level) this.levelUp(p, true);
       if (p.level > level) p.level = level;
+      if (p.level < 120) for (const it of p.items) if (it.equipped && G.ITEM_BASES[it.base] && G.ITEM_BASES[it.base].slot === 'wings') {
+        await db.query('UPDATE items SET equipped = FALSE, eq_slot = NULL WHERE id = $1 AND character_id = $2 RETURNING id', [it.id, p.charId]);
+        it.equipped = false; it.eq_slot = null;
+      }
       p.exp = 0; p.recalc(); p.hp = p.maxHp; p.mp = p.maxMp;
       if (online) p.send({ type: 'log', kind: 'quest', text: `O administrador ajustou seu nível para ${p.level}.` });
       return p.level;
@@ -1107,11 +1131,14 @@ class World {
   }
 
   damagePlayer(a, v, mult, crit, now) {
+    if (Math.random() < (v.dodge || 0)) { v.map.emit({ k: 'block', t: v.id }); v.pvpHitAt = now; a.pvpAtkAt = now; return 0; }
     const bd = a.buffs.dmg && a.buffs.dmg.until > now ? a.buffs.dmg.mult : 1;
     const db = v.buffs.def && v.buffs.def.until > now ? v.buffs.def.mult : 1;
-    const raw = rand(a.dmgMin, a.dmgMax) * mult * bd * (crit ? 1.5 : 1);
+    const raw = rand(a.dmgMin, a.dmgMax) * mult * bd * (crit ? (a.critDmg || 1.5) : 1);
     const d = Math.max(1, Math.round((raw - v.def * db / 2) * PVP_SCALE * (1 - (v.absorb || 0))));
     v.hp -= d;
+    if (v.reflect && d > 0) { a.hp -= Math.max(1, Math.round(d * v.reflect)); if (a.hp <= 0) this.killPlayer(a, now, { T: { name: v.name } }); }
+    if (v.reflect) a.dirty = true;
     v.pvpHitAt = now; a.pvpAtkAt = now;
     v.flip = a.x < v.x;
     // revida automaticamente quem está atacando
@@ -1218,8 +1245,8 @@ class World {
       it.rarity = reward.item;
       if (bagUsed(p) >= G.INVENTORY_SIZE) { const v = itemValue(it) * 2; p.zen += v; parts.push(`${v} Zen (bolsa cheia)`); }
       else {
-        const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus) VALUES ($1,$2,$3,$4)
-          RETURNING id, base, rarity, plus, equipped, qty`, [p.charId, it.base, it.rarity, it.plus]);
+        const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus, excellent_options) VALUES ($1,$2,$3,$4,'[]'::jsonb)
+          RETURNING id, base, rarity, plus, equipped, qty, excellent_options`, [p.charId, it.base, it.rarity, it.plus]);
         p.items.push(rows[0]);
         p.send({ type: 'drop', item: publicItem(rows[0]) });
         parts.push(G.ITEM_BASES[it.base].name);
@@ -1267,8 +1294,8 @@ class World {
 
   damageMonster(p, m, mult, crit, now) {
     const bd = p.buffs.dmg && p.buffs.dmg.until > now ? p.buffs.dmg.mult : 1;
-    const raw = rand(p.dmgMin, p.dmgMax) * mult * bd * (crit ? 1.5 : 1);
-    const d = Math.max(1, Math.round(raw * p.perks().damage - m.T.def / 2));
+    const raw = rand(p.dmgMin, p.dmgMax) * mult * bd * (crit ? (p.critDmg || 1.5) : 1);
+    const d = Math.max(1, Math.round(raw - m.T.def / 2));
     m.hp -= d;
     m.flip = p.x > m.x;
     if (!m.target || m.target.dead || m.target.map !== p.map) m.target = p;
@@ -1331,7 +1358,9 @@ class World {
     const trainingExpFactor = trainingGap <= 2 ? 1 : trainingGap <= 8 ? 0.7 : trainingGap <= 15 ? 0.35 : 0.15;
     const exp = Math.round(m.T.exp * XP() * pk.exp * trainingExpFactor), zen = Math.round(monsterZen(m.T) * pk.zen);
     p.exp += exp; p.kills++; p.zen += zen;
-    const heal = Math.round(p.maxHp * pk.healOnKill); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
+    const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100);
+    if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
+    if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
     // Zen de monstros normais é sempre creditado diretamente; bônus VIP/evento não ultrapassam o teto.
     this.quest(p, 'kill', 1); this.quest(p, 'zen', zen);
     if (m.T.elite) this.quest(p, 'elite', 1);
@@ -1362,7 +1391,8 @@ class World {
     const exp = Math.round(m.T.exp * XP() * pk.exp * share);
     const zen = Math.min(5, Math.max(0, Math.round(monsterZen(m.T) * Math.max(0, share) * pk.zen)));
     p.exp += exp; p.zen += zen; p.kills++;
-    const heal = Math.round(p.maxHp * pk.healOnKill); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; p.map.emit({ k: 'heal', t: p.id, d: recovered }); }
+    const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; p.map.emit({ k: 'heal', t: p.id, d: recovered }); }
+    if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
     this.quest(p, 'kill', 1); this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
     p.send({ type: 'reward', exp, zen, mon: m.T.name, share: share < 1 ? Math.round(share * 100) : undefined });
     while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
@@ -1385,7 +1415,8 @@ class World {
       const zen = Math.round(baseZen * pk.zen);
       const exp = Math.round(m.T.exp * XP() * pk.exp * Math.max(0.1, share));
       p.exp += exp; p.zen += zen; p.bossesKilled++;
-      const heal = Math.round(p.maxHp * pk.healOnKill); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
+      const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
+      if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
       this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
       p.send({ type: 'reward', exp, zen, mon: m.T.name, share: Math.round(share * 100) });
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
@@ -1405,8 +1436,14 @@ class World {
     const db = p.buffs.def && p.buffs.def.until > now ? p.buffs.def.mult : 1;
     const low = Number.isFinite(Number(m.T.dmgMin)) ? Number(m.T.dmgMin) : Number(m.T.dmg) * 0.85;
     const high = Number.isFinite(Number(m.T.dmgMax)) ? Number(m.T.dmgMax) : Number(m.T.dmg) * 1.15;
+    if (Math.random() < (p.dodge || 0)) { p.map.emit({ k: 'block', t: p.id }); return; }
     const d = Math.max(1, Math.round((rand(low, high) - p.def * db / 2) * (1 - (p.absorb || 0))));
     p.hp -= d; p.hurtAt = now;
+    if (p.reflect && d > 0 && !m.dead) {
+      const reflected = Math.max(1, Math.round(d * p.reflect));
+      m.hp -= reflected; p.map.emit({ k: 'h', a: p.id, t: m.id, d: reflected, fx: 'reflect' });
+      if (m.hp <= 0) this.killMonster(m, p, now);
+    }
     p.map.emit({ k: 'h', a: m.id, t: p.id, d, fx: m.T.boss ? 'boss' : 'claw' });
     if (p.hp <= 0) this.killPlayer(p, now, m);
   }

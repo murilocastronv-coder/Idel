@@ -7,30 +7,35 @@ const G = require('./gamedata');
 const SET = require('./settings');
 
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancestral'];
+const WING_RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 const CHAOS_WEAPONS = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].chaos);
-const WINGS1 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === 'wings' && G.ITEM_BASES[k].tier === 1);
-const WINGS2 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === 'wings' && G.ITEM_BASES[k].tier === 2);
 const CAPES = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === 'cape');
+const WINGS1 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === 'wings' && G.ITEM_BASES[k].tier === 1).concat(CAPES.filter((k) => G.ITEM_BASES[k].tier === 1));
+const WINGS2 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === 'wings' && G.ITEM_BASES[k].tier === 2).concat(CAPES.filter((k) => G.ITEM_BASES[k].tier === 2));
 const MATERIALS = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].slot === 'material');
 const EYES = [1, 2, 3, 4, 5, 6, 7].map((n) => 'devil_eye_' + n);
 const INVS = [1, 2, 3, 4, 5, 6, 7].map((n) => 'devil_inv_' + n);
 const EVOLVE = { ...G.WING_EVOLVE, cape_lord: 'cape_emperor' };
 const ON_FAIL = ['lose_all', 'keep_main', 'keep_items'];
 // itens que o administrador pode ajustar (requisitos, atributos e classes)
-const TUNABLE = [...WINGS1, ...WINGS2, ...CAPES];
+const TUNABLE = [...new Set([...WINGS1, ...WINGS2, ...CAPES])];
 
 const DEFAULTS = {
   npcRequired: true,
+  rarityAttributes: {
+    common: { def: 100, wdmg: 100, absorb: 100 }, uncommon: { def: 105, wdmg: 105, absorb: 105 },
+    rare: { def: 112, wdmg: 112, absorb: 112 }, epic: { def: 122, wdmg: 122, absorb: 122 }, legendary: { def: 135, wdmg: 135, absorb: 135 },
+  },
   recipes: {
     wing1: {
-      name: 'Criar Asa Nível 1', enabled: true, mode: 'random', pick: 'any', classes: [], weights: {}, rarityRoll: { enabled: false, weights: { common: 0, uncommon: 0, rare: 30, epic: 60, legendary: 9, ancestral: 1 } }, plusRoll: { enabled: false, weights: { 0: 80, 1: 15, 2: 4, 3: 1 } },
+      name: 'Criar Asa Nível 1', enabled: true, mode: 'random', pick: 'any', classes: [], weights: {}, rarityRoll: { enabled: true, weights: { common: 55, uncommon: 25, rare: 12, epic: 6, legendary: 2 } }, plusRoll: { enabled: false, weights: { 0: 100 } },
       main: { bases: CHAOS_WEAPONS, minPlus: 0, minRarity: 'common' },
       materials: [{ item: 'jewel_of_chaos', qty: 1 }], zen: 100000,
       rate: { base: 30, perPlus: 5, perRarity: 4, max: 75 }, onFail: 'lose_all', results: WINGS1,
     },
     wing2: {
-      name: 'Criar Asa Nível 2', enabled: true, mode: 'random', pick: 'any', classes: [], weights: {}, rarityRoll: { enabled: false, weights: { common: 0, uncommon: 0, rare: 0, epic: 30, legendary: 60, ancestral: 10 } }, plusRoll: { enabled: false, weights: { 0: 80, 1: 15, 2: 4, 3: 1 } },
-      main: { bases: WINGS1, minPlus: 0, minRarity: 'common' },
+      name: 'Evoluir Asa para Nível 2', enabled: true, mode: 'random', pick: 'any', classes: [], weights: {}, rarityRoll: { enabled: false, weights: { common: 55, uncommon: 25, rare: 12, epic: 6, legendary: 2 } }, plusRoll: { enabled: false, weights: { 0: 100 } },
+      main: { bases: WINGS1, minPlus: 9, minRarity: 'common' },
       materials: [{ item: 'jewel_of_chaos', qty: 1 }, { item: 'loch_feather', qty: 1 }], zen: 1000000,
       rate: { base: 35, perPlus: 5, perRarity: 0, max: 60 }, onFail: 'lose_all', results: WINGS2,
     },
@@ -66,7 +71,7 @@ const ALLOWED = {
   devil: { main: EYES, results: INVS },
 };
 const ORIGINAL = {};
-for (const k of TUNABLE) { const b = G.ITEM_BASES[k]; ORIGINAL[k] = { req: b.req, def: b.def, wdmg: b.wdmg, absorb: b.absorb, classes: [...b.classes] }; }
+for (const k of TUNABLE) { const b = G.ITEM_BASES[k]; ORIGINAL[k] = { req: b.req, def: b.def, wdmg: b.wdmg, absorb: b.absorb, classes: [...(b.classes || Object.keys(G.CLASSES))] }; }
 
 let H = null; // funções do mundo (publicItem, bagUsed)
 
@@ -82,14 +87,21 @@ function applyItemOverrides(c) {
 async function init(helpers) {
   H = helpers;
   const c = await SET.load('chaos', DEFAULTS);
-  // uma vez: asas e capas passam a exigir nível 150 (ajustes antigos do painel abaixo disso sobem para 150)
-  const mig = await SET.load('migr_wing150', { done: false });
-  if (!mig.done) {
-    let changed = false;
-    for (const [k, o] of Object.entries(c.items || {})) if (o && o.req < 150) { o.req = 150; changed = true; }
-    if (changed) await SET.save('chaos', c).catch(() => {});
-    await SET.save('migr_wing150', { done: true }).catch(() => {});
+  const migration = await SET.load('migr_wing120', { done: false });
+  if (!migration.done) {
+    c.recipes.wing1.rarityRoll = { ...DEFAULTS.recipes.wing1.rarityRoll, weights: { ...DEFAULTS.recipes.wing1.rarityRoll.weights } };
+    c.recipes.wing2.main.minPlus = 9;
+    c.recipes.wing1.classes = []; c.recipes.wing2.classes = [];
+    for (const id of ['wing1', 'wing2']) { c.recipes[id].results = DEFAULTS.recipes[id].results.slice(); c.recipes[id].weights = {}; }
+    await SET.save('chaos', c).catch(() => {});
+    await SET.save('migr_wing120', { done: true }).catch(() => {});
   }
+  // Regra fixa do sistema: qualquer asa/capa exige exatamente nível 120.
+  for (const k of TUNABLE) if (G.ITEM_BASES[k].slot === 'wings') {
+    G.ITEM_BASES[k].req = 120;
+    if (c.items && c.items[k]) c.items[k].req = 120;
+  }
+  await SET.save('chaos', c).catch(() => {});
   // o modo de cada receita vem sempre do jogo (asas: sorteio entre todas, nunca pela classe)
   for (const id of RECIPE_IDS) {
     const r = c.recipes[id], d = DEFAULTS.recipes[id];
@@ -97,7 +109,10 @@ async function init(helpers) {
     r.mode = d.mode;
     if (d.mode === 'random') { r.pick = 'any'; r.weights = r.weights || {}; }
     if (d.rarityRoll) { r.rarityRoll = r.rarityRoll || d.rarityRoll; r.plusRoll = r.plusRoll || d.plusRoll; }
+    if (id === 'wing1' || id === 'wing2') r.classes = [];
     if (id === 'wing2') { r.main.bases = r.main.bases.filter((b) => ALLOWED.wing2.main.includes(b)); if (!r.main.bases.length) r.main.bases = d.main.bases.slice(); }
+    if (id === 'wing1' && (!r.rarityRoll || !r.rarityRoll.enabled)) r.rarityRoll = { ...d.rarityRoll, weights: { ...d.rarityRoll.weights } };
+    if (id === 'wing2') r.main.minPlus = 9;
   }
   applyItemOverrides(c);
 }
@@ -127,7 +142,11 @@ function weighted(map) {
 
 // valida tudo que vem do painel (nunca confia no navegador)
 function sanitize(input) {
-  const out = { npcRequired: input.npcRequired !== false, recipes: {}, items: {} };
+  const out = { npcRequired: input.npcRequired !== false, recipes: {}, items: {}, rarityAttributes: {} };
+  for (const rarity of WING_RARITIES) {
+    const src = (input.rarityAttributes || {})[rarity] || DEFAULTS.rarityAttributes[rarity];
+    out.rarityAttributes[rarity] = { def: int(src.def, 50, 300, `${rarity}: defesa %`), wdmg: int(src.wdmg, 50, 300, `${rarity}: dano %`), absorb: int(src.absorb, 50, 300, `${rarity}: absorção %`) };
+  }
   for (const id of RECIPE_IDS) {
     const r = (input.recipes || {})[id] || {};
     const d = DEFAULTS.recipes[id];
@@ -147,10 +166,10 @@ function sanitize(input) {
       // asas: o resultado é sempre sorteado entre todas (a classe não escolhe nem muda a chance)
       pick: d.mode === 'random' ? 'any' : undefined,
       weights: d.mode === 'random' ? Object.fromEntries(results.map((b) => [b, int((r.weights || {})[b] ?? 1, 0, 1000, `${label}: peso de ${G.ITEM_BASES[b].name}`)])) : undefined,
-      rarityRoll: d.rarityRoll ? rollCfg(r.rarityRoll, d.rarityRoll, RARITY_ORDER, `${label}: raridade`) : undefined,
+      rarityRoll: d.rarityRoll ? rollCfg(r.rarityRoll, d.rarityRoll, id === 'wing1' || id === 'wing2' ? WING_RARITIES : RARITY_ORDER, `${label}: raridade`) : undefined,
       plusRoll: d.plusRoll ? rollCfg(r.plusRoll, d.plusRoll, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], `${label}: +`) : undefined,
-      classes: (Array.isArray(r.classes) ? r.classes : d.classes).filter((c) => G.CLASSES[c]),
-      main: { bases, minPlus: int(main.minPlus ?? d.main.minPlus, 0, 15, `${label}: + mínimo`), minRarity: RARITY_ORDER.includes(main.minRarity) ? main.minRarity : 'common' },
+      classes: id === 'wing1' || id === 'wing2' ? [] : (Array.isArray(r.classes) ? r.classes : d.classes).filter((c) => G.CLASSES[c]),
+      main: { bases, minPlus: id === 'wing2' ? 9 : int(main.minPlus ?? d.main.minPlus, 0, 15, `${label}: + mínimo`), minRarity: RARITY_ORDER.includes(main.minRarity) ? main.minRarity : 'common' },
       materials: mats,
       zen: int(r.zen ?? d.zen, 0, 1e12, `${label}: Zen`),
       rate: { base: int(rate.base ?? d.rate.base, 0, 100, `${label}: chance base`), perPlus: int(rate.perPlus ?? d.rate.perPlus, 0, 50, `${label}: chance por +1`),
@@ -159,6 +178,10 @@ function sanitize(input) {
       onFail: ON_FAIL.includes(r.onFail) ? r.onFail : d.onFail,
       results,
     };
+    if (id === 'wing1') {
+      out_r.rarityRoll.enabled = true;
+      if (!Object.values(out_r.rarityRoll.weights).some((v) => v > 0)) throw new Error(`${label}: configure ao menos um peso de raridade.`);
+    }
     if (out_r.weights && !results.some((b) => out_r.weights[b] > 0)) throw new Error(`${label}: pelo menos uma asa precisa ter peso maior que 0.`);
     out.recipes[id] = out_r;
   }
@@ -166,10 +189,10 @@ function sanitize(input) {
     const o = (input.items || {})[k];
     if (!o) continue;
     const name = G.ITEM_BASES[k].name;
-    const classes = (Array.isArray(o.classes) ? o.classes : ORIGINAL[k].classes).filter((c) => G.CLASSES[c]);
+    const classes = G.ITEM_BASES[k].slot === 'wings' ? Object.keys(G.CLASSES) : (Array.isArray(o.classes) ? o.classes : ORIGINAL[k].classes).filter((c) => G.CLASSES[c]);
     if (!classes.length) throw new Error(`${name}: escolha pelo menos uma classe.`);
-    if (G.ITEM_BASES[k].cat === 'cape' && classes.some((c) => c !== 'dark_lord')) throw new Error(`${name}: capas são só do Dark Lord.`);
-    out.items[k] = { req: int(o.req, 1, G.LIMITS.maxLevel, `${name}: nível`), def: int(o.def, 0, 5000, `${name}: defesa`),
+    if (G.ITEM_BASES[k].cat === 'cape' && G.ITEM_BASES[k].slot !== 'wings' && classes.some((c) => c !== 'dark_lord')) throw new Error(`${name}: capas são só do Dark Lord.`);
+    out.items[k] = { req: G.ITEM_BASES[k].slot === 'wings' ? 120 : int(o.req, 1, G.LIMITS.maxLevel, `${name}: nível`), def: int(o.def, 0, 5000, `${name}: defesa`),
       wdmg: int(o.wdmg, 0, 200, `${name}: dano %`), absorb: int(o.absorb, 0, 60, `${name}: absorção %`), classes };
   }
   return out;
@@ -203,6 +226,7 @@ function resultsFor(r, p, main) {
     if (p.cls === 'magic_gladiator' && (main.base === 'wings_satan' || main.base === 'wings_heaven')) to = 'wings_darkness';
     return to && r.results.includes(to) ? [to] : [];
   }
+  if (r.id === 'wing2') return r.results.filter((b) => !r.weights || (r.weights[b] ?? 1) > 0);
   return r.results.filter((b) => !r.weights || (r.weights[b] ?? 1) > 0);
 }
 
@@ -307,8 +331,8 @@ async function craft(world, p, recipeId, mainId) {
   const success = roll < chance;
   // 1º sorteio: sucesso; 2º: qual asa (pelos pesos, igual para todas as classes); 3º opcional: raridade e +
   const resultBase = success ? (r.weights ? weighted(Object.fromEntries(results.map((b) => [b, r.weights[b] ?? 1]))) : results[Math.floor(Math.random() * results.length)]) : null;
-  const resRarity = success ? ((r.rarityRoll && r.rarityRoll.enabled && weighted(r.rarityRoll.weights)) || G.ITEM_BASES[resultBase].rarity || 'epic') : null;
-  const resPlus = success ? Number((r.plusRoll && r.plusRoll.enabled && weighted(r.plusRoll.weights)) || 0) : 0;
+  const resRarity = success ? (recipeId === 'wing2' ? main.rarity : ((r.rarityRoll && r.rarityRoll.enabled && weighted(r.rarityRoll.weights)) || G.ITEM_BASES[resultBase].rarity || 'epic')) : null;
+  const resPlus = success && recipeId !== 'wing2' ? Number((r.plusRoll && r.plusRoll.enabled && weighted(r.plusRoll.weights)) || 0) : 0;
   const consumeMain = success || r.onFail === 'lose_all';
   const consumeMats = success || r.onFail !== 'keep_items';
   const inputs = { main: { id: String(main.id), base: main.base, plus: main.plus, rarity: main.rarity }, materials: takes.map((t) => ({ id: String(t.it.id), base: t.it.base, qty: t.take })) };
@@ -455,7 +479,8 @@ async function history(limit = 50, name = '') {
 function adminView() {
   return {
     config: cfg(), recipeIds: RECIPE_IDS, allowed: ALLOWED, onFail: ON_FAIL, materials: MATERIALS.map((k) => ({ id: k, name: G.ITEM_BASES[k].name })),
-    items: TUNABLE.map((k) => ({ id: k, name: G.ITEM_BASES[k].name, cat: G.ITEM_BASES[k].cat, tier: G.ITEM_BASES[k].tier, ...ORIGINAL[k], ...(cfg().items[k] || {}) })),
+    items: TUNABLE.map((k) => ({ id: k, name: G.ITEM_BASES[k].name, cat: G.ITEM_BASES[k].cat, tier: G.ITEM_BASES[k].tier, slot: G.ITEM_BASES[k].slot,
+      ...ORIGINAL[k], ...(cfg().items[k] || {}), req: 120, classes: Object.keys(G.CLASSES) })),
     names: Object.fromEntries([...CHAOS_WEAPONS, ...TUNABLE, ...MATERIALS].map((k) => [k, G.ITEM_BASES[k].name])),
   };
 }

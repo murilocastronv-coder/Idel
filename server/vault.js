@@ -134,7 +134,7 @@ async function adopt(p, owner) {
 async function load(p, no) {
   const owner = ownerOf(p);
   const row = await ensureRow(owner, p.accountId);
-  const items = (await db.query('SELECT id, base, rarity, plus, qty, locked, vault_pos FROM items WHERE vault_owner = $1 AND vault_no = $2 ORDER BY vault_pos', [owner, no])).rows;
+  const items = (await db.query('SELECT id, base, rarity, plus, qty, locked, vault_pos, excellent_options FROM items WHERE vault_owner = $1 AND vault_no = $2 ORDER BY vault_pos', [owner, no])).rows;
   return { owner, zen: Number(row.zen), capacity: row.capacity || capOf(cfg()), items };
 }
 
@@ -307,7 +307,7 @@ async function doAct(world, p, msg) {
         if (H.bagUsed(p) >= G.INVENTORY_SIZE) return say(false, 'Sua bolsa está cheia. Libere um espaço para retirar.');
         const got = await db.tx(async (q) => {
           await q('SELECT owner FROM vaults WHERE owner = $1 FOR UPDATE', [owner]);
-          const u = await q('UPDATE items SET character_id = $2, vault_owner = NULL, vault_no = NULL, vault_pos = NULL, vault_at = NULL, equipped = FALSE, eq_slot = NULL WHERE id = $1 AND vault_owner = $3 AND vault_no = $4 RETURNING id, base, rarity, plus, equipped, qty, eq_slot, locked', [r.id, p.charId, owner, no]);
+          const u = await q('UPDATE items SET character_id = $2, vault_owner = NULL, vault_no = NULL, vault_pos = NULL, vault_at = NULL, equipped = FALSE, eq_slot = NULL WHERE id = $1 AND vault_owner = $3 AND vault_no = $4 RETURNING id, base, rarity, plus, equipped, qty, eq_slot, locked, excellent_options', [r.id, p.charId, owner, no]);
           if (!u.rows[0]) throw new Error('O item mudou. Tente de novo.');
           await q('UPDATE vaults SET updated_at = now() WHERE owner = $1 RETURNING owner', [owner]);
           return u.rows[0];

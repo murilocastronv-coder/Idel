@@ -180,9 +180,17 @@
       ctx.restore();
     };
     // Itens sazonais e asas adicionadas sem spritesheet próprio usam uma asa 2D compatível.
-    const wingKey = WG && wk && WG.sheets[wk] ? wk : 'wings_dragon';
+    const variants = { wings_life: ['wings_elf', 72], wings_dragon_l1: ['wings_satan', -12], wings_spirit_l1: ['wings_heaven', 32] };
+    const variant = variants[wk];
+    const wingKey = WG && wk && WG.sheets[wk] ? wk : variant ? variant[0] : 'wings_dragon';
     const wingPath = WG && (WG.sheets[wingKey] || Object.values(WG.sheets)[0]);
-    if (wk && WG) wing(wingPath, WG.glow && WG.glow[wingKey]);
+    const rarityGlow = { uncommon: '#5fdc78', rare: '#5aaaff', epic: '#be64ff', legendary: '#ffd36b' };
+    if (wk && WG) {
+      const filter = variant && variant[1] ? `hue-rotate(${variant[1]}deg) saturate(1.25)` : 'none';
+      ctx.save(); ctx.filter = filter;
+      wing(wingPath, (WG.glow && WG.glow[wingKey]) || rarityGlow[eq.wingRarity] || null);
+      ctx.restore();
+    }
     blit(back, 0);
     piece('boots'); piece('armor_mid'); piece('gloves_mid');
     const wingOver = WG && wk && WG.over && (WG.over[wk] || WG.over[wingKey]);

@@ -28,6 +28,7 @@ const KUNDUN = require('./kundun');
 const EQUIP = require('./equip');
 const VAULT = require('./vault');
 const CLS = require('./classes');
+const EXCELLENT = require('./excellent');
 
 const PORT = Number(process.env.PORT || 3000);
 const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
@@ -380,6 +381,17 @@ route('POST', '/api/admin/chaos', bad(async (req) => {
   const config = await CHAOS.saveConfig(body.config || {});
   CMDS.log({ accountId: acc.id, name: acc.username, role: 'superadmin' }, 'panel:chaos', null, {}, null, config, 'ok', 'Receitas da Chaos Machine salvas', null);
   return { ok: true, message: 'Chaos Machine salva.', ...CHAOS.adminView() };
+}));
+route('GET', '/api/admin/excellent', async (req) => {
+  await requireAdmin(req);
+  return EXCELLENT.adminView();
+});
+route('POST', '/api/admin/excellent', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 64 * 1024);
+  const config = await EXCELLENT.save(body.config || {});
+  CMDS.log({ accountId: acc.id, name: acc.username, role: 'superadmin' }, 'panel:excellent', null, {}, null, config, 'ok', 'Opções Excellent atualizadas', null);
+  return { ok: true, message: 'Opções Excellent salvas.', ...EXCELLENT.adminView() };
 }));
 route('GET', '/api/admin/drops', async (req) => {
   await requireAdmin(req);

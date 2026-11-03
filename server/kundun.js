@@ -4,6 +4,7 @@
 // entrega do prêmio (mesma transação); com a bolsa cheia ela continua lá.
 const db = require('./db');
 const G = require('./gamedata');
+const EXCELLENT = require('./excellent');
 const SET = require('./settings');
 
 const BOXES = ['kundun_bronze', 'kundun_prata', 'kundun_ouro', 'kundun_promo'];
@@ -132,8 +133,9 @@ async function open(world, p, itemId) {
       if (!d.rows[0]) throw new Error('A caixa mudou. Tente de novo.');
       let out = null;
       if (r.kind === 'item') {
-        out = (await q(`INSERT INTO items (character_id, base, rarity, plus) VALUES ($1,$2,$3,$4) RETURNING id, base, rarity, plus, equipped, qty`,
-          [p.charId, r.base, r.rarity, r.plus])).rows[0];
+        const opts = EXCELLENT.roll(r.base);
+        out = (await q(`INSERT INTO items (character_id, base, rarity, plus, excellent_options) VALUES ($1,$2,$3,$4,$5) RETURNING id, base, rarity, plus, equipped, qty, excellent_options`,
+          [p.charId, r.base, r.rarity, r.plus, JSON.stringify(opts)])).rows[0];
       } else if (r.kind === 'material') {
         out = stackTo
           ? (await q('UPDATE items SET qty = qty + $3 WHERE id = $1 AND character_id = $2 AND qty + $3 <= $4 RETURNING id, base, rarity, plus, equipped, qty', [stackTo.id, p.charId, r.qty, G.MAX_STACK])).rows[0]

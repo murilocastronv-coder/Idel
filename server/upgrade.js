@@ -115,7 +115,8 @@ function checkDirect(p, jewelId, itemId) {
   if (plus >= 9) return { err: c.messages.limit, limit: true };
   const need = plus < 6 ? BLESS : SOUL;
   if (jw.base !== need) return { err: plus < 6 ? `De +0 a +6 use Jewel of Bless (este item está +${plus}).` : `De +6 a +9 use Jewel of Soul (este item está +${plus}).` };
-  const chance = Math.max(0, Math.min(100, Number(c.direct[plus]) || 0));
+  const luck = H && H.itemStats ? Number(H.itemStats(it).jewelLuck) || 0 : 0;
+  const chance = Math.max(0, Math.min(100, (Number(c.direct[plus]) || 0) + luck));
   return { jw, it, plus, chance };
 }
 function preview(p, msg) {

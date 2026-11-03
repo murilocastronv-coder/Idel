@@ -45,7 +45,7 @@
         <div class="adt-checks">${al.main.map((b) => `<label class="adt-check"><input type="checkbox" data-list="main.bases" value="${b}" ${r.main.bases.includes(b) ? 'checked' : ''}> ${esc(N[b])}</label>`).join('')}</div>
         <p class="adt-sub">${r.mode === 'pair' ? 'Convites que podem ser criados (desmarcado = nível desativado)' : r.mode === 'random' ? 'Resultados possíveis e peso de cada um no sorteio (a classe de quem combina não muda nada)' : 'Resultados possíveis (evolução da capa usada)'}</p>
         <div class="adt-checks">${al.results.map((b) => { const wt = r.weights ? (r.weights[b] ?? 1) : null; return `<label class="adt-check"><input type="checkbox" data-list="results" value="${b}" ${r.results.includes(b) ? 'checked' : ''}> ${esc(N[b])}${wt !== null ? ` · peso <input type="number" class="w-xs" data-w="${b}" min="0" max="1000" value="${wt}">` : ''}</label>`; }).join('')}</div>
-        ${r.rarityRoll ? ['rarityRoll', 'plusRoll'].map((k) => { const rr = r[k]; const keys = k === 'rarityRoll' ? RAR : ['0', '1', '2', '3', '4', '5']; return `<div class="adm-row"><label class="adt-check"><input type="checkbox" data-roll-en="${k}" ${rr.enabled ? 'checked' : ''}> ${k === 'rarityRoll' ? 'Sortear raridade (pesos)' : 'Sortear + do item (pesos)'}</label>
+        ${r.rarityRoll ? ['rarityRoll', 'plusRoll'].map((k) => { const rr = r[k]; const keys = k === 'rarityRoll' ? (id === 'wing1' || id === 'wing2' ? RAR.filter((x) => x !== 'ancestral') : RAR) : ['0', '1', '2', '3', '4', '5']; return `<div class="adm-row"><label class="adt-check"><input type="checkbox" data-roll-en="${k}" ${rr.enabled ? 'checked' : ''} ${id === 'wing1' && k === 'rarityRoll' ? 'disabled checked' : ''}> ${k === 'rarityRoll' ? 'Sortear raridade (pesos)' : 'Sortear + do item (pesos)'}</label>
           ${keys.map((x) => `<label>${k === 'rarityRoll' ? esc(RAR_PT[x]) : '+' + x} <input type="number" class="w-xs" data-roll="${k}" data-k="${x}" min="0" max="1000" value="${rr.weights[x] ?? 0}"></label>`).join('')}</div>`; }).join('') : ''}
         <p class="adt-sub">Classes que podem combinar (nenhuma marcada = todas)</p>
         <div class="adt-checks">${Object.entries(CL).map(([k, c]) => `<label class="adt-check"><input type="checkbox" data-list="classes" value="${k}" ${r.classes.includes(k) ? 'checked' : ''}> ${esc(c.name)}</label>`).join('')}</div>
@@ -60,8 +60,13 @@
       ${V.recipeIds.map(recipe).join('')}
       <fieldset class="adt-card"><legend>Asas e capas (atributos, nível e classes)</legend>
         <div class="adt-table-wrap"><table class="adt-table"><thead><tr><th>Item</th><th>Nível</th><th>Defesa</th><th>Dano %</th><th>Absorve %</th><th>Classes</th></tr></thead><tbody>
-        ${V.items.map((it) => `<tr data-item="${it.id}"><td>${esc(it.name)}</td><td>${num('req', it.req, 'min="1"')}</td><td>${num('def', it.def, 'min="0"')}</td><td>${num('wdmg', it.wdmg, 'min="0"')}</td><td>${num('absorb', it.absorb, 'min="0" max="60"')}</td>
-          <td class="adt-cls">${Object.entries(CL).map(([k, c]) => `<label title="${esc(c.name)}"><input type="checkbox" value="${k}" ${it.classes.includes(k) ? 'checked' : ''} ${it.cat === 'cape' && k !== 'dark_lord' ? 'disabled' : ''}>${esc(c.name.split(' ').map((w) => w[0]).join(''))}</label>`).join('')}</td></tr>`).join('')}
+        ${V.items.map((it) => `<tr data-item="${it.id}"><td>${esc(it.name)}${it.slot === 'wings' ? '<small> · todas as classes</small>' : ''}</td><td>${num('req', it.req, `min="1" ${it.slot === 'wings' ? 'disabled title="Requisito fixo: nível 120"' : ''}`)}</td><td>${num('def', it.def, 'min="0"')}</td><td>${num('wdmg', it.wdmg, 'min="0"')}</td><td>${num('absorb', it.absorb, 'min="0" max="60"')}</td>
+          <td class="adt-cls">${Object.entries(CL).map(([k, c]) => `<label title="${esc(c.name)}"><input type="checkbox" value="${k}" ${it.classes.includes(k) ? 'checked' : ''} ${it.slot === 'wings' ? 'disabled' : ''} ${it.cat === 'cape' && k !== 'dark_lord' ? 'disabled' : ''}>${esc(c.name.split(' ').map((w) => w[0]).join(''))}</label>`).join('')}</td></tr>`).join('')}
+        </tbody></table></div>
+      </fieldset>
+      <fieldset class="adt-card"><legend>Atributos das asas por raridade</legend><p class="muted small">Multiplicadores percentuais aplicados à defesa, dano extra e absorção. O requisito permanece fixo no nível 120.</p>
+        <div class="adt-table-wrap"><table class="adt-table"><thead><tr><th>Raridade</th><th>Defesa %</th><th>Dano %</th><th>Absorção %</th></tr></thead><tbody>
+        ${['common','uncommon','rare','epic','legendary'].map((rar) => `<tr data-rarstat="${rar}"><td>${esc(RAR_PT[rar])}</td><td>${num('def', C.rarityAttributes[rar].def, 'min="50" max="300"')}</td><td>${num('wdmg', C.rarityAttributes[rar].wdmg, 'min="50" max="300"')}</td><td>${num('absorb', C.rarityAttributes[rar].absorb, 'min="50" max="300"')}</td></tr>`).join('')}
         </tbody></table></div>
       </fieldset>
       <button class="btn btn-gold" type="button" id="adt-chaos-save">Salvar Chaos Machine</button>
@@ -75,7 +80,7 @@
       try { const r = await X.api('GET', '/api/admin/chaos?name=' + encodeURIComponent($('#adt-chaos-name').value.trim())); $('#adt-chaos-log').innerHTML = histChaos(r.history, N); } catch (e) { msg(box, e.message, true); }
     };
     $('#adt-chaos-save').onclick = async () => {
-      const cfg = { npcRequired: $('#adt-npc').checked, recipes: {}, items: {} };
+      const cfg = { npcRequired: $('#adt-npc').checked, recipes: {}, items: {}, rarityAttributes: {} };
       for (const fs of $$('[data-recipe]', box)) {
         const r = { rate: {}, main: { bases: [] }, results: [], classes: [], materials: [] };
         for (const el of $$('[data-f]', fs)) {
@@ -94,7 +99,31 @@
         cfg.items[tr.dataset.item] = { req: Number($('[data-f=req]', tr).value), def: Number($('[data-f=def]', tr).value), wdmg: Number($('[data-f=wdmg]', tr).value),
           absorb: Number($('[data-f=absorb]', tr).value), classes: $$('.adt-cls input', tr).filter((i) => i.checked).map((i) => i.value) };
       }
+      for (const tr of $$('[data-rarstat]', box)) cfg.rarityAttributes[tr.dataset.rarstat] = Object.fromEntries(['def','wdmg','absorb'].map((k) => [k, Number($(`[data-f=${k}]`, tr).value)]));
       try { const r = await X.api('POST', '/api/admin/chaos', { config: cfg }); msg(box, r.message); } catch (e) { msg(box, e.message, true); box.scrollIntoView({ block: 'start' }); }
+    };
+  }
+
+  async function excellent(box) {
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    let V;
+    try { V = await X.api('GET', '/api/admin/excellent'); } catch (e) { box.innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+    const C = V.config;
+    box.innerHTML = `<p class="adt-msg" role="status"></p>
+      <p class="adt-sub">Itens novos gerados em drops e recompensas recebem opções Excellent persistidas no item. Armas, escudos, luvas e peças defensivas usam listas compatíveis. As opções já existentes não são alteradas.</p>
+      <label class="adt-check"><input type="checkbox" id="ex-enabled" ${C.enabled ? 'checked' : ''}> Ativar geração Excellent</label>
+      <div class="adm-row"><label>Mínimo de opções ${num('minOptions', C.minOptions, 'id="ex-min" min="2" max="4"')}</label>
+        <label>Máximo de opções ${num('maxOptions', C.maxOptions, 'id="ex-max" min="2" max="4"')}</label></div>
+      <label class="adt-sub" for="ex-pools">Opções por categoria (JSON): cada registro usa id, weight, min e max. IDs aceitos: ${Object.keys(V.definitions).map(esc).join(', ')}</label>
+      <textarea id="ex-pools" rows="20" spellcheck="false" style="width:100%;font:12px/1.45 monospace">${esc(JSON.stringify(C.pools, null, 2))}</textarea>
+      <button class="btn btn-gold" type="button" id="ex-save">Salvar opções Excellent</button>`;
+    $('#ex-save').onclick = async () => {
+      try {
+        const config = { enabled: $('#ex-enabled').checked, minOptions: Number($('#ex-min').value), maxOptions: Number($('#ex-max').value), pools: JSON.parse($('#ex-pools').value) };
+        const r = await X.api('POST', '/api/admin/excellent', { config });
+        msg(box, r.message);
+        $('#ex-pools').value = JSON.stringify(r.config.pools, null, 2);
+      } catch (e) { msg(box, e.message || 'JSON inválido.', true); }
     };
   }
   function histChaos(rows, N) {
@@ -626,9 +655,10 @@
       <details class="adm-sec adt-sec" data-sec="arena"><summary><h3>Eventos: Chaos Castle e Devil Square</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="upgrade"><summary><h3>Aprimoramento +0 a +15 e Ferreiro</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="chaos"><summary><h3>Chaos Machine (asas e capas)</h3></summary><div class="adt-body"></div></details>
+      <details class="adm-sec adt-sec" data-sec="excellent"><summary><h3>Opções Excellent semi-full</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="drops"><summary><h3>Drops de materiais e eventos</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="rules"><summary><h3>Comandos, reset e histórico ADM</h3></summary><div class="adt-body"></div></details>`;
-    const fn = { invasion, arena, upgrade, equip, vault, chaos, drops, rules };
+    const fn = { invasion, arena, upgrade, equip, vault, chaos, excellent, drops, rules };
     $$('.adt-sec', el).forEach((d) => { d.addEventListener('toggle', () => { if (d.open && !d.dataset.loaded) { d.dataset.loaded = 1; fn[d.dataset.sec]($('.adt-body', d)); } }); });
   }
 

@@ -534,11 +534,11 @@ async function deliverPending(p) {
               const st = b.stack && p.items.find((i) => i.base === r.base && !i.equipped && (Number(i.qty) || 1) + r.qty <= G.MAX_STACK);
               if (st) { const x = await q('UPDATE items SET qty = qty + $3 WHERE id = $1 AND character_id = $2 RETURNING qty', [st.id, p.charId, r.qty]); bumped.push([st, Number(x.rows[0].qty)]); }
               else if (b.stack) created.push((await q('INSERT INTO items (character_id, base, rarity, plus, qty) VALUES ($1,$2,$3,0,$4) RETURNING id, base, rarity, plus, equipped, qty', [p.charId, r.base, b.rarity || 'common', r.qty])).rows[0]);
-              else for (let i = 0; i < r.qty; i++) created.push((await q('INSERT INTO items (character_id, base, rarity, plus, qty) VALUES ($1,$2,$3,0,1) RETURNING id, base, rarity, plus, equipped, qty', [p.charId, r.base, b.rarity || 'common'])).rows[0]);
+              else for (let i = 0; i < r.qty; i++) created.push((await q("INSERT INTO items (character_id, base, rarity, plus, excellent_options) VALUES ($1,$2,$3,0,'[]'::jsonb) RETURNING id, base, rarity, plus, equipped, qty, excellent_options", [p.charId, r.base, b.rarity || 'common'])).rows[0]);
             } else if (r.kind === 'gear') {
               for (let i = 0; i < r.qty; i++) {
                 const it = H.rollItem(Math.max(1, r.level || p.level), 'boss');
-                created.push((await q('INSERT INTO items (character_id, base, rarity, plus, qty) VALUES ($1,$2,$3,$4,1) RETURNING id, base, rarity, plus, equipped, qty', [p.charId, it.base, r.rarity || it.rarity, it.plus || 0])).rows[0]);
+                created.push((await q("INSERT INTO items (character_id, base, rarity, plus, qty, excellent_options) VALUES ($1,$2,$3,$4,1,'[]'::jsonb) RETURNING id, base, rarity, plus, equipped, qty, excellent_options", [p.charId, it.base, r.rarity || it.rarity, it.plus || 0])).rows[0]);
               }
             }
           }

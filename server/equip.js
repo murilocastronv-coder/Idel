@@ -22,7 +22,7 @@ const equipable = (b) => b && SLOTS.includes(b.slot === 'ring' ? 'ring' : b.slot
 // regra padrão, tirada do catálogo
 function defaultRule(base) {
   const b = G.ITEM_BASES[base];
-  const r = { classes: CLASSES.slice(), minEvo: 0, level: b.req || 1, str: 0, agi: 0, ene: 0, vit: 0, cmd: 0, slot: b.slot, enabled: true };
+  const r = { classes: CLASSES.slice(), minEvo: 0, level: b.slot === 'wings' ? 120 : (b.req || 1), str: 0, agi: 0, ene: 0, vit: 0, cmd: 0, slot: b.slot, enabled: true };
   if (b.classes) {
     r.classes = b.classes.slice();
   } else if (b.slot === 'weapon') {
@@ -41,7 +41,9 @@ function defaultRule(base) {
 function rule(base) {
   const d = defaultRule(base);
   const o = overrides.get(base);
-  return o ? { ...d, ...o } : d;
+  const out = o ? { ...d, ...o } : d;
+  if (G.ITEM_BASES[base] && G.ITEM_BASES[base].slot === 'wings') { out.classes = CLASSES.slice(); out.level = 120; out.minEvo = 0; }
+  return out;
 }
 
 // o que a dica do item mostra (o navegador compara com o personagem só para exibir; quem decide é o servidor)
@@ -114,6 +116,8 @@ async function init() {
 }
 
 function fromRow(r) {
+  const b = G.ITEM_BASES[r.base];
+  if (b.slot === 'wings') return { ...defaultRule(r.base), classes: CLASSES.slice(), minEvo: 0, level: 120, slot: b.slot, enabled: r.enabled };
   return { classes: String(r.classes || '').split(',').filter((c) => CLASSES.includes(c)), minEvo: r.min_evo, level: r.min_level ?? G.ITEM_BASES[r.base].req,
     str: r.req_str, agi: r.req_agi, ene: r.req_ene, vit: r.req_vit, cmd: r.req_cmd, slot: r.slot || G.ITEM_BASES[r.base].slot, enabled: r.enabled };
 }
@@ -123,14 +127,14 @@ function sanitize(base, i) {
   const b = G.ITEM_BASES[base];
   if (!equipable(b)) throw new Error(`${base}: não é um item equipável.`);
   const n = (v, a, z, f) => { const x = Math.round(Number(v)); if (!Number.isFinite(x) || x < a || x > z) throw new Error(`${b.name}: ${f} de ${a} a ${z}.`); return x; };
-  const classes = (Array.isArray(i.classes) ? i.classes : String(i.classes || '').split(',')).map((c) => String(c).trim()).filter((c) => CLASSES.includes(c));
+  const classes = b.slot === 'wings' ? CLASSES.slice() : (Array.isArray(i.classes) ? i.classes : String(i.classes || '').split(',')).map((c) => String(c).trim()).filter((c) => CLASSES.includes(c));
   if (!classes.length) throw new Error(`${b.name}: escolha pelo menos uma classe.`);
-  if (b.cat === 'cape' && classes.some((c) => c !== 'dark_lord')) throw new Error(`${b.name}: capas são só do Dark Lord.`);
+  if (b.cat === 'cape' && b.slot !== 'wings' && classes.some((c) => c !== 'dark_lord')) throw new Error(`${b.name}: capas são só do Dark Lord.`);
   const slot = i.slot || b.slot;
   const group = SLOT_GROUPS.find((g) => g.includes(b.slot));
   if (!group || !group.includes(slot)) throw new Error(`${b.name}: o lugar "${SLOT_PT[slot] || slot}" não combina com este tipo de item.`);
   if (b.set && slot !== b.slot) throw new Error(`${b.name}: peças de conjunto ficam no lugar original (a aparência depende disso).`);
-  return { classes, minEvo: n(i.minEvo || 0, 0, 2, 'evolução'), level: n(i.level ?? b.req, 1, G.LIMITS.maxLevel, 'nível'),
+  return { classes, minEvo: b.slot === 'wings' ? 0 : n(i.minEvo || 0, 0, 2, 'evolução'), level: b.slot === 'wings' ? 120 : n(i.level ?? b.req, 1, G.LIMITS.maxLevel, 'nível'),
     str: n(i.str || 0, 0, 65000, 'força'), agi: n(i.agi || 0, 0, 65000, 'agilidade'), ene: n(i.ene || 0, 0, 65000, 'energia'),
     vit: n(i.vit || 0, 0, 65000, 'vitalidade'), cmd: n(i.cmd || 0, 0, 65000, 'comando'), slot, enabled: i.enabled !== false };
 }

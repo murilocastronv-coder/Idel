@@ -102,7 +102,7 @@ async function claim({accountId,orderId,charId,world}) {
     if(!owns.rows[0]) throw new Error('Escolha um personagem da sua conta.');
     const product=findProduct(claimed.rows[0].product_id);
     if (!product) throw new Error('Produto deste pedido não existe mais.');
-    await world.adminGiveItems(String(charId),itemList(product.id));
+    await world.adminGiveItems(String(charId),itemList(product.id),{excellent:true});
     await db.query(`UPDATE premium_orders SET status='claimed', character_id=$2, claimed_at=now() WHERE id=$1 RETURNING id`,[orderId,charId]);
     return {ok:true,type:product.type,qty:product.qty||null};
   } catch(e) {
