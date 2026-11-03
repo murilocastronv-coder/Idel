@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/css/style.css?v=18">
   <link rel="stylesheet" href="/css/game.css?v=30">
   <link rel="stylesheet" href="/css/art-upgrade.css?v=4">
-  <link rel="stylesheet" href="/css/gfx-fx.css?v=1">
+  <link rel="stylesheet" href="/css/gfx-fx.css?v=3">
 </head>
 <body class="game">
   <canvas id="world" aria-label="Mapa do jogo"></canvas>
@@ -74,6 +74,7 @@
       <button type="button" data-panel="shop" id="btn-shop">Loja</button>
       <button type="button" data-panel="quests">Missões<i class="badge" id="quest-badge" hidden></i></button>
       <button type="button" data-panel="config">Idle</button>
+      <button type="button" data-panel="market">Mercado</button>
       <button type="button" data-panel="rank">Ranking</button>
       <button type="button" data-panel="chat">Chat<i class="badge" id="chat-badge" hidden></i></button>
       <button type="button" id="btn-exit" title="Voltar à seleção de heróis">Heróis</button>
@@ -179,6 +180,17 @@
   <div class="item-info window" id="item-info" hidden role="dialog" aria-label="Detalhes do item"><div id="item-info-body"></div><div class="row" id="item-info-actions"></div></div>
   <div class="upg-modal window" id="upg-modal" hidden role="dialog" aria-label="Aprimorar equipamento"></div>
 
+  <section class="panel window" id="panel-market" hidden aria-labelledby="market-title">
+    <header><h2 id="market-title">Mercado <small id="market-zen"></small></h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <div class="mk-tabs" role="tablist" aria-label="Mercado">
+      <button type="button" role="tab" data-mk="browse">Comprar</button>
+      <button type="button" role="tab" data-mk="sell">Vender</button>
+      <button type="button" role="tab" data-mk="mine">Minhas vendas<i class="badge" id="mk-badge" hidden></i></button>
+    </div>
+    <p class="mk-msg" id="mk-msg" aria-live="polite" hidden></p>
+    <div id="market-body"></div>
+  </section>
+
   <section class="panel window" id="panel-rank" hidden aria-labelledby="rank-title">
     <header><h2 id="rank-title">Ranking</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
     <div class="rank-tabs" id="rank-tabs" role="tablist" aria-label="Ordenar ranking">
@@ -267,6 +279,6 @@
   <script src="/js/sprites.js?v=24"></script>
   <script src="/js/sfx.js?v=20"></script>
   <script src="/js/admin-tools.js?v=9"></script>
-  <script src="/js/game.js?v=45"></script>
+  <script src="/js/game.js?v=46"></script>
 </body>
 </html>

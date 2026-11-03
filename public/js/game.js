@@ -62,7 +62,7 @@
       case 'hello': case 'pong': case 'stats': return;
       case 'enter': return onEnter(m);
       case 's': return onSnap(m);
-      case 'char': S.char = m; renderChar(); return;
+      case 'char': S.char = m; renderChar(); if (S.panel === 'market' && MK.tab === 'sell') renderMarket(); return;
       case 'pj': S.players.set(m.id, { ...(S.players.get(m.id) || { x: 0, y: 0, rx: null }), info: m }); return;
       case 'pl': S.players.delete(m.id); return;
       case 'reward': if (window.Sfx) Sfx.coin(); return feed(`+${fmt.format(m.exp)} EXP  +${fmt.format(m.zen)} Zen${m.share ? ` (${m.share}% do dano)` : ''}`, '');
@@ -90,6 +90,8 @@
       case 'tradeInvite': return tradeInvite(m);
       case 'tradeInviteEnd': if (TR.inv && TR.inv.id === m.id) closeTradeInvite(); if (m.text) feed(m.text, 'warn'); return;
       case 'trade': return onTrade(m);
+      case 'market': MK.data = m; MK.busy = false; if (m.view === 'mine') mkBadge(m.rows); if (S.panel === 'market' && (MK.tab === m.view || (MK.tab === 'sell' && m.view === 'mine' && MK.listed))) { if (MK.listed) { MK.listed = false; MK.tab = 'mine'; } renderMarket(); } return;
+      case 'marketMsg': MK.busy = false; if (!m.ok) MK.listed = false; mkMsg(m.text, m.ok); feed(m.text, m.ok ? 'quest' : 'warn'); if (S.panel === 'market') renderMarket(); return;
       case 'tradeMsg': tradeStatus(m.text, true); feed(m.text, 'warn'); return;
       case 'upgPreview': return upgPreview(m);
       case 'upgResult': return upgResult(m);
@@ -1973,6 +1975,7 @@
     else if (name === 'rank') renderRank();
     else if (name === 'chaos') { renderChaos(); send({ type: 'chaosInfo' }); }
     else if (name === 'vault') renderVault();
+    else if (name === 'market') { MK.msg = null; mkLoad(MK.tab); renderMarket(); }
     else if (name === 'arena') renderArena();
     else if (name === 'smith') renderSmith();
     else if (name === 'cquest') { renderCQ(); send({ type: 'cqInfo', npc: CQ.npc }); }
@@ -1982,6 +1985,112 @@
   $$('.menu [data-panel]').forEach((b) => { b.onclick = () => openPanel(b.dataset.panel); });
   $$('.panel [data-close]').forEach((b) => { b.onclick = closePanel; });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
+
+  // ================= mercado entre jogadores (Zen) =================
+  const MK = { tab: 'browse', data: null, q: '', cat: '', rarity: '', sort: 'asc', page: 0, sel: null, busy: false, msg: null, listed: false };
+  const mkSend = (o) => { MK.busy = true; send({ type: 'market', ...o }); };
+  function mkFilters() { return { q: MK.q, cat: MK.cat, rarity: MK.rarity, sort: MK.sort, page: MK.page }; }
+  function mkLoad(tab) { if (tab === 'browse') mkSend({ action: 'browse', ...mkFilters() }); else if (tab === 'mine') mkSend({ action: 'mine' }); }
+  function mkMsg(text, ok) { MK.msg = text ? { text, ok } : null; }
+  function mkBadge(rows) { const n = (rows || []).filter((r) => r.status !== 'active' && !r.collected).length; const b = $('#mk-badge'); if (b) { b.hidden = !n; b.textContent = n || ''; } }
+  function mkIcon(it) { const d = document.createElement('div'); d.className = 'ic'; d.style.setProperty('--r', RAR[it.rarity]); d.appendChild(iconCanvas(it)); d.onclick = () => openItemInfo(it, 'market'); return d; }
+  function mkRow(r, right) {
+    const row = document.createElement('div'); row.className = 'mk-row' + (r.status && r.status !== 'active' ? ' done' : '');
+    const it = r.item;
+    row.appendChild(mkIcon(it));
+    const nm = document.createElement('div'); nm.className = 'nm';
+    nm.innerHTML = `<b style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}${it.qty > 1 ? ' ×' + fmt.format(it.qty) : ''}</b><small>${RAR_NAME[it.rarity] || ''}${it.excellent ? ' · Excellent' : ''}${it.req ? ' · Nv. ' + it.req : ''} · ${right.sub}</small>`;
+    row.appendChild(nm);
+    const pr = document.createElement('div'); pr.className = 'pr'; pr.innerHTML = `<b>${fmt.format(r.price)} Zen</b>`;
+    if (right.btn) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small ' + (right.cls || ''); b.textContent = right.btn; b.disabled = MK.busy || !!right.off; b.onclick = right.fn; pr.appendChild(b); }
+    row.appendChild(pr);
+    return row;
+  }
+  const mkLeft = (ms) => { const h = Math.max(0, Math.round((ms - Date.now()) / 3600000)); return h >= 1 ? `${h}h` : `${Math.max(1, Math.round((ms - Date.now()) / 60000))} min`; };
+  function renderMarket() {
+    $$('.mk-tabs [data-mk]').forEach((b) => { b.classList.toggle('active', b.dataset.mk === MK.tab); b.setAttribute('aria-selected', b.dataset.mk === MK.tab); b.onclick = () => { MK.tab = b.dataset.mk; MK.msg = null; mkLoad(MK.tab); renderMarket(); }; });
+    $('#market-zen').textContent = S.char ? `· ${fmt.format(S.me ? S.me.zen ?? S.char.zen : S.char.zen)} Zen` : '';
+    const msg = $('#mk-msg'); msg.hidden = !MK.msg; if (MK.msg) { msg.textContent = MK.msg.text; msg.classList.toggle('bad', !MK.msg.ok); }
+    const body = $('#market-body'); body.innerHTML = '';
+    const d = MK.data && MK.data.view === MK.tab ? MK.data : null;
+    if (MK.tab === 'browse') {
+      const f = document.createElement('div'); f.className = 'mk-filters';
+      f.innerHTML = `<input type="search" id="mk-q" placeholder="Procurar item…" value="${esc(MK.q)}" maxlength="40">
+        <select id="mk-cat"><option value="">Tudo</option><option value="weapon">Armas</option><option value="armor">Armaduras</option><option value="jewelry">Anéis e colares</option><option value="wings">Asas</option><option value="material">Joias e materiais</option><option value="other">Outros</option></select>
+        <select id="mk-rar"><option value="">Qualquer raridade</option>${RAR_ORDER.map((r) => `<option value="${r}">${RAR_NAME[r]}</option>`).join('')}</select>
+        <select id="mk-sort"><option value="asc">Mais barato</option><option value="desc">Mais caro</option><option value="new">Mais novo</option></select>`;
+      body.appendChild(f);
+      $('#mk-cat').value = MK.cat; $('#mk-rar').value = MK.rarity; $('#mk-sort').value = MK.sort;
+      const go = () => { MK.q = $('#mk-q').value.trim(); MK.cat = $('#mk-cat').value; MK.rarity = $('#mk-rar').value; MK.sort = $('#mk-sort').value; MK.page = 0; mkLoad('browse'); };
+      let tq = null; $('#mk-q').oninput = () => { clearTimeout(tq); tq = setTimeout(go, 400); };
+      ['#mk-cat', '#mk-rar', '#mk-sort'].forEach((k) => { $(k).onchange = go; });
+      const list = document.createElement('div'); list.className = 'mk-list';
+      if (!d) list.innerHTML = '<p class="mk-empty">Carregando…</p>';
+      else if (!d.rows.length) list.innerHTML = '<p class="mk-empty">Nenhum item à venda com esses filtros.</p>';
+      else d.rows.forEach((r) => {
+        const own = S.char && ('p' + r.sellerId === String(S.char.id) || r.sellerId === String(S.char.id));
+        list.appendChild(mkRow(r, { sub: `${esc(r.seller)} · ${mkLeft(r.expires)}`, btn: own ? 'Seu' : 'Comprar', cls: 'btn-gold', off: own, fn: () => {
+          tradeDialog(`<h3>Comprar ${esc(r.item.name)}${r.item.plus ? ' +' + r.item.plus : ''}?</h3><p>Preço: <b style="color:#ffd36b">${fmt.format(r.price)} Zen</b> · vendedor ${esc(r.seller)}</p>`,
+            [{ label: 'Comprar', cls: 'btn-gold', fn: () => mkSend({ action: 'buy', id: r.id, price: r.price, back: mkFilters() }) }, { label: 'Cancelar' }]);
+        } }));
+      });
+      body.appendChild(list);
+      if (d && (d.page > 0 || d.more)) {
+        const pg = document.createElement('div'); pg.className = 'mk-pager';
+        pg.innerHTML = `<button class="btn small" type="button" id="mk-prev" ${d.page > 0 ? '' : 'disabled'}>‹ Anterior</button><span class="muted">Página ${d.page + 1}</span><button class="btn small" type="button" id="mk-next" ${d.more ? '' : 'disabled'}>Próxima ›</button>`;
+        body.appendChild(pg);
+        $('#mk-prev').onclick = () => { MK.page = Math.max(0, MK.page - 1); mkLoad('browse'); };
+        $('#mk-next').onclick = () => { MK.page++; mkLoad('browse'); };
+      }
+    } else if (MK.tab === 'sell') {
+      const bag = (S.char ? S.char.items : []).filter((i) => !i.equipped && !i.locked && i.slot !== 'quest');
+      if (MK.sel && !bag.some((i) => i.id === MK.sel)) MK.sel = null;
+      const grid = document.createElement('div'); grid.className = 'mk-bag';
+      bag.forEach((it) => { const b = slotButton(it, () => { MK.sel = it.id; renderMarket(); }); if (it.id === MK.sel) b.classList.add('sel'); grid.appendChild(b); });
+      if (!bag.length) grid.innerHTML = '<p class="muted" style="grid-column:1/-1">Nenhum item da bolsa pode ser vendido agora.</p>';
+      body.insertAdjacentHTML('beforeend', '<p class="muted" style="margin:0 0 6px">Escolha um item da bolsa e o preço. O item fica guardado no anúncio por 48 horas; a taxa do mercado é 10% da venda.</p>');
+      body.appendChild(grid);
+      const it = bag.find((i) => i.id === MK.sel);
+      const box = document.createElement('div'); box.className = 'mk-sell';
+      if (!it) box.innerHTML = '<p class="muted" style="margin:0">Toque em um item acima.</p>';
+      else {
+        box.innerHTML = `<div class="row"><b style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}</b><button class="btn small btn-ghost" type="button" id="mk-info">Detalhes</button></div>
+          <div class="row">${it.stack ? `<label>Qtd. <input type="number" id="mk-qty" min="1" max="${it.qty}" value="${it.qty}" style="width:90px"></label>` : ''}<input type="number" id="mk-price" min="1" step="1" placeholder="Preço em Zen" inputmode="numeric">
+          <button class="btn btn-gold" type="button" id="mk-list">Anunciar</button></div><p class="mk-sum" id="mk-sum">Coloque o preço para ver quanto você recebe.</p>`;
+        const sum = () => { const v = Math.floor(Number($('#mk-price').value)); $('#mk-sum').innerHTML = v > 0 ? `Preço ${fmt.format(v)} Zen · taxa 10%: ${fmt.format(Math.floor(v * 0.1))} Zen · você recebe <b>${fmt.format(v - Math.floor(v * 0.1))} Zen</b>` : 'Coloque o preço para ver quanto você recebe.'; };
+        setTimeout(() => {
+          $('#mk-price').oninput = sum;
+          $('#mk-info').onclick = () => openItemInfo(it, 'market');
+          $('#mk-list').onclick = () => {
+            const price = Math.floor(Number($('#mk-price').value)); const qty = $('#mk-qty') ? Math.floor(Number($('#mk-qty').value)) : 1;
+            if (!(price > 0)) { mkMsg('Coloque um preço em Zen.', false); renderMarket(); return; }
+            MK.listed = true; mkSend({ action: 'list', item: it.id, price, qty });
+          };
+        }, 0);
+      }
+      body.appendChild(box);
+    } else {
+      const list = document.createElement('div'); list.className = 'mk-list';
+      const rows = d ? d.rows : null;
+      const pending = rows ? rows.filter((r) => r.status !== 'active' && !r.collected) : [];
+      if (pending.length) {
+        const zen = pending.filter((r) => r.status === 'sold').reduce((a, r) => a + r.price - r.fee, 0), items = pending.filter((r) => r.status !== 'sold').length;
+        const bar = document.createElement('div'); bar.className = 'mk-sell';
+        bar.innerHTML = `<div class="row"><span>Para coletar: ${zen ? `<b style="color:#ffd36b">${fmt.format(zen)} Zen</b>` : ''}${zen && items ? ' e ' : ''}${items ? `${items} item(ns) de volta` : ''}</span><button class="btn btn-gold" type="button" id="mk-collect" ${MK.busy ? 'disabled' : ''}>Coletar tudo</button></div>`;
+        body.appendChild(bar);
+        setTimeout(() => { const b = $('#mk-collect'); if (b) b.onclick = () => mkSend({ action: 'collect' }); }, 0);
+      }
+      if (!rows) list.innerHTML = '<p class="mk-empty">Carregando…</p>';
+      else if (!rows.length) list.innerHTML = '<p class="mk-empty">Você não tem anúncios. Use a aba Vender.</p>';
+      else rows.forEach((r) => {
+        const st = r.status === 'active' ? `à venda · termina em ${mkLeft(r.expires)}` : r.status === 'sold' ? `vendido para ${esc(r.buyer || '?')} · ${r.collected ? 'Zen coletado' : `receber ${fmt.format(r.price - r.fee)} Zen`}` : `${r.status === 'expired' ? 'expirou' : 'cancelado'} · ${r.collected ? 'item devolvido' : 'item para coletar'}`;
+        list.appendChild(mkRow(r, r.status === 'active' ? { sub: st, btn: 'Cancelar', fn: () => mkSend({ action: 'cancel', id: r.id }) }
+          : !r.collected ? { sub: st, btn: 'Coletar', cls: 'btn-gold', fn: () => mkSend({ action: 'collect', id: r.id }) } : { sub: st }));
+      });
+      if (d) body.insertAdjacentHTML('beforeend', `<p class="muted" style="margin:0 0 6px">${rows.filter((r) => r.status === 'active').length}/${d.max} anúncios ativos.</p>`);
+      body.appendChild(list);
+    }
+  }
 
   function iconCanvas(it) {
     const c = document.createElement('canvas'); c.width = 48; c.height = 48;

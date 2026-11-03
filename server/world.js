@@ -17,6 +17,7 @@ const CLS = require('./classes');
 const ARENA = require('./arena');
 const UPG = require('./upgrade');
 const TRADE = require('./trade');
+const MARKET = require('./market');
 const SOCIAL = require('./social');
 const EXCELLENT = require('./excellent');
 
@@ -364,6 +365,7 @@ class World {
     await VAULT.init(helpers);
     await UPG.init({ ...helpers, itemStats });
     TRADE.init(this, helpers);
+    MARKET.init(this, helpers);
     SOCIAL.init(this);
     await INV.init(this, helpers);
     this.invasion = INV;
@@ -684,6 +686,7 @@ class World {
       case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
       case 'openBox': return p.run(() => KUNDUN.open(this, p, String(msg.id || '')));
       case 'trade': return p.run(() => TRADE.act(this, p, msg));
+      case 'market': return p.run(() => MARKET.act(this, p, msg));
       case 'vault': return p.run(() => VAULT.act(this, p, msg));
       case 'arena': return p.run(() => ARENA.act(this, p, msg));
       case 'upgPreview': return p.run(() => UPG.preview(p, msg));
