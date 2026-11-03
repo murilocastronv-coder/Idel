@@ -2563,13 +2563,52 @@
           return '<article class="premium-card" style="--set-tone:' + esc(p.tone) + '">' +
             '<canvas width="72" height="72" data-premium-icon="' + esc(p.id) + '"></canvas><div><b>' + esc(p.name) + '</b>' +
             '<small>' + detail + '</small><span>' + brl.format(p.price / 100) + '</span>' +
-            '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled || (p.type === 'reset' && !(RSI.info && !RSI.info.free)) ? ' disabled' : '') + '>' + (p.type === 'reset' && RSI.info && RSI.info.free ? 'Use o reset grátis no Herói' : data.enabled ? (p.type === 'reset' ? 'Comprar reset · R$ 5,00' : isBox ? 'Comprar caixas' : 'Comprar conjunto') : 'Pagamento indisponível') + '</button></div></article>';
+            '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled || (p.type === 'reset' && !(RSI.info && !RSI.info.free)) ? ' disabled' : '') + '>' + (p.type === 'reset' && RSI.info && RSI.info.free ? 'Use o reset grátis no Herói' : data.enabled ? (p.type === 'reset' ? 'Comprar reset · R$ 5,00' : isBox ? 'Comprar caixas' : 'Comprar conjunto') : 'Pagamento indisponível') + '</button>' + (p.type === 'set' ? '<button class="btn small premium-preview-trigger" type="button" data-premium-preview="' + esc(p.id) + '">Ver no personagem</button>' : '') + '</div></article>';
         }).join('') + '</div></section>';
       Array.from(holder.querySelectorAll('[data-premium-icon]')).forEach((canvas, i) => {
         const product = data.catalog[i];
         PA.drawIcon(canvas.getContext('2d'), product && product.type === 'box' ? 'box' : ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, product ? product.tone : '#d82f3f');
       });
-      $$('[data-premium-buy]', holder).forEach(btn => { btn.onclick = async () => {
+      $('[data-premium-preview]', holder).forEach(btn => { btn.onclick = () => {
+        const product = data.catalog.find(p => p.id === btn.dataset.premiumPreview);
+        if (!product) return;
+        const dialog = document.createElement('dialog');
+        dialog.className = 'premium-preview-dialog';
+        dialog.innerHTML = '<div class="premium-preview-head"><div><b>Prévia no personagem</b><small>' + esc(product.name) + '</small></div><button class="btn small" type="button" data-preview-close aria-label="Fechar">✕</button></div><canvas width="260" height="280" aria-label="Prévia do equipamento no personagem"></canvas><p class="muted small">Prévia visual aproximada com os sprites atuais e a aparência do seu personagem. Não equipa nem compra o item.</p><button class="btn small btn-gold" type="button" data-preview-close>Fechar prévia</button>';
+        document.body.appendChild(dialog);
+        const close = () => { if (dialog.open) dialog.close(); dialog.remove(); };
+        dialog.querySelectorAll('[data-preview-close]').forEach(b => { b.onclick = close; });
+        dialog.addEventListener('click', e => { if (e.target === dialog) close(); });
+        dialog.addEventListener('cancel', e => { e.preventDefault(); close(); });
+        dialog.showModal();
+        const canvas = dialog.querySelector('canvas'), ctx = canvas.getContext('2d');
+        const cls = S.char.cls, ap = S.char.ap || {};
+        const current = (S.players.get(S.youId) && S.players.get(S.youId).info && S.players.get(S.youId).info.eq) || {};
+        const suffix = Number((product.id.match(/(\d+)$/) || [0, 1])[1]) - 1;
+        const styles = ['phoenix', 'storm', 'scale', 'dragon', 'bronze', 'abyss', 'leather'];
+        const equip = { ...current };
+        const style = styles[Math.max(0, suffix) % styles.length];
+        equip.helm = style; equip.armor = style; equip.gloves = style; equip.boots = style;
+        const wingSheets = Sprites.meta('wings', 'sheets') || {};
+        const wings = Object.keys(wingSheets);
+        if (wings.length) { equip.wings = wings[Math.max(0, suffix) % wings.length]; equip.wingRarity = 'epic'; }
+        const weaponClasses = (Sprites.meta('weapons', 'classes') || {});
+        const weaponList = weaponClasses[cls] && weaponClasses[cls].list || [];
+        const weaponHint = cls === 'fairy_elf' ? ['bow', 'crossbow'] : cls === 'dark_wizard' || cls === 'summoner' ? ['staff', 'stick', 'book'] : cls === 'dark_lord' ? ['scepter', 'sword'] : ['sword', 'blade'];
+        equip.w = weaponHint.map(h => weaponList.find(w => w.includes(h))).find(Boolean) || weaponList[0] || current.w || null;
+        let raf = 0;
+        const draw = () => {
+          if (!dialog.open) { cancelAnimationFrame(raf); return; }
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.imageSmoothingEnabled = false;
+          ctx.fillStyle = 'rgba(8,12,25,.55)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+          Sprites.hero(ctx, cls, ap, 'idle', performance.now(), canvas.width / 2, canvas.height - 16, 2.25, false, { equip });
+          raf = requestAnimationFrame(draw);
+        };
+        Sprites.ready.then(draw).catch(() => { ctx.fillStyle = '#eee'; ctx.fillText('Prévia indisponível', 55, 140); });
+        dialog.addEventListener('close', () => { cancelAnimationFrame(raf); dialog.remove(); }, { once: true });
+      }; });
+      $('[data-premium-buy]', holder).forEach(btn => { btn.onclick = async () => {
         btn.disabled = true;
         try {
           const res = await fetch('/api/premium-store/checkout', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-Requested-With':'mui'}, body:JSON.stringify({product:btn.dataset.premiumBuy, charId, back:'/game.html?c=' + encodeURIComponent(charId)}) });

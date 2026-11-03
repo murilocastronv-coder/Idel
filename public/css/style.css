@@ -375,3 +375,14 @@ details[open] > summary { margin-bottom: 14px; }
 .market-points li { display: grid; gap: 4px; padding: 12px; border: 2px solid var(--gold-dim, #8a6a2a); background: rgba(8, 10, 22, .55); }
 .market-points b { color: #9affd0; font-size: 16px; }
 .market-points span { font-size: 14px; opacity: .9; }
+
+
+/* Prévia de equipamento da loja */
+.premium-card .premium-preview-trigger{background:rgba(35,49,79,.92);border-color:rgba(239,195,96,.62);font-size:.82rem}
+.premium-preview-dialog{width:min(360px,calc(100vw - 28px));max-width:calc(100vw - 28px);max-height:calc(100dvh - 32px);padding:16px;border:2px solid #c9a552;border-radius:12px;background:#18213c;color:#f5edda;box-shadow:0 18px 60px #000b;text-align:center}
+.premium-preview-dialog::backdrop{background:rgba(4,7,16,.78);backdrop-filter:blur(3px)}
+.premium-preview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;margin-bottom:8px}
+.premium-preview-head>div{display:flex;flex-direction:column;gap:4px}
+.premium-preview-head small{color:#d1c5a8}
+.premium-preview-dialog canvas{display:block;width:min(260px,72vw);height:auto;max-height:48vh;margin:0 auto 8px;image-rendering:pixelated;border:1px solid rgba(239,195,96,.3);background:#11182b;border-radius:8px}
+.premium-preview-dialog p{margin:8px 0}
