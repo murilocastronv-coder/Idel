@@ -92,6 +92,8 @@
       case 'trade': return onTrade(m);
       case 'market': MK.data = m; MK.busy = false; if (m.view === 'mine') mkBadge(m.rows); if (S.panel === 'market' && (MK.tab === m.view || (MK.tab === 'sell' && m.view === 'mine' && MK.listed))) { if (MK.listed) { MK.listed = false; MK.tab = 'mine'; } renderMarket(); } return;
       case 'marketStripe': MK.stripe = m; MK.busy = false; if (S.panel === 'market') renderMarket(); return;
+      case 'resetStatus': RSI.info = m; RSI.busy = false; if (S.panel === 'hero') renderHero(); return;
+      case 'resetStatusResult': RSI.busy = false; feed(m.text, m.ok ? 'quest' : 'warn'); if (m.ok) goldFlash('RESET STATUS!'); else alertBanner(m.text); return;
       case 'marketWallet': MK.wallet = m; if (S.panel === 'market') renderMarket(); return;
       case 'marketPix': MK.pix = m; MK.busy = false; if (S.panel === 'market') renderMarket(); return;
       case 'marketOpen': MK.busy = false; if (m.text) { mkMsg(m.text, true); feed(m.text, 'quest'); } if (m.url && (/^https:\/\/([a-z0-9-]+\.)*stripe\.com\//.test(m.url) || /^http:\/\/localhost/.test(m.url))) location.assign(m.url); return;
@@ -1971,7 +1973,7 @@
   function renderPanel(name) {
     if (!S.char) return;
     if (name === 'bag') renderBag();
-    else if (name === 'hero') renderHero();
+    else if (name === 'hero') { send({ type: 'resetStatus' }); renderHero(); }
     else if (name === 'maps') renderMaps();
     else if (name === 'shop') renderShop();
     else if (name === 'config') renderConfig();
@@ -2437,6 +2439,14 @@
   }
   $$('#rank-tabs [data-by]').forEach((t) => { t.onclick = () => { RK.by = t.dataset.by; $('#g-rank-body').innerHTML = ''; renderRank(); }; });
 
+  const RSI = { info: null, busy: false };
+  function resetStatusBtn() {
+    const i = RSI.info;
+    if (!i) return '<button class="btn small rs-btn" type="button" disabled>RESET STATUS…</button>';
+    const label = i.free ? 'RESET STATUS – GRATUITO' : i.items > 0 ? 'RESET STATUS – 1 ITEM' : 'RESET STATUS – NECESSÁRIO ITEM';
+    return `<button class="btn small rs-btn ${i.free ? 'btn-gold' : i.items > 0 ? 'btn-gold' : ''}" type="button" id="rs-btn" ${RSI.busy || (!i.free && i.items < 1) ? 'disabled' : ''}>${label}</button>
+      <small class="muted">${i.free ? 'Seu primeiro reset é grátis.' : `Você tem ${i.items} Reset Status.${i.items < 1 ? ' Compre na loja da Mercadora Pasi.' : ''}`}</small>`;
+  }
   function renderHero() {
     const c = S.char, me = S.me || {};
     const names = { str: 'Força', agi: 'Agilidade', vit: 'Vitalidade', ene: 'Energia', cmd: 'Comando' };
@@ -2445,6 +2455,7 @@
       <p>${esc(c.name)} · <b class="cls-name">${esc(c.className || S.data.classes[c.cls].name)}</b> · Nível ${c.level}${c.resets ? ` · ${c.resets} resets` : ''}</p>
       ${c.evolutions && c.evo < c.evolutions.length - 1 ? `<p class="muted small">Próxima evolução: ${esc(c.evolutions[c.evo + 1])} (missão com ${c.evo === 0 && !['magic_gladiator', 'dark_lord'].includes(c.cls) ? 'a Priestess Sevina, em Devias' : 'Marlon, em Lorencia'})</p>` : ''}
       <p class="free-pts">${c.free > 0 ? `${c.free} pontos para distribuir` : 'Nenhum ponto livre'}</p>
+      <div class="rs-row">${resetStatusBtn()}</div>
       <div class="stat-rows">${keys.map((k) => `<div class="stat-row"><span>${names[k]}</span><b>${c.stats[k]}</b>
         <button class="btn small" type="button" data-stat="${k}" data-n="1" ${c.free < 1 ? 'disabled' : ''} aria-label="Adicionar 1 ponto em ${names[k]}">+1</button>
         <button class="btn small" type="button" data-stat="${k}" data-n="${Math.min(10, c.free) || 10}" ${c.free < 1 ? 'disabled' : ''} aria-label="Adicionar até 10 pontos em ${names[k]}">+${Math.min(10, c.free) || 10}</button></div>`).join('')}</div>
@@ -2463,6 +2474,10 @@
       <p class="mode-note">Servidor <b>${esc(c.mode)}</b>: subir de nível é difícil e morrer custa ${Math.round(c.deathLoss * 100)}% da EXP do nível.</p>`;
     $$('#hero-body [data-stat]').forEach((b) => { b.onclick = () => send({ type: 'stat', stat: b.dataset.stat, n: Number(b.dataset.n) }); });
     $('#auto-stats').onchange = (e) => send({ type: 'settings', settings: { autoStats: e.target.checked } });
+    const rb = $('#rs-btn');
+    if (rb) rb.onclick = () => tradeDialog(`<h3>RESETAR ATRIBUTOS?</h3><p>Deseja realmente resetar todos os pontos distribuídos do seu personagem?</p>
+      <p class="muted">Todos os pontos investidos em atributos serão devolvidos para você distribuir novamente${RSI.info && RSI.info.points ? ` (${fmt.format(RSI.info.points)} pontos)` : ''}. ${RSI.info && RSI.info.free ? 'Este é o seu reset grátis.' : 'Será consumido 1 item Reset Status.'}</p>`,
+      [{ label: 'CONFIRMAR', cls: 'btn-gold', fn: () => { RSI.busy = true; renderHero(); send({ type: 'resetStatus', action: 'use' }); } }, { label: 'CANCELAR' }]);
     void me;
   }
 
@@ -2584,11 +2599,11 @@
       return;
     }
     body.innerHTML = vipHtml() + `<p>Seu Zen: <b>${fmt.format(S.char.zen)}</b></p>` + Object.entries(S.data.shop).map(([id, s]) => `
-      <div class="shop-item"><canvas width="36" height="36" data-icon="${id === 'pot_hp' ? 'potion_hp' : 'potion_mp'}"></canvas>
-        <div><b>${esc(s.name)}</b> — ${s.price} Zen<br><small class="muted">${esc(s.desc)} · você tem ${fmt.format(id === 'pot_hp' ? S.char.pots.hp : S.char.pots.mp)}</small></div>
-        <div class="row">${[10, 50, 100].map((q) => `<button class="btn small" type="button" data-buy="${id}" data-q="${q}" ${S.char.zen < q * s.price ? 'disabled' : ''}>${q}× · ${fmt.format(q * s.price)}</button>`).join('')}</div>
+      <div class="shop-item"><canvas width="36" height="36" data-icon="${s.icon || (id === 'pot_hp' ? 'potion_hp' : 'potion_mp')}"></canvas>
+        <div><b>${esc(s.name)}</b> — ${fmt.format(s.price)} Zen<br><small class="muted">${esc(s.desc)} · você tem ${fmt.format(s.item ? S.char.items.filter((i) => i.base === s.item).reduce((a, i) => a + (Number(i.qty) || 1), 0) : id === 'pot_hp' ? S.char.pots.hp : S.char.pots.mp)}</small></div>
+        <div class="row">${(s.item ? [1, 5, 10] : [10, 50, 100]).map((q) => `<button class="btn small" type="button" data-buy="${id}" data-q="${q}" ${S.char.zen < q * s.price ? 'disabled' : ''}>${q}× · ${fmt.format(q * s.price)}</button>`).join('')}</div>
       </div>`).join('') + '<p class="muted">Para vender itens, abra a Bolsa e toque no item.</p><div id="premium-store"></div>';
-    $$('#shop-body canvas[data-icon]').forEach((c) => PA.drawIcon(c.getContext('2d'), c.dataset.icon, 0, 0, 3, '#3a7aff'));
+    $$('#shop-body canvas[data-icon]').forEach((c) => PA.drawIcon(c.getContext('2d'), c.dataset.icon, 0, 0, 3, c.dataset.icon === 'scroll' ? '#7affc8' : '#3a7aff'));
     $$('#shop-body [data-buy]').forEach((b) => { b.onclick = () => send({ type: 'buy', item: b.dataset.buy, qty: Number(b.dataset.q) }); });
     bindVip(body);
     renderPremiumStore(body);

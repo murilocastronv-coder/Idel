@@ -427,6 +427,8 @@ const ITEM_BASES = {
   devil_eye_7: { name: "Devil's Eye +7", slot: 'material', icon: 'eye', ic: '#ffb43a', req: 1, stack: 999, rarity: 'epic', value: 39200, special: true, devil: 7, desc: "Junte com Devil's Key +7 e uma Jewel of Chaos na Chaos Machine para criar o Devil's Invitation +7." },
   devil_key_7: { name: "Devil's Key +7", slot: 'material', icon: 'key', ic: '#ffb43a', req: 1, stack: 999, rarity: 'epic', value: 39200, special: true, devil: 7, desc: "Junte com Devil's Eye +7 e uma Jewel of Chaos na Chaos Machine para criar o Devil's Invitation +7." },
   devil_inv_7: { name: "Devil's Invitation +7", slot: 'material', icon: 'scroll', ic: '#ffb43a', req: 1, stack: 999, rarity: 'legendary', value: 122500, special: true, devil: 7, event: 'devil', desc: 'Entrada do Devil Square +7. Só é gasto quando a entrada no evento é confirmada.' },
+  reset_status: { name: 'Reset Status', slot: 'material', icon: 'scroll', ic: '#7affc8', req: 1, stack: 999, rarity: 'epic', value: 1000, special: true,
+    desc: 'Permite resetar todos os pontos distribuídos nos atributos do personagem, devolvendo os pontos para redistribuição.' },
   loch_feather: { name: "Loch's Feather", slot: 'material', icon: 'feather', ic: '#ffb43a', req: 1, stack: 999, rarity: 'epic', value: 9000, special: true,
     desc: 'Pena rara. Necessária para evoluir asas para o nível 2 e para evoluir a capa do Dark Lord.' },
   // armas do Caos: usadas como base das receitas (o + e a raridade aumentam a chance)
@@ -596,6 +598,7 @@ const RARITY_WEIGHTS = {
 const SHOP = {
   pot_hp: { name: 'Poção de Vida', price: 20, desc: 'Recupera 35% da vida' },
   pot_mp: { name: 'Poção de Mana', price: 20, desc: 'Recupera 50% da mana' },
+  reset_status: { name: 'Reset Status', price: 2000000, item: 'reset_status', icon: 'scroll', desc: 'Reseta os pontos dos atributos (1 uso por item)' },
 };
 
 const INVENTORY_SIZE = 40;

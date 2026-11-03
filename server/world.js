@@ -18,6 +18,7 @@ const ARENA = require('./arena');
 const UPG = require('./upgrade');
 const TRADE = require('./trade');
 const MARKET = require('./market');
+const RSTAT = require('./reset-status');
 const SOCIAL = require('./social');
 const EXCELLENT = require('./excellent');
 
@@ -689,6 +690,7 @@ class World {
         if (MARKET.isBlocked(p) && (msg.action === 'invite' || (msg.action === 'answer' && msg.accept))) return p.send({ type: 'log', kind: 'warn', text: 'Sua conta está bloqueada no mercado e nas trocas até pagar a comissão pendente (Mercado → Minhas vendas).' });
         return p.run(() => TRADE.act(this, p, msg));
       case 'market': return p.run(() => MARKET.act(this, p, msg));
+      case 'resetStatus': return p.run(() => RSTAT.act(this, p, msg));
       case 'vault': return p.run(() => VAULT.act(this, p, msg));
       case 'arena': return p.run(() => ARENA.act(this, p, msg));
       case 'upgPreview': return p.run(() => UPG.preview(p, msg));
@@ -769,6 +771,17 @@ class World {
     if (!p.map.def.safe) return p.send({ type: 'log', kind: 'warn', text: 'A loja fica na cidade de Lorencia.' });
     const cost = s.price * qty;
     if (p.zen < cost) return p.send({ type: 'log', kind: 'warn', text: `Zen insuficiente: custa ${cost}.` });
+    if (s.item) {
+      // item da loja (ex.: Reset Status): entra na bolsa; o que não couber não é cobrado
+      if (qty > 50) return undefined;
+      p.zen -= cost;
+      const got = await this.giveMaterial(p, s.item, qty, { silent: true });
+      if (got < qty) p.zen += s.price * (qty - got);
+      await this.persist(p);
+      p.send({ type: 'log', kind: got ? 'info' : 'warn', text: got ? `Comprou ${got}× ${s.name} por ${(s.price * got).toLocaleString('pt-BR')} Zen.` : 'Sua bolsa está cheia.' });
+      p.send(p.charState());
+      return undefined;
+    }
     p.zen -= cost;
     if (item === 'pot_hp') p.pots.hp += qty; else p.pots.mp += qty;
     await this.persist(p);

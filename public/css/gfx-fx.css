@@ -90,3 +90,5 @@
 @keyframes mk-notice-bar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 @media (max-width: 520px) { .mk-notice { grid-template-columns: auto 1fr; } .mk-notice-act { grid-column: 1 / -1; justify-content: flex-end; } .mk-notice-txt b { font-size: 14px; } }
 @media (prefers-reduced-motion: reduce) { .mk-notice { transition: opacity .2s; } }
+.rs-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 8px; }
+.rs-btn { font-weight: 800; letter-spacing: .3px; }
