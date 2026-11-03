@@ -1633,5 +1633,14 @@ window.I18N_EN = {
 "item devolvido": "item returned",
 "item para coletar": "item to collect",
 "{0} item(ns) de volta": "{0} item(s) returned",
-"ou": "or"
+"ou": "or",
+"🎁 Dar de presente para outro jogador": "🎁 Give as a gift to another player",
+"Nome de usuário da conta (o login, não o herói)": "Account username (the login, not the hero)",
+"Você paga e o VIP vai para a conta digitada. A pessoa recebe um aviso no jogo.": "You pay and the VIP goes to the account you typed. They get a notice in game.",
+"Digite o nome de usuário de quem vai ganhar o VIP.": "Type the username of who will get the VIP.",
+"Pagamento recebido! O VIP de presente é entregue em instantes.": "Payment received! The gifted VIP will be delivered shortly.",
+"Pagamento recebido! O VIP de presente vai para a conta escolhida em instantes.": "Payment received! The gifted VIP goes to the chosen account shortly.",
+"Não encontramos a conta \"{0}\". Confira o nome de usuário (não é o nome do herói).": "We couldn't find the account \"{0}\". Check the username (not the hero name).",
+"🎁 {0} te deu de presente {1} por {2} dias!": "🎁 {0} gave you {1} for {2} days as a gift!",
+"Nome de usuário inválido.": "Invalid username."
 };

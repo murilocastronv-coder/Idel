@@ -94,7 +94,7 @@ async function grant(accountId, planId, days) {
 }
 
 // ---------- Stripe ----------
-async function createCheckout({ account, planId, days, baseUrl, back }) {
+async function createCheckout({ account, planId, days, baseUrl, back, gift }) {
   if (!enabled()) { const e = new Error('Pagamentos indisponíveis no momento.'); e.status = 503; throw e; }
   const plan = PLANS[planId];
   if (!plan || !plan.prices[days]) { const e = new Error('Plano inválido.'); e.status = 400; throw e; }
@@ -103,7 +103,7 @@ async function createCheckout({ account, planId, days, baseUrl, back }) {
   const sep = backPath.includes('?') ? '&' : '?';
   const f = new URLSearchParams();
   f.set('mode', 'payment');
-  f.set('success_url', `${baseUrl}${backPath}${sep}vip=ok`);
+  f.set('success_url', `${baseUrl}${backPath}${sep}vip=${gift ? 'presente' : 'ok'}`);
   f.set('cancel_url', `${baseUrl}${backPath}${sep}vip=cancelado`);
   f.set('client_reference_id', String(account.id));
   if (account.email) f.set('customer_email', account.email);
@@ -111,14 +111,15 @@ async function createCheckout({ account, planId, days, baseUrl, back }) {
   f.set('line_items[0][quantity]', '1');
   f.set('line_items[0][price_data][currency]', CURRENCY);
   f.set('line_items[0][price_data][unit_amount]', String(amount));
-  f.set('line_items[0][price_data][product_data][name]', `${plan.name} — ${days} dias`);
-  f.set('line_items[0][price_data][product_data][description]', `MU Idle Legends · conta ${account.username} · ${plan.perks.slice(0, 3).join(', ')}`);
+  f.set('line_items[0][price_data][product_data][name]', `${plan.name} — ${days} dias${gift ? ` (presente para ${gift.username})` : ''}`);
+  f.set('line_items[0][price_data][product_data][description]', `MU Idle Legends · ${gift ? `presente de ${account.username} para a conta ${gift.username}` : `conta ${account.username}`} · ${plan.perks.slice(0, 3).join(', ')}`);
   for (const pre of ['metadata', 'payment_intent_data[metadata]']) {
     f.set(`${pre}[game]`, 'muidle');
     f.set(`${pre}[acc]`, String(account.id));
     f.set(`${pre}[plan]`, plan.id);
     f.set(`${pre}[days]`, String(days));
     f.set(`${pre}[amt]`, String(amount));
+    if (gift) f.set(`${pre}[to]`, String(gift.id));
   }
   const r = await fetch((process.env.STRIPE_API || 'https://api.stripe.com') + '/v1/checkout/sessions', {
     method: 'POST',
@@ -151,6 +152,7 @@ async function deliver(s, onGranted) {
   if (md.game !== 'muidle') return 'outro-produto'; // eventos de outros projetos no mesmo Stripe
   const plan = PLANS[md.plan];
   const days = Number(md.days), acc = Number(md.acc), amt = Number(md.amt);
+  const to = Number(md.to) || acc; // VIP de presente: quem recebe é a conta escolhida pelo comprador
   if (!plan || !DAYS.includes(days) || !acc) return 'metadados-invalidos';
   if (String(s.currency).toLowerCase() !== CURRENCY || s.amount_total !== amt) {
     console.error(`[vip] valor diferente na sessão ${s.id}: ${s.amount_total} ${s.currency} (esperado ${amt} ${CURRENCY}). Nada foi entregue.`);
@@ -158,11 +160,11 @@ async function deliver(s, onGranted) {
   }
   const ins = await db.query(`INSERT INTO payments (provider, ref, account_id, plan, days, amount_cents, currency, status, note)
     VALUES ('stripe', $1, $2, $3, $4, $5, $6, 'paid', $7) ON CONFLICT (ref) DO NOTHING RETURNING id`,
-  [s.id, acc, plan.id, days, s.amount_total, CURRENCY, (s.customer_details && s.customer_details.email) || s.customer_email || null]);
+  [s.id, to, plan.id, days, s.amount_total, CURRENCY, [((s.customer_details && s.customer_details.email) || s.customer_email || ''), to !== acc ? `presente da conta #${acc}` : ''].filter(Boolean).join(' · ') || null]);
   if (!ins.rows[0]) return 'ja-entregue';
-  const row = await grant(acc, plan.id, days);
-  console.log(`[vip] ${plan.name} ${days} dias entregue para a conta ${row.username} (sessão ${s.id})`);
-  if (onGranted) await onGranted(acc, plan, days);
+  const row = await grant(to, plan.id, days);
+  console.log(`[vip] ${plan.name} ${days} dias entregue para a conta ${row.username}${to !== acc ? ` (presente da conta #${acc})` : ''} (sessão ${s.id})`);
+  if (onGranted) await onGranted(to, plan, days, to !== acc ? acc : null);
   return 'entregue';
 }
 

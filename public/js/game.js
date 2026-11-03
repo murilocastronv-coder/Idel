@@ -2505,19 +2505,30 @@
       <div class="vip-plan t${p.tier}"><b style="color:${p.color}">${p.tier === 2 ? '◆' : '★'} ${esc(p.name)}</b>
         <ul>${p.perks.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
         <div class="row">${V.days.map((d) => `<button class="btn small ${d === 30 ? 'btn-gold' : ''}" type="button" data-vip="${p.id}" data-days="${d}" ${V.enabled ? '' : 'disabled'}>${d} dias · ${brl.format(p.prices[d] / 100)}</button>`).join('')}</div>
-      </div>`).join('')}</div>${V.enabled ? '<p class="muted small">Pagamento seguro pelo Stripe. O VIP vale para todos os heróis da conta e soma dias se você renovar.</p>' : '<p class="muted small">Pagamentos em breve.</p>'}</div>`;
+      </div>`).join('')}</div>
+      ${V.enabled ? `<div class="vip-gift"><label class="adt-check"><input type="checkbox" id="vip-gift-on"> 🎁 Dar de presente para outro jogador</label>
+        <div class="row" id="vip-gift-row" hidden><input type="text" id="vip-gift-to" maxlength="40" placeholder="Nome de usuário da conta (o login, não o herói)" autocomplete="off"></div>
+        <p class="muted small" id="vip-gift-hint" hidden>Você paga e o VIP vai para a conta digitada. A pessoa recebe um aviso no jogo.</p></div>` : ''}
+      ${V.enabled ? '<p class="muted small">Pagamento seguro pelo Stripe. O VIP vale para todos os heróis da conta e soma dias se você renovar.</p>' : '<p class="muted small">Pagamentos em breve.</p>'}</div>`;
   }
-  async function buyVip(plan, days, btn) {
+  async function buyVip(plan, days, btn, root) {
+    const on = root && $('#vip-gift-on', root) && $('#vip-gift-on', root).checked;
+    const giftTo = on ? $('#vip-gift-to', root).value.trim() : '';
+    if (on && !giftTo) { feed('Digite o nome de usuário de quem vai ganhar o VIP.', 'warn'); $('#vip-gift-to', root).focus(); return; }
     btn.disabled = true;
     try {
       const r = await fetch('/api/vip/checkout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'mui' },
-        body: JSON.stringify({ plan, days, back: `/game.html?c=${encodeURIComponent(charId)}` }) });
+        body: JSON.stringify({ plan, days, giftTo: giftTo || undefined, back: `/game.html?c=${encodeURIComponent(charId)}` }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j.url) throw new Error(j.error || 'Não foi possível abrir o pagamento. Tente de novo.');
       location.href = j.url;
     } catch (e) { feed(e.message, 'warn'); btn.disabled = false; }
   }
-  function bindVip(root) { $$('[data-vip]', root).forEach((b) => { b.onclick = () => buyVip(b.dataset.vip, Number(b.dataset.days), b); }); }
+  function bindVip(root) {
+    $$('[data-vip]', root).forEach((b) => { b.onclick = () => buyVip(b.dataset.vip, Number(b.dataset.days), b, root); });
+    const g = $('#vip-gift-on', root);
+    if (g) g.onchange = () => { $('#vip-gift-row', root).hidden = !g.checked; $('#vip-gift-hint', root).hidden = !g.checked; $$('[data-vip]', root).forEach((b) => { b.textContent = b.textContent.replace(/^🎁 /, ''); if (g.checked) b.textContent = '🎁 ' + b.textContent; }); if (g.checked) $('#vip-gift-to', root).focus(); };
+  }
 
 
   async function renderPremiumStore(root) {
@@ -3740,6 +3751,7 @@
       history.replaceState(null, '', `/game.html?c=${encodeURIComponent(charId)}`);
       setTimeout(() => {
         if (vipQ === 'ok') { alertBanner('Pagamento recebido! Seu VIP é ativado em instantes.'); feed('Pagamento recebido! Seu VIP é ativado em instantes.', 'quest'); }
+        else if (vipQ === 'presente') { alertBanner('Pagamento recebido! O VIP de presente é entregue em instantes.'); feed('Pagamento recebido! O VIP de presente vai para a conta escolhida em instantes.', 'quest'); }
         else feed('Pagamento cancelado. Nada foi cobrado.', 'warn');
       }, 2500);
     }

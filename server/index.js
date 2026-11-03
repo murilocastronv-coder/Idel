@@ -278,9 +278,18 @@ route('POST', '/api/vip/checkout', async (req) => {
   const body = await readJson(req);
   const days = Number(body.days);
   let r;
-  try { r = await VIP.createCheckout({ account: acc, planId: String(body.plan || ''), days, baseUrl: publicUrl(req), back: body.back }); }
+  // VIP de presente: o comprador paga e o VIP vai para a conta do usuário digitado
+  let gift = null;
+  const giftName = String(body.giftTo || '').trim();
+  if (giftName) {
+    if (giftName.length > 40) throw new HttpError(400, 'Nome de usuário inválido.');
+    const g = (await db.query('SELECT id, username FROM accounts WHERE lower(username) = lower($1)', [giftName])).rows[0];
+    if (!g) throw new HttpError(404, `Não encontramos a conta "${giftName}". Confira o nome de usuário (não é o nome do herói).`);
+    if (String(g.id) !== String(acc.id)) gift = { id: g.id, username: g.username };
+  }
+  try { r = await VIP.createCheckout({ account: acc, planId: String(body.plan || ''), days, baseUrl: publicUrl(req), back: body.back, gift }); }
   catch (e) { throw new HttpError(e.status || 500, e.message); }
-  await audit(acc.id, 'vip_checkout', req, { plan: body.plan, days });
+  await audit(acc.id, 'vip_checkout', req, { plan: body.plan, days, giftTo: gift ? gift.username : undefined });
   return { ok: true, url: r.url };
 });
 
@@ -921,11 +930,17 @@ const server = http.createServer(async (req, res) => {
         req.on('data', (d) => { n += d.length; if (n > 512 * 1024) { bad(new Error('grande')); req.destroy(); } else ch.push(d); });
         req.on('end', () => ok(Buffer.concat(ch))); req.on('error', bad);
       });
-      const r = await VIP.webhook(raw, req.headers['stripe-signature'], async (accId, plan, days) => {
+      const r = await VIP.webhook(raw, req.headers['stripe-signature'], async (accId, plan, days, giftFrom) => {
         if (world) world.refreshVip(accId).catch(() => {});
         try {
+          let fromName = null;
+          if (giftFrom) {
+            fromName = ((await db.query('SELECT username FROM accounts WHERE id = $1', [giftFrom])).rows[0] || {}).username || 'Conta #' + giftFrom;
+            if (world) for (const p of world.players.values()) if (p.accountId === String(accId)) p.send({ type: 'log', kind: 'quest', text: `🎁 ${fromName} te deu de presente ${plan.name} por ${days} dias!` });
+          }
           const { rows } = await db.query('SELECT username, email FROM accounts WHERE id = $1', [accId]);
-          const buyer = rows[0] || { username: 'Conta #' + accId, email: '' };
+          const buyer0 = rows[0] || { username: 'Conta #' + accId, email: '' };
+          const buyer = fromName ? { ...buyer0, username: `${buyer0.username} (presente de ${fromName})` } : buyer0;
           const amount = Number(plan.prices[days] || 0);
           const money = (amount / 100).toFixed(2);
           const when = new Date().toLocaleString('pt-BR', { timeZone: 'Europe/Paris' });
