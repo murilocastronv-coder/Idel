@@ -17,6 +17,7 @@ const sec = require('./security');
 const mail = require('./mail');
 const VIP = require('./vip');
 const STORE = require('./premium-shop');
+const MARKET_REAL = require('./market-real');
 const ADMIN = require('./admin');
 const game = require('./gamedata');
 const { WSServer } = require('./ws');
@@ -926,6 +927,7 @@ const server = http.createServer(async (req, res) => {
           });
         } catch (e) { console.error('[vip] aviso de compra por e-mail:', e.message); }
       }, async (session) => {
+        if (session.metadata && session.metadata.game === 'muidle-market') return MARKET_REAL.webhook(session);
         const result = await STORE.webhook(session);
         if (result === 'entregue') console.log(`[premium-store] pedido pago recebido: ${session.id}`);
       });

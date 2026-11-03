@@ -5,6 +5,7 @@
 //  o Zen da venda e os itens cancelados/expirados ficam para o vendedor coletar (funciona mesmo com ele offline).
 const db = require('./db');
 const G = require('./gamedata');
+const REAL = require('./market-real');
 
 const FEE = 0.10;
 const MAX_ACTIVE = 10;
@@ -15,6 +16,7 @@ let W = null, H = null;
 
 function init(world, helpers) {
   W = world; H = helpers;
+  REAL.init(world, helpers);
   // anúncios vencidos voltam para o vendedor coletar
   setInterval(() => {
     db.query("UPDATE market_listings SET status = 'expired', closed_at = now() WHERE status = 'active' AND expires_at < now()").catch((e) => console.error('[mercado] expirar', e.message));
@@ -23,7 +25,7 @@ function init(world, helpers) {
 
 const nameOf = (base) => (G.ITEM_BASES[base] || {}).name || base;
 const fmt = (n) => Math.round(n).toLocaleString('pt-BR');
-const feeOf = (price) => Math.floor(price * FEE);
+const feeOf = (price, cur) => (cur === 'brl' ? REAL.feeOf(price) : Math.floor(price * FEE));
 function sellable(it) {
   const b = G.ITEM_BASES[it.base];
   if (!b) return 'Item desconhecido.';
@@ -35,7 +37,7 @@ function sellable(it) {
 }
 function view(r) {
   const it = H.publicItem({ id: 'L' + r.id, base: r.base, rarity: r.rarity, plus: r.plus, qty: r.qty, excellent_options: r.excellent_options, equipped: false });
-  return { id: String(r.id), item: it, price: Number(r.price), fee: Number(r.fee) || feeOf(Number(r.price)), seller: r.seller_name, sellerId: String(r.seller_char),
+  return { id: String(r.id), item: it, price: Number(r.price), fee: Number(r.fee) || feeOf(Number(r.price), r.currency), cur: r.currency || 'zen', seller: r.seller_name, sellerId: String(r.seller_char),
     status: r.status, buyer: r.buyer_name || null, collected: !!r.collected, expires: r.expires_at ? new Date(r.expires_at).getTime() : 0, closed: r.closed_at ? new Date(r.closed_at).getTime() : 0 };
 }
 
@@ -57,20 +59,22 @@ async function browse(p, msg) {
       if (cat === 'material') return b.slot === 'material' || c === 'material' || c === 'jewel';
       return !['weapon', 'helm', 'armor', 'pants', 'gloves', 'boots', 'shield', 'ring', 'pendant', 'wings', 'material'].includes(b.slot);
     }).map(([id]) => id);
-    if (!bases.length) return p.send({ type: 'market', view: 'browse', rows: [], page, more: false, fee: FEE });
+    if (!bases.length) return p.send({ type: 'market', view: 'browse', cur: msg.cur === 'brl' ? 'brl' : 'zen', rows: [], page, more: false, fee: FEE, real: REAL.enabled() });
   }
   const args = [PAGE + 1, page * PAGE];
-  let where = "status = 'active' AND expires_at > now()";
+  const cur = msg.cur === 'brl' ? 'brl' : 'zen';
+  args.push(cur);
+  let where = `status = 'active' AND expires_at > now() AND currency = $${args.length}`;
   if (bases) { args.push(bases.join(',')); where += ` AND base = ANY(string_to_array($${args.length}, ','))`; }
   if (msg.rarity && /^[a-z]+$/.test(String(msg.rarity))) { args.push(String(msg.rarity)); where += ` AND rarity = $${args.length}`; }
   const { rows } = await db.query(`SELECT * FROM market_listings WHERE ${where} ORDER BY ${sort} LIMIT $1 OFFSET $2`, args);
-  p.send({ type: 'market', view: 'browse', rows: rows.slice(0, PAGE).map(view), page, more: rows.length > PAGE, fee: FEE, myZen: p.zen });
+  p.send({ type: 'market', view: 'browse', cur, rows: rows.slice(0, PAGE).map(view), page, more: rows.length > PAGE, fee: FEE, myZen: p.zen, real: REAL.enabled() });
 }
 
 async function mine(p) {
   const { rows } = await db.query(`SELECT * FROM market_listings WHERE seller_char = $1 AND (status = 'active' OR NOT collected OR closed_at > now() - interval '3 days')
     ORDER BY (status = 'active') DESC, (NOT collected AND status <> 'active') DESC, id DESC LIMIT 60`, [p.charId]);
-  p.send({ type: 'market', view: 'mine', rows: rows.map(view), fee: FEE, max: MAX_ACTIVE, hours: DURATION_H, myZen: p.zen });
+  p.send({ type: 'market', view: 'mine', rows: rows.map(view), fee: FEE, max: MAX_ACTIVE, hours: DURATION_H, myZen: p.zen, real: REAL.enabled() });
 }
 
 async function list(world, p, msg) {
@@ -78,13 +82,23 @@ async function list(world, p, msg) {
   const it = p.items.find((i) => String(i.id) === String(msg.item));
   if (!it) return say('Este item não está na sua bolsa.');
   const why = sellable(it); if (why) return say(why);
+  const cur = msg.cur === 'brl' ? 'brl' : 'zen';
   const price = Math.floor(Number(msg.price));
-  if (!Number.isFinite(price) || price < 1) return say('Coloque um preço em Zen.');
-  if (price > MAX_PRICE) return say(`O preço máximo é ${fmt(MAX_PRICE)} Zen.`);
+  let seller = null;
+  if (cur === 'brl') {
+    if (!Number.isFinite(price) || price < REAL.MIN_CENTS) return say(`O preço mínimo em reais é ${REAL.brl(REAL.MIN_CENTS)}.`);
+    if (price > REAL.MAX_CENTS) return say(`O preço máximo em reais é ${REAL.brl(REAL.MAX_CENTS)}.`);
+    const sf = await REAL.sellerForListing(p);
+    if (sf.error) return say(sf.error);
+    seller = sf.seller;
+  } else {
+    if (!Number.isFinite(price) || price < 1) return say('Coloque um preço em Zen.');
+    if (price > MAX_PRICE) return say(`O preço máximo é ${fmt(MAX_PRICE)} Zen.`);
+  }
   const have = Number(it.qty) || 1;
   const qty = G.ITEM_BASES[it.base].stack ? Math.floor(Number(msg.qty) || have) : 1;
   if (!(qty >= 1 && qty <= have)) return say(`Quantidade inválida (você tem ${fmt(have)}).`);
-  const active = (await db.query("SELECT count(*)::int AS n FROM market_listings WHERE seller_char = $1 AND status = 'active'", [p.charId])).rows[0].n;
+  const active = (await db.query("SELECT count(*)::int AS n FROM market_listings WHERE seller_char = $1 AND status IN ('active', 'reserved')", [p.charId])).rows[0].n;
   if (active >= MAX_ACTIVE) return say(`No máximo ${MAX_ACTIVE} anúncios ativos ao mesmo tempo.`);
   const whole = qty === have;
   let row;
@@ -94,9 +108,10 @@ async function list(world, p, msg) {
         ? await q('DELETE FROM items WHERE id = $1 AND character_id = $2 AND qty = $3 AND equipped = FALSE AND locked = FALSE AND vault_no IS NULL RETURNING id', [it.id, p.charId, have])
         : await q('UPDATE items SET qty = qty - $3 WHERE id = $1 AND character_id = $2 AND qty = $4 AND vault_no IS NULL RETURNING id', [it.id, p.charId, qty, have]);
       if (!u.rows[0]) throw new Error('item mudou');
-      const r = await q(`INSERT INTO market_listings (seller_char, seller_name, base, rarity, plus, qty, excellent_options, price, fee, expires_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, now() + ($10 || ' hours')::interval) RETURNING *`,
-        [p.charId, p.name, it.base, it.rarity || 'common', it.plus || 0, qty, JSON.stringify(it.excellent_options || []), price, feeOf(price), String(DURATION_H)]);
+      const r = await q(`INSERT INTO market_listings (seller_char, seller_name, base, rarity, plus, qty, excellent_options, price, fee, expires_at, currency, seller_account, stripe_account)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, now() + ($10 || ' hours')::interval, $11, $12, $13) RETURNING *`,
+        [p.charId, p.name, it.base, it.rarity || 'common', it.plus || 0, qty, JSON.stringify(it.excellent_options || []), price, feeOf(price, cur), String(DURATION_H),
+          cur, p.accountId, seller ? seller.stripe_account : null]);
       return r.rows[0];
     });
   } catch (e) {
@@ -106,7 +121,8 @@ async function list(world, p, msg) {
   if (whole) p.items = p.items.filter((i) => i !== it); else it.qty = have - qty;
   p.dirty = true;
   p.send(p.charState());
-  p.send({ type: 'marketMsg', ok: true, text: `${qty > 1 ? qty + '× ' : ''}${nameOf(it.base)}${it.plus ? ' +' + it.plus : ''} anunciado por ${fmt(price)} Zen. Você recebe ${fmt(price - feeOf(price))} Zen quando vender.` });
+  const money = (v) => (cur === 'brl' ? REAL.brl(v) : `${fmt(v)} Zen`);
+  p.send({ type: 'marketMsg', ok: true, text: `${qty > 1 ? qty + '× ' : ''}${nameOf(it.base)}${it.plus ? ' +' + it.plus : ''} anunciado por ${money(price)}. Você recebe ${money(price - feeOf(price, cur))}${cur === 'brl' ? ' direto na sua conta Stripe' : ''} quando vender.` });
   return mine(p);
 }
 
@@ -116,6 +132,7 @@ async function buy(world, p, msg) {
   if (!Number.isFinite(id)) return say('Anúncio inválido.');
   const r = (await db.query('SELECT * FROM market_listings WHERE id = $1', [id])).rows[0];
   if (!r || r.status !== 'active' || new Date(r.expires_at).getTime() < Date.now()) return say('Este anúncio não está mais à venda.');
+  if (r.currency === 'brl') return REAL.act(p, { ...msg, action: 'buyReal' });
   if (String(r.seller_char) === String(p.charId)) return say('Você não pode comprar o seu próprio anúncio. Use "Minhas vendas" para cancelar.');
   const price = Number(r.price);
   if (Number(msg.price) !== price) return say('O preço mudou. Confira de novo.');
@@ -126,7 +143,7 @@ async function buy(world, p, msg) {
   try {
     created = await db.tx(async (q) => {
       const u = await q(`UPDATE market_listings SET status = 'sold', buyer_char = $2, buyer_name = $3, closed_at = now()
-        WHERE id = $1 AND status = 'active' AND expires_at > now() RETURNING id`, [id, p.charId, p.name]);
+        WHERE id = $1 AND status = 'active' AND currency = 'zen' AND expires_at > now() RETURNING id`, [id, p.charId, p.name]);
       if (!u.rows[0]) throw new Error('vendido');
       const z = await q('UPDATE characters SET zen = $2 WHERE id = $1 AND zen >= $3 RETURNING id', [p.charId, newZen, price]);
       if (!z.rows[0]) throw new Error('zen');
@@ -149,7 +166,11 @@ async function buy(world, p, msg) {
 async function cancel(world, p, msg) {
   const id = Math.floor(Number(msg.id));
   const u = await db.query("UPDATE market_listings SET status = 'cancelled', closed_at = now() WHERE id = $1 AND seller_char = $2 AND status = 'active' RETURNING id", [id, p.charId]);
-  if (!u.rows[0]) p.send({ type: 'marketMsg', ok: false, text: 'Este anúncio não está mais ativo.' });
+  if (!u.rows[0]) {
+    const st = (await db.query('SELECT status FROM market_listings WHERE id = $1 AND seller_char = $2', [id, p.charId])).rows[0];
+    p.send({ type: 'marketMsg', ok: false, text: st && st.status === 'reserved' ? 'Um comprador está pagando este item agora; não dá para cancelar.' : 'Este anúncio não está mais ativo.' });
+    return mine(p);
+  }
   else p.send({ type: 'marketMsg', ok: true, text: 'Anúncio cancelado. Colete o item em "Minhas vendas".' });
   return collect(world, p, { id }, true);
 }
@@ -158,11 +179,12 @@ async function cancel(world, p, msg) {
 async function collect(world, p, msg, quiet) {
   const say = (t, ok) => p.send({ type: 'marketMsg', ok: !!ok, text: t });
   const one = msg && msg.id ? Math.floor(Number(msg.id)) : null;
-  const { rows } = await db.query(`SELECT * FROM market_listings WHERE seller_char = $1 AND status <> 'active' AND NOT collected ${one ? 'AND id = $2' : ''} ORDER BY id`,
+  const { rows } = await db.query(`SELECT * FROM market_listings WHERE seller_char = $1 AND status IN ('sold', 'cancelled', 'expired') AND NOT collected ${one ? 'AND id = $2' : ''} ORDER BY id`,
     one ? [p.charId, one] : [p.charId]);
   if (!rows.length) { if (!quiet) say('Não há nada para coletar.'); return mine(p); }
   let zen = 0; const got = []; let full = false;
   for (const r of rows) {
+    if (r.status === 'sold' && r.currency === 'brl') continue; // dinheiro real já foi para a conta Stripe
     if (r.status === 'sold') {
       const gain = Number(r.price) - Number(r.fee);
       try {
@@ -198,6 +220,7 @@ async function collect(world, p, msg, quiet) {
 function act(world, p, msg) {
   if (p.trade) return p.send({ type: 'marketMsg', ok: false, text: 'Termine a troca antes de usar o mercado.' });
   const a = String(msg.action || '');
+  const real = REAL.act(p, msg); if (real) return real;
   if (a === 'browse') return browse(p, msg);
   if (a === 'mine') return mine(p);
   if (a === 'list') return list(world, p, msg);

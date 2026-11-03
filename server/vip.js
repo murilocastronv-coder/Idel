@@ -171,7 +171,7 @@ async function webhook(raw, sigHeader, onGranted, onOther) {
   const ev = JSON.parse(raw.toString('utf8'));
   const o = ev.data && ev.data.object;
   if ((ev.type === 'checkout.session.completed' || ev.type === 'checkout.session.async_payment_succeeded') && o && o.payment_status === 'paid') {
-    if (o.metadata && o.metadata.game === 'muidle-premium') {
+    if (o.metadata && (o.metadata.game === 'muidle-premium' || o.metadata.game === 'muidle-market')) {
       const result = onOther ? await onOther(o) : 'outro-produto';
       return { code: 200, body: { received: true, result } };
     }

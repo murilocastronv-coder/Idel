@@ -57,3 +57,9 @@
 @media (max-width: 520px) { .mk-bag { grid-template-columns: repeat(6, 1fr); } .mk-row { grid-template-columns: 40px 1fr auto; padding: 4px 6px; } }
 .mk-filters select, .mk-filters input { background: #0b1020; color: var(--bone, #f0e6cc); border: 2px solid var(--edge); padding: 6px 8px; font: 600 13px var(--display); border-radius: 0; }
 .mk-filters select option { background: #0b1020; color: #f0e6cc; }
+.mk-cur { display: flex; gap: 4px; margin-bottom: 8px; }
+.mk-cur button { flex: 1; padding: 6px; border: 1px solid var(--edge); background: rgba(8, 12, 25, .7); color: var(--bone-dim); font: 700 11px var(--display); }
+.mk-cur button.on { color: #9affd0; border-color: #4ac88a; background: rgba(30, 90, 60, .45); }
+.mk-row .pr b.brl { color: #9affd0; }
+.mk-stripe { margin-bottom: 8px; border-color: #635bff; background: rgba(99, 91, 255, .12); }
+.mk-stripe select { background: #0b1020; color: #f0e6cc; border: 2px solid var(--edge); padding: 4px 6px; }
