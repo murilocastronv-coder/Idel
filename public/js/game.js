@@ -2878,7 +2878,8 @@
   $('#chat-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const inp = e.target.text, v = inp.value.trim();
-    if (v.startsWith('/')) { sendCmd(v); chatSys(v, 'cmd'); }
+    if (v.startsWith('//')) send({ type: 'chat', text: inp.value, channel: 'global' });
+    else if (v.startsWith('/')) { sendCmd(v); chatSys(v, 'cmd'); }
     else if (v) send({ type: 'chat', text: inp.value, channel: activeChatChannel, target: $('#chat-target').value });
     inp.value = '';
   });
