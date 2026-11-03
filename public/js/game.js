@@ -2573,7 +2573,7 @@
         const product = catalog[i];
         PA.drawIcon(canvas.getContext('2d'), product && product.type === 'box' ? 'box' : ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, product ? product.tone : '#d82f3f');
       });
-      $('[data-premium-preview]', holder).forEach(btn => { btn.onclick = () => {
+      $$('[data-premium-preview]', holder).forEach(btn => { btn.onclick = () => {
         const product = catalog.find(p => p.id === btn.dataset.premiumPreview);
         if (!product) return;
         const dialog = document.createElement('dialog');
