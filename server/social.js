@@ -150,7 +150,7 @@ async function chat(world,p,request) {
   let text=String(request.text||'').replace(/[\\u0000-\\u001f]/g,'').trim().slice(0,120);
   let channel=SOCIAL_CHANNELS.has(request.channel)?request.channel:'global';
   let targetName=String(request.target||'').trim();
-  const privateCommand=text.match(/^\\/\\/([^\\s]{1,20})\\s+([\\s\\S]+)$/);
+  const privateCommand=text.match(/^\/\/([^\s]{1,20})\s+([\s\S]+)$/);
   if(privateCommand){ targetName=privateCommand[1]; text=privateCommand[2].trim().slice(0,120); channel='private'; }
   if (channel === 'information') return send(p,'log',{kind:'warn',text:'O canal Informações é reservado ao servidor.'});
   if (!text) return;
