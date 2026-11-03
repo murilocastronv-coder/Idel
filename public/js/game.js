@@ -2612,7 +2612,7 @@
         Sprites.ready.then(draw).catch(() => { ctx.fillStyle = '#eee'; ctx.fillText('Prévia indisponível', 55, 140); });
         dialog.addEventListener('close', () => { cancelAnimationFrame(raf); dialog.remove(); }, { once: true });
       }; });
-      $('[data-premium-buy]', holder).forEach(btn => { btn.onclick = async () => {
+      $$('[data-premium-buy]', holder).forEach(btn => { btn.onclick = async () => {
         btn.disabled = true;
         try {
           const res = await fetch('/api/premium-store/checkout', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-Requested-With':'mui'}, body:JSON.stringify({product:btn.dataset.premiumBuy, charId, back:'/game.html?c=' + encodeURIComponent(charId)}) });
