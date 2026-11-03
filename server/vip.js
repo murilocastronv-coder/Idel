@@ -11,14 +11,14 @@ const PLANS = {
   vip1: {
     id: 'vip1', tier: 1, name: 'VIP Ouro', color: '#ffd36b',
     prices: { 15: 1300, 30: 2340 }, // centavos de real (30 dias = 2 × 15 dias com 10% de desconto)
-    exp: 2, zen: 1.5, drop: 1.25, offlineH: 12, damage: 1, bossDrop: 1.1, questReward: 1.1, healOnKill: 0.01,
-    perks: ['EXP 2x', 'Zen +50%', 'Drops +25%', 'Progresso offline de até 12 horas', 'Selo VIP Ouro no nome', 'Chance de drop de Boss +10%', 'Zen de monstros +10%', 'Prêmios de missões +10%', 'Recupera 1% da vida ao derrotar monstros'],
+    exp: 2, zen: 1.5, drop: 1.25, offlineH: 12, damage: 1, bossDrop: 1, questReward: 1, healOnKill: 0,
+    perks: ['EXP 2x', 'Zen +50%', 'Drops +25%', 'Progresso offline de até 12 horas', 'Selo VIP Ouro no nome'],
   },
   vip2: {
     id: 'vip2', tier: 2, name: 'VIP Diamante', color: '#7fe3ff',
     prices: { 15: 2600, 30: 4680 },
-    exp: 3, zen: 2, drop: 1.5, offlineH: 24, damage: 1, bossDrop: 1.2, questReward: 1.2, healOnKill: 0.02,
-    perks: ['EXP 3x', 'Zen em dobro', 'Drops +50%', 'Progresso offline de até 24 horas', 'Selo VIP Diamante no nome', 'Chance de drop de Boss +20%', 'Zen de monstros +20%', 'Prêmios de missões +20%', 'Recupera 2% da vida ao derrotar monstros'],
+    exp: 3, zen: 2, drop: 1.5, offlineH: 24, damage: 1, bossDrop: 1, questReward: 1, healOnKill: 0,
+    perks: ['EXP 3x', 'Zen em dobro', 'Drops +50%', 'Progresso offline de até 24 horas', 'Selo VIP Diamante no nome'],
   },
 };
 const DAYS = [15, 30];
