@@ -1434,4 +1434,5 @@ EN = {
 "Jogar 2D": "Play 2D", "Jogar 3D": "Play 3D", "Gráfico em pixel art": "Pixel art graphics", "Gráfico 3D realista (mesmo servidor)": "Realistic 3D graphics (same server)",
 "Gráfico do jogo": "Game graphics", "2D (pixel art)": "2D (pixel art)", "3D (realista)": "3D (realistic)",
 "Carregando o gráfico 3D…": "Loading 3D graphics…", "Seu aparelho não abriu o gráfico 3D. Jogando em 2D.": "Your device could not open the 3D graphics. Playing in 2D.",
+"Jogar em 2D": "Play in 2D", "Jogar em 3D": "Play in 3D", "Gráfico do jogo": "Game graphics",
 }

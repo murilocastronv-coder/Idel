@@ -614,6 +614,7 @@
   // ---------------- botões do topo ----------------
   // escolha do gráfico (2D ou 3D): fica salva e vale para o "Entrar" de qualquer herói — o servidor é o mesmo
   const setGfxPref = (g) => { try { localStorage.setItem('mui_gfx', g); } catch (_) { /* sem armazenamento */ } };
+  try { const q = new URLSearchParams(location.search).get('gfx'); if (q === '2d' || q === '3d') setGfxPref(q); } catch (_) { /* nada */ }
   $('#btn-play-3d').onclick = () => { setGfxPref('3d'); $('#btn-play').dataset.keep = '1'; $('#btn-play').click(); };
   $('#btn-play').onclick = () => {
     if ($('#btn-play').dataset.keep) delete $('#btn-play').dataset.keep; else setGfxPref('2d');

@@ -43,16 +43,20 @@
     try { const r = await api('GET', '/api/me'); me = r.account ? r : null; } catch (_) { me = null; }
     render();
   }
+  // 2D ou 3D: a escolha fica salva no aparelho e vale para o "Entrar" (o servidor é o mesmo)
+  let gfx = (() => { let q = null; try { q = new URLSearchParams(location.search).get('gfx'); } catch (_) { /* nada */ } if (q === '2d' || q === '3d') { try { localStorage.setItem('mui_gfx', q); } catch (_) { /* nada */ } return q; } try { return localStorage.getItem('mui_gfx') || '2d'; } catch (_) { return '2d'; } })();
+  $$('.app-gfx [data-gfx]').forEach((b) => { b.onclick = () => { gfx = b.dataset.gfx; try { localStorage.setItem('mui_gfx', gfx); } catch (_) { /* nada */ } render(); }; });
   function render() {
+    $$('.app-gfx [data-gfx]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.gfx === gfx)));
     $('#a-guest').hidden = !!me;
     $('#a-user').hidden = !me;
     if (!me) return;
     $('#a-name').textContent = me.account.username;
     const list = $('#a-heroes');
-    list.innerHTML = me.characters.slice(0, 4).map((c) => `<li><a href="/game.html?c=${encodeURIComponent(c.id)}">
+    list.innerHTML = me.characters.slice(0, 4).map((c) => `<li><a href="/game.html?c=${encodeURIComponent(c.id)}&gfx=${gfx}">
       <b>${esc(c.name)}</b><small>${esc(CLASS[c.class] || c.class)} · ${esc(T('Nv.'))} ${c.level}</small><span>${esc(T('Entrar no mundo'))}</span></a></li>`).join('');
     const play = $('#a-play');
-    if (me.characters.length) { play.href = `/game.html?c=${encodeURIComponent(me.characters[0].id)}`; play.textContent = `${T('Jogar com')} ${me.characters[0].name}`; }
+    if (me.characters.length) { play.href = `/game.html?c=${encodeURIComponent(me.characters[0].id)}&gfx=${gfx}`; play.textContent = `${T('Jogar com')} ${me.characters[0].name} · ${gfx.toUpperCase()}`; }
     else { play.href = '/?herois'; play.textContent = T('Criar meu primeiro herói'); }
   }
 

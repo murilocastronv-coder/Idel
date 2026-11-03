@@ -1723,5 +1723,7 @@ window.I18N_EN = {
 "2D (pixel art)": "2D (pixel art)",
 "3D (realista)": "3D (realistic)",
 "Carregando o gráfico 3D…": "Loading 3D graphics…",
-"Seu aparelho não abriu o gráfico 3D. Jogando em 2D.": "Your device could not open the 3D graphics. Playing in 2D."
+"Seu aparelho não abriu o gráfico 3D. Jogando em 2D.": "Your device could not open the 3D graphics. Playing in 2D.",
+"Jogar em 2D": "Play in 2D",
+"Jogar em 3D": "Play in 3D"
 };
