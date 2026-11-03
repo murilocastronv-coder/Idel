@@ -528,6 +528,7 @@
       });
     }
     W3.updateActors(dt, t);
+    if (W3.renderPreview) W3.renderPreview(renderer, dt, t);
     if (QL.bloom && composer) { composer.passes[0].scene = scene; composer.passes[0].camera = camera; composer.render(dt); }
     else renderer.render(scene, camera);
   };

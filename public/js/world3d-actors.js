@@ -200,7 +200,7 @@
   function lenOf(o) { const b = new THREE.Box3().setFromObject(o); return Math.max(0.1, b.max.z - b.min.z, b.max.x - b.min.x); }
 
   class Actor {
-    constructor(desc) {
+    constructor(desc, parent) {
       this.key = desc.key; this.kind = desc.kind;
       this.root = new THREE.Group();
       this.yaw = desc.kind === 'npc' ? 0 : Math.PI * 0; this.tyaw = this.yaw;
@@ -208,7 +208,7 @@
       this.shadow.position.y = 0.02; this.shadow.renderOrder = 1; this.root.add(this.shadow);
       this.model = null; this.mixer = null; this.actions = {}; this.cur = null; this.sig = '';
       this.lastAtk = 0; this.lastHit = 0; this.dying = false; this.flash = 0;
-      W3.scene().add(this.root);
+      (parent || W3.scene()).add(this.root);
       this.build(desc);
     }
     async build(desc) {
@@ -428,4 +428,44 @@
     return Promise.all(jobs.map((p) => p.catch(() => null)));
   };
   W3.heroHeight = 1.85;
+
+  // ------------------------------------------------------------------ prévia do herói (loja e inspeção de item)
+  // Desenha num canto do canvas 3D antes do quadro do mapa e copia para o canvas da janela.
+  let pv = null;
+  W3.preview = function (canvas2d, desc) {
+    if (pv) pv.stop();
+    const sc = new THREE.Scene();
+    sc.add(new THREE.HemisphereLight(0xbfd0ff, 0x2a2018, 0.9));
+    const key = new THREE.DirectionalLight(0xfff0dc, 2.2); key.position.set(2.5, 4, 3.5); sc.add(key);
+    const rim = new THREE.DirectionalLight(0x8aa8ff, 1.2); rim.position.set(-3, 2.5, -3); sc.add(rim);
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(1.15, 48).rotateX(-Math.PI / 2), new MSM({ color: 0x1a1622, roughness: 0.6, metalness: 0.3 }));
+    sc.add(floor);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.18, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0.6 })); ring.position.y = 0.01; sc.add(ring);
+    const holder = new THREE.Group(); sc.add(holder);
+    const cam = new THREE.PerspectiveCamera(30, canvas2d.width / canvas2d.height, 0.1, 40);
+    cam.position.set(0, 1.35, 5.2); cam.lookAt(0, 1.05, 0);
+    const actor = new Actor({ ...desc, key: 'preview' }, holder);
+    const ctx = canvas2d.getContext('2d');
+    pv = { sc, cam, holder, actor, canvas2d, ctx, desc, t0: performance.now(), stop() { if (pv === this) pv = null; actor.dispose(); } };
+    return () => pv && pv.actor === actor && pv.stop();
+  };
+  W3.renderPreview = function (renderer, dt, t) {
+    if (!pv) return;
+    if (!pv.canvas2d.isConnected) { pv.stop(); return; }
+    const w = pv.canvas2d.width, h = pv.canvas2d.height;
+    pv.holder.rotation.y += dt * 0.7;
+    pv.actor.update({ ...pv.desc, x: 0, y: 0, speed: 0, act: 'idle' }, dt, t);
+    const pr = renderer.getPixelRatio();
+    const vw = w / pr, vh = h / pr;
+    pv.cam.aspect = w / h; pv.cam.updateProjectionMatrix();
+    renderer.setScissorTest(true); renderer.setScissor(0, 0, vw, vh); renderer.setViewport(0, 0, vw, vh);
+    renderer.setClearColor(0x0a0c18, 1); renderer.clear();
+    renderer.render(pv.sc, pv.cam);
+    const gl = renderer.domElement;
+    pv.ctx.clearRect(0, 0, w, h);
+    pv.ctx.drawImage(gl, 0, gl.height - h, w, h, 0, 0, w, h);
+    renderer.setScissorTest(false);
+    const size = renderer.getSize(new THREE.Vector2()); renderer.setViewport(0, 0, size.x, size.y);
+    renderer.setClearColor(0x000000, 1);
+  };
 })();

@@ -166,6 +166,10 @@ SETS = {
     'phoenix': dict(main=ramp('#d86a1a', '#ffb04a', '#7a2a08'), trim=GOLD, dark=ramp('#5a1a04'), eye='#fff2a8', spikes=2, pad=5, shape='dragon', aura='#ff9a2a'),
     'abyss': dict(main=ramp('#2a1240', '#6a3aa8', '#0e0618'), trim=ramp('#c06bff', '#f0d0ff', '#5a2a8a'), dark=ramp('#0e0618'), eye='#ff4ad8', spikes=3, pad=5, shape='dragon', aura='#c06bff'),
 }
+# conjuntos de Natal (loja premium): uma camada por tom, com pelúcia branca e detalhes dourados
+FUR = ramp('#eef2f8', '#ffffff', '#9aa8c0')
+for _i, _tone in enumerate(['#db3039', '#55c7f2', '#4cbd72', '#e6b744', '#c277e8']):
+    SETS['fest%d' % _i] = dict(main=ramp(_tone), trim=FUR, dark=ramp(_tone, dark=0.7), eye='#ffd36b', spikes=0, pad=4, shape='bronze', aura=None)
 PIECES = ['boots', 'armor_mid', 'gloves_mid', 'helm', 'armor_front', 'gloves_front']
 
 

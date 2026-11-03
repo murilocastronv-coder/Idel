@@ -1145,7 +1145,12 @@
    "dragon",
    "storm",
    "phoenix",
-   "abyss"
+   "abyss",
+   "fest0",
+   "fest1",
+   "fest2",
+   "fest3",
+   "fest4"
   ],
   "pieces": [
    "boots",
@@ -1164,7 +1169,12 @@
     "dragon": "equip/dark_knight_dragon.png",
     "storm": "equip/dark_knight_storm.png",
     "phoenix": "equip/dark_knight_phoenix.png",
-    "abyss": "equip/dark_knight_abyss.png"
+    "abyss": "equip/dark_knight_abyss.png",
+    "fest0": "equip/dark_knight_fest0.png",
+    "fest1": "equip/dark_knight_fest1.png",
+    "fest2": "equip/dark_knight_fest2.png",
+    "fest3": "equip/dark_knight_fest3.png",
+    "fest4": "equip/dark_knight_fest4.png"
    },
    "dark_wizard": {
     "leather": "equip/dark_wizard_leather.png",
@@ -1173,7 +1183,12 @@
     "dragon": "equip/dark_wizard_dragon.png",
     "storm": "equip/dark_wizard_storm.png",
     "phoenix": "equip/dark_wizard_phoenix.png",
-    "abyss": "equip/dark_wizard_abyss.png"
+    "abyss": "equip/dark_wizard_abyss.png",
+    "fest0": "equip/dark_wizard_fest0.png",
+    "fest1": "equip/dark_wizard_fest1.png",
+    "fest2": "equip/dark_wizard_fest2.png",
+    "fest3": "equip/dark_wizard_fest3.png",
+    "fest4": "equip/dark_wizard_fest4.png"
    },
    "fairy_elf": {
     "leather": "equip/fairy_elf_leather.png",
@@ -1182,7 +1197,12 @@
     "dragon": "equip/fairy_elf_dragon.png",
     "storm": "equip/fairy_elf_storm.png",
     "phoenix": "equip/fairy_elf_phoenix.png",
-    "abyss": "equip/fairy_elf_abyss.png"
+    "abyss": "equip/fairy_elf_abyss.png",
+    "fest0": "equip/fairy_elf_fest0.png",
+    "fest1": "equip/fairy_elf_fest1.png",
+    "fest2": "equip/fairy_elf_fest2.png",
+    "fest3": "equip/fairy_elf_fest3.png",
+    "fest4": "equip/fairy_elf_fest4.png"
    },
    "magic_gladiator": {
     "leather": "equip/magic_gladiator_leather.png",
@@ -1191,7 +1211,12 @@
     "dragon": "equip/magic_gladiator_dragon.png",
     "storm": "equip/magic_gladiator_storm.png",
     "phoenix": "equip/magic_gladiator_phoenix.png",
-    "abyss": "equip/magic_gladiator_abyss.png"
+    "abyss": "equip/magic_gladiator_abyss.png",
+    "fest0": "equip/magic_gladiator_fest0.png",
+    "fest1": "equip/magic_gladiator_fest1.png",
+    "fest2": "equip/magic_gladiator_fest2.png",
+    "fest3": "equip/magic_gladiator_fest3.png",
+    "fest4": "equip/magic_gladiator_fest4.png"
    },
    "dark_lord": {
     "leather": "equip/dark_lord_leather.png",
@@ -1200,7 +1225,12 @@
     "dragon": "equip/dark_lord_dragon.png",
     "storm": "equip/dark_lord_storm.png",
     "phoenix": "equip/dark_lord_phoenix.png",
-    "abyss": "equip/dark_lord_abyss.png"
+    "abyss": "equip/dark_lord_abyss.png",
+    "fest0": "equip/dark_lord_fest0.png",
+    "fest1": "equip/dark_lord_fest1.png",
+    "fest2": "equip/dark_lord_fest2.png",
+    "fest3": "equip/dark_lord_fest3.png",
+    "fest4": "equip/dark_lord_fest4.png"
    },
    "summoner": {
     "leather": "equip/summoner_leather.png",
@@ -1209,7 +1239,12 @@
     "dragon": "equip/summoner_dragon.png",
     "storm": "equip/summoner_storm.png",
     "phoenix": "equip/summoner_phoenix.png",
-    "abyss": "equip/summoner_abyss.png"
+    "abyss": "equip/summoner_abyss.png",
+    "fest0": "equip/summoner_fest0.png",
+    "fest1": "equip/summoner_fest1.png",
+    "fest2": "equip/summoner_fest2.png",
+    "fest3": "equip/summoner_fest3.png",
+    "fest4": "equip/summoner_fest4.png"
    }
   }
  },

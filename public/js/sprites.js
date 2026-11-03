@@ -138,7 +138,20 @@
   function img(path) { return lazyEntry(path).im; }
   // todas as folhas que um herói equipado precisa (corpo em camadas, conjuntos, arma e asa/capa)
   const WING_VARIANT = { wings_life: 'wings_elf', wings_dragon_l1: 'wings_satan', wings_spirit_l1: 'wings_heaven' };
+  // conjuntos de Natal (loja premium): cada tom tem a sua camada no herói; asas e armas usam as mais parecidas
+  const FEST_WINGS = ['wings_dragon', 'wings_soul', 'wings_elf', 'wings_spirit', 'wings_darkness'];
+  const FEST_WEAPON = { sword: 'phoenix_sword', bow: 'phoenix_bow', shield: null };
+  function normEq(eq) {
+    if (!eq) return eq;
+    let out = null;
+    const set = (k, v) => { if (!out) out = { ...eq }; out[k] = v; };
+    for (const k of ['helm', 'armor', 'gloves', 'boots']) { const m = /^festive_(\d+)$/.exec(eq[k] || ''); if (m) set(k, 'fest' + ((Number(m[1]) - 1) % 5)); }
+    const wm = /^festive_(\d+)_wings$/.exec(eq.wings || ''); if (wm) set('wings', FEST_WINGS[(Number(wm[1]) - 1) % 5]);
+    const am = /^festive_\d+_(sword|bow)$/.exec(eq.w || ''); if (am) set('w', FEST_WEAPON[am[1]]);
+    return out || eq;
+  }
   function equipPaths(cls, eq) {
+    eq = normEq(eq);
     const out = [];
     const m = S.manifest; if (!m || !m.equip) return out;
     const meta = m.heroes[cls]; if (!meta || !meta.layers) return out;
@@ -170,6 +183,7 @@
   const ARMOR = ['helm', 'armor', 'gloves', 'boots'];
   // eq: { w: base da arma, wg: cor do brilho da arma, helm/armor/gloves/boots: conjunto }
   function heroEquip(ctx, cls, ap, action, t, x, y, scale, flip, opts = {}, eq = {}) {
+    eq = normEq(eq) || {};
     if (!S.manifest || !S.manifest.equip) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts);
     const meta = S.manifest.heroes[cls];
     if (!meta || !meta.layers) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts);

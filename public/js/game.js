@@ -712,13 +712,15 @@
   function load3D() {
     const files = ['vendor/three/three.min.js', 'vendor/three/GLTFLoader.js', 'vendor/three/SkeletonUtils.js', 'vendor/three/RoomEnvironment.js',
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
-      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=1', 'world3d-actors.js?v=1'];
+      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=2', 'world3d-actors.js?v=2'];
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();
         if (!w || !w.init || !w.init(cv, quality)) throw new Error('webgl');
         is3d = w.on = true;
         document.body.classList.add('gfx3d');
+        w.setColors = {}; for (const [id, st] of Object.entries((S.data && S.data.sets) || {})) if (st.color) w.setColors[id] = st.color;
+        w.wingColor = (base) => { const m = /^(festive_\d+)_wings$/.exec(base || ''); return m && w.setColors[m[1]] ? w.setColors[m[1]] : null; };
         resize();
         return true;
       }).catch((e) => { is3d = false; console.warn('[3d] usando 2D:', e && e.message); feed('Seu aparelho não abriu o gráfico 3D. Jogando em 2D.', 'warn'); return false; });
@@ -2734,18 +2736,16 @@
         const canvas = dialog.querySelector('canvas'), ctx = canvas.getContext('2d');
         const cls = S.char.cls, ap = S.char.ap || {};
         const current = (S.players.get(S.youId) && S.players.get(S.youId).info && S.players.get(S.youId).info.eq) || {};
-        const suffix = Number((product.id.match(/(\d+)$/) || [0, 1])[1]) - 1;
-        const styles = ['phoenix', 'storm', 'scale', 'dragon', 'bronze', 'abyss', 'leather'];
-        const equip = { ...current };
-        const style = styles[Math.max(0, suffix) % styles.length];
-        equip.helm = style; equip.armor = style; equip.gloves = style; equip.boots = style;
-        const wingSheets = Sprites.meta('wings', 'sheets') || {};
-        const wings = Object.keys(wingSheets);
-        if (wings.length) { equip.wings = wings[Math.max(0, suffix) % wings.length]; equip.wingRarity = 'epic'; }
-        const weaponClasses = (Sprites.meta('weapons', 'classes') || {});
-        const weaponList = weaponClasses[cls] && weaponClasses[cls].list || [];
-        const weaponHint = cls === 'fairy_elf' ? ['bow', 'crossbow'] : cls === 'dark_wizard' || cls === 'summoner' ? ['staff', 'stick', 'book'] : cls === 'dark_lord' ? ['scepter', 'sword'] : ['sword', 'blade'];
-        equip.w = weaponHint.map(h => weaponList.find(w => w.includes(h))).find(Boolean) || weaponList[0] || current.w || null;
+        // as peças de verdade deste conjunto (elmo, armadura, luvas, botas, asa e arma do conjunto)
+        const equip = { ...current, helm: product.id, armor: product.id, gloves: product.id, boots: product.id, wings: product.id + '_wings', wingRarity: 'epic',
+          w: cls === 'fairy_elf' ? product.id + '_bow' : ['dark_knight', 'magic_gladiator'].includes(cls) ? product.id + '_sword' : current.w || null, wg: product.tone || null };
+        if (is3d) {
+          canvas.width = 300; canvas.height = 320;
+          W3().preview(canvas, { kind: 'hero', cls, eq: equip });
+          dialog.addEventListener('close', () => { canvas.remove(); }, { once: true });
+          return;
+        }
+        Sprites.preloadEquip(cls, equip);
         let raf = 0;
         const draw = () => {
           if (!dialog.open) { cancelAnimationFrame(raf); return; }
@@ -3489,6 +3489,12 @@
     const turn = (d) => { vi = (vi + d + PV_VIEWS.length) % PV_VIEWS.length; auto = performance.now(); };
     box.querySelectorAll('[data-pv]').forEach((b) => { b.onclick = () => turn(Number(b.dataset.pv)); });
     cv2.onclick = () => turn(1);
+    if (is3d) {
+      // 3D: o herói de verdade girando com o item vestido
+      cv2.width = 300; cv2.height = 260; box.querySelector('.ii-pv-bar').hidden = true;
+      W3().preview(cv2, { kind: 'hero', cls: S.char.cls, eq });
+      return;
+    }
     Sprites.preloadEquip(S.char.cls, eq);
     PV.on = true;
     const token = PV.token = {};
