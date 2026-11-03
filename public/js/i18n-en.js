@@ -1714,5 +1714,14 @@ window.I18N_EN = {
 "Defense Skill (Mana: 30)": "Defense Skill (Mana: 30)",
 "Chance de sucesso na defesa": "Defense success chance",
 "Preço no mercado: {0}": "Market price: {0}",
-"Preço: {0} Zen": "Price: {0} Zen"
+"Preço: {0} Zen": "Price: {0} Zen",
+"Jogar 2D": "Play 2D",
+"Jogar 3D": "Play 3D",
+"Gráfico em pixel art": "Pixel art graphics",
+"Gráfico 3D realista (mesmo servidor)": "Realistic 3D graphics (same server)",
+"Gráfico do jogo": "Game graphics",
+"2D (pixel art)": "2D (pixel art)",
+"3D (realista)": "3D (realistic)",
+"Carregando o gráfico 3D…": "Loading 3D graphics…",
+"Seu aparelho não abriu o gráfico 3D. Jogando em 2D.": "Your device could not open the 3D graphics. Playing in 2D."
 };

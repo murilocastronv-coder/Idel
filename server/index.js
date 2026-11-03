@@ -63,7 +63,7 @@ function securityHeaders(res) {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'",
-    "font-src 'self'", "media-src 'self'", "img-src 'self' data:", "connect-src 'self' ws: wss:",
+    "font-src 'self'", "media-src 'self'", "img-src 'self' data: blob:", "connect-src 'self' ws: wss: blob:",
     "frame-ancestors 'none'", "base-uri 'self'", "form-action 'self'",
   ].join('; '));
   if (IS_PROD) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -862,7 +862,7 @@ route('DELETE', '/api/characters/:id', async (req, url, res, params) => {
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
-  '.webmanifest': 'application/manifest+json', '.apk': 'application/vnd.android.package-archive', '.woff': 'font/woff', '.woff2': 'font/woff2', '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.txt': 'text/plain; charset=utf-8',
+  '.webmanifest': 'application/manifest+json', '.apk': 'application/vnd.android.package-archive', '.woff': 'font/woff', '.woff2': 'font/woff2', '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.txt': 'text/plain; charset=utf-8', '.glb': 'model/gltf-binary',
 };
 function serveStatic(req, res, pathname) {
   let rel;
@@ -893,6 +893,18 @@ function serveStatic(req, res, pathname) {
       res.writeHead(206, { 'Content-Type': type, 'Content-Length': end - start + 1, 'Content-Range': `bytes ${start}-${end}/${st.size}`, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-cache', ETag: etag });
       if (req.method === 'HEAD') return res.end();
       return fs.createReadStream(file, { start, end }).pipe(res);
+    }
+    // modelos 3D e scripts grandes: entrega a cópia .gz feita no build quando o navegador aceita gzip
+    if (/^\.(glb|js|json)$/.test(ext) && /\bgzip\b/.test(req.headers['accept-encoding'] || '') && !req.headers.range) {
+      const gz = file + '.gz';
+      try {
+        const gst = fs.statSync(gz);
+        if (gst.mtimeMs >= st.mtimeMs - 1000) {
+          res.writeHead(200, { 'Content-Type': type, 'Content-Encoding': 'gzip', 'Content-Length': gst.size, 'Cache-Control': 'no-cache', ETag: etag, Vary: 'Accept-Encoding' });
+          if (req.method === 'HEAD') return res.end();
+          return fs.createReadStream(gz).pipe(res);
+        }
+      } catch (_) { /* sem cópia comprimida */ }
     }
     res.writeHead(200, {
       'Content-Type': type,

@@ -1,0 +1,183 @@
+{
+ "gerado": "2026-10-21T07:24:01.410Z",
+ "esqueleto": {
+  "prefixo": "mixamorig",
+  "ossos": [
+   "Hips",
+   "Spine",
+   "Spine1",
+   "Spine2",
+   "Neck",
+   "Head",
+   "LeftShoulder",
+   "LeftArm",
+   "LeftForeArm",
+   "LeftHand",
+   "RightShoulder",
+   "RightArm",
+   "RightForeArm",
+   "RightHand",
+   "LeftUpLeg",
+   "LeftLeg",
+   "LeftFoot",
+   "LeftToeBase",
+   "RightUpLeg",
+   "RightLeg",
+   "RightFoot",
+   "RightToeBase",
+   "CapeA",
+   "CapeB",
+   "CapeC"
+  ]
+ },
+ "brilho": {
+  "DK_Vermelho": 1,
+  "DK_Brilho": 0.9,
+  "DK_Gema": 3,
+  "DL_Ouro": 0.4,
+  "DL_Rubi": 2.5,
+  "Elfa_Ouro": 0.3,
+  "Elfa_Esmeralda": 2.2,
+  "DW_Safira": 3,
+  "MG_Roxo": 0.6,
+  "MG_Brilho": 1.4,
+  "MG_Ametista": 3,
+  "Esq_Olho": 4,
+  "Touro_Olho": 4,
+  "Lamina_Fio": 2.4,
+  "Lamina_Roxa": 1.6,
+  "DW_Orbe": 4
+ },
+ "encaixe": {
+  "direita": [
+   -0.075,
+   -0.02,
+   0
+  ],
+  "esquerda": [
+   0.075,
+   -0.02,
+   0
+  ]
+ },
+ "animacoes": {
+  "arquivo": "animacoes_humanoide.glb",
+  "clipes": {
+   "espada_idle": {
+    "dur": 3,
+    "loop": true
+   },
+   "espada_walk": {
+    "dur": 1.05,
+    "loop": true,
+    "speed": 1.2
+   },
+   "espada_run": {
+    "dur": 0.62,
+    "loop": true,
+    "speed": 3.6
+   },
+   "espada_hit": {
+    "dur": 0.45,
+    "loop": false
+   },
+   "espada_death": {
+    "dur": 1.6,
+    "loop": false
+   },
+   "cajado_idle": {
+    "dur": 3,
+    "loop": true
+   },
+   "cajado_walk": {
+    "dur": 1.05,
+    "loop": true,
+    "speed": 1.2
+   },
+   "cajado_run": {
+    "dur": 0.62,
+    "loop": true,
+    "speed": 3.6
+   },
+   "cajado_hit": {
+    "dur": 0.45,
+    "loop": false
+   },
+   "cajado_death": {
+    "dur": 1.6,
+    "loop": false
+   },
+   "arco_idle": {
+    "dur": 3,
+    "loop": true
+   },
+   "arco_walk": {
+    "dur": 1.05,
+    "loop": true,
+    "speed": 1.2
+   },
+   "arco_run": {
+    "dur": 0.62,
+    "loop": true,
+    "speed": 3.6
+   },
+   "arco_hit": {
+    "dur": 0.45,
+    "loop": false
+   },
+   "arco_death": {
+    "dur": 1.6,
+    "loop": false
+   },
+   "espada_atk1": {
+    "dur": 1.05,
+    "loop": false,
+    "impact": 0.42,
+    "recover": 0.8
+   },
+   "espada_atk2": {
+    "dur": 1,
+    "loop": false,
+    "impact": 0.4,
+    "recover": 0.76
+   },
+   "espada_cast": {
+    "dur": 1,
+    "loop": false,
+    "impact": 0.5,
+    "recover": 0.78
+   },
+   "cajado_cast": {
+    "dur": 1,
+    "loop": false,
+    "impact": 0.5,
+    "recover": 0.78
+   },
+   "arco_shoot": {
+    "dur": 0.95,
+    "loop": false,
+    "impact": 0.56,
+    "recover": 0.75
+   }
+  }
+ },
+ "modelos": {
+  "dark_knight": "dark_knight.glb",
+  "dark_lord": "dark_lord.glb",
+  "fairy_elf": "fairy_elf.glb",
+  "dark_wizard": "dark_wizard.glb",
+  "magic_gladiator": "magic_gladiator.glb",
+  "esqueleto": "esqueleto.glb",
+  "touro": "touro.glb"
+ },
+ "armas": {
+  "espada_dk": "armas/espada_dk.glb",
+  "espada_mg": "armas/espada_mg.glb",
+  "cetro_dl": "armas/cetro_dl.glb",
+  "cajado_dw": "armas/cajado_dw.glb",
+  "arco_elfa": "armas/arco_elfa.glb",
+  "espada_esqueleto": "armas/espada_esqueleto.glb",
+  "escudo_esqueleto": "armas/escudo_esqueleto.glb",
+  "machado_touro": "armas/machado_touro.glb"
+ }
+}

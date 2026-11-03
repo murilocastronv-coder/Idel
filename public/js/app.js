@@ -213,13 +213,18 @@
       info.innerHTML = `${li.classList.contains('last') ? '<em class="last-tag">Último jogado</em>' : ''}<b>${esc(c.name)}</b><span>${esc(state.data.classes[c.class].name)} · Nv. ${c.level}${c.resets ? ` · ${c.resets} resets` : ''}</span>
         <span>${esc(mapName)} · ${fmt.format(c.zen)} Zen</span>`;
       const play = document.createElement('a');
-      play.className = 'btn small btn-gold'; play.textContent = 'Entrar no mundo';
-      play.href = `/game.html?c=${encodeURIComponent(c.id)}`;
+      play.className = 'btn small btn-gold'; play.textContent = 'Jogar 2D';
+      play.href = `/game.html?c=${encodeURIComponent(c.id)}&gfx=2d`;
+      play.title = 'Gráfico em pixel art';
+      const play3 = document.createElement('a');
+      play3.className = 'btn small btn-gold play-3d'; play3.textContent = 'Jogar 3D';
+      play3.href = `/game.html?c=${encodeURIComponent(c.id)}&gfx=3d`;
+      play3.title = 'Gráfico 3D realista (mesmo servidor)';
       const del = document.createElement('button');
       del.type = 'button'; del.className = 'btn small btn-ghost'; del.textContent = 'Excluir';
       del.onclick = () => openDelete(c);
       const acts = document.createElement('div'); acts.className = 'char-acts';
-      acts.append(play, del);
+      acts.append(play, play3, del);
       info.appendChild(acts);
       li.appendChild(info);
       list.appendChild(li);
