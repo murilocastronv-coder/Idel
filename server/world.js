@@ -1750,4 +1750,4 @@ class World {
   }
 }
 
-module.exports = { World, expToNext };
+module.exports = { World, expToNext, gearVisual };

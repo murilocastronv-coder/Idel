@@ -21,7 +21,7 @@ const MARKET_REAL = require('./market-real');
 const ADMIN = require('./admin');
 const game = require('./gamedata');
 const { WSServer } = require('./ws');
-const { World } = require('./world');
+const { World, gearVisual } = require('./world');
 const CHAOS = require('./chaos');
 const DROPS = require('./drops');
 const CMDS = require('./commands');
@@ -633,6 +633,11 @@ route('GET', '/api/me', async (req) => {
   const statusAccess = canSeeStatus(acc);
   const { rows } = await db.query(`SELECT id, name, class, appearance, level, resets, zen, str, agi, vit, ene, cmd,
     free_points, map, combat_power, created_at, last_seen_at FROM characters WHERE account_id = $1 ORDER BY last_seen_at DESC NULLS LAST, id`, [acc.id]);
+  // equipamento visível de cada herói (a tela de escolha já mostra o herói equipado)
+  if (rows.length) {
+    const eqRows = (await db.query("SELECT character_id, base, rarity, plus FROM items WHERE character_id = ANY(string_to_array($1, ',')::bigint[]) AND equipped AND vault_no IS NULL", [rows.map((r) => r.id).join(',')])).rows;
+    for (const r of rows) r.eq = gearVisual(eqRows.filter((i) => String(i.character_id) === String(r.id)));
+  }
   return { account: { username: acc.username, email: maskEmail(acc.email), createdAt: acc.created_at, lastLoginAt: acc.last_login_at, statusAccess, admin: ADMIN.isAdmin(acc), vip: VIP.status(acc) }, characters: rows };
 });
 

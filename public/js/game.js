@@ -63,7 +63,7 @@
       case 'enter': onEnter(m); marketNotice(); return;
       case 's': return onSnap(m);
       case 'char': S.char = m; renderChar(); if (S.panel === 'market' && MK.tab === 'sell') renderMarket(); return;
-      case 'pj': S.players.set(m.id, { ...(S.players.get(m.id) || { x: 0, y: 0, rx: null }), info: m }); return;
+      case 'pj': S.players.set(m.id, { ...(S.players.get(m.id) || { x: 0, y: 0, rx: null }), info: m }); if (m.eq) Sprites.preloadEquip(m.cls, m.eq); return;
       case 'pl': S.players.delete(m.id); return;
       case 'reward': if (window.Sfx) Sfx.coin(); return feed(`+${fmt.format(m.exp)} EXP  +${fmt.format(m.zen)} Zen${m.share ? ` (${m.share}% do dano)` : ''}`, '');
       case 'duelInvite': return showDuelInvite(m);
@@ -3743,13 +3743,21 @@
   // ================= início =================
   (async function init() {
     centerMsg('Entrando no mundo…');
+    // já busca o herói (com o equipamento) para carregar as folhas dos itens antes de entrar: nada de herói "pelado" por um instante
+    const meP = fetch('/api/me', { credentials: 'same-origin' }).then((r) => r.json()).catch(() => null);
+    let myChar = null;
     try {
       const r = await fetch('/api/gamedata', { credentials: 'same-origin' });
       S.data = await r.json();
       await Sprites.ready;
+      const me = await meP;
+      myChar = me && me.characters ? me.characters.find((x) => String(x.id) === String(charId)) : null;
     } catch (_) { centerMsg('Não foi possível carregar o jogo. Verifique a internet.', true); return; }
+    const pre = myChar ? Sprites.preloadEquip(myChar.class, myChar.eq, 5000) : Promise.resolve();
     await pickRoom();
+    await pre;
     connect();
+    if (myChar) setTimeout(() => Sprites.preloadClass(myChar.class), 4000);
     // voltando do pagamento do Stripe
     // volta do Stripe (pagamento do mercado ou cadastro de vendedor)
     const mkQ = new URLSearchParams(location.search).get('mercado');

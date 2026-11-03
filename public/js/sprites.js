@@ -126,14 +126,46 @@
 
   // ---------- equipamento visível (camadas carregadas sob demanda) ----------
   const lazy = new Map();
-  function img(path) {
+  function lazyEntry(path) {
     let e = lazy.get(path);
     if (!e) {
       e = { im: null };
       lazy.set(path, e);
-      loadImg(BASE + path + '?v=' + S.manifest.version).then((im) => { e.im = im; }).catch(() => {});
+      e.p = loadImg(BASE + path + '?v=' + S.manifest.version).then((im) => { e.im = im; return im; }).catch(() => null);
     }
-    return e.im;
+    return e;
+  }
+  function img(path) { return lazyEntry(path).im; }
+  // todas as folhas que um herói equipado precisa (corpo em camadas, conjuntos, arma e asa/capa)
+  const WING_VARIANT = { wings_life: 'wings_elf', wings_dragon_l1: 'wings_satan', wings_spirit_l1: 'wings_heaven' };
+  function equipPaths(cls, eq) {
+    const out = [];
+    const m = S.manifest; if (!m || !m.equip) return out;
+    const meta = m.heroes[cls]; if (!meta || !meta.layers) return out;
+    out.push(meta.layers.back, meta.layers.front);
+    eq = eq || {};
+    for (const k of ARMOR) { const set = eq[k]; const path = set && m.equip.classes[cls] && m.equip.classes[cls][set]; if (path) out.push(path); }
+    const W = m.weapons.classes[cls]; if (W && W.sheet) out.push(W.sheet);
+    const WG = m.wings;
+    if (WG && eq.wings) {
+      const key = WG.sheets[eq.wings] ? eq.wings : WING_VARIANT[eq.wings] || 'wings_dragon';
+      if (WG.sheets[key]) out.push(WG.sheets[key]);
+      const over = WG.over && (WG.over[eq.wings] || WG.over[key]); if (over) out.push(over);
+    }
+    return [...new Set(out)];
+  }
+  // carrega antes de mostrar: resolve quando todas as folhas estiverem prontas (ou depois de ms, para nunca travar)
+  async function preloadEquip(cls, eq, ms = 4000) {
+    await ready;
+    const ps = equipPaths(cls, eq).map((p) => lazyEntry(p).p);
+    await Promise.race([Promise.all(ps), new Promise((r) => setTimeout(r, ms))]);
+  }
+  const equipReady = (cls, eq) => equipPaths(cls, eq).every((p) => !!img(p));
+  // em segundo plano: todas as folhas de equipamento de uma classe (trocar de conjunto fica instantâneo)
+  async function preloadClass(cls) {
+    await ready;
+    const m = S.manifest; if (!m || !m.equip || !m.equip.classes[cls]) return;
+    for (const path of Object.values(m.equip.classes[cls])) { await lazyEntry(path).p; }
   }
   const ARMOR = ['helm', 'armor', 'gloves', 'boots'];
   // eq: { w: base da arma, wg: cor do brilho da arma, helm/armor/gloves/boots: conjunto }
@@ -233,7 +265,7 @@
   function hasHair(cls) { return !!(S.manifest && S.manifest.heroes[cls] && S.manifest.heroes[cls].hairKeys); }
 
   window.Sprites = {
-    ready, HAIR, SKIN, defaultHairIndex, hasHair, drawEffect,
+    ready, HAIR, SKIN, defaultHairIndex, hasHair, drawEffect, preloadEquip, equipReady, preloadClass,
     hero: (ctx, cls, ap, action, t, x, y, scale, flip, opts) => (opts && opts.equip ? heroEquip(ctx, cls, ap, action, t, x, y, scale, flip, opts, opts.equip) : draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts)),
     ARMOR,
     monster: (ctx, name, action, t, x, y, scale, flip, opts) => draw(ctx, 'monsters', name, null, action, t, x, y, scale, flip, { ...opts, useScale: true }),

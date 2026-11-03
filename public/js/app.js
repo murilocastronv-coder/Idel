@@ -180,8 +180,14 @@
   }
 
   // ---------------- painel da conta e heróis ----------------
-  function charCanvas(c, scale) {
-    return portrait(c.class, c.appearance, 64, 1);
+  // retrato do herói já com os itens equipados (carrega as folhas e redesenha assim que ficarem prontas)
+  function charCanvas(c) {
+    const size = 64, scale = 1;
+    const cv = document.createElement('canvas'); cv.width = size; cv.height = size;
+    const paint = () => { const g = cv.getContext('2d'); g.clearRect(0, 0, size, size); Sprites.hero(g, c.class, c.appearance, 'idle', 0, size / 2, size - 2 * scale, scale, false, c.eq ? { equip: c.eq } : undefined); };
+    paint();
+    if (c.eq && Sprites.preloadEquip) Sprites.preloadEquip(c.class, c.eq).then(paint);
+    return cv;
   }
 
   function renderAccount() {
