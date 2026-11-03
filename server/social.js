@@ -147,7 +147,7 @@ async function act(world,p,msg) {
 
 async function chat(world,p,request) {
   W=world;
-  let text=String(request.text||'').replace(/[\\u0000-\\u001f]/g,'').trim().slice(0,120);
+  let text=String(request.text||'').replace(/[\u0000-\u001f\u007f]/g,'').trim().slice(0,120);
   let channel=SOCIAL_CHANNELS.has(request.channel)?request.channel:'global';
   let targetName=String(request.target||'').trim();
   const privateCommand=text.match(/^\/\/([^\s]{1,20})\s+([\s\S]+)$/);
