@@ -19,21 +19,41 @@ from pixelkit import hexc, ramp5  # noqa: E402
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 OUT = os.path.join(ROOT, 'public', 'assets', 'sprites')
 PREVIEW = os.path.join(HERE, 'preview')
-ACTIONS = [('idle', 4, 4), ('walk', 4, 8), ('attack', 4, 12), ('hit', 1, 1), ('death', 4, 6)]
+# (animação, quadros, quadros por segundo): 8 quadros nas animações principais
+FPS = {'idle': 8, 'walk': 16, 'attack': 24, 'hit': 12, 'death': 12}
+ACTIONS = [(a, heroes.FRAMES[a], FPS[a]) for a in ('idle', 'walk', 'attack', 'hit', 'death')]
+MAXF = max(n for _, n, _ in ACTIONS)
+
+
+def legacy(fn):
+    """Monstros desenhados com listas de 4 quadros-chave: os 8 quadros passam a posição fracionária."""
+    def wrap(a, i):
+        n = heroes.FRAMES[a]
+        orig = {'idle': 4, 'walk': 4, 'attack': 4, 'hit': 1, 'death': 4}[a]
+        if orig == 1 or n == 1:
+            return fn(a, 0)
+        # posição fracionária nos 4 quadros-chave originais (os desenhos interpolam)
+        return fn(a, heroes.key_u(a, i, orig) if a != 'death' or orig > 1 else 0)
+    return wrap
 CLASSES = ['dark_knight', 'dark_wizard', 'fairy_elf', 'magic_gladiator', 'dark_lord', 'summoner']
 
 
 def death_frames(draw, pivot):
-    """Quadros de morte: ajoelha, cai de costas, deitado."""
-    f0 = draw('death', 0).image()
-    f1 = draw('death', 1).image()
-    f2 = f1.rotate(40, resample=Image.NEAREST, center=pivot, translate=(10, 0))
-    f3 = f1.rotate(88, resample=Image.NEAREST, center=pivot, translate=(30, -2))
-    return [f0, f1, f2, f3]
+    """Quadros de morte: cambaleia, ajoelha, tomba de costas e fica deitado (queda suave)."""
+    n = heroes.FRAMES['death']
+    kneel = max(2, n // 2 - 1)
+    frames = [draw('death', min(n - 1, round(k * (n - 1) / kneel))).image() for k in range(kneel)]
+    base = draw('death', n - 1).image()
+    rest = n - kneel
+    for k in range(rest):
+        q = (k + 1) / rest
+        e = 1 - (1 - q) ** 2  # acelera no começo, assenta no fim
+        frames.append(base.rotate(88 * e, resample=Image.NEAREST, center=pivot, translate=(30 * e, -2 * e)))
+    return frames
 
 
 def sheet(draw, fw, fh, pivot, rotate_death=True):
-    img = Image.new('RGBA', (fw * 4, fh * len(ACTIONS)), (0, 0, 0, 0))
+    img = Image.new('RGBA', (fw * MAXF, fh * len(ACTIONS)), (0, 0, 0, 0))
     meta = {}
     for row, (act, n, fps) in enumerate(ACTIONS):
         if act == 'death' and rotate_death:
@@ -54,10 +74,10 @@ def runtime_actions(actions):
     """Preserva no manifest as temporizações usadas pelo cliente."""
     walk = actions.get('walk')
     if walk:
-        actions['run'] = {'row': walk['row'], 'frames': walk['frames'], 'fps': max(12, walk.get('fps', 12))}
+        actions['run'] = {'row': walk['row'], 'frames': walk['frames'], 'fps': max(24, walk.get('fps', 12))}
     attack = actions.get('attack')
     if attack:
-        attack['impactFrame'] = min(2, attack['frames'] - 1)
+        attack['impactFrame'] = min(attack['frames'] - 1, round(attack['frames'] * 0.55))
     return actions
 
 
@@ -66,7 +86,7 @@ def main():
     os.makedirs(os.path.join(OUT, 'monsters'), exist_ok=True)
     os.makedirs(os.path.join(OUT, 'effects'), exist_ok=True)
     os.makedirs(PREVIEW, exist_ok=True)
-    manifest = {'version': 6, 'heroes': {}, 'monsters': {}, 'effects': {},
+    manifest = {'version': 7, 'heroes': {}, 'monsters': {}, 'effects': {},
                 'skinKeys': [list(c) for c in ramp5(heroes.SKIN)]}
     pivot = (heroes.BUILD['cx'], heroes.FOOT_Y)
 
@@ -147,12 +167,12 @@ def main():
     print('  asas e capas:', len(wings.STYLES))
 
     mons = {
-        'slime': (monsters.slime, 48, 40, (22, 37), False, 1.0),
+        'slime': (legacy(monsters.slime), 48, 40, (22, 37), False, 1.0),
         'goblin': (lambda a, i: monsters.goblin(a, i), 96, 96, (40, 90), True, 1.0),
         'goblin_elite': (monsters.goblin_chief, 96, 96, (40, 90), True, 1.25),
-        'ice_golem': (monsters.ice_golem, 96, 96, (42, 90), True, 1.25),
-        'lava_hound': (monsters.lava_hound, 80, 56, (34, 52), False, 1.0),
-        'spider': (monsters.spider, 64, 48, (30, 44), False, 1.0),
+        'ice_golem': (legacy(monsters.ice_golem), 96, 96, (42, 90), True, 1.25),
+        'lava_hound': (legacy(monsters.lava_hound), 80, 56, (34, 52), False, 1.0),
+        'spider': (legacy(monsters.spider), 64, 48, (30, 44), False, 1.0),
         'skeleton': (lambda a, i: monsters.skeleton(a, i), 96, 96, (40, 90), True, 1.0),
         'skeleton_king': (lambda a, i: monsters.skeleton(a, i, king=True), 96, 96, (42, 90), True, 1.5),
     }

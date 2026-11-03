@@ -17,17 +17,55 @@ def hair_ramp(base):
 
 
 # ---------------------------------------------------------------- poses
+# quadros por animação (8 quadros = movimento mais suave; o cliente lê tudo do manifest)
+FRAMES = {'idle': 8, 'walk': 8, 'attack': 8, 'hit': 3, 'death': 8}
+CYCLIC = {'idle', 'walk'}
+
+
+def kf(seq, u, cyc):
+    """Interpola uma lista de quadros-chave (números ou tuplas) na posição fracionária u."""
+    L = len(seq)
+    if L == 1:
+        return seq[0]
+    if cyc:
+        u = u % L
+        a = int(u) % L; b = (a + 1) % L
+    else:
+        u = max(0.0, min(L - 1, u))
+        a = int(u); b = min(L - 1, a + 1)
+    f = u - int(u)
+    A, Bv = seq[a], seq[b]
+    if isinstance(A, tuple):
+        return tuple(x + (y - x) * f for x, y in zip(A, Bv))
+    return A + (Bv - A) * f
+
+
+def key_u(action, i, L):
+    """Posição fracionária do quadro i dentro de uma lista de L quadros-chave."""
+    n = FRAMES.get(action, L)
+    if action in CYCLIC:
+        return i * L / n
+    return i * (L - 1) / max(1, n - 1)
+
+
 def pose_for(action, i, kind):
-    """Retorna parâmetros de pose. kind: 'melee', 'caster', 'bow'."""
+    """Retorna parâmetros de pose. kind: 'melee', 'caster', 'bow'. i vai de 0 a FRAMES[action]-1."""
     p = dict(bob=0, lean=0, bf=(0, 0), ff=(0, 0), ua_f=75, fa_f=60, ua_b=100, fa_b=100, w=None, flash=0, hurt=False, crouch=0)
+    cyc = action in CYCLIC
+    K4 = lambda seq: kf(seq, key_u(action, i, len(seq)), cyc)
     if action == 'idle':
-        p['bob'] = [0, 0, 1, 1][i]
-        p['ua_f'] += [0, 2, 4, 2][i]
+        # respiração: sobe e desce devagar, braço acompanha
+        ph = i / FRAMES['idle'] * 2 * math.pi
+        p['bob'] = 0.5 - 0.5 * math.cos(ph)
+        p['ua_f'] += 2 - 2 * math.cos(ph)
+        p['ua_b'] -= 1 - math.cos(ph)
+        p['nod'] = 0.3 - 0.3 * math.cos(ph)
     elif action == 'walk':
-        step = [6, 0, -6, 0][i]
-        p['ff'] = (step, [0, 2, 0, 0][i])
-        p['bf'] = (-step, [0, 0, 0, 2][i])
-        p['bob'] = [0, 1, 0, 1][i]
+        ph = i / FRAMES['walk'] * 2 * math.pi
+        step = 6 * math.cos(ph)
+        p['ff'] = (step, max(0, 2.2 * math.sin(ph)))
+        p['bf'] = (-step, max(0, -2.2 * math.sin(ph)))
+        p['bob'] = 0.5 + 0.5 * math.cos(2 * ph)
         p['ua_f'] = 80 - step * 4
         p['fa_f'] = 70 - step * 3
         p['ua_b'] = 100 + step * 4
@@ -35,28 +73,28 @@ def pose_for(action, i, kind):
         p['lean'] = 1
     elif action == 'attack':
         if kind == 'melee':
-            p['ua_f'], p['fa_f'], p['w'] = [(-130, -150, -150), (-40, -20, -40), (35, 40, 45), (60, 55, 65)][i]
-            p['lean'] = [-1, 1, 2, 1][i]
-            p['ff'] = [(0, 0), (3, 0), (5, 0), (3, 0)][i]
-            p['bf'] = [(0, 0), (-2, 0), (-3, 0), (-2, 0)][i]
+            p['ua_f'], p['fa_f'], p['w'] = K4([(-110, -130, -130), (-140, -160, -160), (-40, -20, -40), (35, 40, 45), (60, 55, 65), (70, 62, 66)])
+            p['lean'] = K4([0, -1, 1, 2, 1, 0.5])
+            p['ff'] = K4([(0, 0), (0, 0), (3, 0), (5, 0), (3, 0), (1, 0)])
+            p['bf'] = K4([(0, 0), (0, 0), (-2, 0), (-3, 0), (-2, 0), (-1, 0)])
         elif kind == 'caster':
-            p['ua_f'], p['fa_f'], p['w'] = [(-50, -90, -105), (-20, -40, -70), (-5, -5, -40), (40, 30, -80)][i]
-            p['flash'] = [0, 1, 2, 0][i]
-            p['lean'] = [0, 1, 2, 1][i]
-            p['ua_b'], p['fa_b'] = [(110, 100), (40, 10), (20, 0), (80, 90)][i]
+            p['ua_f'], p['fa_f'], p['w'] = K4([(-30, -60, -95), (-50, -90, -105), (-20, -40, -70), (-5, -5, -40), (40, 30, -80), (60, 50, -85)])
+            p['flash'] = round(K4([0, 0, 1, 2, 0, 0]))
+            p['lean'] = K4([0, 0, 1, 2, 1, 0])
+            p['ua_b'], p['fa_b'] = K4([(100, 100), (110, 100), (40, 10), (20, 0), (80, 90), (95, 98)])
         else:  # arco
-            p['ua_f'], p['fa_f'] = [(10, 0), (0, 0), (0, 0), (40, 50)][i]
-            p['ua_b'], p['fa_b'] = [(30, 0), (20, 175), (25, 170), (90, 100)][i]
-            p['draw'] = [0, 1, 0, 0][i]
-            p['flash'] = [0, 0, 2, 0][i]
-            p['lean'] = [0, 0, -1, 0][i]
+            p['ua_f'], p['fa_f'] = K4([(30, 20), (10, 0), (0, 0), (0, 0), (40, 50), (60, 55)])
+            p['ua_b'], p['fa_b'] = K4([(60, 60), (30, 0), (20, 175), (25, 170), (90, 100), (100, 100)])
+            p['draw'] = round(K4([0, 0, 1, 0, 0, 0]))
+            p['flash'] = round(K4([0, 0, 0, 2, 0, 0]))
+            p['lean'] = K4([0, 0, 0, -1, 0, 0])
     elif action == 'hit':
-        p['lean'] = -3
+        p['lean'] = K4([-2, -3.5, -1.5])
         p['ua_f'], p['fa_f'] = 130, 150
         p['ua_b'], p['fa_b'] = 140, 170
         p['hurt'] = True
     elif action == 'death':
-        p['crouch'] = [3, 7, 0, 0][i]
+        p['crouch'] = K4([0, 3, 7, 7])
         p['lean'] = -2
         p['ua_f'], p['fa_f'] = 100, 110
     return p

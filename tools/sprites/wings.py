@@ -1,6 +1,7 @@
 """Asas e capas (Chaos Machine). Desenhadas com as mesmas poses do herói (Body/pose_for),
 então acompanham cada quadro de idle, andar, ataque, dano e morte. Ficam atrás do corpo."""
 import math
+import heroes
 from pixelkit import Canvas, ramp, flat, at
 from heroes import FOOT_Y
 from equipment import body_for
@@ -127,7 +128,7 @@ def feather_wing(c, R, flap, span, col, scale=1.0, tips=None, leaf=False):
 def cape(c, B, P, st, i, action):
     t = B.top
     sway = {'walk': [4, 8, 4, 8], 'idle': [0, 1, 2, 1], 'attack': [2, 5, 7, 4], 'hit': [6], 'death': [0, 0, 0, 0]}.get(action, [0])
-    sw = sway[min(i, len(sway) - 1)]
+    sw = heroes.kf(sway, heroes.key_u(action, i, len(sway)), action in heroes.CYCLIC)
     big = 4 if st.get('big') else 0
     cx = B.cx
     bottom = FOOT_Y + DY - 1
@@ -175,7 +176,7 @@ def draw_wings(cls, base, action, i, layer='back'):
             c.img[:, cut:, :] = 0
     else:
         seq = FLAP.get(action, [0])
-        fl = seq[min(i, len(seq) - 1)]
+        fl = heroes.kf(seq, heroes.key_u(action, i, len(seq)), action in heroes.CYCLIC)
         R = root_of(B)
         far = (R[0] + 7, R[1] - 2)
         span = st['span']

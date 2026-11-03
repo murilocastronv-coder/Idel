@@ -1,5 +1,5 @@
 {
- "version": 6,
+ "version": 7,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",
@@ -12,34 +12,34 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
    "hairKeys": null,
@@ -60,34 +60,34 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
    "hairKeys": null,
@@ -108,34 +108,34 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
    "hairKeys": [
@@ -182,34 +182,34 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
    "hairKeys": null,
@@ -230,34 +230,34 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
    "hairKeys": null,
@@ -278,34 +278,34 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
    "hairKeys": [
@@ -354,37 +354,37 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
-   "scale": 1
+   "scale": 1.0
   },
   "goblin": {
    "sheet": "monsters/goblin.png",
@@ -397,37 +397,37 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
-   "scale": 1
+   "scale": 1.0
   },
   "goblin_elite": {
    "sheet": "monsters/goblin_elite.png",
@@ -440,34 +440,34 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
    "scale": 1.25
@@ -483,34 +483,34 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
    "scale": 1.25
@@ -526,37 +526,37 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
-   "scale": 1
+   "scale": 1.0
   },
   "spider": {
    "sheet": "monsters/spider.png",
@@ -569,37 +569,37 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
-   "scale": 1
+   "scale": 1.0
   },
   "skeleton": {
    "sheet": "monsters/skeleton.png",
@@ -612,37 +612,37 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
-   "scale": 1
+   "scale": 1.0
   },
   "skeleton_king": {
    "sheet": "monsters/skeleton_king.png",
@@ -655,34 +655,34 @@
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 4,
-     "fps": 4
+     "frames": 8,
+     "fps": 8
     },
     "walk": {
      "row": 1,
-     "frames": 4,
-     "fps": 8
+     "frames": 8,
+     "fps": 16
     },
     "attack": {
      "row": 2,
-     "frames": 4,
-     "fps": 12,
-     "impactFrame": 2
+     "frames": 8,
+     "fps": 24,
+     "impactFrame": 4
     },
     "hit": {
      "row": 3,
-     "frames": 1,
-     "fps": 1
+     "frames": 3,
+     "fps": 12
     },
     "death": {
      "row": 4,
-     "frames": 4,
-     "fps": 6
+     "frames": 8,
+     "fps": 12
     },
     "run": {
      "row": 1,
-     "frames": 4,
-     "fps": 12
+     "frames": 8,
+     "fps": 24
     }
    },
    "scale": 1.5

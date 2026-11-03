@@ -7,6 +7,12 @@ from heroes import Body, pose_for, draw_leg, draw_arm, draw_torso, GOLD, SILVER
 FOOT = heroes.FOOT_Y
 
 
+def KF(seq, action, i):
+    """Quadro-chave interpolado (i fracionário de 0 a 4) — anima com 8 quadros suaves."""
+    return heroes.kf(seq, i, action in heroes.CYCLIC)
+
+
+
 def _pose(action, i):
     a = {'idle': 'idle', 'walk': 'walk', 'attack': 'attack', 'hit': 'hit', 'death': 'death'}[action]
     return pose_for(a, i, 'melee')
@@ -112,20 +118,20 @@ def skeleton(action, i, king=False):
 def slime(action, i):
     c = Canvas(48, 40)
     if action == 'idle' or action == 'walk':
-        sq = [0, 1, 2, 1][i] if action == 'idle' else [0, 2, 3, 1][i]
-        dx = 0 if action == 'idle' else [0, 1, 2, 1][i]
+        sq = KF([0, 1, 2, 1], action, i) if action == 'idle' else KF([0, 2, 3, 1], action, i)
+        dx = 0 if action == 'idle' else KF([0, 1, 2, 1], action, i)
     elif action == 'attack':
-        sq = [3, -2, -3, 0][i]; dx = [0, 3, 5, 2][i]
+        sq = KF([3, -2, -3, 0], action, i); dx = KF([0, 3, 5, 2], action, i)
     elif action == 'hit':
         sq, dx = 2, -2
     else:
-        sq = [3, 6, 9, 11][i]; dx = 0
+        sq = KF([3, 6, 9, 11], action, i); dx = 0
     G = ramp('#3faa4a', '#8af08a', '#1e5a26')
     top = 12 + sq
-    w = 14 + sq // 2
+    w = 14 + sq / 2
     cx = 22 + dx
     c.part(lambda d: d.polygon([(cx - w, 37), (cx - w + 2, top + 10), (cx - 6, top + 2), (cx, top), (cx + 6, top + 2), (cx + w - 2, top + 10), (cx + w, 37)], fill=255), G)
-    if action != 'death' or i < 3:
+    if action != 'death' or i < 2.5:
         c.part(lambda d: d.ellipse([cx - 9, top + 4, cx - 4, top + 8], fill=255), flat('#d8ffd8'), shade=False, sep=False)
         for ex in (cx + 1, cx + 7):
             c.part(lambda d, ex=ex: d.rectangle([ex, top + 9, ex + 2, top + 13], fill=255), flat('#1b2a1e'), shade=False, sep=False)
@@ -138,13 +144,13 @@ def slime(action, i):
 def spider(action, i):
     c = Canvas(64, 48)
     ph = i % 4
-    lift = 0 if action != 'attack' else [0, 3, 5, 1][i]
+    lift = 0 if action != 'attack' else KF([0, 3, 5, 1], action, i)
     dead = action == 'death'
     BODY = ramp('#3a2a4a', '#6a5080', '#1a1024')
-    cx, cy = 30 + (2 if action == 'attack' and i == 2 else 0), 30 - lift
+    cx, cy = 30 + (KF([0, 1, 2, 0], action, i) if action == 'attack' else 0), 30 - lift
     for k in range(4):
         for side in (-1, 1):
-            wig = (2 if (ph + k) % 2 == 0 else -2) if action == 'walk' else 0
+            wig = 2 * math.cos((ph + k) * math.pi) if action == 'walk' else (0.6 * math.sin(i * math.pi / 2 + k) if action == 'idle' else 0)
             knee = (cx + side * (8 + k * 3), cy - 10 + k * 2 + wig)
             if dead:
                 knee = (cx + side * (6 + k * 2), cy - 2)
@@ -209,10 +215,10 @@ def goblin_chief(action, i):
 def ice_golem(action, i):
     """Golem de Gelo: corpo de blocos de gelo, cristais nos ombros e núcleo brilhante."""
     c = Canvas(96, 96)
-    bob = {'idle': [0, 0, 1, 1], 'walk': [0, 1, 0, 1], 'attack': [0, -1, 1, 0], 'hit': [1], 'death': [2, 5, 0, 0]}[action][i]
-    step = [4, 0, -4, 0][i] if action == 'walk' else 0
+    bob = KF({'idle': [0, 0, 1, 1], 'walk': [0, 1, 0, 1], 'attack': [0, -1, 1, 0], 'hit': [1], 'death': [2, 5, 0, 0]}[action], action, i)
+    step = KF([4, 0, -4, 0], action, i) if action == 'walk' else 0
     swing = {'attack': [-14, -22, 10, 4]}.get(action, [0, 0, 0, 0])
-    sw = swing[i] if action == 'attack' else 0
+    sw = KF(swing, action, i) if action == 'attack' else 0
     ICE = ramp('#5aa8e0', '#c8f0ff', '#2a5a98')
     DEEP = ramp('#3a7ac0', '#8ad0ff', '#1a3a70')
     cx, top = 42, 40 + bob
@@ -247,18 +253,18 @@ def ice_golem(action, i):
 def lava_hound(action, i):
     """Cão de Lava: quadrúpede de rocha com crina de fogo e fendas brilhantes."""
     c = Canvas(80, 56)
-    ph = i % 4
+    ph = int(i * 2) % 4
     run = action == 'walk'
-    lunge = [0, 4, 8, 2][i] if action == 'attack' else 0
+    lunge = KF([0, 4, 8, 2], action, i) if action == 'attack' else 0
     dead = action == 'death'
     ROCK = ramp('#3a2a26', '#6a4a40', '#1a100e')
     FIRE = ramp('#ff6a1a', '#ffd36b', '#a8240a')
-    by = 30 + (1 if ph % 2 and run else 0) + ([0, 4, 10, 14][i] if dead else 0)
+    by = 30 + (1 if ph % 2 and run else 0) + (KF([0, 4, 10, 14], action, i) if dead else 0)
     bx = 34 + lunge
     # pernas
     legs = [(bx - 14, -1), (bx - 8, 1), (bx + 8, -1), (bx + 14, 1)]
     for k, (lx, ph2) in enumerate(legs):
-        off = (3 if (ph + k) % 2 else -3) * ph2 if run else 0
+        off = 3 * math.cos(i * math.pi / 2 + k * math.pi) * ph2 if run else 0
         if dead:
             continue
         c.part(lambda d, lx=lx, off=off: d.polygon(quad((lx, by + 4), (lx + off, 50), 5, 4), fill=255), ROCK)
@@ -274,7 +280,7 @@ def lava_hound(action, i):
     # cabeça
     hx, hy = bx + 18, by - 6 + (6 if dead else 0)
     c.part(lambda d: d.polygon([(hx - 6, hy - 6), (hx + 6, hy - 7), (hx + 14, hy - 1), (hx + 14, hy + 3), (hx + 4, hy + 6), (hx - 6, hy + 5)], fill=255), ROCK)
-    jaw = 3 if action == 'attack' and i in (1, 2) else 0
+    jaw = round(KF([0, 3, 3, 0], action, i)) if action == 'attack' else 0
     c.part(lambda d: d.polygon([(hx + 2, hy + 3 + jaw), (hx + 14, hy + 3 + jaw), (hx + 12, hy + 6 + jaw), (hx + 2, hy + 7)], fill=255), ROCK)
     if jaw:
         c.part(lambda d: d.rectangle([hx + 4, hy + 3, hx + 13, hy + 3 + jaw], fill=255), flat('#ff6a1a'), shade=False, sep=False)
