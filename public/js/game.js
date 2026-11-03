@@ -65,7 +65,7 @@
       case 'char': S.char = m; renderChar(); if (S.panel === 'market' && MK.tab === 'sell') renderMarket(); return;
       case 'pj': S.players.set(m.id, { ...(S.players.get(m.id) || { x: 0, y: 0, rx: null }), info: m }); if (m.eq) Sprites.preloadEquip(m.cls, m.eq); return;
       case 'pl': S.players.delete(m.id); return;
-      case 'reward': if (window.Sfx) Sfx.coin(); return feed(`+${fmt.format(m.exp)} EXP  +${fmt.format(m.zen)} Zen${m.share ? ` (${m.share}% do dano)` : ''}`, '');
+      case 'reward': if (window.Sfx) Sfx.coin(); return;
       case 'duelInvite': return showDuelInvite(m);
       case 'duel': S.duel = { with: m.with, name: m.name, until: performance.now() + m.until }; renderDuelBar(); if (window.Sfx) Sfx.duel(); feed(`Duelo contra ${m.name} começou! Vence quem derrubar o outro.`, 'pvp'); return;
       case 'duelEnd': S.duel = null; renderDuelBar(); feed(m.result === 'win' ? 'Você venceu o duelo!' : m.result === 'loss' ? 'Você perdeu o duelo.' : 'Duelo encerrado sem vencedor.', m.result === 'win' ? 'lvl' : 'warn'); return;
@@ -1889,7 +1889,7 @@
     const f = $('#feed');
     f.appendChild(el);
     while (f.children.length > 6) f.firstChild.remove();
-    setTimeout(() => el.remove(), 6200);
+    setTimeout(() => el.remove(), cls === 'chat-toast' ? 15000 : 6200);
   }
 
   // ================= ficha do personagem =================
@@ -2552,9 +2552,12 @@
     holder.innerHTML = '<p class="muted">Carregando conjuntos…</p>';
     try {
       const data = await admApi('GET', '/api/premium-store');
+      const catalog = Array.isArray(data.catalog) ? data.catalog : [];
+      const orders = Array.isArray(data.orders) ? data.orders : [];
+      if (!catalog.length) throw new Error('A loja não retornou produtos. Atualize a página ou tente novamente.');
       holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/special-christmas-pixel-art.svg" alt="Set natalino em pixel art 2D" loading="lazy"><div><h3>Conjuntos semi-full</h3><b>Especial Christmas</b><p class="muted small">Armadura natalina, asas, pingente, dois anéis, espada, arco e escudo.</p></div></div><p class="muted small">30 conjuntos semi-full e pacotes promocionais de Box Kundun com itens raros e épicos, sem atributos full. Os atributos dos conjuntos aumentam junto com o preço; até o tier inicial supera os equipamentos base de monstros e bosses. Confira os seis atributos antes de comprar. O primeiro reset de status é grátis; cada reset adicional custa R$ 5,00.</p>' +
-        ((data.orders || []).length ? '<div class="premium-orders"><b>Pedidos prontos para resgatar</b>' + data.orders.map(o => '<div class="row"><span>' + esc(o.product) + ' · ' + brl.format(o.amount_cents / 100) + '</span><button class="btn small btn-gold" type="button" data-premium-claim="' + o.id + '">Resgatar neste personagem</button></div>').join('') + '</div>' : '') +
-        '<div class="premium-grid">' + data.catalog.map(p => {
+        (orders.length ? '<div class="premium-orders"><b>Pedidos prontos para resgatar</b>' + orders.map(o => '<div class="row"><span>' + esc(o.product) + ' · ' + brl.format(o.amount_cents / 100) + '</span><button class="btn small btn-gold" type="button" data-premium-claim="' + o.id + '">Resgatar neste personagem</button></div>').join('') + '</div>' : '') +
+        '<div class="premium-grid">' + catalog.map(p => {
           const isBox = p.type === 'box';
           const detail = p.type === 'reset' ? 'Reset de atributos para o personagem selecionado'
             : isBox
@@ -2567,11 +2570,11 @@
             '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled || (p.type === 'reset' && !(RSI.info && !RSI.info.free)) ? ' disabled' : '') + '>' + (p.type === 'reset' && RSI.info && RSI.info.free ? 'Use o reset grátis no Herói' : data.enabled ? (p.type === 'reset' ? 'Comprar reset · R$ 5,00' : isBox ? 'Comprar caixas' : 'Comprar conjunto') : 'Pagamento indisponível') + '</button>' + (p.type === 'set' ? '<button class="btn small premium-preview-trigger" type="button" data-premium-preview="' + esc(p.id) + '">Ver no personagem</button>' : '') + '</div></article>';
         }).join('') + '</div></section>';
       Array.from(holder.querySelectorAll('[data-premium-icon]')).forEach((canvas, i) => {
-        const product = data.catalog[i];
+        const product = catalog[i];
         PA.drawIcon(canvas.getContext('2d'), product && product.type === 'box' ? 'box' : ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, product ? product.tone : '#d82f3f');
       });
       $('[data-premium-preview]', holder).forEach(btn => { btn.onclick = () => {
-        const product = data.catalog.find(p => p.id === btn.dataset.premiumPreview);
+        const product = catalog.find(p => p.id === btn.dataset.premiumPreview);
         if (!product) return;
         const dialog = document.createElement('dialog');
         dialog.className = 'premium-preview-dialog';
@@ -2822,9 +2825,19 @@
     CHAT_LOGS[channel].push(l);
     if (CHAT_LOGS[channel].length > 100) CHAT_LOGS[channel].shift();
     if (channel === activeChatChannel) paintChat();
-    if (notify && S.panel !== 'chat') {
-      if (!l.from) feed(l.en && window.I18N && I18N.lang === 'en' ? l.en : l.text, /Dourad|DOURAD/.test(l.text) ? 'gold' : 'lvl');
-      else { S.chatUnread++; $('#chat-badge').hidden = false; }
+    if (notify) {
+      const labels = { local: 'LOCAL', global: 'GLOBAL', private: 'PRIVADO', guild: 'GUILDA', party: 'PARTY', information: 'INFORMAÇÕES' };
+      const colors = { local: '#f2ead8', global: '#f0c64e', private: '#e99bdf', guild: '#7ddc86', party: '#77b8ff', information: '#ff9c52' };
+      const name = l.from || 'Servidor';
+      const message = l.en && window.I18N && I18N.lang === 'en' ? l.en : l.text;
+      feed(`[${labels[channel]}] ${name}: ${message}`, 'chat-toast', colors[channel]);
+      if (channel === 'private' && S.panel !== 'chat') {
+        S.chatUnread++;
+        const badge = $('#chat-badge');
+        badge.textContent = S.chatUnread > 99 ? '99+' : String(S.chatUnread);
+        badge.classList.add('badge-count');
+        badge.hidden = false;
+      }
     }
   }
   const CHAT_CHANNELS = ['local','global','private','guild','party','information'];
