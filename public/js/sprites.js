@@ -200,7 +200,7 @@
       const sx = f * WG.fw, sy = (wblk * WG.rowsPerClass + row) * WG.fh;
       const w = Math.round(WG.fw * scale), h = Math.round(WG.fh * scale);
       const flap = Math.sin((Number(t) || 0) / 520);
-      const spread = 0.91 + (flap + 1) * 0.045;
+      const spread = 0.97 + (flap + 1) * 0.015;
       const bob = Math.round(flap * 1.5 * scale);
       const cx = -Math.round(WG.pivot[0] * scale) + w / 2;
       const cy = -Math.round(WG.pivot[1] * scale) + h / 2 + bob;
@@ -217,16 +217,20 @@
     const wingKey = WG && wk && WG.sheets[wk] ? wk : variant ? variant[0] : 'wings_dragon';
     const wingPath = WG && (WG.sheets[wingKey] || Object.values(WG.sheets)[0]);
     const rarityGlow = { uncommon: '#5fdc78', rare: '#5aaaff', epic: '#be64ff', legendary: '#ffd36b' };
-    if (wk && WG) {
+    // de costas a asa/capa fica por cima do corpo; nas outras vistas, atrás
+    const fromBack = /_back$/.test(action);
+    const drawWing = () => {
       const filter = variant && variant[1] ? `hue-rotate(${variant[1]}deg) saturate(1.25)` : 'none';
       ctx.save(); ctx.filter = filter;
       wing(wingPath, (WG.glow && WG.glow[wingKey]) || rarityGlow[eq.wingRarity] || null);
       ctx.restore();
-    }
+    };
+    if (wk && WG && !fromBack) drawWing();
     blit(back, 0);
     piece('boots'); piece('armor_mid'); piece('gloves_mid');
+    if (wk && WG && fromBack) drawWing();
     const wingOver = WG && wk && WG.over && (WG.over[wk] || WG.over[wingKey]);
-    if (wk && wingOver) wing(wingOver, null);
+    if (wk && wingOver && !fromBack) wing(wingOver, null);
     piece('helm');
     const wb = eq.w === undefined ? S.manifest.weapons.defaults[cls] : eq.w;
     const wi = W && wb ? W.list.indexOf(wb) : -1;

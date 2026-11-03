@@ -1,5 +1,5 @@
 {
- "version": 7,
+ "version": 8,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",
@@ -36,8 +36,33 @@
      "frames": 8,
      "fps": 12
     },
+    "idle_front": {
+     "row": 5,
+     "frames": 8,
+     "fps": 8
+    },
+    "walk_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 16
+    },
+    "walk_back": {
+     "row": 7,
+     "frames": 8,
+     "fps": 16
+    },
     "run": {
      "row": 1,
+     "frames": 8,
+     "fps": 24
+    },
+    "run_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 24
+    },
+    "run_back": {
+     "row": 7,
      "frames": 8,
      "fps": 24
     }
@@ -84,8 +109,33 @@
      "frames": 8,
      "fps": 12
     },
+    "idle_front": {
+     "row": 5,
+     "frames": 8,
+     "fps": 8
+    },
+    "walk_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 16
+    },
+    "walk_back": {
+     "row": 7,
+     "frames": 8,
+     "fps": 16
+    },
     "run": {
      "row": 1,
+     "frames": 8,
+     "fps": 24
+    },
+    "run_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 24
+    },
+    "run_back": {
+     "row": 7,
      "frames": 8,
      "fps": 24
     }
@@ -132,8 +182,33 @@
      "frames": 8,
      "fps": 12
     },
+    "idle_front": {
+     "row": 5,
+     "frames": 8,
+     "fps": 8
+    },
+    "walk_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 16
+    },
+    "walk_back": {
+     "row": 7,
+     "frames": 8,
+     "fps": 16
+    },
     "run": {
      "row": 1,
+     "frames": 8,
+     "fps": 24
+    },
+    "run_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 24
+    },
+    "run_back": {
+     "row": 7,
      "frames": 8,
      "fps": 24
     }
@@ -206,8 +281,33 @@
      "frames": 8,
      "fps": 12
     },
+    "idle_front": {
+     "row": 5,
+     "frames": 8,
+     "fps": 8
+    },
+    "walk_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 16
+    },
+    "walk_back": {
+     "row": 7,
+     "frames": 8,
+     "fps": 16
+    },
     "run": {
      "row": 1,
+     "frames": 8,
+     "fps": 24
+    },
+    "run_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 24
+    },
+    "run_back": {
+     "row": 7,
      "frames": 8,
      "fps": 24
     }
@@ -254,8 +354,33 @@
      "frames": 8,
      "fps": 12
     },
+    "idle_front": {
+     "row": 5,
+     "frames": 8,
+     "fps": 8
+    },
+    "walk_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 16
+    },
+    "walk_back": {
+     "row": 7,
+     "frames": 8,
+     "fps": 16
+    },
     "run": {
      "row": 1,
+     "frames": 8,
+     "fps": 24
+    },
+    "run_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 24
+    },
+    "run_back": {
+     "row": 7,
      "frames": 8,
      "fps": 24
     }
@@ -302,8 +427,33 @@
      "frames": 8,
      "fps": 12
     },
+    "idle_front": {
+     "row": 5,
+     "frames": 8,
+     "fps": 8
+    },
+    "walk_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 16
+    },
+    "walk_back": {
+     "row": 7,
+     "frames": 8,
+     "fps": 16
+    },
     "run": {
      "row": 1,
+     "frames": 8,
+     "fps": 24
+    },
+    "run_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 24
+    },
+    "run_back": {
+     "row": 7,
      "frames": 8,
      "fps": 24
     }
@@ -975,7 +1125,7 @@
    "armor_front",
    "gloves_front"
   ],
-  "rowsPerPiece": 5,
+  "rowsPerPiece": 8,
   "classes": {
    "dark_knight": {
     "leather": "equip/dark_knight_leather.png",
@@ -1132,7 +1282,7 @@
    "dark_lord",
    "summoner"
   ],
-  "rowsPerClass": 5,
+  "rowsPerClass": 8,
   "sheets": {
    "wings_satan": "equip/wings_wings_satan.png",
    "wings_heaven": "equip/wings_wings_heaven.png",

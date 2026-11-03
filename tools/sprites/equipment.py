@@ -122,6 +122,10 @@ CLASS_WEAPONS = {
 
 
 def draw_weapon(cls, base, action, i):
+    import views
+    ba, view = views.split(action)
+    if view != 'side':
+        return views.draw_weapon_view(cls, base, ba, view, i)
     P, B = body_for(cls, action, i)
     c = Canvas(FW, FH)
     hand = B.ha_f
@@ -236,6 +240,10 @@ def boot(c, B, side, st):
 
 
 def draw_equip(cls, piece, set_name, action, i):
+    import views
+    ba, view = views.split(action)
+    if view != 'side':
+        return views.draw_equip_view(cls, piece, set_name, ba, view, i)
     P, B = body_for(cls, action, i)
     st = SETS[set_name]
     shape = st.get('shape', set_name)

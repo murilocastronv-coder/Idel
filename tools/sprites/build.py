@@ -21,7 +21,9 @@ OUT = os.path.join(ROOT, 'public', 'assets', 'sprites')
 PREVIEW = os.path.join(HERE, 'preview')
 # (animação, quadros, quadros por segundo): 8 quadros nas animações principais
 FPS = {'idle': 8, 'walk': 16, 'attack': 24, 'hit': 12, 'death': 12}
-ACTIONS = [(a, heroes.FRAMES[a], FPS[a]) for a in ('idle', 'walk', 'attack', 'hit', 'death')]
+MON_ACTIONS = [(a, heroes.FRAMES[a], FPS[a]) for a in ('idle', 'walk', 'attack', 'hit', 'death')]
+# heróis: + parado de frente, andando de frente (para baixo) e de costas (para cima)
+ACTIONS = MON_ACTIONS + [('idle_front', heroes.FRAMES['idle'], FPS['idle']), ('walk_front', heroes.FRAMES['walk'], FPS['walk']), ('walk_back', heroes.FRAMES['walk'], FPS['walk'])]
 MAXF = max(n for _, n, _ in ACTIONS)
 
 
@@ -52,10 +54,11 @@ def death_frames(draw, pivot):
     return frames
 
 
-def sheet(draw, fw, fh, pivot, rotate_death=True):
-    img = Image.new('RGBA', (fw * MAXF, fh * len(ACTIONS)), (0, 0, 0, 0))
+def sheet(draw, fw, fh, pivot, rotate_death=True, actions=None):
+    actions = actions or ACTIONS
+    img = Image.new('RGBA', (fw * MAXF, fh * len(actions)), (0, 0, 0, 0))
     meta = {}
-    for row, (act, n, fps) in enumerate(ACTIONS):
+    for row, (act, n, fps) in enumerate(actions):
         if act == 'death' and rotate_death:
             frames = death_frames(draw, pivot)
         else:
@@ -75,6 +78,10 @@ def runtime_actions(actions):
     walk = actions.get('walk')
     if walk:
         actions['run'] = {'row': walk['row'], 'frames': walk['frames'], 'fps': max(24, walk.get('fps', 12))}
+    for v in ('front', 'back'):
+        w = actions.get('walk_' + v)
+        if w:
+            actions['run_' + v] = {'row': w['row'], 'frames': w['frames'], 'fps': max(24, w.get('fps', 12))}
     attack = actions.get('attack')
     if attack:
         attack['impactFrame'] = min(attack['frames'] - 1, round(attack['frames'] * 0.55))
@@ -86,7 +93,7 @@ def main():
     os.makedirs(os.path.join(OUT, 'monsters'), exist_ok=True)
     os.makedirs(os.path.join(OUT, 'effects'), exist_ok=True)
     os.makedirs(PREVIEW, exist_ok=True)
-    manifest = {'version': 7, 'heroes': {}, 'monsters': {}, 'effects': {},
+    manifest = {'version': 8, 'heroes': {}, 'monsters': {}, 'effects': {},
                 'skinKeys': [list(c) for c in ramp5(heroes.SKIN)]}
     pivot = (heroes.BUILD['cx'], heroes.FOOT_Y)
 
@@ -177,7 +184,7 @@ def main():
         'skeleton_king': (lambda a, i: monsters.skeleton(a, i, king=True), 96, 96, (42, 90), True, 1.5),
     }
     for name, (fn, fw, fh, pv, rot, scale) in mons.items():
-        img, meta = sheet(fn, fw, fh, pv, rotate_death=rot)
+        img, meta = sheet(fn, fw, fh, pv, rotate_death=rot, actions=MON_ACTIONS)
         path = f'monsters/{name}.png'
         img.save(os.path.join(OUT, path))
         manifest['monsters'][name] = {'sheet': path, 'fw': fw, 'fh': fh, 'pivot': list(pv), 'actions': runtime_actions(meta), 'scale': scale}

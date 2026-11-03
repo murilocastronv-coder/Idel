@@ -92,3 +92,8 @@
 @media (prefers-reduced-motion: reduce) { .mk-notice { transition: opacity .2s; } }
 .rs-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 8px; }
 .rs-btn { font-weight: 800; letter-spacing: .3px; }
+/* inspeção do item vestido no herói */
+.ii-preview { display: grid; justify-items: center; gap: 4px; margin: 4px auto 8px; padding: 6px; border: 1px solid var(--edge); background: radial-gradient(ellipse at 50% 85%, rgba(232, 184, 74, .12), transparent 60%), rgba(8, 10, 22, .6); max-width: 260px; }
+.ii-preview canvas { width: 240px; height: 190px; image-rendering: pixelated; cursor: pointer; }
+.ii-pv-bar { display: flex; gap: 8px; align-items: center; font: 700 12px var(--display); color: #ffe7a0; }
+.ii-pv-bar span { min-width: 110px; text-align: center; }

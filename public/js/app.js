@@ -184,7 +184,7 @@
   function charCanvas(c) {
     const size = 64, scale = 1;
     const cv = document.createElement('canvas'); cv.width = size; cv.height = size;
-    const paint = () => { const g = cv.getContext('2d'); g.clearRect(0, 0, size, size); Sprites.hero(g, c.class, c.appearance, 'idle', 0, size / 2, size - 2 * scale, scale, false, c.eq ? { equip: c.eq } : undefined); };
+    const paint = () => { const g = cv.getContext('2d'); g.clearRect(0, 0, size, size); Sprites.hero(g, c.class, c.appearance, 'idle_front', 0, size / 2, size - 2 * scale, scale, false, c.eq ? { equip: c.eq } : undefined); };
     paint();
     if (c.eq && Sprites.preloadEquip) Sprites.preloadEquip(c.class, c.eq).then(paint);
     return cv;
@@ -474,7 +474,7 @@
   }
 
   // retrato recortado (pés em baixo, sem a área vazia do quadro)
-  function portrait(cls, ap, size, scale, action = 'idle', t = 0) {
+  function portrait(cls, ap, size, scale, action = 'idle_front', t = 0) {
     const cv = document.createElement('canvas'); cv.width = size; cv.height = size;
     Sprites.hero(cv.getContext('2d'), cls, ap, action, t, size / 2, size - 2 * scale, scale, false);
     return cv;

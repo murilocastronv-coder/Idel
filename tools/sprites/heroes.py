@@ -283,6 +283,10 @@ NULL = NullCanvas()
 def draw_hero(cls, action, i, hair=None, layer='full'):
     """Desenha um quadro. layer: 'full' (com arma padrão), 'back' (corpo, sem arma e sem o braço da frente)
     ou 'front' (só o braço/ombro da frente). Retorna Canvas."""
+    import views
+    ba, view = views.split(action)
+    if view != 'side':
+        return views.draw_hero_view(cls, ba, view, i, hair=hair, layer=layer)
     kind = {'dark_knight': 'melee', 'magic_gladiator': 'melee', 'dark_lord': 'melee', 'fairy_elf': 'bow'}.get(cls, 'caster')
     if cls == 'dark_lord' and action == 'attack':
         kind = 'caster'

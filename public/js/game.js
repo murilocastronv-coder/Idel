@@ -708,6 +708,8 @@
     e.rx += (e.x - e.rx) * k; e.ry += (e.y - e.ry) * k;
     const v = dt > 0 ? Math.hypot(e.rx - ox, e.ry - oy) / dt : 0;
     e.speed = (e.speed || 0) * 0.8 + v * 0.2;
+    // direção do movimento (suavizada): decide se o herói anda de lado, de frente ou de costas
+    if (dt > 0) { e.vx = (e.vx || 0) * 0.8 + ((e.rx - ox) / dt) * 0.2; e.vy = (e.vy || 0) * 0.8 + ((e.ry - oy) / dt) * 0.2; }
     if (e.phase === undefined) e.phase = Math.random() * 1000;
   }
 
@@ -1369,6 +1371,17 @@
   const spr = () => zoom / 2; // pixels de tela por pixel de sprite (sprites têm o dobro da resolução do mundo)
   function shake(mag, dur = 350) { S.shake = { mag, dur, until: performance.now() + dur }; }
 
+  // herói: parado = de frente; andando para os lados = de lado (virado para onde vai); para baixo = de frente; para cima = de costas
+  function heroAnim(e, now) {
+    if (e.dyingAt || now < (e.attackUntil || 0) || (now < (e.hurtUntil || 0) && now >= (e.hitAt || 0))) return [...animOf(e, now), e.flip];
+    const speed = e.speed || 0;
+    if (speed > 10) {
+      const vx = e.vx || 0, vy = e.vy || 0, run = speed > 65;
+      if (Math.abs(vx) >= Math.abs(vy) * 0.85) { e.faceLeft = vx < 0; return [run ? 'run' : 'walk', now + e.phase, false, e.faceLeft]; }
+      return [(run ? 'run_' : 'walk_') + (vy > 0 ? 'front' : 'back'), now + e.phase, false, false];
+    }
+    return ['idle_front', now + e.phase, false, false];
+  }
   function animOf(e, now) {
     if (e.dyingAt) return ['death', now - e.dyingAt, true];
     if (now < (e.attackUntil || 0)) return ['attack', now - (e.attackStart || now), true];
@@ -1439,8 +1452,8 @@
           const g4 = ctx.createRadialGradient(x, y - 14 * zoom, 0, x, y - 14 * zoom, r2);
           g4.addColorStop(0, e.kind === 'sevina' ? 'rgba(160,220,255,.4)' : 'rgba(255,190,90,.4)'); g4.addColorStop(1, 'rgba(0,0,0,0)');
           ctx.fillStyle = g4; ctx.fillRect(x - r2, y - 14 * zoom - r2, r2 * 2, r2 * 2); ctx.restore();
-          if (e.kind === 'sevina') Sprites.hero(ctx, 'fairy_elf', { hair: 1, skin: 0 }, 'idle', now, x, y, sc, true, { equip: { w: null, armor: 'phoenix', helm: null } });
-          else Sprites.hero(ctx, 'dark_knight', { hair: 4, skin: 1 }, 'idle', now, x, y, sc, true, { equip: { helm: 'storm', armor: 'storm', gloves: 'storm', boots: 'storm' } });
+          if (e.kind === 'sevina') Sprites.hero(ctx, 'fairy_elf', { hair: 1, skin: 0 }, 'idle_front', now, x, y, sc, true, { equip: { w: null, armor: 'phoenix', helm: null } });
+          else Sprites.hero(ctx, 'dark_knight', { hair: 4, skin: 1 }, 'idle_front', now, x, y, sc, true, { equip: { helm: 'storm', armor: 'storm', gloves: 'storm', boots: 'storm' } });
           label(e.name, x, y - HERO_H * sc - 4 * dpr, e.kind === 'sevina' ? '#bfe8ff' : '#ffcf7a');
           label('Evolução de classe', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
           continue;
@@ -1452,8 +1465,8 @@
           const g5 = ctx.createRadialGradient(x, y - 14 * zoom, 0, x, y - 14 * zoom, r3);
           g5.addColorStop(0, guard ? 'rgba(255,70,50,.42)' : 'rgba(170,80,255,.42)'); g5.addColorStop(1, 'rgba(0,0,0,0)');
           ctx.fillStyle = g5; ctx.fillRect(x - r3, y - 14 * zoom - r3, r3 * 2, r3 * 2); ctx.restore();
-          if (guard) Sprites.hero(ctx, 'dark_knight', { hair: 0, skin: 1 }, 'idle', now, x, y, sc, true, { equip: { helm: 'abyss', armor: 'abyss', gloves: 'abyss', boots: 'abyss' } });
-          else Sprites.hero(ctx, 'dark_wizard', { hair: 3, skin: 0 }, 'idle', now, x, y, sc, false, { equip: { armor: 'abyss', helm: 'abyss' } });
+          if (guard) Sprites.hero(ctx, 'dark_knight', { hair: 0, skin: 1 }, 'idle_front', now, x, y, sc, true, { equip: { helm: 'abyss', armor: 'abyss', gloves: 'abyss', boots: 'abyss' } });
+          else Sprites.hero(ctx, 'dark_wizard', { hair: 3, skin: 0 }, 'idle_front', now, x, y, sc, false, { equip: { armor: 'abyss', helm: 'abyss' } });
           label(e.name, x, y - HERO_H * sc - 4 * dpr, guard ? '#ffb0a0' : '#d8b0ff');
           label(e.kind === 'teleport' ? 'Viajar para outro mapa' : guard ? 'Chaos Castle' : 'Devil Square', x, y - HERO_H * sc - 17 * dpr, guard ? '#ff7a5a' : '#c88aff', 10);
           continue;
@@ -1464,7 +1477,7 @@
           const glow = ctx.createRadialGradient(x, y - 14 * zoom, 0, x, y - 14 * zoom, rg);
           glow.addColorStop(0, 'rgba(255,211,107,.38)'); glow.addColorStop(1, 'rgba(255,211,107,0)');
           ctx.fillStyle = glow; ctx.fillRect(x - rg, y - 14 * zoom - rg, rg * 2, rg * 2); ctx.restore();
-          Sprites.hero(ctx, 'fairy_elf', { hair: 2, skin: 1 }, 'idle', now, x, y, sc, false, { equip: { armor: 'phoenix', gloves: 'phoenix', boots: 'phoenix' } });
+          Sprites.hero(ctx, 'fairy_elf', { hair: 2, skin: 1 }, 'idle_front', now, x, y, sc, false, { equip: { armor: 'phoenix', gloves: 'phoenix', boots: 'phoenix' } });
           label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffe7a0');
           label('Guildas e membros', x, y - HERO_H * sc - 17 * dpr, '#ffd36b', 10);
           continue;
@@ -1478,15 +1491,15 @@
           continue;
         }
         if (e.kind === 'vault') { drawVaultChest(x, y, now); label(e.name, x, y - 30 * zoom - 4 * dpr, '#ffd36b'); label('Guardar itens e Zen', x, y - 30 * zoom - 17 * dpr, '#9affd0', 10); continue; }
-        Sprites.hero(ctx, 'dark_wizard', { hair: 1, skin: 1 }, 'idle', now, x, y, sc, true);
+        Sprites.hero(ctx, 'dark_wizard', { hair: 1, skin: 1 }, 'idle_front', now, x, y, sc, true);
         label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffd36b');
         label('Loja', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
         continue;
       }
       const [x, y] = toScreen(e.rx, e.ry);
-      const [act, t, once] = animOf(e, now);
-      const runBob = act === 'run' ? Math.round(Math.abs(Math.sin((now + (e.phase || 0)) * 0.018)) * 1.5 * zoom) : 0;
-      const idleBob = act === 'idle' ? Math.sin((now + (e.phase || 0)) / 390) * 0.55 * zoom : 0;
+      const [act, t, once, heroFlip] = kind === 'p' ? heroAnim(e, now) : animOf(e, now);
+      const runBob = /^run/.test(act) ? Math.round(Math.abs(Math.sin((now + (e.phase || 0)) * 0.018)) * 1.5 * zoom) : 0;
+      const idleBob = /^idle/.test(act) ? Math.sin((now + (e.phase || 0)) / 390) * 0.55 * zoom : 0;
       const recoilAge = (now - (e.hitAt || 0)) / 1000;
       const recoil = recoilAge >= 0 && recoilAge < .18 ? Math.sin((recoilAge / .18) * Math.PI) * (e.hitDir || 1) * 2.1 * zoom : 0;
       e.hpShow = e.hpShow === undefined ? e.hp : e.hpShow + (e.hp - e.hpShow) * 0.25;
@@ -1561,8 +1574,8 @@
           ctx.beginPath(); ctx.ellipse(x, y, 13 * zoom, 4 * zoom, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
         }
         const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : undefined;
-        if (act === 'run') drawRunPuff(x, y, now, e.phase, e.flip, '#c9b98f');
-        Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - runBob - idleBob, sc, e.flip, { once, equip: eq });
+        if (act === 'run') drawRunPuff(x, y, now, e.phase, heroFlip, '#c9b98f');
+        Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - runBob - idleBob, sc, heroFlip, { once, equip: eq });
         if (e.dead) continue;
         const top = y - HERO_H * sc - 4 * dpr;
         hpBar(x, top, 16 * zoom, e.hpShow / e.maxHp, isMe ? '#6aa84f' : (e.flags & 1) ? '#ff5a4a' : '#4aa3ff');
@@ -2404,7 +2417,9 @@
         ? '<button class="btn small" type="button" data-act="unequip">Desequipar</button>'
         : `<button class="btn small btn-gold" type="button" data-act="equip" ${canEq ? '' : 'disabled'}>Equipar</button>
            ${it.slot === 'ring' && canEq ? '<button class="btn small" type="button" data-act="equip" data-slot="ring2">No anel direito</button>' : ''}
-           <button class="btn small btn-ghost" type="button" data-act="sell">Vender por ${fmt.format(it.value)} Zen</button>`}</div>`;
+           <button class="btn small btn-ghost" type="button" data-act="sell">Vender por ${fmt.format(it.value)} Zen</button>`}
+        ${['weapon', 'helm', 'armor', 'gloves', 'boots', 'wings'].includes(it.slot) ? '<button class="btn small" type="button" data-look>👁 Ver no herói</button>' : ''}</div>`;
+    const lk = $('[data-look]', box); if (lk) lk.onclick = () => openItemInfo(it, 'bag');
     $$('[data-act]', box).forEach((b) => {
       b.onclick = () => {
         if (b.dataset.act === 'sell') S.selItem = null;
@@ -3203,12 +3218,50 @@
     $('#item-info-body').innerHTML = '';
     $('#item-info-body').appendChild((() => { const c = document.createElement('div'); c.className = 'ii-icon'; c.style.setProperty('--r', RAR[it.rarity]); c.appendChild(iconCanvas(it)); return c; })());
     $('#item-info-body').insertAdjacentHTML('beforeend', itemInfoHtml(it));
+    itemPreview(it, $('#item-info-body'));
     $('#item-info-actions').innerHTML = (side === 'me' ? '<button class="btn" type="button" id="ii-remove">Tirar da oferta</button>' : '') + '<button class="btn btn-gold" type="button" id="ii-close">FECHAR</button>';
     box.hidden = false;
     $('#ii-close').onclick = closeItemInfo;
     const rm = $('#ii-remove'); if (rm) rm.onclick = () => { send({ type: 'trade', action: 'remove', item: it.id }); closeItemInfo(); };
   }
-  function closeItemInfo() { $('#item-info').hidden = true; TR.view = null; }
+  function closeItemInfo() { $('#item-info').hidden = true; TR.view = null; PV.on = false; }
+  // ---------- inspeção: o item vestido no seu herói, girando (de frente, de lado, andando, de costas) ----------
+  const PV = { on: false };
+  const PV_VIEWS = [['idle_front', false, 'De frente'], ['walk_front', false, 'Andando'], ['idle', false, 'De lado'], ['walk', true, 'Andando de lado'], ['walk_back', false, 'De costas']];
+  function itemPreview(it, root) {
+    PV.on = false;
+    const visual = ['weapon', 'helm', 'armor', 'gloves', 'boots', 'wings'].includes(it.slot);
+    if (!visual || !S.char) return;
+    const me = S.players.get(S.youId);
+    const eq = { ...((me && me.info && me.info.eq) || {}) };
+    if (it.slot === 'weapon') { eq.w = it.base; eq.wr = it.rarity; eq.wp = it.plus || 0; eq.wg = ['epic', 'legendary', 'ancestral'].includes(it.rarity) ? RAR[it.rarity] : (it.plus || 0) >= 7 ? '#7ad0ff' : null; }
+    else if (it.slot === 'wings') { eq.wings = it.base; eq.wingRarity = it.rarity; eq.wingPlus = it.plus || 0; }
+    else if (it.set) eq[it.slot] = it.set;
+    const box = document.createElement('div'); box.className = 'ii-preview';
+    box.innerHTML = '<canvas width="240" height="190" aria-label="Prévia do item no seu herói"></canvas><div class="ii-pv-bar"><button type="button" class="btn small" data-pv="-1" aria-label="Girar">◀</button><span></span><button type="button" class="btn small" data-pv="1" aria-label="Girar">▶</button></div>';
+    root.insertBefore(box, root.children[1] || null);
+    const cv2 = box.querySelector('canvas'), g = cv2.getContext('2d'), lab = box.querySelector('span');
+    let vi = 0, auto = performance.now();
+    const turn = (d) => { vi = (vi + d + PV_VIEWS.length) % PV_VIEWS.length; auto = performance.now(); };
+    box.querySelectorAll('[data-pv]').forEach((b) => { b.onclick = () => turn(Number(b.dataset.pv)); });
+    cv2.onclick = () => turn(1);
+    Sprites.preloadEquip(S.char.cls, eq);
+    PV.on = true;
+    const token = PV.token = {};
+    const step = (now) => {
+      if (!PV.on || PV.token !== token || !box.isConnected) return;
+      if (now - auto > 2600) turn(1);
+      const [act, flip, name] = PV_VIEWS[vi];
+      lab.textContent = name;
+      g.clearRect(0, 0, cv2.width, cv2.height);
+      const grd = g.createRadialGradient(120, 168, 4, 120, 168, 70); grd.addColorStop(0, 'rgba(255,211,107,.25)'); grd.addColorStop(1, 'rgba(255,211,107,0)');
+      g.fillStyle = grd; g.fillRect(0, 100, 240, 90);
+      g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(120, 176, 26, 7, 0, 0, Math.PI * 2); g.fill();
+      Sprites.hero(g, S.char.cls, S.char.ap, act, now, 120, 176, 1.6, flip, { equip: eq });
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
   function tradeDialog(html, buttons) {
     const d = $('#trade-dlg');
     d.innerHTML = html + `<div class="row">${buttons.map((b, i) => `<button class="btn ${b.cls || ''}" type="button" data-b="${i}">${esc(b.label)}</button>`).join('')}</div>`;

@@ -37,6 +37,16 @@ STYLES = {
 GLOW = {'wings_dragon': '#ff6a2a', 'wings_soul': '#7ad0ff', 'wings_spirit': '#ffe08a', 'wings_darkness': '#a04aff',
         'wings_despair': '#ff6ab8', 'cape_emperor': '#ff5a3a'}
 
+# abrir e fechar (estilo MU): fator de abertura horizontal por quadro (1 = aberta, menor = fechando)
+FOLD = {
+    'idle': [1.0, 0.9, 0.74, 0.9],
+    'walk': [1.02, 0.82, 0.62, 0.84],
+    'attack': [0.9, 1.06, 1.0, 0.9],
+    'hit': [0.84],
+    'death': [0.8, 0.7, 0.66, 0.66],
+}
+FOLD_VIEW = {'idle': [1.04, 0.86, 0.6, 0.86], 'walk': [1.04, 0.78, 0.5, 0.8]}
+FLAP_VIEW = {'idle': [6, 0, -8, 0], 'walk': [8, -2, -12, -2]}
 # batida das asas por quadro (graus; positivo = mais aberta para cima)
 FLAP = {
     'idle': [0, 5, 9, 5],
@@ -57,9 +67,16 @@ def rotp(p, o, ang):
     return (o[0] + x * math.cos(a) - y * math.sin(a), o[1] + x * math.sin(a) + y * math.cos(a))
 
 
-def bat_wing(c, R, flap, span, col, bone, scale=1.0, claws=False, thorn=False):
+def folder(R, flap, sx):
+    def f(p):
+        q = rotp(p, R, flap * 0.8)            # bater a asa = girar tudo no ombro
+        return (R[0] + (q[0] - R[0]) * sx, q[1])   # abrir/fechar = encolher na horizontal
+    return f
+
+
+def bat_wing(c, R, flap, span, col, bone, scale=1.0, claws=False, thorn=False, sx=1.0):
     s = span * scale
-    rot = lambda p: rotp(p, R, flap * 0.8)   # bater a asa = girar tudo no ombro
+    rot = folder(R, flap, sx)
     Wr = at(R, -104, s * 0.52)
     W = rot(Wr)                              # punho: sobe atrás do ombro
     T = rot(at(Wr, -142, s * 0.6))           # ponta: alta, para trás
@@ -91,9 +108,9 @@ def bat_wing(c, R, flap, span, col, bone, scale=1.0, claws=False, thorn=False):
             c.part(lambda dr, p=p, tip=tip: dr.polygon([(p[0] - 1.5, p[1] + 1), (p[0] + 1.5, p[1]), tip], fill=255), ramp('#f0f0f0', '#ffffff', '#9a9aa8'), sep=False)
 
 
-def feather_wing(c, R, flap, span, col, scale=1.0, tips=None, leaf=False):
+def feather_wing(c, R, flap, span, col, scale=1.0, tips=None, leaf=False, sx=1.0):
     s = span * scale
-    rot = lambda p: rotp(p, R, flap * 0.8)
+    rot = folder(R, flap, sx)
     Wr = at(R, -98, s * 0.5)
     Tr = at(Wr, -152, s * 0.5)
     rows = []
@@ -159,7 +176,77 @@ def cape(c, B, P, st, i, action):
             c.part(lambda dr, x=x: dr.ellipse([x - 2.5, t - 3, x + 2.5, t + 2], fill=255), col, sep=False)
 
 
+def cape_view(c, B, st, view, i, walk):
+    t, cx = B.top, B.cx
+    bottom = FOOT_Y + DY - 1
+    big = 4 if st.get('big') else 0
+    sw = math.sin(i / 8 * 2 * math.pi) * (2.5 if walk else 0.8)
+    if view == 'front':
+        # de frente a capa fica atrás: aparecem as bordas ao lado das pernas e a gola alta
+        poly = [(cx - 10, t), (cx + 10, t), (cx + 17 + big + sw, bottom - 2), (cx - 17 - big + sw, bottom - 2)]
+        c.part(lambda dr: dr.polygon(poly, fill=255), st['inner'])
+        c.part(lambda dr: dr.line([poly[1], poly[2]], fill=255, width=2), st['col'], shade=False, sep=False)
+        c.part(lambda dr: dr.line([poly[0], poly[3]], fill=255, width=2), st['col'], shade=False, sep=False)
+        col = ramp('#f0e6d0', '#ffffff', '#a89878') if st.get('fur') else st['col']
+        for s in (-1, 1):
+            collar = [(cx + s * 5, t + 1), (cx + s * (12 + big), t - 12 - big), (cx + s * 8, t - 4)]
+            c.part(lambda dr, collar=collar: dr.polygon(collar, fill=255), col, sep=False)
+        return
+    # de costas: a capa cobre as costas inteiras
+    hem = [(cx + 15 + big + sw, bottom - 3), (cx + 7, bottom), (cx, bottom - 2), (cx - 7, bottom), (cx - 15 - big + sw, bottom - 3)]
+    poly = [(cx - 10, t - 1), (cx + 10, t - 1)] + hem
+    c.part(lambda dr: dr.polygon(poly, fill=255), st['col'])
+    for x0 in (-6, 0, 6):
+        c.part(lambda dr, x0=x0: dr.line([(cx + x0 * 0.6, t + 6), (cx + x0 * 1.6 + sw, bottom - 3)], fill=255, width=1), darker(st['col'], 0.7), shade=False, sep=False)
+    c.part(lambda dr: dr.line(hem, fill=255, width=2), st['trim'], shade=False, sep=False)
+    ex, ey = cx + sw * 0.3, t + 18
+    c.part(lambda dr: dr.polygon([(ex, ey - 6), (ex + 5, ey - 1), (ex, ey + 6), (ex - 5, ey - 1)], fill=255), st['trim'], sep=False)
+    c.part(lambda dr: dr.ellipse([ex - 2, ey - 2.5, ex + 2, ey + 1.5], fill=255), ramp('#ff5a8a', '#ffb0c8', '#8a1030') if st.get('fur') else ramp('#5ad0ff', '#c8f4ff', '#1a5a9a'), sep=False)
+    col = ramp('#f0e6d0', '#ffffff', '#a89878') if st.get('fur') else st['col']
+    collar = [(cx - 11, t + 3), (cx - 13 - big, t - 10 - big), (cx - 5, t - 6), (cx, t - 12 - big), (cx + 5, t - 6), (cx + 13 + big, t - 10 - big), (cx + 11, t + 3)]
+    c.part(lambda dr: dr.polygon(collar, fill=255), col, sep=False)
+    c.part(lambda dr: dr.line(collar, fill=255, width=1), st['trim'], shade=False, sep=False)
+
+
+def draw_wings_view(cls, base, ba, view, i, layer):
+    import views
+    import numpy as np
+    B = views.FrontBody(ba, i, view)
+    B.cx += DX; B.top += DY
+    st = STYLES[base]
+    c = Canvas(WFW, WFH)
+    if layer == 'over':
+        return c
+    if st['kind'] == 'cape':
+        cape_view(c, B, st, view, i, ba == 'walk')
+        c.outline()
+        return c
+    # par de asas simétrico: desenha a esquerda e espelha (as duas partes aparecem de frente e de costas)
+    fold = heroes.kf(FOLD_VIEW.get(ba, [1]), heroes.key_u(ba, i, len(FOLD_VIEW.get(ba, [1]))), True)
+    flap = heroes.kf(FLAP_VIEW.get(ba, [0]), heroes.key_u(ba, i, len(FLAP_VIEW.get(ba, [0]))), True)
+    W2 = int(B.cx * 2)
+    tmp = Canvas(W2, WFH)
+    R = (B.cx - 3, B.top + 4)
+    span = st['span'] * 0.95
+    if st['kind'] in ('bat', 'thorn'):
+        bat_wing(tmp, R, flap, span, st['col'], st['bone'], claws=st.get('claws', False), thorn=st['kind'] == 'thorn', sx=fold)
+    else:
+        feather_wing(tmp, R, flap, span, st['col'], leaf=st['kind'] == 'leaf', tips=st.get('tips'), sx=fold)
+    left = tmp.img
+    right = left[:, ::-1]
+    both = left.copy()
+    take = (both[:, :, 3] == 0) & (right[:, :, 3] > 0)
+    both[take] = right[take]
+    c.img[:, :min(WFW, W2)] = both[:, :min(WFW, W2)]
+    c.outline()
+    return c
+
+
 def draw_wings(cls, base, action, i, layer='back'):
+    import views
+    ba, view = views.split(action)
+    if view != 'side':
+        return draw_wings_view(cls, base, ba, view, i, layer)
     P, B = body_for(cls, action, i)
     # desloca o corpo para o quadro maior
     B.cx += DX; B.top += DY
@@ -177,15 +264,17 @@ def draw_wings(cls, base, action, i, layer='back'):
     else:
         seq = FLAP.get(action, [0])
         fl = heroes.kf(seq, heroes.key_u(action, i, len(seq)), action in heroes.CYCLIC)
+        fs = FOLD.get(action, [1])
+        fo = heroes.kf(fs, heroes.key_u(action, i, len(fs)), action in heroes.CYCLIC)
         R = root_of(B)
         far = (R[0] + 7, R[1] - 2)
         span = st['span']
         if st['kind'] in ('bat', 'thorn'):
-            bat_wing(c, far, fl - 10, span * 0.9, darker(st['col']), darker(st['bone']), thorn=st['kind'] == 'thorn')
-            bat_wing(c, R, fl, span, st['col'], st['bone'], claws=st.get('claws', False), thorn=st['kind'] == 'thorn')
+            bat_wing(c, far, fl - 10, span * 0.9, darker(st['col']), darker(st['bone']), thorn=st['kind'] == 'thorn', sx=fo * 0.92)
+            bat_wing(c, R, fl, span, st['col'], st['bone'], claws=st.get('claws', False), thorn=st['kind'] == 'thorn', sx=fo)
         else:
             leaf = st['kind'] == 'leaf'
-            feather_wing(c, far, fl - 10, span * 0.9, darker(st['col']), leaf=leaf, tips=darker(st['tips']) if st.get('tips') else None)
-            feather_wing(c, R, fl, span, st['col'], leaf=leaf, tips=st.get('tips'))
+            feather_wing(c, far, fl - 10, span * 0.9, darker(st['col']), leaf=leaf, tips=darker(st['tips']) if st.get('tips') else None, sx=fo * 0.92)
+            feather_wing(c, R, fl, span, st['col'], leaf=leaf, tips=st.get('tips'), sx=fo)
     c.outline()
     return c

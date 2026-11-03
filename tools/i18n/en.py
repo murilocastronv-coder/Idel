@@ -1394,4 +1394,12 @@ EN = {
 "Você não tem pontos distribuídos para resetar.": "You have no distributed points to reset.",
 "Você já usou o reset grátis. Compre o item Reset Status na loja da Mercadora Pasi para resetar de novo.": "You've already used the free reset. Buy a Reset Status item at Merchant Pasi's shop to reset again.",
 "Não foi possível resetar agora (nada foi alterado). Tente de novo.": "Couldn't reset right now (nothing changed). Try again.",
+"De frente": "Front",
+"Andando": "Walking",
+"De lado": "Side",
+"Andando de lado": "Walking sideways",
+"De costas": "Back",
+"👁 Ver no herói": "👁 View on hero",
+"Prévia do item no seu herói": "Item preview on your hero",
+"Girar": "Rotate",
 }
