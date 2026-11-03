@@ -612,7 +612,11 @@
   $$('#ranking .tab').forEach((t) => { t.onclick = () => loadRanking(t.dataset.by); });
 
   // ---------------- botões do topo ----------------
+  // escolha do gráfico (2D ou 3D): fica salva e vale para o "Entrar" de qualquer herói — o servidor é o mesmo
+  const setGfxPref = (g) => { try { localStorage.setItem('mui_gfx', g); } catch (_) { /* sem armazenamento */ } };
+  $('#btn-play-3d').onclick = () => { setGfxPref('3d'); $('#btn-play').dataset.keep = '1'; $('#btn-play').click(); };
   $('#btn-play').onclick = () => {
+    if ($('#btn-play').dataset.keep) delete $('#btn-play').dataset.keep; else setGfxPref('2d');
     if (!state.me) return openAuth('login', 'Entre na sua conta para jogar. Ainda não tem? Use “Criar conta”.');
     // sempre abre a seleção de heróis (dá para escolher ou criar outro)
     openAccount();

@@ -110,9 +110,14 @@ async function checkout({account, productId, baseUrl, back, charId}) {
     : product.type==='box'
       ? `MU Idle Legends · pacote com ${product.qty} Boxes Kundun semi-full · resgate por personagem`
       : 'MU Idle Legends · conjunto semi-full de 12 peças · resgate por personagem');
+  let buyerCharId = resetCharacterId;
+  if (!buyerCharId && /^\d{1,18}$/.test(String(charId || ''))) {
+    const own = await db.query('SELECT id FROM characters WHERE id=$1 AND account_id=$2', [String(charId), account.id]);
+    if (own.rows[0]) buyerCharId = Number(own.rows[0].id);
+  }
   for(const pre of ['metadata','payment_intent_data[metadata]']) {
     f.set(`${pre}[game]`,'muidle-premium'); f.set(`${pre}[acc]`,String(account.id)); f.set(`${pre}[product]`,product.id); f.set(`${pre}[amt]`,String(amount));
-    if (resetCharacterId) f.set(`${pre}[char]`, String(resetCharacterId));
+    if (buyerCharId) f.set(`${pre}[char]`, String(buyerCharId));
   }
   const r=await fetch((process.env.STRIPE_API||'https://api.stripe.com')+'/v1/checkout/sessions',{method:'POST',
     headers:{Authorization:`Bearer ${KEY()}`,'Content-Type':'application/x-www-form-urlencoded','Idempotency-Key':crypto.randomUUID()},body:f});
@@ -131,8 +136,14 @@ async function webhook(s) {
     const owned = await db.query('SELECT id FROM characters WHERE id=$1 AND account_id=$2',[resetCharacterId,accountId]);
     if (!owned.rows[0]) return 'metadados-invalidos';
   }
+  let charId = resetCharacterId;
+  if (!charId && /^\d{1,18}$/.test(String(md.char || ''))) {
+    const own = await db.query('SELECT id FROM characters WHERE id=$1 AND account_id=$2',[String(md.char),accountId]);
+    if (own.rows[0]) charId = Number(own.rows[0].id);
+  }
   const r=await db.query(`INSERT INTO premium_orders(stripe_ref,account_id,product_id,amount_cents,currency,status,character_id)
-    VALUES($1,$2,$3,$4,$5,'pending',$6) ON CONFLICT(stripe_ref) DO NOTHING RETURNING id`,[s.id,accountId,product.id,amount,CURRENCY,resetCharacterId]);
+    VALUES($1,$2,$3,$4,$5,'pending',$6) ON CONFLICT(stripe_ref) DO NOTHING RETURNING id`,[s.id,accountId,product.id,amount,CURRENCY,charId]);
+  if (r.rows[0] && WORLD) deliverOrder(r.rows[0].id).catch((e) => console.error('[premium-store] entrega automática:', e.message));
   return r.rows[0]?'entregue':'ja-entregue';
 }
 async function pending(accountId) {
@@ -165,4 +176,47 @@ async function claim({accountId,orderId,charId,world}) {
     throw e;
   }
 }
-module.exports={init,publicCatalog,saveConfig,checkout,webhook,pending,itemList,BOX_PROMOS};
+// ---------------- entrega automática ----------------
+// Todo pedido pago vai sozinho para o personagem que comprou (ou o último jogado da conta).
+// Se a bolsa estiver cheia, o pedido continua pendente e é entregue de novo a cada poucos minutos / ao entrar no jogo.
+let WORLD = null;
+const failNote = new Map();
+async function deliverOrder(orderId) {
+  const o = (await db.query(`SELECT id, account_id, product_id, character_id FROM premium_orders WHERE id=$1 AND status='pending'`, [orderId])).rows[0];
+  if (!o || !WORLD) return null;
+  let charId = o.character_id;
+  if (charId) { const own = await db.query('SELECT id FROM characters WHERE id=$1 AND account_id=$2', [charId, o.account_id]); if (!own.rows[0]) charId = null; }
+  if (!charId) {
+    const last = (await db.query('SELECT id FROM characters WHERE account_id=$1 ORDER BY last_seen_at DESC NULLS LAST, id DESC LIMIT 1', [o.account_id])).rows[0];
+    if (!last) return null;
+    charId = last.id;
+  }
+  const product = findProduct(o.product_id);
+  try {
+    await claim({ accountId: o.account_id, orderId: o.id, charId: String(charId), world: WORLD });
+    console.log(`[premium-store] pedido #${o.id} (${o.product_id}) entregue automaticamente ao personagem ${charId}`);
+    const name = product ? product.name : o.product_id;
+    for (const p of WORLD.players.values()) if (String(p.accountId) === String(o.account_id)) p.send({ type: 'log', kind: 'quest', text: `🎁 Sua compra "${name}" foi entregue${String(p.id) === String(charId) ? ' na sua bolsa' : ' ao seu personagem'}!` });
+    failNote.delete(o.id);
+    return true;
+  } catch (e) {
+    if (failNote.get(o.id) !== e.message) {
+      failNote.set(o.id, e.message);
+      console.warn(`[premium-store] pedido #${o.id} ainda não entregue: ${e.message}`);
+      for (const p of WORLD.players.values()) if (String(p.id) === String(charId)) p.send({ type: 'log', kind: 'warn', text: `Sua compra "${product ? product.name : o.product_id}" está esperando: ${e.message} Libere espaço que ela chega sozinha.` });
+    }
+    return false;
+  }
+}
+async function deliverPending(accountId) {
+  const rows = (await db.query(`SELECT id FROM premium_orders WHERE status='pending'${accountId ? ' AND account_id=$1' : ''} ORDER BY id LIMIT 50`, accountId ? [accountId] : [])).rows;
+  for (const r of rows) await deliverOrder(r.id).catch((e) => console.error('[premium-store] entrega:', e.message));
+}
+function startAutoDelivery(world) {
+  WORLD = world;
+  // pedidos que ficaram pendentes (inclusive os antigos) e travas de "claiming" esquecidas por queda do servidor
+  db.query(`UPDATE premium_orders SET status='pending' WHERE status='claiming'`).catch(() => {});
+  setTimeout(() => deliverPending().catch(() => {}), 5000);
+  setInterval(() => deliverPending().catch(() => {}), 3 * 60 * 1000).unref();
+}
+module.exports={init,publicCatalog,saveConfig,checkout,webhook,pending,itemList,BOX_PROMOS,startAutoDelivery,deliverPending};

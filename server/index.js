@@ -299,6 +299,7 @@ route('POST', '/api/vip/checkout', async (req) => {
 
 route('GET', '/api/premium-store', async (req) => {
   const acc = await requireAccount(req);
+  await STORE.deliverPending(acc.id).catch(() => {});
   return { catalog: STORE.publicCatalog(), orders: await STORE.pending(acc.id), enabled: VIP.enabled() };
 });
 route('POST', '/api/premium-store/checkout', async (req) => {
@@ -1065,6 +1066,7 @@ setInterval(() => {
   await STORE.init();
   world = new World();
   await world.init();
+  STORE.startAutoDelivery(world); // compras da loja premium chegam sozinhas no personagem
   // amostra a cada 5 minutos (e logo após iniciar)
   setTimeout(() => sampleStats().catch((e) => console.error('[status]', e.message)), 20000).unref();
   setInterval(() => sampleStats().catch((e) => console.error('[status]', e.message)), 5 * 60 * 1000).unref();
