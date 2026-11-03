@@ -97,3 +97,26 @@
 .ii-preview canvas { width: 240px; height: 190px; image-rendering: pixelated; cursor: pointer; }
 .ii-pv-bar { display: flex; gap: 8px; align-items: center; font: 700 12px var(--display); color: #ffe7a0; }
 .ii-pv-bar span { min-width: 110px; text-align: center; }
+
+/* ---------- Janela de informações do item (estilo MU Online clássico) ---------- */
+.mu-tip { position: fixed; left: 0; top: 0; z-index: 9999; pointer-events: none; width: max-content; max-width: min(330px, calc(100vw - 12px));
+  background: rgba(8, 8, 14, .9); border: 1px solid #5a4a2a; outline: 1px solid rgba(0,0,0,.8); box-shadow: 0 0 0 1px rgba(255,214,120,.08) inset, 0 8px 24px rgba(0,0,0,.6);
+  padding: 8px 12px 10px; font: 13px/1.35 var(--font-ui, system-ui, sans-serif); color: #e8e6f0; text-align: center; border-radius: 2px; }
+.mu-tip[hidden] { display: none; }
+.mu-tip .mt-icon { width: 56px; height: 56px; margin: 0 auto 4px; display: grid; place-items: center; background: radial-gradient(circle, color-mix(in srgb, var(--r) 30%, transparent), transparent 70%); }
+.mu-tip .mt-icon canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+.mu-tip-inline { position: static; pointer-events: auto; max-width: none; width: auto; margin: 0 0 8px; z-index: auto; }
+.mt-l { padding: 1px 0; }
+.mt-name { font-weight: 800; font-size: 15px; text-shadow: 0 1px 0 #000, 0 0 8px rgba(0,0,0,.6); }
+.mt-full { color: #ffd36b; font-size: 11px; border: 1px solid #ffd36b; padding: 0 4px; border-radius: 2px; margin-left: 4px; vertical-align: 1px; }
+.mt-type { color: #b9b4c8; font-size: 12px; }
+.mt-cls { font-size: 12px; color: #d8d4e4; }
+.mt-grade { font-size: 11px; letter-spacing: .04em; }
+.mt-g-FULL { color: #ffd36b; } .mt-g-SEMIFULL { color: #7cff6a; } .mt-g-NORMAL { color: #a8a4b8; }
+.mt-dim { color: #9a96aa; font-size: 12px; }
+.mt-sep { height: 1px; margin: 5px 10%; background: linear-gradient(90deg, transparent, #5a4a2a, transparent); }
+.mt-exc { color: #7cff6a; }
+.mt-spec { color: #5fe0ff; }
+.mt-bad { color: #ff5a5a; }
+.mt-miss { color: #6f6b80; font-size: 11.5px; }
+.mt-price { color: #ffd36b; font-weight: 700; }

@@ -269,6 +269,10 @@ route('GET', '/api/gamedata', async () => ({
   shop: game.SHOP, sets: game.SETS, classRules: CLS.publicRules(),
   vip: { plans: VIP.publicPlans(), days: VIP.DAYS, currency: VIP.CURRENCY, enabled: VIP.enabled() },
   premiumSets: STORE.publicCatalog(),
+  // opções Excellent possíveis por categoria (o tooltip calcula FULL / SEMI FULL com os dados reais)
+  excellent: (() => { const v = EXCELLENT.adminView(); return { max: v.config.maxOptions, enabled: v.config.enabled,
+    pools: Object.fromEntries(Object.entries(v.config.pools).map(([k, l]) => [k, l.filter((x) => x.weight > 0).map((x) => x.id)])),
+    names: Object.fromEntries(Object.entries(v.definitions).map(([k, d]) => [k, { name: d.name, unit: d.unit }])) }; })(),
 }));
 
 // ---------------- VIP (compra) e administração ----------------

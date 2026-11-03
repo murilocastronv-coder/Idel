@@ -1177,6 +1177,7 @@
 
   // ---------- ícones de itens e sprites sazonais ----------
   const iconCache = new Map();
+  const TIP = { el: null, map: new WeakMap(), cur: null };
   const christmasSprite = new Image();
   christmasSprite.src = '/assets/special-christmas-pixel-art.svg';
   christmasSprite.onload = () => { iconCache.clear(); if (typeof renderBag === 'function' && S.panel === 'bag') renderBag(); };
@@ -2049,6 +2050,7 @@
     const row = document.createElement('div'); row.className = 'mk-row' + (r.status && r.status !== 'active' && r.status !== 'reserved' ? ' done' : '');
     const it = r.item;
     row.appendChild(mkIcon(it));
+    if (r.price) tipBind(row.querySelector('canvas'), it, { price: 'Preço no mercado: ' + mkMoney(r.price, r.cur) });
     const nm = document.createElement('div'); nm.className = 'nm';
     nm.innerHTML = `<b style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}${it.qty > 1 ? ' ×' + fmt.format(it.qty) : ''}</b><small>${RAR_NAME[it.rarity] || ''}${it.excellent ? ' · Excellent' : ''}${it.req ? ' · Nv. ' + it.req : ''} · ${right.sub}</small>`;
     row.appendChild(nm);
@@ -2236,9 +2238,10 @@
     }
   }
 
-  function iconCanvas(it) {
+  function iconCanvas(it, noTip) {
     const c = document.createElement('canvas'); c.width = 48; c.height = 48;
     drawItemIcon(c.getContext('2d'), it, 3, 3, 3, ACCENT(it));
+    if (!noTip && it && it.name) TIP.map.set(c, { it });
     return c;
   }
   function slotButton(it, onClick) {
@@ -2410,12 +2413,10 @@
     if (R.twoHand) extra.push('Duas mãos (sem escudo)');
     if (it.slot === 'ring') extra.push('Anel esquerdo ou direito');
     const high = ['epic', 'legendary', 'ancestral'].includes(it.rarity);
-    box.innerHTML = `<h3 style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}</h3>
-      <p style="color:${high ? '#ffd36b' : RAR[it.rarity]}">${RAR_NAME[it.rarity]} · ${catTxt}${it.equipped && it.eqSlot === 'ring2' ? ' · anel direito' : ''}</p>
-      <p>${esc(statLine(it.stats))}</p>
-      <ul class="req-list">${lines.map(([v, t]) => `<li class="${ok(v)}">${v ? '✔' : '✘'} ${esc(t)}</li>`).join('')}${extra.map((t) => `<li class="req-na">• ${esc(t)}</li>`).join('')}</ul>
+    box.innerHTML = `<div class="mu-tip mu-tip-inline">${muTipHtml(it)}</div>
+      ${it.equipped && it.eqSlot === 'ring2' ? '<p class="muted">Anel direito</p>' : ''}${R.enabled === false ? '<p class="bad">Item desativado</p>' : ''}
       ${it.chaos ? '<p style="color:#d8b0ff">Arma do Caos: base para criar asas e a capa do Dark Lord na Chaos Machine (o + e a raridade aumentam a chance).</p>' : ''}
-      ${cmp}${set}
+      ${cmp}
       <div class="row">${it.equipped
         ? '<button class="btn small" type="button" data-act="unequip">Desequipar</button>'
         : `<button class="btn small btn-gold" type="button" data-act="equip" ${canEq ? '' : 'disabled'}>Equipar</button>
@@ -2669,7 +2670,9 @@
         <div><b>${esc(s.name)}</b> — ${fmt.format(s.price)} Zen<br><small class="muted">${esc(s.desc)} · você tem ${fmt.format(s.item ? S.char.items.filter((i) => i.base === s.item).reduce((a, i) => a + (Number(i.qty) || 1), 0) : id === 'pot_hp' ? S.char.pots.hp : S.char.pots.mp)}</small></div>
         <div class="row">${(s.item ? [1, 5, 10] : [10, 50, 100]).map((q) => `<button class="btn small" type="button" data-buy="${id}" data-q="${q}" ${S.char.zen < q * s.price ? 'disabled' : ''}>${q}× · ${fmt.format(q * s.price)}</button>`).join('')}</div>
       </div>`).join('') + '<p class="muted">Para vender itens, abra a Bolsa e toque no item.</p><div id="premium-store"></div>';
-    $$('#shop-body canvas[data-icon]').forEach((c) => { const ic = c.dataset.icon; const sh = Object.values(S.data.shop).find((x) => (x.icon || '') === ic && x.item); if (!PA.drawItem(c.getContext('2d'), { base: sh && sh.item, icon: ic }, 0, 0, 48)) PA.drawIcon(c.getContext('2d'), ic, 6, 6, 3, ic === 'scroll' ? '#7affc8' : '#3a7aff'); });
+    $$('#shop-body canvas[data-icon]').forEach((c) => { const ic = c.dataset.icon; const sh = Object.values(S.data.shop).find((x) => (x.icon || '') === ic && x.item); if (!PA.drawItem(c.getContext('2d'), { base: sh && sh.item, icon: ic }, 0, 0, 48)) PA.drawIcon(c.getContext('2d'), ic, 6, 6, 3, ic === 'scroll' ? '#7affc8' : '#3a7aff');
+      const row = c.closest('.shop-item'); const btn = row && row.querySelector('[data-buy]'); const sp = btn && S.data.shop[btn.dataset.buy];
+      if (sp) tipBind(c, { name: sp.name, desc: sp.desc, icon: ic, base: sp.item, rarity: sp.item ? 'rare' : 'common', slot: sp.item ? 'material' : 'potion' }, { price: `Preço: ${fmt.format(sp.price)} Zen` }); });
     $$('#shop-body [data-buy]').forEach((b) => { b.onclick = () => send({ type: 'buy', item: b.dataset.buy, qty: Number(b.dataset.q) }); });
     bindVip(body);
     renderPremiumStore(body);
@@ -3167,6 +3170,117 @@
     window.addEventListener('pointermove', move, { passive: false }); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
   }
   // janela de detalhes completa (somente leitura) com comparação com o que está equipado
+  // ---------- Janela de informações do item (estilo MU): uma estrutura só para bolsa, equipamentos, baú, troca, mercado e loja ----------
+  const KIND_TXT = { sword: 'Espada', bow: 'Arco', staff: 'Cajado', scepter: 'Cetro', book: 'Livro', axe: 'Machado', firesword: 'Espada' };
+  const EXC_CAT = (slot) => slot === 'weapon' ? 'weapon' : slot === 'shield' ? 'shield' : slot === 'gloves' ? 'gloves' : slot === 'boots' ? 'boots' : ['helm', 'armor', 'pants'].includes(slot) ? 'armor' : null;
+  function muGrade(it) {
+    const ex = S.data && S.data.excellent;
+    const cat = EXC_CAT(it.slot);
+    const pool = ex && cat ? (ex.pools[cat] || []) : [];
+    if (!cat || !pool.length) return null;
+    const have = new Set((it.excellentOptions || []).map((o) => o.id));
+    const possible = Math.min(ex.max || 4, pool.length);
+    const n = have.size;
+    return { grade: n >= possible ? 'FULL' : n > 0 ? 'SEMI FULL' : 'NORMAL', n, possible, missing: pool.filter((id) => !have.has(id)).map((id) => (ex.names[id] || { name: id }).name) };
+  }
+  function muClass(it) {
+    if (it.rarity === 'legendary' || it.rarity === 'ancestral') return 'Lendário';
+    if (it.set && S.data.sets[it.set] && S.data.sets[it.set].seasonal) return 'Ancient';
+    if (it.excellent) return 'Excelente';
+    return 'Normal';
+  }
+  function muTipHtml(it, opt = {}) {
+    const L = [];
+    const line = (t, cls = '') => L.push(`<div class="mt-l ${cls}">${t}</div>`);
+    const R = it.reqs || {};
+    const st = it.stats || {};
+    const equipable = !!SLOT_NAME[it.slot];
+    const g = equipable ? muGrade(it) : null;
+    const nameCol = it.excellent ? '#7cff6a' : RAR[it.rarity];
+    line(`${it.excellent ? '<span>Excelente</span> ' : ''}<span>${esc(it.name)}</span>${it.plus ? ` [+${it.plus}]` : ''}${it.stack && it.qty > 1 ? ' ×' + fmt.format(it.qty) : ''}${g && g.grade === 'FULL' ? ' <b class="mt-full">FULL</b>' : ''}`, 'mt-name" style="color:' + nameCol);
+    let type = it.slot === 'material' ? (it.event ? 'Item de evento' : 'Material') : it.slot === 'box' ? 'Caixa' : it.slot === 'quest' ? 'Item de missão'
+      : it.cat === 'cape' ? `Capa · nível ${it.tier}` : it.cat === 'wings' ? `Asas · nível ${it.tier}`
+      : it.slot === 'weapon' ? `<span>${KIND_TXT[it.kind] || 'Arma'}</span> · <span>${R.twoHand ? 'arma de duas mãos' : 'arma de uma mão'}</span>` : esc(SLOT_NAME[it.slot] || (it.slot === 'potion' ? 'Poção' : ''));
+    if (type) line(it.slot === 'weapon' ? type : `<span>${type}</span>`, 'mt-type');
+    if (equipable) {
+      line(`<span style="color:${RAR[it.rarity]}">${RAR_NAME[it.rarity]}</span> · <span>${muClass(it)}</span>${g ? ` · <b class="mt-grade mt-g-${g.grade.replace(' ', '')}">${g.grade}</b>` : ''}`, 'mt-cls');
+      if (it.plus !== undefined) line(`Aprimoramento: +${it.plus || 0} / +15`, 'mt-dim');
+    }
+    L.push('<div class="mt-sep"></div>');
+    if (st.dmg) line(`Dano: ${fmt.format(st.dmg[0])} ~ ${fmt.format(st.dmg[1])}`);
+    if (st.def) line(`Defesa: ${fmt.format(st.def)}`);
+    if (st.hp) line(`Vida adicional: +${fmt.format(st.hp)}`);
+    if (st.wdmg) line(`Aumenta o dano em +${st.wdmg}%`, 'mt-spec');
+    if (st.absorb) line(`Absorve ${st.absorb}% do dano recebido`, 'mt-spec');
+    if (equipable) {
+      const lvl = R.level || it.req;
+      const meets = (v, need) => (v >= need ? '' : 'mt-bad');
+      if (lvl) line(`Nível necessário: ${fmt.format(lvl)}`, S.char ? meets(S.char.level, lvl) : '');
+      for (const k of ['str', 'agi', 'ene', 'vit', 'cmd']) if (R[k]) line(`${STAT_PT[k]} necessária: ${fmt.format(R[k])}`, S.char ? meets(S.char.stats[k] || 0, R[k]) : '');
+      if (R.minEvo) line(`Evolução necessária: ${(S.char && S.char.evolutions && S.char.evolutions[R.minEvo]) || R.minEvo}`, S.char ? meets(S.char.evo || 0, R.minEvo) : '');
+      if (R.classes) {
+        const all = R.classes.length === Object.keys(S.data.classes).length;
+        const names = R.classes.map((k) => (S.data.classes[k] ? S.data.classes[k].name : k)).join(' / ');
+        const okc = !S.char || R.classes.includes(S.char.cls);
+        line(all ? 'Classe permitida: todas as classes' : `<span>Classe permitida:</span> ${esc(names)}`, okc ? '' : 'mt-bad');
+        if (!okc) line('Não pode ser equipado por esta classe.', 'mt-bad');
+      }
+    }
+    const exo = Array.isArray(it.excellentOptions) ? it.excellentOptions : [];
+    if (exo.length) {
+      L.push('<div class="mt-sep"></div>');
+      for (const o of exo) line(`${/^Luck/.test(o.name) ? '' : '<span>Aumenta</span> '}<span>${esc(o.name)}</span> +${o.value}${o.unit || ''}`, /^Luck|Skill/.test(o.name) ? 'mt-spec' : 'mt-exc');
+    }
+    if (g && g.grade === 'SEMI FULL' && g.missing.length) {
+      line(`Possui ${g.n} de ${g.possible} opções · faltam (sorteáveis):`, 'mt-dim');
+      line(g.missing.map((n) => `<span>${esc(n)}</span>`).join(' · '), 'mt-miss');
+    }
+    if (it.set && S.data.sets[it.set]) { L.push('<div class="mt-sep"></div>'); line(`Conjunto ${esc(S.data.sets[it.set].name)}: ${esc(S.data.sets[it.set].bonus)}`, 'mt-spec'); }
+    if (it.desc && !equipable) line(esc(it.desc), 'mt-dim');
+    if (it.locked) line('Bloqueado', 'mt-bad');
+    if (it.slot === 'quest') line('Não pode ser trocado', 'mt-bad');
+    const price = opt.price || (it.value ? `Preço de venda: ${fmt.format(it.value)} Zen` : '');
+    if (price) { L.push('<div class="mt-sep"></div>'); line(esc(price), 'mt-price'); }
+    return `<div class="mu-tip-body">${L.join('')}</div>`;
+  }
+  // tooltip que acompanha o mouse (computador); no celular o toque abre os detalhes com a mesma estrutura
+  const canHover = window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
+  function tipBind(el, it, opt) { if (el && it) TIP.map.set(el, { it, opt }); return el; }
+  function tipFind(t) {
+    for (let e = t, k = 0; e && k < 4; e = e.parentElement, k++) {
+      if (TIP.map.has(e)) return TIP.map.get(e);
+      if (k > 0 && e.querySelectorAll) { const cs = e.querySelectorAll('canvas'); if (cs.length === 1 && TIP.map.has(cs[0])) return TIP.map.get(cs[0]); }
+    }
+    return null;
+  }
+  function tipPlace(x, y) {
+    const el = TIP.el, w = el.offsetWidth, h = el.offsetHeight, vw = innerWidth, vh = innerHeight;
+    let nx = x + 18, ny = y + 14;
+    if (nx + w > vw - 6) nx = Math.max(6, x - w - 14);
+    if (ny + h > vh - 6) ny = Math.max(6, vh - h - 6);
+    el.style.transform = `translate(${Math.round(nx)}px,${Math.round(ny)}px)`;
+  }
+  if (canHover) {
+    TIP.el = document.createElement('div'); TIP.el.className = 'mu-tip'; TIP.el.hidden = true; TIP.el.setAttribute('role', 'tooltip');
+    document.body.appendChild(TIP.el);
+    document.addEventListener('mouseover', (ev) => {
+      const f = tipFind(ev.target);
+      if (!f) { if (TIP.cur) { TIP.cur = null; TIP.el.hidden = true; } return; }
+      if (TIP.cur !== f) {
+        TIP.cur = f;
+        TIP.el.innerHTML = '';
+        const ic = document.createElement('div'); ic.className = 'mt-icon'; ic.style.setProperty('--r', RAR[f.it.rarity] || '#888'); ic.appendChild(iconCanvas(f.it, true));
+        TIP.el.appendChild(ic);
+        TIP.el.insertAdjacentHTML('beforeend', muTipHtml(f.it, f.opt));
+        TIP.el.hidden = false;
+      }
+      tipPlace(ev.clientX, ev.clientY);
+    });
+    document.addEventListener('mousemove', (ev) => { if (TIP.cur) tipPlace(ev.clientX, ev.clientY); }, { passive: true });
+    document.addEventListener('mousedown', () => { TIP.cur = null; TIP.el.hidden = true; }, true);
+    document.addEventListener('scroll', () => { TIP.cur = null; TIP.el.hidden = true; }, true);
+  }
+
   function itemInfoHtml(it) {
     const R = it.reqs || {};
     const cls = S.char ? S.char.cls : null;
@@ -3210,13 +3324,10 @@
           </tbody></table>`;
       }
     }
-    return `<h3 style="color:${RAR[it.rarity]}">${esc(it.name)}${it.plus ? ' +' + it.plus : ''}${it.stack && it.qty > 1 ? ' ×' + fmt.format(it.qty) : ''}</h3>
-      <p><span class="ii-rar" style="color:${RAR[it.rarity]};border-color:${RAR[it.rarity]}">${RAR_NAME[it.rarity]}</span>${it.excellent ? ` · Excellent semi-full (${it.excellentOptions.length} opções)` : ''} · ${esc(typeTxt)} · ${equipable ? 'equipável' : it.slot === 'box' ? 'abre na bolsa' : 'não equipável'}</p>
-      ${rows.length ? `<table class="ii-stats">${rows.map(([k, v]) => `<tr><td>${k}</td><td>${esc(v)}</td></tr>`).join('')}</table>` : ''}
-      ${req.length ? `<ul class="req-list">${req.map(([ok, t]) => `<li class="${ok ? 'req-ok' : 'req-no'}">${ok ? '✔' : '✘'} ${esc(t)}</li>`).join('')}</ul>` : ''}
-      ${it.desc ? `<p class="ii-desc">${esc(it.desc)}</p>` : ''}
+    void rows; void req; void typeTxt;
+    return `<div class="mu-tip mu-tip-inline">${muTipHtml(it)}</div>
       ${it.contents ? `<p class="box-list-title">Pode conter:</p><ul class="box-list">${it.contents.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
-      ${restr.length ? `<ul class="ii-restr">${restr.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+      ${R.twoHand ? '<ul class="ii-restr"><li>Arma de duas mãos (sem escudo)</li></ul>' : ''}
       ${cmp}`;
   }
   function openItemInfo(it, side) {
