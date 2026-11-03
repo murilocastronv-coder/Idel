@@ -18,6 +18,13 @@ const SCOPES = ['all', 'map', 'monster'];
 const CATS = ['jewel', 'wing', 'cape', 'devil', 'castle'];
 const TARGETS = ['all', 'jewel', 'wing', 'cape', 'boss', 'devil', 'castle'];
 
+// Joias e materiais de entrada (Devil Square / Blood Castle): chance FIXA de no máximo 0,010% por item e por morte.
+// Vale para qualquer monstro, nível e mapa; eventos e bônus não passam desse teto; 1 unidade por drop;
+// o mesmo item nunca é sorteado duas vezes na mesma morte (mesmo que mais de uma regra combine).
+const RARE_CAP = 0.01; // em %
+const RARE_ITEMS = new Set(['jewel_of_bless', 'jewel_of_soul', 'jewel_of_chaos', 'jewel_of_life', 'jewel_of_creation', 'scroll_of_archangel', 'blood_bone']);
+const isRare = (k) => RARE_ITEMS.has(k) || /^(devil_eye|devil_key|scroll_of_archangel|blood_bone)(_\d+)?$/.test(String(k));
+
 let rules = [];
 let events = [];
 let H = null;
@@ -78,12 +85,15 @@ const randi = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 // sorteia as regras para um monstro; devolve [{rule, item, qty}]
 function roll(mType, T, mapId, plevel, now = Date.now()) {
   const out = [];
+  const seenRare = new Set();
   for (const r of rules) {
     if (!matches(r, mType, T, mapId, plevel)) continue;
+    const rare = isRare(r.item);
+    if (rare) { if (seenRare.has(r.item)) continue; seenRare.add(r.item); }
     const { cm, qm } = boost(r, T, now);
-    const ch = Math.min(100, r.chance * cm);
+    const ch = rare ? Math.min(RARE_CAP, r.chance) : Math.min(100, r.chance * cm);
     if (Math.random() * 100 >= ch) continue;
-    const qty = Math.max(1, Math.round(randi(r.qtyMin, r.qtyMax) * qm));
+    const qty = rare ? 1 : Math.max(1, Math.round(randi(r.qtyMin, r.qtyMax) * qm));
     out.push({ rule: r, item: r.item, qty });
   }
   return out;
@@ -235,12 +245,15 @@ function offline(world, p, def, mapId, kills) {
   for (const g of def.groups) {
     const T = G.MONSTERS[g.type];
     const share = kills * (g.count / def.groups.reduce((a, x) => a + x.count, 0));
+    const seenRare = new Set();
     for (const r of rules) {
       if (!matches(r, g.type, T, mapId, p.level)) continue;
-      const exp = share * Math.min(100, r.chance) / 100 * (0.7 + Math.random() * 0.4);
+      const rare = isRare(r.item);
+      if (rare) { if (seenRare.has(r.item)) continue; seenRare.add(r.item); }
+      const exp = share * (rare ? Math.min(RARE_CAP, r.chance) : Math.min(100, r.chance)) / 100 * (0.7 + Math.random() * 0.4);
       let n = Math.floor(exp) + (Math.random() < exp % 1 ? 1 : 0);
       n = Math.min(20, n);
-      for (let i = 0; i < n; i++) { const d = { rule: r, item: r.item, qty: randi(r.qtyMin, r.qtyMax) }; if (questOk(p, d)) found.push(d); }
+      for (let i = 0; i < n; i++) { const d = { rule: r, item: r.item, qty: rare ? 1 : randi(r.qtyMin, r.qtyMax) }; if (questOk(p, d)) found.push(d); }
     }
   }
   return found;
@@ -273,6 +286,8 @@ function sanitizeRule(i) {
   const tier = TIERS.includes(i.tier) ? i.tier : 'any';
   const chance = Number(String(i.chance).replace(',', '.'));
   if (!(chance > 0 && chance <= 100)) throw new Error('A chance precisa ser maior que 0 e no máximo 100%.');
+  if (isRare(item) && chance > RARE_CAP) throw new Error(`Joias e materiais de entrada têm chance máxima de ${String(RARE_CAP).replace('.', ',')}% por item.`);
+  if (isRare(item)) { i.qtyMin = 1; i.qtyMax = 1; }
   const qtyMin = Math.round(Number(i.qtyMin)), qtyMax = Math.round(Number(i.qtyMax));
   if (!(qtyMin >= 1 && qtyMax >= qtyMin && qtyMax <= 100)) throw new Error('Quantidade: mínimo 1, máximo até 100 e o máximo não pode ser menor que o mínimo.');
   if (!isStack(item) && qtyMax > 5) throw new Error('Itens que não empilham: no máximo 5 por drop.');
@@ -368,5 +383,5 @@ function adminView() {
   };
 }
 
-module.exports = { init, cfg, onKill, offline, deliver, spawnGround, removeGround, publicGround, expire, ownedNear, pickup, fits,
+module.exports = { RARE_CAP, isRare, init, cfg, onKill, offline, deliver, spawnGround, removeGround, publicGround, expire, ownedNear, pickup, fits,
   sources, saveRule, deleteRule, saveConfig, saveEvent, stopEvent, history, simulate, adminView, reload, tierOf };
