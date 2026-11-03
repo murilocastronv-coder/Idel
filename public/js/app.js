@@ -564,6 +564,7 @@
       if (['epic', 'legendary', 'ancestral'].includes(it.rarity)) b.classList.add('glow');
       const cv = document.createElement('canvas'); cv.width = 16 * 3; cv.height = 16 * 3;
       PA.drawIcon(cv.getContext('2d'), it.icon, 3, 3, 3, rar[it.rarity].color);
+      PA.itemsReady.then((ok) => { if (!ok) return; const g = cv.getContext('2d'); g.clearRect(0, 0, 48, 48); if (!PA.drawItem(g, it, 0, 0, 48)) PA.drawIcon(g, it.icon, 3, 3, 3, rar[it.rarity].color); });
       b.appendChild(cv);
       b.onclick = () => selectItem(i);
       b.onmouseenter = () => selectItem(i);

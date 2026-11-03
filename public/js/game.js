@@ -1180,12 +1180,15 @@
   const christmasSprite = new Image();
   christmasSprite.src = '/assets/special-christmas-pixel-art.svg';
   christmasSprite.onload = () => { iconCache.clear(); if (typeof renderBag === 'function' && S.panel === 'bag') renderBag(); };
+  PA.itemsReady.then((ok) => { if (!ok) return; iconCache.clear(); if (S.panel) try { renderPanel(S.panel); } catch (_) {} });
   const christmasCrops = {
     helm:[5,5,66,66], armor:[72,5,66,67], pants:[138,5,65,68], gloves:[205,17,53,49], boots:[263,5,57,67],
     wings:[0,70,108,58], pendant:[99,68,58,61], ring1:[158,74,44,53], ring2:[202,72,48,53], sword:[252,66,68,66],
     bow:[5,124,76,67], shield:[155,125,74,65]
   };
   function drawItemIcon(ctx, item, x, y, scale, fallbackColor) {
+    // ícone detalhado 48x48: ocupa o quadro inteiro (o ícone simples tem margem de 1 célula)
+    if (PA.drawItem(ctx, item, x - scale, y - scale, scale * 16)) return;
     const part = String(item.base || '').match(/^festive_\\d+_(\\w+)$/);
     const crop = part && christmasCrops[part[1]];
     const size = scale * 10;
@@ -1203,7 +1206,7 @@
   function itemIcon(item) {
     const k = (item.base || item.icon) + item.rarity + (item.ic || '');
     let c = iconCache.get(k);
-    if (!c) { c = document.createElement('canvas'); c.width = 48; c.height = 48; drawItemIcon(c.getContext('2d'), item, 6, 6, 3); iconCache.set(k, c); }
+    if (!c) { c = document.createElement('canvas'); c.width = 48; c.height = 48; drawItemIcon(c.getContext('2d'), item, 3, 3, 3); iconCache.set(k, c); }
     return c;
   }
   // itens no chão (materiais com dono e tempo)
@@ -2586,7 +2589,11 @@
         }).join('') + '</div></section>';
       Array.from(holder.querySelectorAll('[data-premium-icon]')).forEach((canvas, i) => {
         const product = catalog[i];
-        PA.drawIcon(canvas.getContext('2d'), product && product.type === 'box' ? 'box' : ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, product ? product.tone : '#d82f3f');
+        const pc = canvas.getContext('2d');
+        const piece = product && product.type === 'set' ? { base: product.id + '_' + ['armor','wings','sword','helm','shield'][i % 5] }
+          : product && product.type === 'box' ? { base: 'kundun_promo', icon: 'box' } : product && product.type === 'reset' ? { base: 'reset_status', icon: 'scroll' } : null;
+        if (!(piece && PA.drawItem(pc, piece, 0, 0, 72)))
+          PA.drawIcon(pc, product && product.type === 'box' ? 'box' : ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, product ? product.tone : '#d82f3f');
       });
       $$('[data-premium-preview]', holder).forEach(btn => { btn.onclick = () => {
         const product = catalog.find(p => p.id === btn.dataset.premiumPreview);
@@ -2658,11 +2665,11 @@
       return;
     }
     body.innerHTML = vipHtml() + `<p>Seu Zen: <b>${fmt.format(S.char.zen)}</b></p>` + Object.entries(S.data.shop).map(([id, s]) => `
-      <div class="shop-item"><canvas width="36" height="36" data-icon="${s.icon || (id === 'pot_hp' ? 'potion_hp' : 'potion_mp')}"></canvas>
+      <div class="shop-item"><canvas width="48" height="48" style="width:36px;height:36px" data-icon="${s.icon || (id === 'pot_hp' ? 'potion_hp' : 'potion_mp')}"></canvas>
         <div><b>${esc(s.name)}</b> — ${fmt.format(s.price)} Zen<br><small class="muted">${esc(s.desc)} · você tem ${fmt.format(s.item ? S.char.items.filter((i) => i.base === s.item).reduce((a, i) => a + (Number(i.qty) || 1), 0) : id === 'pot_hp' ? S.char.pots.hp : S.char.pots.mp)}</small></div>
         <div class="row">${(s.item ? [1, 5, 10] : [10, 50, 100]).map((q) => `<button class="btn small" type="button" data-buy="${id}" data-q="${q}" ${S.char.zen < q * s.price ? 'disabled' : ''}>${q}× · ${fmt.format(q * s.price)}</button>`).join('')}</div>
       </div>`).join('') + '<p class="muted">Para vender itens, abra a Bolsa e toque no item.</p><div id="premium-store"></div>';
-    $$('#shop-body canvas[data-icon]').forEach((c) => PA.drawIcon(c.getContext('2d'), c.dataset.icon, 0, 0, 3, c.dataset.icon === 'scroll' ? '#7affc8' : '#3a7aff'));
+    $$('#shop-body canvas[data-icon]').forEach((c) => { const ic = c.dataset.icon; const sh = Object.values(S.data.shop).find((x) => (x.icon || '') === ic && x.item); if (!PA.drawItem(c.getContext('2d'), { base: sh && sh.item, icon: ic }, 0, 0, 48)) PA.drawIcon(c.getContext('2d'), ic, 6, 6, 3, ic === 'scroll' ? '#7affc8' : '#3a7aff'); });
     $$('#shop-body [data-buy]').forEach((b) => { b.onclick = () => send({ type: 'buy', item: b.dataset.buy, qty: Number(b.dataset.q) }); });
     bindVip(body);
     renderPremiumStore(body);
@@ -3820,8 +3827,9 @@
   $('#btn-pot-hp').onclick = () => send({ type: 'potion', kind: 'hp' });
   $('#btn-pot-mp').onclick = () => send({ type: 'potion', kind: 'mp' });
   $('#btn-exit').onclick = () => { leaving = true; send({ type: 'leave' }); setTimeout(() => { location.href = backHome(); }, 800); };
-  PA.drawIcon($('#btn-pot-hp canvas').getContext('2d'), 'potion_hp', 0, 0, 3, '#fff');
-  PA.drawIcon($('#btn-pot-mp canvas').getContext('2d'), 'potion_mp', 0, 0, 3, '#3a7aff');
+  PA.drawIcon($('#btn-pot-hp canvas').getContext('2d'), 'potion_hp', 6, 6, 3, '#fff');
+  PA.drawIcon($('#btn-pot-mp canvas').getContext('2d'), 'potion_mp', 6, 6, 3, '#3a7aff');
+  PA.itemsReady.then(() => { for (const [id, k] of [['#btn-pot-hp', 'potion_hp'], ['#btn-pot-mp', 'potion_mp']]) { const cv = $(id + ' canvas'); if (!cv) continue; const g = cv.getContext('2d'); const w = cv.width; const keep = g.getImageData(0, 0, w, cv.height); g.clearRect(0, 0, w, cv.height); if (!PA.drawItem(g, { icon: k }, 0, 0, Math.min(w, cv.height))) g.putImageData(keep, 0, 0); } });
 
   // ================= escolha da sala =================
   async function pickRoom() {

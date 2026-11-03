@@ -346,5 +346,26 @@
     });
   }
 
-  window.PixelArt = { drawCharacter, drawMonster, monsterSize, drawIcon, drawLandscape, drawGrid, HAIR, SKIN, GRID_W, GRID_H };
+  // ---- Ícones detalhados 48x48 (atlas gerado por tools/sprites/icons.py) ----
+  const ITEMS_V = 1;
+  const itemAtlas = { img: new Image(), idx: null, size: 48, cols: 24 };
+  const itemsReady = Promise.all([
+    fetch('/assets/icons/items.json?v=' + ITEMS_V).then((r) => r.json()).then((j) => { itemAtlas.idx = j.index; itemAtlas.size = j.size; itemAtlas.cols = j.cols; }),
+    new Promise((res, rej) => { itemAtlas.img.onload = res; itemAtlas.img.onerror = rej; itemAtlas.img.src = '/assets/icons/items.png?v=' + ITEMS_V; }),
+  ]).then(() => true).catch(() => false);
+  /** Desenha o ícone detalhado do item (por base, ou genérico pelo tipo de ícone) num quadrado de `size` px.
+   *  Retorna false se o atlas ainda não carregou ou não há ícone (quem chama usa o ícone simples). */
+  function drawItem(ctx, item, x, y, size) {
+    const A = itemAtlas;
+    if (!A.idx || !A.img.naturalWidth || !item) return false;
+    let i = A.idx[item.base];
+    if (i === undefined) i = A.idx['@' + item.icon];
+    if (i === undefined) return false;
+    const s = A.size;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(A.img, (i % A.cols) * s, Math.floor(i / A.cols) * s, s, s, Math.round(x), Math.round(y), size, size);
+    return true;
+  }
+
+  window.PixelArt = { drawItem, itemsReady, drawCharacter, drawMonster, monsterSize, drawIcon, drawLandscape, drawGrid, HAIR, SKIN, GRID_W, GRID_H };
 })();
