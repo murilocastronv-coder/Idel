@@ -70,3 +70,23 @@
 .mk-sell input[type="text"], #mk-pixkey, #mk-payout { flex: 1 1 200px; min-width: 0; background: #0b1020; color: #f0e6cc; border: 2px solid var(--edge); padding: 6px 8px; }
 .adt-sec[data-sec="market"] .adt-table { display: block; overflow-x: auto; max-width: 100%; }
 .adt-sec[data-sec="market"] .adt-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+
+/* aviso do Mercado com dinheiro real (topo da tela, 15 s) */
+.mk-notice { position: fixed; top: 10px; left: 50%; z-index: 60; width: min(560px, calc(100vw - 24px)); transform: translate(-50%, -140%); opacity: 0;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 12px 14px 14px; overflow: hidden;
+  background: linear-gradient(135deg, rgba(20, 60, 44, .97), rgba(16, 20, 38, .97)); border: 2px solid #4ac88a; box-shadow: 0 0 0 2px #0b0d18, 0 8px 26px rgba(0, 0, 0, .55), 0 0 22px rgba(74, 200, 138, .35);
+  transition: transform .45s cubic-bezier(.2, 1.3, .4, 1), opacity .3s ease; color: #f0e6cc; }
+.mk-notice.show { transform: translate(-50%, 0); opacity: 1; }
+.mk-notice.hide { transform: translate(-50%, -140%); opacity: 0; }
+.mk-notice-ico { font-size: 30px; filter: drop-shadow(0 0 8px rgba(255, 211, 107, .6)); }
+.mk-notice-txt { display: grid; gap: 3px; min-width: 0; }
+.mk-notice-txt b { color: #9affd0; font: 800 15px var(--display, sans-serif); letter-spacing: .2px; }
+.mk-notice-txt span { font-size: 13px; line-height: 1.35; color: #e8e0cc; }
+.mk-notice-txt em { color: #ffd36b; font-style: normal; font-weight: 800; }
+.mk-notice-act { display: flex; gap: 6px; align-items: center; }
+.mk-notice-x { background: transparent; border: 0; color: #f0e6cc; font-size: 24px; line-height: 1; cursor: pointer; padding: 2px 6px; }
+.mk-notice-x:hover { color: #fff; }
+.mk-notice-bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: linear-gradient(90deg, #4ac88a, #ffd36b); transform-origin: left; animation: mk-notice-bar 15s linear forwards; }
+@keyframes mk-notice-bar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (max-width: 520px) { .mk-notice { grid-template-columns: auto 1fr; } .mk-notice-act { grid-column: 1 / -1; justify-content: flex-end; } .mk-notice-txt b { font-size: 14px; } }
+@media (prefers-reduced-motion: reduce) { .mk-notice { transition: opacity .2s; } }

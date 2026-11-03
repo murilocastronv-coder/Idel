@@ -60,7 +60,7 @@
   function onMsg(m) {
     switch (m.type) {
       case 'hello': case 'pong': case 'stats': return;
-      case 'enter': return onEnter(m);
+      case 'enter': onEnter(m); marketNotice(); return;
       case 's': return onSnap(m);
       case 'char': S.char = m; renderChar(); if (S.panel === 'market' && MK.tab === 'sell') renderMarket(); return;
       case 'pj': S.players.set(m.id, { ...(S.players.get(m.id) || { x: 0, y: 0, rx: null }), info: m }); return;
@@ -1989,6 +1989,28 @@
   $$('.menu [data-panel]').forEach((b) => { b.onclick = () => openPanel(b.dataset.panel); });
   $$('.panel [data-close]').forEach((b) => { b.onclick = closePanel; });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
+
+  // aviso de novidade: Mercado de players com dinheiro real (aparece ao entrar no jogo, some em 15 s)
+  let mkNoticeShown = false;
+  function marketNotice() {
+    if (mkNoticeShown) return;
+    mkNoticeShown = true;
+    setTimeout(() => {
+      const n = document.createElement('div');
+      n.className = 'mk-notice'; n.setAttribute('role', 'status'); n.setAttribute('aria-live', 'polite');
+      n.innerHTML = `<div class="mk-notice-ico" aria-hidden="true">💰</div>
+        <div class="mk-notice-txt"><b>Mercado de players ATIVO com dinheiro real!</b>
+        <span>Venda seus itens por <em>R$</em> ou <em>US$</em> e receba de verdade, ou compre direto de outros jogadores. O item chega na hora na bolsa.</span></div>
+        <div class="mk-notice-act"><button type="button" class="btn small btn-gold" data-open>Abrir Mercado</button><button type="button" class="mk-notice-x" data-x aria-label="Fechar aviso">×</button></div>
+        <i class="mk-notice-bar" aria-hidden="true"></i>`;
+      document.body.appendChild(n);
+      requestAnimationFrame(() => n.classList.add('show'));
+      const close = () => { if (!n.isConnected) return; n.classList.remove('show'); n.classList.add('hide'); setTimeout(() => n.remove(), 400); };
+      const timer = setTimeout(close, 15000);
+      n.querySelector('[data-x]').onclick = () => { clearTimeout(timer); close(); };
+      n.querySelector('[data-open]').onclick = () => { clearTimeout(timer); close(); MK.tab = 'browse'; MK.cur = 'brl'; if (S.panel !== 'market') openPanel('market'); };
+    }, 1600);
+  }
 
   // ================= mercado entre jogadores (Zen, R$ e US$) =================
   const MK = { tab: 'browse', data: null, q: '', cat: '', rarity: '', sort: 'asc', page: 0, sel: null, busy: false, msg: null, listed: false, cur: 'zen', sellCur: 'zen', stripe: null, wallet: null, pix: null };

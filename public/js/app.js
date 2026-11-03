@@ -607,6 +607,8 @@
   };
   $('#btn-hero-register').onclick = () => (state.me ? openAccount() : openAuth('register'));
   $('#btn-hero-ranking').onclick = () => $('#ranking').scrollIntoView();
+  // seção do Mercado de players: leva para jogar (a aba Mercado fica dentro do jogo)
+  if ($('#btn-market-play')) $('#btn-market-play').onclick = () => $('#btn-play').click();
 
   function brandIcon() {
     const cv = $('#brand-icon');

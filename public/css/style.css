@@ -365,3 +365,13 @@ details[open] > summary { margin-bottom: 14px; }
 .premium-admin label span{flex:1;font-size:.85em;}
 .premium-admin input[type=number]{width:74px;}
 @media(max-width:620px){.premium-art-wrap{align-items:flex-start;flex-direction:column}.premium-art{width:100%;max-width:320px}.premium-grid{grid-template-columns:1fr}.premium-orders .row{align-items:flex-start;flex-direction:column}}
+
+/* Mercado de players com dinheiro real (página inicial) */
+.market-promo .market-card { position: relative; padding: clamp(18px, 3vw, 30px); overflow: hidden;
+  background: radial-gradient(ellipse at 85% 0%, rgba(74, 200, 138, .22), transparent 55%), radial-gradient(ellipse at 0% 100%, rgba(232, 184, 74, .18), transparent 60%), var(--stone, #1a2036); }
+.market-promo h2 { margin: 6px 0 8px; }
+.market-tag { display: inline-block; padding: 4px 10px; background: #2f9e68; color: #fff; font-weight: 800; font-size: 13px; letter-spacing: .4px; text-transform: uppercase; box-shadow: 3px 3px 0 var(--edge, #0b0d18); }
+.market-points { list-style: none; padding: 0; margin: 16px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.market-points li { display: grid; gap: 4px; padding: 12px; border: 2px solid var(--gold-dim, #8a6a2a); background: rgba(8, 10, 22, .55); }
+.market-points b { color: #9affd0; font-size: 16px; }
+.market-points span { font-size: 14px; opacity: .9; }
