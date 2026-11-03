@@ -121,6 +121,9 @@ function rollPlus(table) {
   const pr = Math.random(), plusChance = table === 'boss' ? 0.12 : 0.06;
   return pr < plusChance * 0.12 ? 3 : pr < plusChance * 0.4 ? 2 : pr < plusChance ? 1 : 0;
 }
+// chance geral de um monstro comum deixar item ao morrer (1%); chefes continuam com o drop próprio
+const GENERAL_DROP = 0.01;
+const dropChance = (T) => (T.boss ? T.drop : Math.min(T.drop, GENERAL_DROP));
 const RANDOM_POOL = () => Object.entries(G.ITEM_BASES).filter(([, b]) => !b.special);
 function rollItem(level, table) {
   const all = RANDOM_POOL();
@@ -899,7 +902,7 @@ class World {
     const totalN = types.reduce((a, t) => a + t.n, 0);
     const avg = (f) => types.reduce((a, t) => a + f(t.T) * t.n, 0) / totalN;
     const mHp = avg((T) => T.hp), mDmg = avg((T) => T.dmg), mExp = avg((T) => T.exp);
-    const mZen = avg((T) => monsterZen(T)), mDrop = avg((T) => T.drop), mLvl = avg((T) => T.level);
+    const mZen = avg((T) => monsterZen(T)), mDrop = avg((T) => dropChance(T)), mLvl = avg((T) => T.level);
     let kills = 0, exp = 0, zen = 0, levels = 0, potsUsed = 0, died = false, elapsed = 0;
     while (elapsed < secs) {
       const dps = ((p.dmgMin + p.dmgMax) / 2) * 1.25 / (p.atkMs / 1000);
@@ -1402,7 +1405,7 @@ class World {
       if (Math.random() < 0.08) p.pots.mp++;
       p.send(p.charState());
     }
-    if (Math.random() < Math.min(0.95, m.T.drop * pk.drop)) {
+    if (Math.random() < Math.min(0.95, dropChance(m.T) * pk.drop)) {
       const it = m.T.training ? rollTrainingItem(p, m.T.level) : rollItem(m.T.level, 'normal');
       if (it) {
         it.pos = [Math.round(m.x), Math.round(m.y)];
