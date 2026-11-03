@@ -5,6 +5,8 @@ const db = require('./db');
 const G = require('./gamedata');
 const KEY = () => process.env.STRIPE_SECRET_KEY || '';
 const CURRENCY = 'brl';
+const RESET_STATUS = require('./reset-status');
+const STAT_RESET = { id:'stat-reset', name:'Reset de atributos', price:500, qty:1, tone:'#e8b84a', type:'reset' };
 // Pacotes fixos de Box Kundun Promocional: conteúdo semi-full, sem itens ancestrais/full.
 const BOX_PROMOS = [
   { id:'kundun-promo-10', name:'10 Boxes Kundun · Semi-full', price:5000, qty:10, tone:'#ef4350', type:'box' },
@@ -15,7 +17,7 @@ let config = {};
 function findProduct(id) {
   const set = G.PREMIUM_SET_PACKS.find((p) => p.id === id);
   if (set) return { ...set, type:'set' };
-  return BOX_PROMOS.find((p) => p.id === id) || null;
+  return BOX_PROMOS.find((p) => p.id === id) || (id === STAT_RESET.id ? STAT_RESET : null);
 }
 
 function publicCatalog(admin = false) {
@@ -25,7 +27,7 @@ function publicCatalog(admin = false) {
       req:p.req, plus:p.plus, tone:p.tone, pieces:12, type:'set', admin };
   });
   const boxes = BOX_PROMOS.map((p) => ({ ...p, enabled:true, pieces:p.qty, req:1, plus:0, admin }));
-  return sets.concat(boxes);
+  return sets.concat(boxes, [{ ...STAT_RESET, enabled:true, pieces:1, req:1, plus:0, admin }]);
 }
 async function init() {
   await db.query(`CREATE TABLE IF NOT EXISTS premium_orders (
@@ -50,10 +52,21 @@ async function saveConfig(input) {
   config = next;
   return publicCatalog(true);
 }
-async function checkout({account, productId, baseUrl, back}) {
+async function checkout({account, productId, baseUrl, back, charId}) {
   if (!KEY() || !process.env.STRIPE_WEBHOOK_SECRET) { const e = new Error('Pagamentos indisponíveis no momento.'); e.status=503; throw e; }
   const product=findProduct(productId), isSet=product && product.type==='set', c=config[productId]||{};
   if (!product || (isSet && c.enabled===false)) { const e=new Error('Produto indisponível.'); e.status=404; throw e; }
+  let resetCharacterId = null;
+  if (product.type === 'reset') {
+    resetCharacterId = Math.round(Number(charId));
+    if (!Number.isSafeInteger(resetCharacterId) || resetCharacterId < 1) { const e=new Error('Escolha o personagem que receberá o reset.'); e.status=400; throw e; }
+    const owned = await db.query('SELECT free_stat_reset_used,class,str,agi,vit,ene,cmd FROM characters WHERE id=$1 AND account_id=$2', [resetCharacterId, account.id]);
+    if (!owned.rows[0]) { const e=new Error('Esse personagem não pertence à sua conta.'); e.status=403; throw e; }
+    if (!owned.rows[0].free_stat_reset_used) { const e=new Error('O primeiro reset de atributos é grátis. Use-o no painel Herói antes de comprar outro.'); e.status=400; throw e; }
+    const base = G.CLASSES[owned.rows[0].class].base;
+    const keys = ['str','agi','vit','ene'].concat(owned.rows[0].class === 'dark_lord' ? ['cmd'] : []);
+    if (!keys.some((key) => Number(owned.rows[0][key] || 0) > Number(base[key] || 0))) { const e=new Error('Não há pontos distribuídos para resetar.'); e.status=400; throw e; }
+  }
   const amount=isSet && Number.isInteger(c.price)?c.price:product.price;
   const safeBack=typeof back==='string'&&/^\/[\w\-./?=&%]*$/.test(back)?back:'/game.html';
   const sep=safeBack.includes('?')?'&':'?';
@@ -62,11 +75,14 @@ async function checkout({account, productId, baseUrl, back}) {
   f.set('client_reference_id',String(account.id)); if(account.email) f.set('customer_email',account.email);
   f.set('locale','pt-BR'); f.set('line_items[0][quantity]','1'); f.set('line_items[0][price_data][currency]',CURRENCY);
   f.set('line_items[0][price_data][unit_amount]',String(amount)); f.set('line_items[0][price_data][product_data][name]',product.name);
-  f.set('line_items[0][price_data][product_data][description]', product.type==='box'
-    ? `MU Idle Legends · pacote com ${product.qty} Boxes Kundun semi-full · resgate por personagem`
-    : 'MU Idle Legends · conjunto semi-full de 12 peças · resgate por personagem');
+  f.set('line_items[0][price_data][product_data][description]', product.type==='reset'
+    ? 'MU Idle Legends · um reset de atributos para o personagem escolhido'
+    : product.type==='box'
+      ? `MU Idle Legends · pacote com ${product.qty} Boxes Kundun semi-full · resgate por personagem`
+      : 'MU Idle Legends · conjunto semi-full de 12 peças · resgate por personagem');
   for(const pre of ['metadata','payment_intent_data[metadata]']) {
     f.set(`${pre}[game]`,'muidle-premium'); f.set(`${pre}[acc]`,String(account.id)); f.set(`${pre}[product]`,product.id); f.set(`${pre}[amt]`,String(amount));
+    if (resetCharacterId) f.set(`${pre}[char]`, String(resetCharacterId));
   }
   const r=await fetch((process.env.STRIPE_API||'https://api.stripe.com')+'/v1/checkout/sessions',{method:'POST',
     headers:{Authorization:`Bearer ${KEY()}`,'Content-Type':'application/x-www-form-urlencoded','Idempotency-Key':crypto.randomUUID()},body:f});
@@ -79,8 +95,14 @@ async function webhook(s) {
   if(md.game!=='muidle-premium') return 'outro-produto';
   const product=findProduct(md.product), accountId=Number(md.acc), amount=Number(md.amt);
   if(!product||!accountId||!Number.isInteger(amount)||s.currency?.toLowerCase()!==CURRENCY||Number(s.amount_total)!==amount) return 'metadados-invalidos';
-  const r=await db.query(`INSERT INTO premium_orders(stripe_ref,account_id,product_id,amount_cents,currency,status)
-    VALUES($1,$2,$3,$4,$5,'pending') ON CONFLICT(stripe_ref) DO NOTHING RETURNING id`,[s.id,accountId,product.id,amount,CURRENCY]);
+  const resetCharacterId = product.type === 'reset' ? Math.round(Number(md.char)) : null;
+  if (product.type === 'reset') {
+    if (!Number.isSafeInteger(resetCharacterId) || resetCharacterId < 1) return 'metadados-invalidos';
+    const owned = await db.query('SELECT id FROM characters WHERE id=$1 AND account_id=$2',[resetCharacterId,accountId]);
+    if (!owned.rows[0]) return 'metadados-invalidos';
+  }
+  const r=await db.query(`INSERT INTO premium_orders(stripe_ref,account_id,product_id,amount_cents,currency,status,character_id)
+    VALUES($1,$2,$3,$4,$5,'pending',$6) ON CONFLICT(stripe_ref) DO NOTHING RETURNING id`,[s.id,accountId,product.id,amount,CURRENCY,resetCharacterId]);
   return r.rows[0]?'entregue':'ja-entregue';
 }
 async function pending(accountId) {
@@ -95,14 +117,17 @@ function itemList(productId) {
   return suffix.map((s)=>({base:`${p.id}_${s}`,rarity:s==='wings'?'epic':'rare',plus:s==='wings'?0:p.plus}));
 }
 async function claim({accountId,orderId,charId,world}) {
-  const claimed=await db.query(`UPDATE premium_orders SET status='claiming' WHERE id=$1 AND account_id=$2 AND status='pending' RETURNING product_id`,[orderId,accountId]);
+  const claimed=await db.query(`UPDATE premium_orders SET status='claiming' WHERE id=$1 AND account_id=$2 AND status='pending' RETURNING product_id,character_id`,[orderId,accountId]);
   if(!claimed.rows[0]) throw new Error('Pedido não encontrado ou já resgatado.');
   try {
     const owns=await db.query('SELECT id FROM characters WHERE id=$1 AND account_id=$2',[charId,accountId]);
     if(!owns.rows[0]) throw new Error('Escolha um personagem da sua conta.');
     const product=findProduct(claimed.rows[0].product_id);
     if (!product) throw new Error('Produto deste pedido não existe mais.');
-    await world.adminGiveItems(String(charId),itemList(product.id),{excellent:true});
+    if (product.type === 'reset') {
+      if (String(claimed.rows[0].character_id) !== String(charId)) throw new Error('Este reset foi comprado para outro personagem.');
+      await RESET_STATUS.paid(world, String(charId));
+    } else await world.adminGiveItems(String(charId),itemList(product.id),{excellent:true});
     await db.query(`UPDATE premium_orders SET status='claimed', character_id=$2, claimed_at=now() WHERE id=$1 RETURNING id`,[orderId,charId]);
     return {ok:true,type:product.type,qty:product.qty||null};
   } catch(e) {

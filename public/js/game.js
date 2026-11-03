@@ -2443,9 +2443,9 @@
   function resetStatusBtn() {
     const i = RSI.info;
     if (!i) return '<button class="btn small rs-btn" type="button" disabled>RESET STATUS…</button>';
-    const label = i.free ? 'RESET STATUS – GRATUITO' : i.items > 0 ? 'RESET STATUS – 1 ITEM' : 'RESET STATUS – NECESSÁRIO ITEM';
-    return `<button class="btn small rs-btn ${i.free ? 'btn-gold' : i.items > 0 ? 'btn-gold' : ''}" type="button" id="rs-btn" ${RSI.busy || (!i.free && i.items < 1) ? 'disabled' : ''}>${label}</button>
-      <small class="muted">${i.free ? 'Seu primeiro reset é grátis.' : `Você tem ${i.items} Reset Status.${i.items < 1 ? ' Compre na loja da Mercadora Pasi.' : ''}`}</small>`;
+    const label = i.free ? 'RESET STATUS – GRATUITO' : 'RESET STATUS – R$ 5,00';
+    return `<button class="btn small rs-btn ${i.free ? 'btn-gold' : ''}" type="button" id="rs-btn" ${RSI.busy || !i.free ? 'disabled' : ''}>${label}</button>
+      <small class="muted">${i.free ? 'Seu primeiro reset é grátis.' : 'Cada reset adicional custa R$ 5,00 na Loja.'}</small>`;
   }
   function renderHero() {
     const c = S.char, me = S.me || {};
@@ -2476,7 +2476,7 @@
     $('#auto-stats').onchange = (e) => send({ type: 'settings', settings: { autoStats: e.target.checked } });
     const rb = $('#rs-btn');
     if (rb) rb.onclick = () => tradeDialog(`<h3>RESETAR ATRIBUTOS?</h3><p>Deseja realmente resetar todos os pontos distribuídos do seu personagem?</p>
-      <p class="muted">Todos os pontos investidos em atributos serão devolvidos para você distribuir novamente${RSI.info && RSI.info.points ? ` (${fmt.format(RSI.info.points)} pontos)` : ''}. ${RSI.info && RSI.info.free ? 'Este é o seu reset grátis.' : 'Será consumido 1 item Reset Status.'}</p>`,
+      <p class="muted">Todos os pontos investidos serão devolvidos para você distribuir novamente${RSI.info && RSI.info.points ? ` (${fmt.format(RSI.info.points)} pontos)` : ''}. ${RSI.info && RSI.info.free ? 'Este reset é grátis.' : 'Cada reset depois do primeiro custa R$ 5,00 na Loja.'}</p>`,
       [{ label: 'CONFIRMAR', cls: 'btn-gold', fn: () => { RSI.busy = true; renderHero(); send({ type: 'resetStatus', action: 'use' }); } }, { label: 'CANCELAR' }]);
     void me;
   }
@@ -2552,17 +2552,18 @@
     holder.innerHTML = '<p class="muted">Carregando conjuntos…</p>';
     try {
       const data = await admApi('GET', '/api/premium-store');
-      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/special-christmas-pixel-art.svg" alt="Set natalino em pixel art 2D" loading="lazy"><div><h3>Conjuntos semi-full</h3><b>Especial Christmas</b><p class="muted small">Armadura natalina, asas, pingente, dois anéis, espada, arco e escudo.</p></div></div><p class="muted small">30 conjuntos semi-full e pacotes promocionais de Box Kundun com itens raros e épicos, sem atributos full. Após o pagamento, resgate no personagem escolhido.</p>' +
+      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/special-christmas-pixel-art.svg" alt="Set natalino em pixel art 2D" loading="lazy"><div><h3>Conjuntos semi-full</h3><b>Especial Christmas</b><p class="muted small">Armadura natalina, asas, pingente, dois anéis, espada, arco e escudo.</p></div></div><p class="muted small">30 conjuntos semi-full e pacotes promocionais de Box Kundun com itens raros e épicos, sem atributos full. O primeiro reset de status é grátis; cada reset adicional custa R$ 5,00.</p>' +
         ((data.orders || []).length ? '<div class="premium-orders"><b>Pedidos prontos para resgatar</b>' + data.orders.map(o => '<div class="row"><span>' + esc(o.product) + ' · ' + brl.format(o.amount_cents / 100) + '</span><button class="btn small btn-gold" type="button" data-premium-claim="' + o.id + '">Resgatar neste personagem</button></div>').join('') + '</div>' : '') +
         '<div class="premium-grid">' + data.catalog.map(p => {
           const isBox = p.type === 'box';
-          const detail = isBox
-            ? p.qty + ' caixas · itens raros/épicos · até +' + (p.qty >= 30 ? '8' : '8') + ' · semi-full'
-            : p.pieces + ' peças · nível ' + p.req + '+ · melhoria +' + p.plus + ' · todas as classes';
+          const detail = p.type === 'reset' ? 'Reset de atributos para o personagem selecionado'
+            : isBox
+              ? p.qty + ' caixas · itens raros/épicos · até +8 · semi-full'
+              : p.pieces + ' peças · nível ' + p.req + '+ · melhoria +' + p.plus + ' · todas as classes';
           return '<article class="premium-card" style="--set-tone:' + esc(p.tone) + '">' +
             '<canvas width="72" height="72" data-premium-icon="' + esc(p.id) + '"></canvas><div><b>' + esc(p.name) + '</b>' +
             '<small>' + detail + '</small><span>' + brl.format(p.price / 100) + '</span>' +
-            '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled ? ' disabled' : '') + '>' + (data.enabled ? (isBox ? 'Comprar caixas' : 'Comprar conjunto') : 'Pagamento indisponível') + '</button></div></article>';
+            '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled || (p.type === 'reset' && !(RSI.info && !RSI.info.free)) ? ' disabled' : '') + '>' + (p.type === 'reset' && RSI.info && RSI.info.free ? 'Use o reset grátis no Herói' : data.enabled ? (p.type === 'reset' ? 'Comprar reset · R$ 5,00' : isBox ? 'Comprar caixas' : 'Comprar conjunto') : 'Pagamento indisponível') + '</button></div></article>';
         }).join('') + '</div></section>';
       Array.from(holder.querySelectorAll('[data-premium-icon]')).forEach((canvas, i) => {
         const product = data.catalog[i];
@@ -2571,7 +2572,7 @@
       $$('[data-premium-buy]', holder).forEach(btn => { btn.onclick = async () => {
         btn.disabled = true;
         try {
-          const res = await fetch('/api/premium-store/checkout', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-Requested-With':'mui'}, body:JSON.stringify({product:btn.dataset.premiumBuy, back:'/game.html?c=' + encodeURIComponent(charId)}) });
+          const res = await fetch('/api/premium-store/checkout', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-Requested-With':'mui'}, body:JSON.stringify({product:btn.dataset.premiumBuy, charId, back:'/game.html?c=' + encodeURIComponent(charId)}) });
           const j = await res.json().catch(()=>({}));
           if (!res.ok || !j.url) throw new Error(j.error || 'Não foi possível iniciar a compra.');
           location.href = j.url;
@@ -2580,7 +2581,7 @@
       $$('[data-premium-claim]', holder).forEach(btn => { btn.onclick = async () => {
         btn.disabled=true;
         try {
-          const res=await fetch('/api/premium-store/claim',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'mui'},body:JSON.stringify({orderId:Number(btn.dataset.premiumClaim),charId:S.char.id})});
+          const res=await fetch('/api/premium-store/claim',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'mui'},body:JSON.stringify({orderId:Number(btn.dataset.premiumClaim),charId})});
           const j=await res.json().catch(()=>({}));
           if(!res.ok) throw new Error(j.error||'Não foi possível resgatar.');
           feed((j.type==='box' ? j.qty+' Boxes Kundun resgatadas para ' : 'Conjunto resgatado para ')+S.char.name+'.','info'); renderPremiumStore(root);

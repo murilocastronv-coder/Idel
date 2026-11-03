@@ -55,7 +55,7 @@ async function use(world, p) {
       await q('INSERT INTO stat_reset_log (character_id, kind, points) VALUES ($1, $2, $3) RETURNING id', [p.charId, kind, back]);
     });
   } catch (e) {
-    if (e.message === 'sem-item') say('Você já usou o reset grátis. Compre o item Reset Status na loja da Mercadora Pasi para resetar de novo.');
+    if (e.message === 'sem-item') say('Seu reset grátis já foi usado. Cada reset adicional custa R$ 5,00 na Loja.');
     else { console.error('[reset status]', p.name, e.message); say('Não foi possível resetar agora (nada foi alterado). Tente de novo.'); }
     return info(p);
   }
@@ -68,9 +68,28 @@ async function use(world, p) {
   return info(p);
 }
 
+async function paid(world, charId) {
+  return world.editChar(String(charId), async (p) => {
+    const back = preview(p);
+    if (back <= 0) throw new Error('Este personagem não tem pontos distribuídos para resetar.');
+    const base = G.CLASSES[p.cls].base, next = { ...p.stats };
+    for (const k of STATS) if ((k !== 'cmd' || p.cls === 'dark_lord') && (next[k] || 0) > (base[k] || 0)) next[k] = base[k] || 0;
+    const free = p.free + back, settings = { ...p.settings, autoStats: false };
+    await db.tx(async (q) => {
+      const row = await q('SELECT free_stat_reset_used FROM characters WHERE id=$1 FOR UPDATE', [p.charId]);
+      if (!row.rows[0]) throw new Error('Personagem não encontrado.');
+      if (!row.rows[0].free_stat_reset_used) throw new Error('O primeiro reset é grátis; use-o no painel Herói antes de comprar outro.');
+      await q('UPDATE characters SET str=$2, agi=$3, vit=$4, ene=$5, cmd=$6, free_points=$7, settings=$8 WHERE id=$1 RETURNING id',
+        [p.charId, next.str, next.agi, next.vit, next.ene, next.cmd || 0, free, JSON.stringify(settings)]);
+      await q('INSERT INTO stat_reset_log (character_id, kind, points) VALUES ($1, $2, $3) RETURNING id', [p.charId, 'paid', back]);
+    });
+    p.stats = next; p.free = free; p.settings = settings; p.recalc(); p.dirty = true;
+    return { points: back };
+  });
+}
 function act(world, p, msg) {
   if (msg.action === 'use') return use(world, p);
   return info(p);
 }
 
-module.exports = { act, ITEM };
+module.exports = { act, paid, ITEM };

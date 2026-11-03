@@ -301,7 +301,7 @@ route('POST', '/api/premium-store/checkout', async (req) => {
   const acc = await requireAccount(req);
   limit(req, 'premium-checkout', 5, 60 * 1000, String(acc.id));
   const body = await readJson(req);
-  try { return { ok: true, ...(await STORE.checkout({ account:acc, productId:String(body.product || ''), baseUrl:publicUrl(req), back:body.back })) }; }
+  try { return { ok: true, ...(await STORE.checkout({ account:acc, productId:String(body.product || ''), baseUrl:publicUrl(req), back:body.back, charId:body.charId })) }; }
   catch (e) { throw new HttpError(e.status || 400, e.message); }
 });
 route('POST', '/api/premium-store/claim', async (req) => {
