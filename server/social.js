@@ -147,17 +147,20 @@ async function act(world,p,msg) {
 
 async function chat(world,p,request) {
   W=world;
-  const text=String(request.text||'').replace(/[\u0000-\u001f]/g,'').trim().slice(0,120);
-  if (request.channel === 'information') return send(p,'log',{kind:'warn',text:'O canal Informações é reservado ao servidor.'});
-  const channel=SOCIAL_CHANNELS.has(request.channel)?request.channel:'global';
+  let text=String(request.text||'').replace(/[\\u0000-\\u001f]/g,'').trim().slice(0,120);
+  let channel=SOCIAL_CHANNELS.has(request.channel)?request.channel:'global';
+  let targetName=String(request.target||'').trim();
+  const privateCommand=text.match(/^\\/\\/([^\\s]{1,20})\\s+([\\s\\S]+)$/);
+  if(privateCommand){ targetName=privateCommand[1]; text=privateCommand[2].trim().slice(0,120); channel='private'; }
+  if (channel === 'information') return send(p,'log',{kind:'warn',text:'O canal Informações é reservado ao servidor.'});
   if (!text) return;
-  if (text.startsWith('/')) return world.commands ? world.commands.run(p,text) : undefined;
+  if (text.startsWith('/') && !text.startsWith('//')) return world.commands ? world.commands.run(p,text) : undefined;
   const now=Date.now();
   if (p.mutedUntil>now) return send(p,'log',{kind:'warn',text:`Você está silenciado no chat por mais ${Math.ceil((p.mutedUntil-now)/60000)} min.`});
   if (p.lastChat && now-p.lastChat<1200) return send(p,'log',{kind:'warn',text:'Calma: espere um pouco para enviar outra mensagem.'});
   p.lastChat=now;
   if (channel==='private') {
-    const target=onlineByName(request.target);
+    const target=onlineByName(targetName);
     if (!target || target.charId===p.charId) return send(p,'log',{kind:'warn',text:'Informe o nome de um jogador online para a mensagem privada.'});
     const line={from:p.name,cls:p.cls,vipTier:p.vip().tier,text,t:now,channel:'private',to:target.name};
     send(p,'chat',line); send(target,'chat',line); return;
