@@ -23,7 +23,7 @@ PREVIEW = os.path.join(HERE, 'preview')
 FPS = {'idle': 8, 'walk': 16, 'attack': 24, 'hit': 12, 'death': 12}
 MON_ACTIONS = [(a, heroes.FRAMES[a], FPS[a]) for a in ('idle', 'walk', 'attack', 'hit', 'death')]
 # heróis: + parado de frente, andando de frente (para baixo) e de costas (para cima)
-ACTIONS = MON_ACTIONS + [('idle_front', heroes.FRAMES['idle'], FPS['idle']), ('walk_front', heroes.FRAMES['walk'], FPS['walk']), ('walk_back', heroes.FRAMES['walk'], FPS['walk'])]
+ACTIONS = MON_ACTIONS + [('idle_front', heroes.FRAMES['idle'], FPS['idle']), ('walk_front', heroes.FRAMES['walk'], FPS['walk']), ('walk_back', heroes.FRAMES['walk'], FPS['walk']), ('idle_back', heroes.FRAMES['idle'], FPS['idle'])]
 MAXF = max(n for _, n, _ in ACTIONS)
 
 
@@ -93,7 +93,7 @@ def main():
     os.makedirs(os.path.join(OUT, 'monsters'), exist_ok=True)
     os.makedirs(os.path.join(OUT, 'effects'), exist_ok=True)
     os.makedirs(PREVIEW, exist_ok=True)
-    manifest = {'version': 8, 'heroes': {}, 'monsters': {}, 'effects': {},
+    manifest = {'version': 9, 'heroes': {}, 'monsters': {}, 'effects': {},
                 'skinKeys': [list(c) for c in ramp5(heroes.SKIN)]}
     pivot = (heroes.BUILD['cx'], heroes.FOOT_Y)
 

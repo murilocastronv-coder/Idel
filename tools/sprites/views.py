@@ -6,7 +6,7 @@ from pixelkit import Canvas, ramp, flat, quad, at
 import heroes
 from heroes import BUILD, FW, FH, FOOT_Y, GOLD, SILVER, SKIN, K, gem, hair_ramp
 
-VIEW_ACTIONS = {'idle_front': ('idle', 'front'), 'walk_front': ('walk', 'front'), 'walk_back': ('walk', 'back')}
+VIEW_ACTIONS = {'idle_front': ('idle', 'front'), 'walk_front': ('walk', 'front'), 'walk_back': ('walk', 'back'), 'idle_back': ('idle', 'back')}
 
 
 def split(action):

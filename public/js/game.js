@@ -1377,13 +1377,17 @@
 
   // herói: parado = de frente; andando para os lados = de lado (virado para onde vai); para baixo = de frente; para cima = de costas
   function heroAnim(e, now) {
-    if (e.dyingAt || now < (e.attackUntil || 0) || (now < (e.hurtUntil || 0) && now >= (e.hitAt || 0))) return [...animOf(e, now), e.flip];
+    if (e.dyingAt || now < (e.attackUntil || 0) || (now < (e.hurtUntil || 0) && now >= (e.hitAt || 0))) { if (now < (e.attackUntil || 0)) { e.face = 'side'; e.faceLeft = !!e.flip; } return [...animOf(e, now), e.flip]; }
     const speed = e.speed || 0;
     if (speed > 10) {
       const vx = e.vx || 0, vy = e.vy || 0, run = speed > 65;
-      if (Math.abs(vx) >= Math.abs(vy) * 0.85) { e.faceLeft = vx < 0; return [run ? 'run' : 'walk', now + e.phase, false, e.faceLeft]; }
-      return [(run ? 'run_' : 'walk_') + (vy > 0 ? 'front' : 'back'), now + e.phase, false, false];
+      if (Math.abs(vx) >= Math.abs(vy) * 0.85) { e.faceLeft = vx < 0; e.face = 'side'; return [run ? 'run' : 'walk', now + e.phase, false, e.faceLeft]; }
+      e.face = vy > 0 ? 'front' : 'back';
+      return [(run ? 'run_' : 'walk_') + e.face, now + e.phase, false, false];
     }
+    // parado: continua virado para o último lado em que andou (direita, esquerda, frente ou costas)
+    if (e.face === 'side') return ['idle', now + e.phase, false, !!e.faceLeft];
+    if (e.face === 'back') return ['idle_back', now + e.phase, false, false];
     return ['idle_front', now + e.phase, false, false];
   }
   function animOf(e, now) {

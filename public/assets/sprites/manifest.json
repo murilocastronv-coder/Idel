@@ -1,5 +1,5 @@
 {
- "version": 8,
+ "version": 9,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",
@@ -50,6 +50,11 @@
      "row": 7,
      "frames": 8,
      "fps": 16
+    },
+    "idle_back": {
+     "row": 8,
+     "frames": 8,
+     "fps": 8
     },
     "run": {
      "row": 1,
@@ -124,6 +129,11 @@
      "frames": 8,
      "fps": 16
     },
+    "idle_back": {
+     "row": 8,
+     "frames": 8,
+     "fps": 8
+    },
     "run": {
      "row": 1,
      "frames": 8,
@@ -196,6 +206,11 @@
      "row": 7,
      "frames": 8,
      "fps": 16
+    },
+    "idle_back": {
+     "row": 8,
+     "frames": 8,
+     "fps": 8
     },
     "run": {
      "row": 1,
@@ -296,6 +311,11 @@
      "frames": 8,
      "fps": 16
     },
+    "idle_back": {
+     "row": 8,
+     "frames": 8,
+     "fps": 8
+    },
     "run": {
      "row": 1,
      "frames": 8,
@@ -369,6 +389,11 @@
      "frames": 8,
      "fps": 16
     },
+    "idle_back": {
+     "row": 8,
+     "frames": 8,
+     "fps": 8
+    },
     "run": {
      "row": 1,
      "frames": 8,
@@ -441,6 +466,11 @@
      "row": 7,
      "frames": 8,
      "fps": 16
+    },
+    "idle_back": {
+     "row": 8,
+     "frames": 8,
+     "fps": 8
     },
     "run": {
      "row": 1,
@@ -1125,7 +1155,7 @@
    "armor_front",
    "gloves_front"
   ],
-  "rowsPerPiece": 8,
+  "rowsPerPiece": 9,
   "classes": {
    "dark_knight": {
     "leather": "equip/dark_knight_leather.png",
@@ -1282,7 +1312,7 @@
    "dark_lord",
    "summoner"
   ],
-  "rowsPerClass": 8,
+  "rowsPerClass": 9,
   "sheets": {
    "wings_satan": "equip/wings_wings_satan.png",
    "wings_heaven": "equip/wings_wings_heaven.png",
