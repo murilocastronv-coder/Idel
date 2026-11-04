@@ -64,10 +64,11 @@ function autoFarmMapId(p) {
 function expToNext(level) { return Math.floor(100 * Math.pow(level, 2.1) + 200); }
 const XP = () => G.GAME_MODE.expRate;
 // ---------- EXP por monstro (Hard, equilibrado) ----------
-// Matar um monstro do seu nível dá 1% da EXP do nível (Free), 2% (VIP Ouro) ou 3% (VIP Diamante) — o multiplicador de EXP do VIP.
+// Matar um monstro do seu nível dá 2% da EXP do nível (Free), 3,5% (VIP Ouro) ou 4,5% (VIP Diamante).
 // Monstro mais fraco que você dá menos (até 0,1%), mais forte dá um pouco mais (até +30%). Os monstros grandes/raros do mapa
 // (golens, Death Knight, Bone Mage...) valem 2,5×. Por cima ainda entra o bônus do mapa. Chefes: 15% do nível, dividido pelo dano.
-const KILL_PCT = 0.01, BOSS_PCT = 0.15;
+// % da barra por monstro do seu nível, pelo plano da conta (já inclui o VIP; não multiplica de novo): Free 2% · VIP Ouro 3,5% · VIP Diamante 4,5%
+const KILL_PCT = { 0: 0.02, 1: 0.035, 2: 0.045 }, BOSS_PCT = 0.15;
 function levelFactor(diff) {
   if (diff >= 0) return 1 + Math.min(10, diff) * 0.03;
   if (diff >= -3) return 1;
@@ -81,7 +82,7 @@ function eliteK(T, def) {
   return T.exp >= MAP_MIN_EXP[id] * 3 ? 2.5 : 1;
 }
 function killExp(p, T, def, pk) {
-  return Math.max(1, Math.round(expToNext(p.level) * KILL_PCT * levelFactor((T.level || 1) - p.level) * eliteK(T, def) * mapExp(def) * (pk ? pk.exp : 1) * XP()));
+  return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * levelFactor((T.level || 1) - p.level) * eliteK(T, def) * mapExp(def) * XP()));
 }
 // bônus de EXP por mapa (servidor continua Hard): mapas mais altos dão um pouco mais de EXP por monstro
 // cada mapa um pouco mais: Vulcanus +3% · Dungeon +8% · Atlans +15% … Kalima +43% · Crywolf +50%

@@ -2052,9 +2052,9 @@
     if (!S.char) return '?';
     const L = S.char.level, next = Math.floor(100 * Math.pow(L, 2.1) + 200), d = (t.level || 1) - L;
     const lf = d >= 0 ? 1 + Math.min(10, d) * 0.03 : d >= -3 ? 1 : Math.max(0.1, 1 + (d + 3) * 0.06);
-    const vip = 1 + ((S.char.vip && S.char.vip.tier) || 0);
+    const vip = [2, 3.5, 4.5][(S.char.vip && S.char.vip.tier) || 0] || 2;
     const w = S.data && S.map && S.data.world.find((x) => x.id === S.map.map);
-    const pct = 1 * lf * vip * (1 + ((w && w.expBonus) || 0) / 100) * (t.boss ? 15 : 1);
+    const pct = lf * (t.boss ? 15 * (1 + ((S.char.vip && S.char.vip.tier) || 0)) : vip) * (1 + ((w && w.expBonus) || 0) / 100);
     return `${fmt.format(Math.round(next * pct / 100))} (${pct.toFixed(pct < 1 ? 2 : 1)}%)`;
   }
   function renderChar() {
