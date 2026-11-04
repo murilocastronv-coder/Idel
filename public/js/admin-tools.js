@@ -668,6 +668,12 @@
             <td class="adt-actions">${w.usdOwed > 0 ? '<button class="btn small" type="button" data-op="usdPaid">Paguei US$</button>' : ''}${w.dueBrl > 0 ? '<button class="btn small" type="button" data-op="forgive">Perdoar R$</button>' : ''}
               <button class="btn small" type="button" data-op="${w.blocked ? 'unblock' : 'block'}">${w.blocked ? 'Desbloquear' : 'Bloquear'}</button></td></tr>`).join('')}
         </tbody></table>` : '<p class="muted">Nenhuma carteira com saldo, dívida ou bloqueio.</p>'}
+        <h4>⚠ Reclamações (proteção contra golpe)</h4>
+        ${(V.disputes || []).length ? `<table class="adt-table"><thead><tr><th>#</th><th>Item / valor</th><th>Vendedor (chave Pix)</th><th>Comprador</th><th>Motivo</th><th>Comprovante</th><th></th></tr></thead><tbody>
+          ${V.disputes.map((x) => `<tr data-dispute="${x.id}"><td>${x.id}<br><small class="muted">${dt(x.at)}</small></td><td>${esc(x.item)}<br>${money(x.price, 'brl')}</td><td>${esc(x.seller)}<br><small>${esc(x.pixKey || '')}</small></td><td>${esc(x.buyer || '?')}<br><small class="muted">pagou: ${x.paidAt ? dt(x.paidAt) : '—'}</small></td>
+            <td><small>${esc(x.reason)}</small></td><td><small>${esc(x.proof || '—')}</small></td>
+            <td class="adt-actions"><button class="btn small" type="button" data-op="disputeBuyer">Pagamento ok: entregar ao comprador</button><button class="btn small" type="button" data-op="disputeSeller">Não pagou: devolver ao vendedor</button></td></tr>`).join('')}
+        </tbody></table><p class="muted">Confira o comprovante com o vendedor (ID da transação, horário, valor). Vendedor que perde 2 reclamações tem o Pix desativado.</p>` : '<p class="muted">Nenhuma reclamação aberta.</p>'}
         <h4>Compras por Pix esperando o vendedor</h4>
         ${V.pix.length ? `<table class="adt-table"><thead><tr><th>Item</th><th>Valor</th><th>Vendedor</th><th>Comprador</th><th>Comprador avisou que pagou</th><th></th></tr></thead><tbody>
           ${V.pix.map((x) => `<tr data-listing="${x.id}"><td>${esc(x.item)}</td><td>${money(x.price, 'brl')}</td><td>${esc(x.seller)}</td><td>${esc(x.buyer || '?')}</td><td>${x.paidAt ? dt(x.paidAt) : 'não'}</td>
@@ -692,6 +698,10 @@
           }
           if (op === 'block') { const note = prompt('Motivo do bloqueio:', 'comissão do mercado não paga'); if (note === null) return; return post({ op, account: tr.dataset.acc, note }); }
           if (op === 'unblock') return post({ op, account: tr.dataset.acc });
+          if (op === 'disputeBuyer' || op === 'disputeSeller') {
+            if (!confirm(op === 'disputeBuyer' ? 'O pagamento foi comprovado? O item vai para o comprador e conta como reclamação perdida para o vendedor.' : 'O pagamento NÃO foi comprovado? O item volta para a vitrine do vendedor.')) return;
+            return post({ op, dispute: tr.dataset.dispute });
+          }
           if (op === 'pixDeliver' && !confirm('Entregar o item ao comprador e lançar a comissão para o vendedor?')) return;
           return post({ op, listing: tr.dataset.listing });
         };

@@ -24,7 +24,7 @@ const feeOf = (c) => Math.max(1, Math.round(c * R.FEE));
 async function init(world, helpers) {
   W = world; H = helpers;
   try { for (const r of (await db.query('SELECT account_id FROM market_wallets WHERE blocked')).rows) blocked.add(String(r.account_id)); } catch (e) { console.error('[carteira] bloqueios', e.message); }
-  setInterval(() => { sweep().catch((e) => console.error('[carteira] prazo', e.message)); }, 60000).unref();
+  setInterval(() => { sweep().catch((e) => console.error('[carteira] prazo', e.message)); sweepPix().catch((e) => console.error('[mercado] pix', e.message)); }, 60000).unref();
 }
 const isBlocked = (p) => !!(p && blocked.has(String(p.accountId)));
 
@@ -140,12 +140,65 @@ function afterDeliver(L, buyerChar, item, text) {
   if (b) { b.items.push(item); b.dirty = true; b.send(b.charState()); b.send({ type: 'marketMsg', ok: true, bought: true, text }); }
 }
 
+// ---------- proteção contra golpe (Pix) ----------
+// • quem é novo vende por Pix só até R$ 30 por item (até ter 3 vendas confirmadas)
+// • depois que o comprador avisa "Já paguei", ninguém cancela sozinho: o item fica preso até o vendedor confirmar ou o ADM decidir
+// • sem confirmação em 24 h depois do "Já paguei" abre reclamação automática; reserva sem pagamento volta para a vitrine
+// • vendedor com reclamação aberta não anuncia nem recebe novas compras por Pix; quem perde 2 reclamações perde o Pix
+const NEW_SELLER_SALES = 3, NEW_SELLER_MAX = 3000, LOSS_BAN = 2;
+async function reputation(acc) {
+  const r = (await db.query(`SELECT
+      (SELECT count(*) FROM market_listings WHERE seller_account = $1 AND status = 'sold' AND pay_mode IN ('pix','connect','platform'))::int AS sales,
+      (SELECT count(*) FROM market_disputes WHERE seller_account = $1 AND status = 'buyer')::int AS lost,
+      (SELECT count(*) FROM market_disputes WHERE seller_account = $1 AND status = 'open')::int AS open,
+      (SELECT EXTRACT(EPOCH FROM now() - created_at)::bigint FROM accounts WHERE id = $1) AS age`, [acc])).rows[0] || {};
+  const w = (await db.query('SELECT pix_banned FROM market_wallets WHERE account_id = $1', [acc])).rows[0];
+  const days = Math.floor(Number(r.age || 0) / 86400);
+  const level = r.lost ? 'risk' : r.sales >= 10 ? 'trusted' : r.sales >= NEW_SELLER_SALES ? 'ok' : 'new';
+  return { sales: r.sales || 0, lost: r.lost || 0, open: r.open || 0, days, level, banned: !!(w && w.pix_banned) };
+}
+async function canListPix(acc, price) {
+  const rep = await reputation(acc);
+  if (rep.banned) return 'Seu Pix foi desativado no mercado por reclamações de compradores. Venda por Zen ou conecte o Stripe.';
+  if (rep.open) return 'Você tem uma reclamação aberta no mercado. Resolva com o administrador antes de anunciar por Pix.';
+  if (rep.sales < NEW_SELLER_SALES && price > NEW_SELLER_MAX) return `Vendedor novo: por Pix o limite é ${R.brl(NEW_SELLER_MAX)} por item até você ter ${NEW_SELLER_SALES} vendas confirmadas (você tem ${rep.sales}).`;
+  return null;
+}
+async function openDispute(L, by, reason, proof) {
+  const r = await db.query(`INSERT INTO market_disputes (listing_id, seller_account, buyer_char, opened_by, reason, proof) VALUES ($1,$2,$3,$4,$5,$6)
+    ON CONFLICT (listing_id) WHERE status = 'open' DO UPDATE SET proof = COALESCE(EXCLUDED.proof, market_disputes.proof) RETURNING id, (xmax = 0) AS fresh`, [L.id, L.seller_account, L.reserved_char, by, reason, proof || null]);
+  // o item continua reservado (preso) enquanto a reclamação estiver aberta
+  await db.query("UPDATE market_listings SET reserved_until = now() + interval '30 days' WHERE id = $1 AND status = 'reserved'", [L.id]);
+  if (r.rows[0] && r.rows[0].fresh) {
+    for (const p of onlineAcc(L.seller_account)) p.send({ type: 'log', kind: 'warn', text: `Mercado: abriram uma reclamação na venda do ${nameOf(L.base)}. O item fica guardado até o administrador analisar.` });
+    const b = online(L.reserved_char); if (b) b.send({ type: 'log', kind: 'warn', text: `Mercado: reclamação aberta para o ${nameOf(L.base)}. O item fica guardado e o administrador vai analisar o pagamento.` });
+    console.warn(`[mercado] reclamação #${r.rows[0].id} na venda ${L.id} (${by}: ${reason})`);
+  }
+  return r.rows[0];
+}
+async function sweepPix() {
+  // reserva sem "Já paguei" passou do prazo: volta para a vitrine
+  const free = await db.query(`UPDATE market_listings SET status = 'active', reserved_char = NULL, reserved_until = NULL WHERE status = 'reserved' AND pay_mode = 'pix'
+    AND buyer_paid_at IS NULL AND reserved_until < now() RETURNING id`);
+  if (free.rows.length) console.log(`[mercado] ${free.rows.length} reserva(s) Pix sem pagamento voltaram para a vitrine`);
+  // pagou e o vendedor não confirmou em 24 h: reclamação automática (o item fica preso)
+  const late = (await db.query(`SELECT l.* FROM market_listings l WHERE l.status = 'reserved' AND l.pay_mode = 'pix' AND l.buyer_paid_at < now() - ($1 || ' hours')::interval
+    AND NOT EXISTS (SELECT 1 FROM market_disputes d WHERE d.listing_id = l.id AND d.status = 'open') LIMIT 50`, [String(PIX_HOLD_H)])).rows;
+  for (const L of late) await openDispute(L, 'auto', 'O vendedor não confirmou o Pix em 24 horas.', null);
+}
+
 // ---------- comprador: Pix direto ao vendedor ----------
 async function buyPix(p, r) {
   const say = (t) => p.send({ type: 'marketMsg', ok: false, text: t });
   if (H.bagUsed(p) >= G.INVENTORY_SIZE) return say('Libere um espaço na bolsa antes de comprar.');
   const busy = (await db.query("SELECT count(*)::int AS n FROM market_listings WHERE reserved_char = $1 AND status = 'reserved' AND pay_mode = 'pix'", [p.charId])).rows[0].n;
   if (busy >= 3) return say('Você já tem 3 compras por Pix esperando confirmação. Aguarde os vendedores confirmarem.');
+  const pre = (await db.query("SELECT seller_account FROM market_listings WHERE id = $1", [r.id])).rows[0];
+  if (pre) {
+    const rp = await reputation(pre.seller_account);
+    if (rp.banned || rp.open) return say('Este vendedor está em análise por uma reclamação. Por segurança, a compra por Pix está suspensa.');
+    if (String(pre.seller_account) === String(p.accountId)) return say('Você não pode comprar o próprio anúncio.');
+  }
   const res = await db.query(`UPDATE market_listings SET status = 'reserved', reserved_char = $2, reserved_until = now() + ($3 || ' hours')::interval
     WHERE id = $1 AND status = 'active' AND expires_at > now() RETURNING *`, [r.id, p.charId, String(PIX_HOLD_H)]);
   const L = res.rows[0];
@@ -166,6 +219,17 @@ async function pixAction(p, msg) {
     await db.query('UPDATE market_listings SET buyer_paid_at = now() WHERE id = $1', [id]);
     const sp = online(L.seller_char); if (sp) sp.send({ type: 'log', kind: 'quest', text: `Mercado: ${p.name} avisou que pagou ${R.brl(L.price)} pelo Pix do ${nameOf(L.base)}. Confira e confirme em Minhas vendas.` });
     say('O vendedor foi avisado. O item chega na sua bolsa assim que ele confirmar o Pix.', true);
+  } else if (a === 'pixDispute' && isBuyer) {
+    if (!L.buyer_paid_at) { say('Primeiro faça o Pix e toque em "Já paguei".'); return require('./market').mineFor(p); }
+    const proof = String(msg.proof || '').trim().slice(0, 300);
+    if (proof.length < 6) { say('Escreva o comprovante: ID da transação do Pix (E2E), data, hora e banco.'); return require('./market').mineFor(p); }
+    await openDispute(L, 'buyer', 'O comprador pagou e o vendedor não confirmou.', proof);
+    say('Reclamação aberta. O item fica guardado e o administrador vai conferir o comprovante.', true);
+  } else if (a === 'pixCancel' && isBuyer && L.buyer_paid_at) {
+    say('Você já avisou que pagou, então a compra não pode ser cancelada por aqui. Se houver problema, abra uma reclamação com o comprovante.');
+  } else if (a === 'pixCancel' && isSeller && L.buyer_paid_at) {
+    await openDispute(L, 'seller', 'O vendedor diz que não recebeu o Pix.', null);
+    say('Como o comprador avisou que pagou, abrimos uma reclamação: o item fica guardado até o administrador conferir o pagamento.', true);
   } else if (a === 'pixCancel' && (isBuyer || isSeller)) {
     await db.query("UPDATE market_listings SET status = 'active', reserved_char = NULL, reserved_until = NULL, buyer_paid_at = NULL WHERE id = $1 AND status = 'reserved'", [id]);
     const other = online(isBuyer ? L.seller_char : L.reserved_char);
@@ -188,6 +252,7 @@ async function confirmPix(L, admin) {
     item = await deliver(q, L, L.buyer_char);
   });
   if (!ok) throw new Error('Esta compra não está mais aberta.');
+  await db.query("UPDATE market_disputes SET status = 'buyer', resolved_by = $2, resolved_at = now() WHERE listing_id = $1 AND status = 'open'", [L.id, admin || 'vendedor confirmou']).catch(() => {});
   await addCommission(L.seller_account, feeOf(Number(L.price)), L.id);
   if (admin) await db.query('INSERT INTO market_ledger (account_id, kind, listing_id, note) VALUES ($1, $2, $3, $4)', [L.seller_account, 'force_deliver', L.id, admin]);
   afterDeliver(L, L.buyer_char, item, `O vendedor confirmou o Pix! ${nameOf(L.base)}${L.plus ? ' +' + L.plus : ''} chegou na sua bolsa.`);
@@ -245,7 +310,11 @@ async function adminView() {
   const sales = (await db.query(`SELECT id, base, plus, price, fee, currency, pay_mode, seller_name, buyer_name, closed_at FROM market_listings WHERE status = 'sold' ORDER BY closed_at DESC LIMIT 40`)).rows
     .map((l) => ({ id: String(l.id), item: nameOf(l.base) + (l.plus ? ' +' + l.plus : ''), price: Number(l.price), fee: Number(l.fee), currency: l.currency, mode: l.pay_mode, seller: l.seller_name, buyer: l.buyer_name, at: l.closed_at }));
   const sellers = (await db.query('SELECT count(*)::int AS n, count(*) FILTER (WHERE charges_enabled AND payouts_enabled)::int AS ready FROM market_sellers')).rows[0];
-  return { totals, active, wallets, pix, sales, sellers, limit: LIMIT_BRL, graceH: GRACE_H, stripe: R.enabled() };
+  const disputes = (await db.query(`SELECT d.*, l.base, l.plus, l.price, l.pix_key, l.seller_name, l.buyer_paid_at, c.name AS buyer FROM market_disputes d JOIN market_listings l ON l.id = d.listing_id
+    LEFT JOIN characters c ON c.id = d.buyer_char WHERE d.status = 'open' ORDER BY d.id LIMIT 100`)).rows
+    .map((d) => ({ id: String(d.id), listing: String(d.listing_id), item: nameOf(d.base) + (d.plus ? ' +' + d.plus : ''), price: Number(d.price), seller: d.seller_name, buyer: d.buyer, pixKey: d.pix_key,
+      by: d.opened_by, reason: d.reason, proof: d.proof, paidAt: d.buyer_paid_at, at: d.created_at }));
+  return { totals, active, wallets, pix, sales, sellers, disputes, limit: LIMIT_BRL, graceH: GRACE_H, stripe: R.enabled() };
 }
 async function adminOp(body, who) {
   const acc = Number(body.account);
@@ -271,6 +340,27 @@ async function adminOp(body, who) {
     }
     case 'block': await wallet(acc); await setBlocked(acc, true, note || 'bloqueado pelo administrador'); return 'Conta bloqueada no mercado e nas trocas.';
     case 'unblock': await wallet(acc); await setBlocked(acc, false); return 'Conta liberada.';
+    case 'disputeBuyer': case 'disputeSeller': {
+      const d = (await db.query("SELECT * FROM market_disputes WHERE id = $1 AND status = 'open'", [Number(body.dispute)])).rows[0];
+      if (!d) throw new Error('Reclamação não encontrada ou já resolvida.');
+      const L = (await db.query("SELECT * FROM market_listings WHERE id = $1 AND status = 'reserved'", [d.listing_id])).rows[0];
+      if (body.op === 'disputeBuyer') {
+        if (L) await confirmPix(L, `${who}: reclamação #${d.id}`);
+        await db.query("UPDATE market_disputes SET status = 'buyer', resolved_by = $2, resolved_at = now() WHERE id = $1", [d.id, who]);
+        const lost = (await db.query("SELECT count(*)::int AS n FROM market_disputes WHERE seller_account = $1 AND status = 'buyer' AND opened_by <> 'seller_ok'", [d.seller_account])).rows[0].n;
+        if (lost >= LOSS_BAN) {
+          await wallet(d.seller_account);
+          await db.query('UPDATE market_wallets SET pix_banned = TRUE, updated_at = now() WHERE account_id = $1', [d.seller_account]);
+          await db.query("UPDATE market_listings SET status = 'cancelled', closed_at = now() WHERE seller_account = $1 AND status = 'active' AND pay_mode = 'pix'", [d.seller_account]);
+          for (const p of onlineAcc(d.seller_account)) p.send({ type: 'log', kind: 'warn', text: 'Mercado: seu Pix foi desativado por reclamações de compradores. Seus anúncios por Pix foram retirados (o item volta em Minhas vendas).' });
+        }
+        return `Reclamação #${d.id}: item entregue ao comprador.${lost >= LOSS_BAN ? ' O Pix deste vendedor foi desativado.' : ''}`;
+      }
+      if (L) await db.query("UPDATE market_listings SET status = 'active', reserved_char = NULL, reserved_until = NULL, buyer_paid_at = NULL WHERE id = $1 AND status = 'reserved'", [L.id]);
+      await db.query("UPDATE market_disputes SET status = 'seller', resolved_by = $2, resolved_at = now() WHERE id = $1", [d.id, who]);
+      const b = online(d.buyer_char); if (b) b.send({ type: 'log', kind: 'warn', text: 'Mercado: o administrador não encontrou o seu pagamento. O item voltou para o vendedor.' });
+      return `Reclamação #${d.id}: pagamento não comprovado, o item voltou para a vitrine do vendedor.`;
+    }
     case 'pixDeliver': {
       const L = (await db.query("SELECT * FROM market_listings WHERE id = $1 AND pay_mode = 'pix' AND status = 'reserved'", [Number(body.listing)])).rows[0];
       if (!L) throw new Error('Compra por Pix não encontrada.');
@@ -293,4 +383,4 @@ async function adminOp(body, who) {
   }
 }
 
-module.exports = { init, isBlocked, send, setInfo, payNow, buyUsd, buyPix, pixAction, webhook, adminView, adminOp, wallet, USD_MIN, USD_MAX, LIMIT_BRL, usd };
+module.exports = { init, isBlocked, send, setInfo, payNow, buyUsd, buyPix, pixAction, webhook, adminView, adminOp, wallet, reputation, canListPix, USD_MIN, USD_MAX, LIMIT_BRL, usd };

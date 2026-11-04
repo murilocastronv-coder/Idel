@@ -71,14 +71,23 @@ async function browse(p, msg) {
   if (bases) { args.push(bases.join(',')); where += ` AND base = ANY(string_to_array($${args.length}, ','))`; }
   if (msg.rarity && /^[a-z]+$/.test(String(msg.rarity))) { args.push(String(msg.rarity)); where += ` AND rarity = $${args.length}`; }
   const { rows } = await db.query(`SELECT * FROM market_listings WHERE ${where} ORDER BY ${sort} LIMIT $1 OFFSET $2`, args);
-  p.send({ type: 'market', view: 'browse', cur, rows: rows.slice(0, PAGE).map(view), page, more: rows.length > PAGE, fee: FEE, myZen: p.zen, real: REAL.enabled() });
+  const out = rows.slice(0, PAGE).map(view);
+  if (cur !== 'zen') {
+    // reputação do vendedor (vendas confirmadas, reclamações perdidas, tempo de conta) para o comprador decidir com segurança
+    const reps = {};
+    for (const r of rows.slice(0, PAGE)) if (r.seller_account && !reps[r.seller_account]) reps[r.seller_account] = await WALLET.reputation(r.seller_account).catch(() => null);
+    rows.slice(0, PAGE).forEach((r, i) => { if (reps[r.seller_account]) out[i].rep = reps[r.seller_account]; });
+  }
+  p.send({ type: 'market', view: 'browse', cur, rows: out, page, more: rows.length > PAGE, fee: FEE, myZen: p.zen, real: REAL.enabled() });
 }
 
 async function mine(p) {
   const { rows } = await db.query(`SELECT * FROM market_listings WHERE seller_char = $1 AND (status = 'active' OR NOT collected OR closed_at > now() - interval '3 days')
     ORDER BY (status = 'active') DESC, (NOT collected AND status <> 'active') DESC, id DESC LIMIT 60`, [p.charId]);
   const buying = (await db.query("SELECT * FROM market_listings WHERE reserved_char = $1 AND status = 'reserved' AND pay_mode = 'pix' ORDER BY id DESC LIMIT 10", [p.charId])).rows
-    .map((r) => ({ ...view(r), pixKey: r.pix_key, paid: !!r.buyer_paid_at }));
+    .map((r) => ({ ...view(r), pixKey: r.pix_key, paid: !!r.buyer_paid_at, until: r.reserved_until ? new Date(r.reserved_until).getTime() : 0 }));
+  const disp = buying.length ? (await db.query("SELECT listing_id FROM market_disputes WHERE status = 'open' AND listing_id = ANY(string_to_array($1, ',')::bigint[])", [buying.map((b) => b.id).join(',')])).rows.map((r) => String(r.listing_id)) : [];
+  for (const b of buying) b.dispute = disp.includes(b.id);
   const out = rows.map((r) => ({ ...view(r), buyer: r.status === 'reserved' ? null : r.buyer_name, paid: !!r.buyer_paid_at }));
   for (const r of rows) if (r.status === 'reserved' && r.reserved_char) out.find((x) => x.id === String(r.id)).reservedBy = (await db.query('SELECT name FROM characters WHERE id = $1', [r.reserved_char])).rows[0]?.name || '?';
   p.send({ type: 'market', view: 'mine', rows: out, buying, fee: FEE, max: MAX_ACTIVE, hours: DURATION_H, myZen: p.zen, real: REAL.enabled() });
@@ -102,6 +111,8 @@ async function list(world, p, msg) {
     else {
       const w = await WALLET.wallet(p.accountId);
       if (!w.pix_key) return say('Para vender em reais, conecte sua conta Stripe ou cadastre sua chave Pix (aba Vender → R$).');
+      const no = await WALLET.canListPix(p.accountId, price);
+      if (no) return say(no);
       mode = 'pix'; pixKey = w.pix_key;
     }
   } else if (cur === 'usd') {
@@ -252,7 +263,7 @@ function act(world, p, msg) {
   if (a === 'wallet') return WALLET.send(p);
   if (a === 'setInfo') return WALLET.setInfo(p, msg);
   if (a === 'payNow') return WALLET.payNow(p);
-  if (a === 'pixPaid' || a === 'pixCancel' || a === 'pixConfirm') return WALLET.pixAction(p, msg);
+  if (a === 'pixPaid' || a === 'pixCancel' || a === 'pixConfirm' || a === 'pixDispute') return WALLET.pixAction(p, msg);
   if (a === 'browse') return browse(p, msg);
   if (a === 'mine') return mine(p);
   if (a === 'list') return list(world, p, msg);

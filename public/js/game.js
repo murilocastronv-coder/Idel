@@ -2187,6 +2187,13 @@
   function mkBadge(rows) { const n = (rows || []).filter((r) => r.status !== 'active' && r.status !== 'reserved' && !r.collected).length + (rows || []).filter((r) => r.status === 'reserved' && r.mode === 'pix').length; const b = $('#mk-badge'); if (b) { b.hidden = !n; b.textContent = n || ''; } }
   function mkIcon(it) { const d = document.createElement('div'); d.className = 'ic'; d.style.setProperty('--r', RAR[it.rarity]); d.appendChild(iconCanvas(it)); d.onclick = () => openItemInfo(it, 'market'); return d; }
   function mkBtn(label, cls, fn, off) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small ' + (cls || ''); b.textContent = label; b.disabled = MK.busy || !!off; b.onclick = fn; return b; }
+  // selo de confiança do vendedor (vendas confirmadas, reclamações perdidas, idade da conta)
+  function repBadge(rp) {
+    if (!rp) return '';
+    const [cls, txt] = rp.banned || rp.lost ? ['rep-risk', `⚠ ${rp.lost} reclamação(ões)`] : rp.open ? ['rep-risk', '⚠ em análise'] : rp.level === 'trusted' ? ['rep-ok', `✔ confiável · ${rp.sales} vendas`] : rp.level === 'ok' ? ['rep-ok', `✔ ${rp.sales} vendas`] : ['rep-new', `vendedor novo · ${rp.sales} venda(s)`];
+    return ` <span class="rep ${cls}" title="Conta com ${rp.days} dia(s)">${txt}</span>`;
+  }
+  const PIX_SAFE = '<ul class="pix-safe"><li>Pague <b>só</b> na chave Pix mostrada aqui — nunca em outra chave enviada por chat.</li><li>Nunca negocie nem entregue itens fora do jogo.</li><li>Guarde o comprovante (ID da transação). Se o vendedor não confirmar, abra uma reclamação: o item fica preso até o administrador conferir.</li></ul>';
   function mkRow(r, right) {
     const row = document.createElement('div'); row.className = 'mk-row' + (r.status && r.status !== 'active' && r.status !== 'reserved' ? ' done' : '');
     const it = r.item;
@@ -2225,7 +2232,7 @@
     if (MK.pix) {
       const px = MK.pix, pb = document.createElement('div'); pb.className = 'mk-sell mk-pix';
       pb.innerHTML = `<b>Pague ${mkMoney(px.amount, 'brl')} no Pix de ${esc(px.seller)}</b><div class="row"><code class="pix-key">${esc(px.key)}</code><button class="btn small" type="button" id="mk-pixcopy">Copiar chave</button></div>
-        <p class="muted" style="margin:0">Item: ${esc(px.item)}. Depois de pagar, toque em "Já paguei". O item chega na sua bolsa quando o vendedor confirmar (reservado por ${px.hours} h).</p>
+        <p class="muted" style="margin:0">Item: ${esc(px.item)}. Depois de pagar, toque em "Já paguei". O item chega na sua bolsa quando o vendedor confirmar (reservado por ${px.hours} h).</p>${PIX_SAFE}
         <div class="row"><button class="btn btn-gold small" type="button" id="mk-pixpaid">Já paguei</button><button class="btn small" type="button" id="mk-pixclose">Fechar</button></div>`;
       body.appendChild(pb);
       setTimeout(() => {
@@ -2255,9 +2262,9 @@
       else if (!d.rows.length) list.innerHTML = '<p class="mk-empty">Nenhum item à venda com esses filtros.</p>';
       else d.rows.forEach((r) => {
         const own = S.char && ('p' + r.sellerId === String(S.char.id) || r.sellerId === String(S.char.id));
-        list.appendChild(mkRow(r, { sub: `${esc(r.seller)} · ${mkLeft(r.expires)}${payHow(r)}`, btn: own ? 'Seu' : 'Comprar', cls: 'btn-gold', off: own, fn: () => {
+        list.appendChild(mkRow(r, { sub: `${esc(r.seller)}${repBadge(r.rep)} · ${mkLeft(r.expires)}${payHow(r)}`, btn: own ? 'Seu' : 'Comprar', cls: 'btn-gold', off: own, fn: () => {
           const name = `${esc(r.item.name)}${r.item.plus ? ' +' + r.item.plus : ''}`;
-          if (r.cur !== 'zen' && r.mode === 'pix') tradeDialog(`<h3>Comprar ${name} por Pix?</h3><p>Preço: <b style="color:#9affd0">${mkMoney(r.price, 'brl')}</b> · vendedor ${esc(r.seller)}</p><p class="muted">Você paga direto no Pix do vendedor. O item fica reservado para você e chega na sua bolsa quando ele confirmar que recebeu.</p>`,
+          if (r.cur !== 'zen' && r.mode === 'pix') tradeDialog(`<h3>Comprar ${name} por Pix?</h3><p>Preço: <b style="color:#9affd0">${mkMoney(r.price, 'brl')}</b> · vendedor ${esc(r.seller)}</p><p>Vendedor: ${repBadge(r.rep) || 'sem histórico'}</p>${r.rep && (r.rep.lost || r.rep.open) ? '<p class="bad">⚠ Este vendedor tem reclamações. Prefira outro anúncio.</p>' : ''}<p class="muted">Você paga direto no Pix do vendedor. O item fica reservado para você e chega na sua bolsa quando ele confirmar que recebeu.</p>${PIX_SAFE}`,
             [{ label: 'Comprar por Pix', cls: 'btn-gold', fn: () => mkSend({ action: 'buy', id: r.id, price: r.price }) }, { label: 'Cancelar' }]);
           else if (r.cur !== 'zen') tradeDialog(`<h3>Comprar ${name} com dinheiro real?</h3><p>Preço: <b style="color:#9affd0">${mkMoney(r.price, r.cur)}</b> · vendedor ${esc(r.seller)}</p><p class="muted">Você vai para a página segura do Stripe pagar com cartão. O item fica reservado por 30 minutos e chega na sua bolsa sozinho assim que o pagamento for confirmado.</p>`,
             [{ label: 'Pagar com cartão', cls: 'btn-gold', fn: () => mkSend({ action: 'buy', id: r.id, price: r.price }) }, { label: 'Cancelar' }]);
@@ -2349,8 +2356,11 @@
       if (d && d.buying && d.buying.length) {
         const bx = document.createElement('div'); bx.className = 'mk-list'; bx.style.marginBottom = '8px';
         bx.insertAdjacentHTML('beforeend', '<p class="muted" style="margin:0">Suas compras por Pix esperando o vendedor confirmar:</p>');
-        d.buying.forEach((r) => bx.appendChild(mkRow(r, { sub: `Pix: <code>${esc(r.pixKey || '')}</code> · ${esc(r.seller)}${r.paid ? ' · você avisou que pagou' : ''}`,
-          btns: [...(r.paid ? [] : [{ label: 'Já paguei', cls: 'btn-gold', fn: () => mkSend({ action: 'pixPaid', id: r.id }) }]), { label: 'Cancelar', fn: () => mkSend({ action: 'pixCancel', id: r.id }) }] })));
+        d.buying.forEach((r) => bx.appendChild(mkRow(r, { sub: `Pix: <code>${esc(r.pixKey || '')}</code> · ${esc(r.seller)}${r.dispute ? ' · <b class="bad">reclamação aberta: o item está guardado</b>' : r.paid ? ' · você avisou que pagou' : ''}`,
+          btns: r.dispute ? [] : r.paid ? [{ label: 'Abrir reclamação', fn: () => {
+            tradeDialog('<h3>Reclamação</h3><p class="muted">Use se você pagou e o vendedor não confirmou. O item fica preso até o administrador conferir o pagamento.</p><label>Comprovante do Pix (ID da transação/E2E, data, hora e banco)<textarea id="mk-proof" maxlength="300" rows="3" style="width:100%"></textarea></label>',
+              [{ label: 'Enviar reclamação', cls: 'btn-gold', fn: () => mkSend({ action: 'pixDispute', id: r.id, proof: ($('#mk-proof') || {}).value || '' }) }, { label: 'Voltar' }]);
+          } }] : [{ label: 'Já paguei', cls: 'btn-gold', fn: () => mkSend({ action: 'pixPaid', id: r.id }) }, { label: 'Cancelar', fn: () => mkSend({ action: 'pixCancel', id: r.id }) }] })));
         body.appendChild(bx);
       }
       const pending = rows ? rows.filter((r) => r.status !== 'active' && r.status !== 'reserved' && !r.collected) : [];
@@ -2367,7 +2377,7 @@
         let right;
         if (r.status === 'reserved' && r.mode === 'pix') right = { sub: `${esc(r.reservedBy || 'um comprador')} vai pagar por Pix${r.paid ? ' · <b>avisou que pagou</b>' : ''}`,
           btns: [{ label: 'Recebi o Pix', cls: 'btn-gold', fn: () => tradeDialog(`<h3>Confirmar que recebeu ${mkMoney(r.price, 'brl')}?</h3><p class="muted">Confira no app do seu banco antes. O item vai para ${esc(r.reservedBy || 'o comprador')} e a comissão de ${mkMoney(r.fee, 'brl')} é somada à sua conta.</p>`, [{ label: 'Confirmar', cls: 'btn-gold', fn: () => mkSend({ action: 'pixConfirm', id: r.id }) }, { label: 'Voltar' }]) },
-            { label: 'Não recebi', fn: () => mkSend({ action: 'pixCancel', id: r.id }) }] };
+            { label: 'Não recebi', fn: () => r.paid ? tradeDialog('<h3>Não recebeu o Pix?</h3><p class="muted">O comprador avisou que pagou, então vamos abrir uma reclamação: o item fica guardado e o administrador confere o pagamento. Confira bem no app do banco antes.</p>', [{ label: 'Abrir reclamação', cls: 'btn-gold', fn: () => mkSend({ action: 'pixCancel', id: r.id }) }, { label: 'Voltar' }]) : mkSend({ action: 'pixCancel', id: r.id }) }] };
         else if (r.status === 'reserved') right = { sub: 'um comprador está pagando agora' };
         else if (r.status === 'active') right = { sub: `à venda · termina em ${mkLeft(r.expires)}${payHow(r)}`, btn: 'Cancelar', fn: () => mkSend({ action: 'cancel', id: r.id }) };
         else if (r.status === 'sold') right = { sub: `vendido para ${esc(r.buyer || '?')} · ${r.cur === 'zen' ? (r.collected ? 'Zen coletado' : `receber ${fmt.format(r.price - r.fee)} Zen`) : r.mode === 'pix' ? `pago no seu Pix (comissão ${mkMoney(r.fee, 'brl')})` : r.mode === 'platform' ? `${mkMoney(r.price - r.fee, 'usd')} no seu saldo em dólar` : `${mkMoney(r.price - r.fee, r.cur)} enviados à sua conta Stripe`}`, ...(r.cur === 'zen' && !r.collected ? { btn: 'Coletar', cls: 'btn-gold', fn: () => mkSend({ action: 'collect', id: r.id }) } : {}) };
