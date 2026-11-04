@@ -78,7 +78,7 @@
   };
   const NPC = {
     shop: { nova: 'npc_mira' }, smith: { nova: 'npc_brant' }, guild: { nova: 'npc_selene' }, marlon: { hero: 'dark_knight', set: 'storm' }, sevina: { hero: 'fairy_elf', set: 'phoenix' },
-    castle_guard: { nova: 'npc_guardiao' }, charon: { nova: 'npc_torvin' }, teleport: { nova: 'npc_elric' }, chaos: { nova: 'mob_goblin', tint: '#a070ff', h: 1.3 }, vault: { proc: 'chest' },
+    castle_guard: { nova: 'npc_guardiao' }, charon: { nova: 'npc_torvin' }, archangel: { nova: 'npc_selene' }, teleport: { nova: 'npc_elric' }, chaos: { nova: 'mob_goblin', tint: '#a070ff', h: 1.3 }, vault: { proc: 'chest' },
   };
   W3.MON = MON;
 

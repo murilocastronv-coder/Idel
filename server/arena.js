@@ -11,7 +11,7 @@ const G = require('./gamedata');
 const SET = require('./settings');
 
 const hourly = (min) => Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`);
-const KINDS = ['castle', 'devil'];
+const KINDS = ['castle', 'devil', 'blood'];
 const R = (kind, qty, extra = {}) => ({ kind, qty, ...extra });
 function castleRewards(i) {
   const box = i < 2 ? 'kundun_bronze' : i < 4 ? 'kundun_prata' : 'kundun_ouro';
@@ -31,6 +31,19 @@ function devilRewards(i) {
     participant: [R('zen', 20000 * (i + 1))],
   };
 }
+// Blood Castle: prêmios por EXP (fração da barra do nível médio da categoria) + Zen; o vencedor é quem destrói a Estátua de Cristal
+const BLOOD_MID = [45, 105, 155, 205, 255, 305, 365];
+const lvExp = (L) => Math.floor(100 * Math.pow(L, 2.1) + 200);
+function bloodRewards(i) {
+  const box = i < 2 ? 'kundun_bronze' : i < 5 ? 'kundun_prata' : 'kundun_ouro', E = lvExp(BLOOD_MID[i]);
+  return {
+    winner: [R('exp', Math.round(E * 0.3)), R('zen', 300000 * (i + 1)), R('item', 1, { base: 'jewel_of_bless' }), R('item', 1, { base: box })],
+    second: [R('exp', Math.round(E * 0.15)), R('zen', 150000 * (i + 1))],
+    third: [R('exp', Math.round(E * 0.1)), R('zen', 80000 * (i + 1))],
+    participant: [R('exp', Math.round(E * 0.05)), R('zen', 20000 * (i + 1))],
+  };
+}
+const BLOOD_CATS = [[15, 80], [81, 130], [131, 180], [181, 230], [231, 280], [281, 330], [331, 9999]];
 const CASTLE_CATS = [[15, 49], [50, 99], [100, 179], [180, 249], [250, 349], [350, 9999]];
 const DEVIL_CATS = [[15, 79], [80, 129], [130, 179], [180, 239], [240, 299], [300, 399], [400, 9999]];
 const DEFAULTS = {
@@ -53,17 +66,32 @@ const DEFAULTS = {
     categories: DEVIL_CATS.map(([a, b], i) => ({ name: `Devil Square ${i + 1}`, minLevel: a, maxLevel: b, minResets: 0 })),
     rewards: DEVIL_CATS.map((_, i) => devilRewards(i)),
   },
+  blood: {
+    enabled: true, name: 'Blood Castle', times: hourly(35), openMin: 10, durationMin: 12, minPlayers: 1, maxPlayers: 10,
+    entryItem: '@blood', buyZen: 0, disguise: false, pvp: false,
+    monsters: { maxAlive: 14, perPlayer: 2, everySec: 4, mult: 1 },
+    shrink: { enabled: false, startPct: 50, endPct: 90, finalSize: 50, dmgPct: 5 },
+    score: { monster: 1, player: 0, survive: 5, minForReward: 5 },
+    categories: BLOOD_CATS.map(([a, b], i) => ({ name: `Blood Castle ${i + 1}`, minLevel: a, maxLevel: b, minResets: 0 })),
+    rewards: BLOOD_CATS.map((_, i) => bloodRewards(i)),
+  },
 };
 // monstros-base de cada categoria (sprites existentes, força ajustada à faixa de nível)
 const MON_BASE = {
   castle: ['goblin_elite', 'death_knight', 'coral_golem', 'magma_golem', 'cloud_golem', 'glacier_golem'],
   devil: [['skeleton', 'goblin_elite'], ['hell_hound', 'death_knight'], ['cursed_skeleton', 'bone_mage'], ['obsidian_skeleton', 'magma_golem'],
     ['storm_spider', 'sand_golem'], ['void_skeleton', 'dark_treant'], ['demon_hound', 'glacier_golem']],
+  blood: [['skeleton', 'hell_hound'], ['death_knight', 'cursed_skeleton'], ['bone_mage', 'hell_hound'], ['obsidian_skeleton', 'death_knight'],
+    ['void_skeleton', 'storm_spider'], ['demon_hound', 'void_skeleton'], ['demon_hound', 'obsidian_skeleton']],
 };
-const NPC_OF = { castle: 'castle_guard', devil: 'charon' };
+// portão e estátua do Blood Castle: estruturas paradas (não andam, não atacam, não regeneram)
+const BC_STRUCT = { gate: { type: 'magma_golem', name: 'Portão do Castelo', tint: '#8a7a6a', hp: 40, size: 3, y: 0.40 }, statue: { type: 'glacier_golem', name: 'Estátua de Cristal', tint: '#9ae8ff', hp: 55, size: 2.8, y: 0.13 } };
+const NPC_OF = { castle: 'castle_guard', devil: 'charon', blood: 'archangel' };
+const NPC_TXT = { castle: 'o Guarda do Chaos Castle', devil: 'Charon', blood: 'o Mensageiro do Arcanjo' };
 const ARENA_DEF = {
   castle: { theme: 'castle', w: 720, h: 600, margin: 46 },
   devil: { theme: 'devilsq', w: 760, h: 620, margin: 46 },
+  blood: { theme: 'castle', w: 560, h: 900, margin: 46 },
 };
 
 let W = null, H = null;
@@ -72,14 +100,14 @@ let seq = 0;
 const pendingChars = new Set();
 
 function cfg() { return SET.get('arena', DEFAULTS); }
-// Devil Square é sempre individual ou em grupo: nunca exige mínimo de participantes nem party.
-const minPlayersOf = (kind) => (kind === 'devil' ? 1 : K(kind).minPlayers);
+// Devil Square e Blood Castle: sozinho ou em grupo, nunca exigem mínimo de participantes nem party.
+const minPlayersOf = (kind) => (kind === 'devil' || kind === 'blood' ? 1 : K(kind).minPlayers);
 // poucos jogadores = ondas menores (sozinho ≈ metade dos monstros vivos), igual ao normal a partir de 3 jogadores
 const soloScale = (n) => Math.min(1, (Math.max(1, n) + 1) / 4);
 const K = (kind) => cfg()[kind];
 const fmt = (n) => Math.round(n).toLocaleString('pt-BR');
 const nameOf = (base) => (G.ITEM_BASES[base] || {}).name || base;
-function entryItemOf(kind, cat) { const e = K(kind).entryItem; return e === '@devil' ? 'devil_inv_' + (cat + 1) : e; }
+function entryItemOf(kind, cat) { const e = K(kind).entryItem; return e === '@devil' ? 'devil_inv_' + (cat + 1) : e === '@blood' ? 'cloak_inv_' + (cat + 1) : e; }
 const countItem = (p, base) => p.items.filter((i) => i.base === base && !i.equipped).reduce((a, i) => a + (Number(i.qty) || 1), 0);
 
 // ---------- agenda ----------
@@ -148,7 +176,7 @@ async function act(world, p, msg) {
   if (a === 'info') return p.send(info(p, kind));
   if (!k.enabled) return say(false, `${k.name} está desativado no momento.`);
   if (p.arena) return say(false, 'Você já está em um evento.');
-  if (!atNpc(p, kind)) return say(false, `Fale com ${kind === 'castle' ? 'o Guarda do Chaos Castle' : 'Charon'} em Lorencia.`);
+  if (!atNpc(p, kind)) return say(false, `Fale com ${NPC_TXT[kind]} em Lorencia.`);
   if (a === 'buy') {
     const base = entryItemOf(kind, 0);
     if (!k.buyZen || kind !== 'castle') return say(false, 'Este item não está à venda.');
@@ -193,30 +221,45 @@ function monTemplate(kind, cat, type) {
   const mid = Math.min(c.maxLevel, c.minLevel + 60, 1000);
   const s = Math.max(1, ((c.minLevel + mid) / 2) / T0.level);
   const mult = Number(K(kind).monsters.mult) || 1;
-  const name = kind === 'castle' ? 'Soldado do Castelo' : T0.name;
+  const name = kind === 'castle' ? 'Soldado do Castelo' : kind === 'blood' ? T0.name + ' Sangrento' : T0.name;
   return {
     ...T0, name, level: Math.round(T0.level * s), hp: Math.round(T0.hp * Math.pow(s, 1.25) * mult), dmg: Math.round(T0.dmg * Math.pow(s, 0.9) * mult * 0.8), def: Math.round(T0.def * Math.sqrt(s)),
     exp: Math.round(T0.exp * s * 1.2), zen: [Math.round(T0.zen[0] * s), Math.round(T0.zen[1] * s)], aggro: 95, drop: 0, boss: false, elite: false,
-    arena: kind, respawnMs: Infinity, tint: kind === 'castle' ? '#ff5a4a' : '#c84aff',
+    arena: kind, respawnMs: Infinity, tint: kind === 'castle' ? '#ff5a4a' : kind === 'blood' ? '#ff2a2a' : '#c84aff',
   };
 }
-function spawnMon(m, kind) {
+function spawnMon(m, kind, area, role) {
   const inst = m.inst, d = inst.def, mg = d.margin + 10;
-  const types = kind === 'castle' ? [MON_BASE.castle[Math.min(m.cat, MON_BASE.castle.length - 1)]] : MON_BASE.devil[Math.min(m.cat, MON_BASE.devil.length - 1)];
-  const type = types[Math.floor(Math.random() * types.length)];
-  const T = monTemplate(kind, m.cat, type);
+  const list = MON_BASE[kind] || MON_BASE.devil;
+  const types = kind === 'castle' ? [MON_BASE.castle[Math.min(m.cat, MON_BASE.castle.length - 1)]] : list[Math.min(m.cat, list.length - 1)];
+  const S = role ? BC_STRUCT[role] : null;
+  const type = S ? S.type : types[Math.floor(Math.random() * types.length)];
+  let T = monTemplate(kind, m.cat, type);
+  if (S) {
+    // vida do portão/estátua cresce com o número de jogadores (sozinho dá para quebrar)
+    const n = Math.max(1, aliveParts(m).length);
+    T = { ...T, name: S.name, tint: S.tint, size: S.size, scale: 1.25, hp: Math.round(T.hp * S.hp * (0.6 + 0.4 * n)), dmg: 0, speed: 0, aggro: 0, atkMs: 1e9, structure: role, elite: true };
+  }
+  const y0 = area ? area[0] : mg, y1 = area ? area[1] : d.h - mg;
   let x, y, tries = 0;
-  do { x = mg + Math.random() * (d.w - mg * 2); y = mg + Math.random() * (d.h - mg * 2); tries++; }
+  if (S) { x = d.w / 2; y = Math.round(d.h * S.y); tries = 99; }
+  else do { x = mg + Math.random() * (d.w - mg * 2); y = y0 + Math.random() * Math.max(1, y1 - y0); tries++; }
   while (tries < 20 && [...m.parts.values()].some((pt) => pt.alive && pt.p && Math.hypot(pt.p.x - x, pt.p.y - y) < 70));
   const mo = { id: 'a' + (++seq).toString(36), type, T, x, y, hx: x, hy: y, hp: T.hp, dead: false, respawnAt: Infinity, target: null,
-    nextAtk: 0, wander: null, nextWander: 0, contrib: new Map(), flip: false, arena: m.id };
+    nextAtk: 0, wander: null, nextWander: 0, contrib: new Map(), flip: false, arena: m.id, bcRole: role || null };
   inst.monsters.push(mo);
-  const msg = { type: 'madd', m: { id: mo.id, type, name: T.name, sprite: T.sprite, tint: T.tint, size: T.size, scale: T.scale || 1, level: T.level, maxHp: T.hp, boss: false, elite: false } };
+  const msg = { type: 'madd', m: { id: mo.id, type, name: T.name, sprite: T.sprite, tint: T.tint, size: T.size, scale: T.scale || 1, level: T.level, maxHp: T.hp, boss: false, elite: !!S } };
   for (const o of inst.players.values()) o.send(msg);
   m.spawned++;
   return mo;
 }
 const aliveMons = (m) => m.inst.monsters.filter((x) => !x.dead).length;
+// Blood Castle: faixa vertical onde os monstros aparecem em cada etapa
+function bcArea(m) {
+  const d = m.inst.def, gy = Math.round(d.h * BC_STRUCT.gate.y);
+  return m.bc.stage === 'statue' ? [d.margin + 30, gy - 40] : [gy + 50, d.h - d.margin - 120];
+}
+const bcNeed = (n) => Math.min(60, 15 + 7 * (Math.max(1, n) - 1));
 const aliveParts = (m) => [...m.parts.values()].filter((x) => x.alive);
 
 // ---------- início ----------
@@ -297,7 +340,9 @@ async function start(kind) {
       p.returnAt = 0; p.moveTo = null; p.target = null; p.pickTarget = null;
       p.hp = p.maxHp; p.mp = p.maxMp; p.buffs = {};
       const n = m.parts.size, ang = (n / Math.max(1, ok.length)) * Math.PI * 2;
-      W.enterMap(p, def.arena + '_arena', [def.w / 2 + Math.cos(ang) * (def.w / 2 - def.margin - 40), def.h / 2 + Math.sin(ang) * (def.h / 2 - def.margin - 40)], inst);
+      const pos = kind === 'blood' ? [def.w / 2 + ((n % 5) - 2) * 40, def.h - def.margin - 40 - Math.floor(n / 5) * 30]
+        : [def.w / 2 + Math.cos(ang) * (def.w / 2 - def.margin - 40), def.h / 2 + Math.sin(ang) * (def.h / 2 - def.margin - 40)];
+      W.enterMap(p, def.arena + '_arena', pos, inst);
       p.send(p.charState());
     }
     m.started = m.parts.size;
@@ -308,10 +353,13 @@ async function start(kind) {
     if (kind === 'castle') {
       const mc = k.monsters, n = Math.max(mc.min, Math.round(mc.base + mc.perPlayer * m.started));
       for (let i = 0; i < n; i++) spawnMon(m, kind);
+    } else if (kind === 'blood') {
+      m.bc = { stage: 'bridge', kills: 0, need: bcNeed(m.started), breaker: null };
+      for (let i = 0; i < Math.min(Math.round(k.monsters.maxAlive * soloScale(m.started)), 6 + m.started * 2); i++) spawnMon(m, kind, bcArea(m));
     } else {
       for (let i = 0; i < Math.min(Math.round(K(kind).monsters.maxAlive * soloScale(m.started)), 6 + m.started * 2); i++) spawnMon(m, kind);
     }
-    for (const part of m.parts.values()) part.p.send({ type: 'arena', phase: 'start', text: `${def.name} começou! ${kind === 'castle' ? 'Seja o último de pé.' : 'Derrote o máximo de monstros.'}`, ...hud(m, part) });
+    for (const part of m.parts.values()) part.p.send({ type: 'arena', phase: 'start', text: `${def.name} começou! ${kind === 'castle' ? 'Seja o último de pé.' : kind === 'blood' ? `Derrote ${m.bc.need} monstros na ponte para chegar ao portão.` : 'Derrote o máximo de monstros.'}`, ...hud(m, part) });
     announce(`${def.name} começou com ${m.started} participante${m.started > 1 ? 's' : ''}!`, false);
   }
   if (!any) { st.phase = 'idle'; st.slot = 0; st.manual = 0; await saveState(); }
@@ -324,6 +372,7 @@ function hud(m, part) {
   const ranked = rank(m, false);
   return { kind: m.kind, name: m.inst.def.name, endsAt: m.endsAt, now: Date.now(), alive: alive.length, total: m.started, monsters: aliveMons(m),
     score: part ? part.score : 0, pos: part ? ranked.indexOf(part) + 1 : 0, mk: part ? part.mk : 0, pk: part ? part.pk : 0, me: part ? part.alive : false,
+    bc: m.bc ? { stage: m.bc.stage, kills: m.bc.kills, need: m.bc.need } : null,
     zone: k.shrink.enabled ? m.zone : null, full: { x0: m.inst.def.margin, y0: m.inst.def.margin, x1: m.inst.def.w - m.inst.def.margin, y1: m.inst.def.h - m.inst.def.margin } };
 }
 function eliminate(m, part, reason, by) {
@@ -343,7 +392,8 @@ function rank(m, final) {
   if (m.kind === 'castle') {
     return arr.sort((a, b) => (b.alive - a.alive) || (final && !a.alive ? b.elimAt - a.elimAt : 0) || b.score - a.score || b.pk - a.pk || b.mk - a.mk || surv(b) - surv(a));
   }
-  return arr.sort((a, b) => b.score - a.score || b.mk - a.mk || (b.alive - a.alive) || surv(b) - surv(a));
+  const br = m.bc && m.bc.breaker;
+  return arr.sort((a, b) => ((b === br) - (a === br)) || b.score - a.score || b.mk - a.mk || (b.alive - a.alive) || surv(b) - surv(a));
 }
 function zoneFor(m, now) {
   const k = K(m.kind), d = m.inst.def, sh = k.shrink;
@@ -377,12 +427,14 @@ function tickMatch(m, now) {
     }
   }
   // Devil Square: novas ondas
-  if (m.kind === 'devil') {
-    const np = aliveParts(m).length, mc = k.monsters, cap = Math.min(60, Math.round(mc.maxAlive * soloScale(np)) + mc.perPlayer * np);
-    if (now - m.lastSpawn >= mc.everySec * 1000) {
+  if (m.kind === 'devil' || m.kind === 'blood') {
+    const np = aliveParts(m).length, mc = k.monsters;
+    let cap = Math.min(60, Math.round(mc.maxAlive * soloScale(np)) + mc.perPlayer * np);
+    if (m.kind === 'blood') cap = m.bc.stage === 'bridge' ? cap : m.bc.stage === 'gate' ? Math.ceil(cap / 3) + 1 : Math.ceil(cap / 2) + 1;
+    if (m.kind !== 'blood' || m.bc.stage !== 'done') if (now - m.lastSpawn >= mc.everySec * 1000) {
       m.lastSpawn = now;
       const need = Math.min(4, cap - aliveMons(m));
-      for (let i = 0; i < need; i++) spawnMon(m, m.kind);
+      for (let i = 0; i < need; i++) spawnMon(m, m.kind, m.kind === 'blood' ? bcArea(m) : null);
     }
   }
   // fim
@@ -410,10 +462,34 @@ function onMonsterKill(world, mo, map, killer) {
   const m = killer.arena;
   const part = m && m.parts.get(killer.charId);
   if (m && part && part.alive) { part.mk++; part.score += K(m.kind).score.monster * (m.kind === 'devil' ? 1 + Math.floor(m.cat / 2) : 1); }
+  if (m && m.kind === 'blood' && m.bc && !m.ended) bloodProgress(m, mo, part);
   world.grantShare(killer, mo, 1);
   map.emit({ k: 'die', t: mo.id });
   // remove o corpo depois de um tempo
   setTimeout(() => { const i = map.monsters.indexOf(mo); if (i >= 0) { map.monsters.splice(i, 1); for (const o of map.players.values()) o.send({ type: 'mdel', id: mo.id }); } }, 1500).unref();
+}
+// Blood Castle: ponte (matar N monstros) → portão → Estátua de Cristal (quem destrói recupera a Arma do Arcanjo e vence)
+function bloodProgress(m, mo, part) {
+  const say = (text) => { for (const o of m.inst.players.values()) o.send({ type: 'arena', phase: 'notice', text }); };
+  if (mo.bcRole === 'gate') {
+    if (part) part.score += 20;
+    m.bc.stage = 'statue';
+    spawnMon(m, m.kind, null, 'statue');
+    for (let i = 0; i < 2 + aliveParts(m).length; i++) spawnMon(m, m.kind, bcArea(m));
+    say(`${part ? part.name : 'Alguém'} derrubou o Portão do Castelo! Destrua a Estátua de Cristal e recupere a Arma do Arcanjo.`);
+  } else if (mo.bcRole === 'statue') {
+    m.bc.stage = 'done'; m.bc.breaker = part || null;
+    if (part) part.score += 50;
+    say(`${part ? part.name : 'Alguém'} destruiu a Estátua de Cristal e recuperou a Arma do Arcanjo!`);
+    end(m, 'missão cumprida').catch((e) => console.error('[arena] blood', e.message));
+  } else if (m.bc.stage === 'bridge') {
+    m.bc.kills++;
+    if (m.bc.kills >= m.bc.need) {
+      m.bc.stage = 'gate';
+      spawnMon(m, m.kind, null, 'gate');
+      say('A ponte está livre! Destrua o Portão do Castelo.');
+    }
+  }
 }
 function onPvpKill(world, k, v) {
   const m = k.arena;
@@ -454,6 +530,8 @@ async function end(m, reason) {
         const same = a.score === b.score && a.pk === b.pk && a.mk === b.mk;
         winner = same ? null : a;   // empate total: sem vencedor (nunca sorteia)
       }
+    } else if (m.kind === 'blood') {
+      winner = m.bc && m.bc.stage === 'done' ? m.bc.breaker : null;   // só vence quem cumpre a missão
     } else {
       const [a, b] = ranked;
       if (a && a.score > 0 && !(b && a.score === b.score && a.mk === b.mk && a.alive === b.alive)) winner = a;
@@ -581,7 +659,7 @@ async function tickKind(kind, now) {
     const slot = st.manual || nextSlotAfter(kind, now);
     if (slot && now >= slot - k.openMin * 60000) {
       st.phase = 'open'; st.slot = slot; st.warned = false;
-      announce(`Inscrições abertas para o ${k.name}! Começa em ${Math.max(1, Math.round((slot - now) / 60000))} min. Fale com ${kind === 'castle' ? 'o Guarda do Chaos Castle' : 'Charon'} em Lorencia.`);
+      announce(`Inscrições abertas para o ${k.name}! Começa em ${Math.max(1, Math.round((slot - now) / 60000))} min. Fale com ${NPC_TXT[kind]} em Lorencia.`);
     }
     return;
   }

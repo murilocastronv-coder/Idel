@@ -713,7 +713,7 @@
   function load3D() {
     const files = ['vendor/three/three.min.js', 'vendor/three/GLTFLoader.js', 'vendor/three/SkeletonUtils.js', 'vendor/three/RoomEnvironment.js',
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
-      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=3', 'world3d-actors.js?v=3', 'world3d-fx.js?v=1'];
+      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=3', 'world3d-actors.js?v=4', 'world3d-fx.js?v=1'];
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();
@@ -1495,7 +1495,7 @@
     const head = (x, y, h) => { const p = W3().project(x, y, h); return [p[0], p[1]]; };
     for (const n of S.map.npcs || []) {
       const [x, y] = head(n.x, n.y, 1.95 * K3);
-      const sub = { chaos: ['Chaos Machine', '#ff9ad8'], sevina: ['Evolução de classe', '#9affd0'], marlon: ['Evolução de classe', '#9affd0'], castle_guard: ['Chaos Castle', '#ff7a5a'], charon: ['Devil Square', '#c88aff'],
+      const sub = { chaos: ['Chaos Machine', '#ff9ad8'], sevina: ['Evolução de classe', '#9affd0'], marlon: ['Evolução de classe', '#9affd0'], castle_guard: ['Chaos Castle', '#ff7a5a'], archangel: ['Blood Castle', '#ff6a6a'], charon: ['Devil Square', '#c88aff'],
         teleport: ['Viajar para outro mapa', '#c88aff'], guild: ['Guildas e membros', '#ffd36b'], smith: ['Aprimorar +9 a +15', '#9affd0'], vault: ['Guardar itens e Zen', '#9affd0'] }[n.kind] || ['Loja', '#9affd0'];
       label(n.name, x, y - 4 * dpr, '#ffd36b');
       label(sub[0], x, y - 17 * dpr, sub[1], 10);
@@ -1585,6 +1585,17 @@
           else Sprites.hero(ctx, 'dark_knight', { hair: 4, skin: 1 }, 'idle_front', now, x, y, sc, true, { equip: { helm: 'storm', armor: 'storm', gloves: 'storm', boots: 'storm' } });
           label(e.name, x, y - HERO_H * sc - 4 * dpr, e.kind === 'sevina' ? '#bfe8ff' : '#ffcf7a');
           label('Evolução de classe', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
+          continue;
+        }
+        if (e.kind === 'archangel') {
+          ctx.save(); ctx.globalCompositeOperation = 'lighter';
+          const r4 = 26 * zoom * (1 + 0.08 * Math.sin(now / 260));
+          const g6 = ctx.createRadialGradient(x, y - 16 * zoom, 0, x, y - 16 * zoom, r4);
+          g6.addColorStop(0, 'rgba(255,215,120,.45)'); g6.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g6; ctx.fillRect(x - r4, y - 16 * zoom - r4, r4 * 2, r4 * 2); ctx.restore();
+          Sprites.hero(ctx, 'fairy_elf', { hair: 2, skin: 0 }, 'idle_front', now, x, y, sc, false, { equip: { armor: 'dragon', helm: 'dragon', wings: 'wings_heaven' } });
+          label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffe0a0');
+          label('Blood Castle', x, y - HERO_H * sc - 17 * dpr, '#ff6a6a', 10);
           continue;
         }
         if (e.kind === 'castle_guard' || e.kind === 'charon' || e.kind === 'teleport') {
@@ -1925,7 +1936,7 @@
         if (n.kind === 'vault') { if (S.panel !== 'vault') openPanel('vault'); return; }
         if (n.kind === 'smith') { if (S.panel !== 'smith') openPanel('smith'); return; }
         if (n.kind === 'teleport') { openPanel('maps'); return; }
-        if (n.kind === 'castle_guard' || n.kind === 'charon') { AR.kind = n.kind === 'charon' ? 'devil' : 'castle'; if (S.panel === 'arena') renderPanel('arena'); else openPanel('arena'); send({ type: 'arena', action: 'info', kind: AR.kind }); return; }
+        if (n.kind === 'castle_guard' || n.kind === 'charon' || n.kind === 'archangel') { AR.kind = n.kind === 'charon' ? 'devil' : n.kind === 'archangel' ? 'blood' : 'castle'; if (S.panel === 'arena') renderPanel('arena'); else openPanel('arena'); send({ type: 'arena', action: 'info', kind: AR.kind }); return; }
         openPanel(n.kind === 'chaos' ? 'chaos' : 'shop'); return;
       }
     }
@@ -2512,7 +2523,7 @@
     const set = it.set && S.data.sets[it.set] ? `<p class="muted">Conjunto ${esc(S.data.sets[it.set].name)} — ${esc(S.data.sets[it.set].bonus)}</p>` : '';
     if (it.slot === 'material' && it.event) {
       box.innerHTML = `<h3 style="color:${ACCENT(it)}">${esc(it.name)} ×${fmt.format(it.qty)}</h3>
-        <p style="color:${RAR[it.rarity]}">Item de evento · ${it.event === 'castle' ? 'Chaos Castle' : 'Devil Square'}</p>
+        <p style="color:${RAR[it.rarity]}">Item de evento · ${it.event === 'castle' ? 'Chaos Castle' : it.event === 'blood' ? 'Blood Castle' : 'Devil Square'}</p>
         ${it.desc ? `<p>${esc(it.desc)}</p>` : ''}
         <div class="row"><button class="btn small btn-ghost" type="button" data-act="sell">Vender ${it.qty > 1 ? 'todas ' : ''}por ${fmt.format(it.value)} Zen</button></div>`;
       $('[data-act]', box).onclick = () => { if (!confirm(`Vender ${it.name}${it.qty > 1 ? ' ×' + it.qty : ''}?`)) return; S.selItem = null; send({ type: 'sell', id: it.id }); };
@@ -3115,8 +3126,9 @@
     const el = $('#arena-hud'), H = AR.hud;
     if (!H || !S.map || !S.map.arena) { el.hidden = true; return; }
     el.hidden = false;
-    el.classList.toggle('devil', H.kind === 'devil');
-    $('#ah-title').textContent = H.name;
+    el.classList.toggle('devil', H.kind === 'devil' || H.kind === 'blood');
+    const bc = H.bc;
+    $('#ah-title').textContent = bc ? `${H.name} · ${bc.stage === 'bridge' ? `Ponte ${bc.kills}/${bc.need}` : bc.stage === 'gate' ? 'Destrua o Portão' : bc.stage === 'statue' ? 'Destrua a Estátua' : 'Missão cumprida'}` : H.name;
     $('#ah-time').textContent = mmss(H.endsAt - (Date.now() - (AR.hudSkew || 0)));
     $('#ah-alive').textContent = `${H.alive}/${H.total}`;
     $('#ah-mons').textContent = H.monsters;
@@ -3140,7 +3152,7 @@
   }
   function renderArena() {
     const body = $('#arena-body'), I = AR.info;
-    if (!I || I.kind !== AR.kind) { body.innerHTML = '<p class="muted">Carregando…</p>'; $('#arena-title').textContent = AR.kind === 'devil' ? 'Devil Square' : 'Chaos Castle'; return; }
+    if (!I || I.kind !== AR.kind) { body.innerHTML = '<p class="muted">Carregando…</p>'; $('#arena-title').textContent = AR.kind === 'devil' ? 'Devil Square' : AR.kind === 'blood' ? 'Blood Castle' : 'Chaos Castle'; return; }
     $('#arena-title').textContent = I.name;
     const now = Date.now() - AR.skew;
     const my = I.myCat >= 0 ? I.categories[I.myCat] : null;
@@ -3150,7 +3162,7 @@
     const rw = I.rewards ? `<div class="ar-rw"><b>Vencedor:</b> ${I.rewards.winner.map(esc).join(', ') || '—'}</div><div class="ar-rw"><b>2º:</b> ${I.rewards.second.map(esc).join(', ') || '—'} · <b>3º:</b> ${I.rewards.third.map(esc).join(', ') || '—'}</div><div class="ar-rw"><b>Participação:</b> ${I.rewards.participant.map(esc).join(', ') || '—'}</div>` : '';
     body.innerHTML = `<div class="ar-count"><span id="ar-phase">${phaseTxt}</span>${I.enabled && I.phase !== 'running' ? `<b id="ar-cd">${mmss(cd)}</b>` : ''}</div>
       ${I.registered !== null ? `<p class="req-ok">✔ Você está inscrito no ${esc(I.categories[I.registered].name)}. Fique online: o item de entrada só é usado quando a partida começar.</p>` : ''}
-      ${!I.atNpc ? `<p class="chaos-warn">Fale com ${I.kind === 'castle' ? 'o Guarda do Chaos Castle' : 'Charon'} em Lorencia para se inscrever. <button class="btn small" type="button" id="ar-go">Ir para Lorencia</button></p>` : ''}
+      ${!I.atNpc ? `<p class="chaos-warn">Fale com ${I.kind === 'castle' ? 'o Guarda do Chaos Castle' : I.kind === 'blood' ? 'o Mensageiro do Arcanjo' : 'Charon'} em Lorencia para se inscrever. <button class="btn small" type="button" id="ar-go">Ir para Lorencia</button></p>` : ''}
       <table class="ar-cats"><thead><tr><th>Categoria</th><th>Nível</th><th>Entrada</th><th>Inscritos</th></tr></thead><tbody>
       ${I.categories.map((c) => `<tr class="${c.i === I.myCat ? 'mine' : ''}"><td>${esc(c.name)}${c.running ? ' ⚔' : ''}</td><td>${c.minLevel}${c.maxLevel >= 9999 ? '+' : '–' + c.maxLevel}${c.minResets ? ` · ${c.minResets}+ resets` : ''}</td>
         <td class="${c.entry.have ? 'ok' : 'no'}">${esc(c.entry.name)} (${c.entry.have})</td><td>${c.registered}/${I.maxPlayers}</td></tr>`).join('')}</tbody></table>
@@ -3166,7 +3178,8 @@
       <ul class="ar-rules">
         <li>Inscrições abrem antes do horário; a partida dura ${I.durationMin} min e precisa de ${I.minPlayers}+ participante${I.minPlayers > 1 ? 's' : ''} (máximo ${I.maxPlayers}).</li>
         ${I.kind === 'castle' ? `<li>Todos contra todos e contra os soldados do castelo. Vence o último de pé.</li>${I.shrink ? '<li>A área segura diminui com o tempo: fora dela você perde vida.</li>' : ''}${I.disguise ? '<li>Todos entram disfarçados de guerreiro do castelo (seus itens continuam com você).</li>' : ''}<li>Se o tempo acabar, vence quem tiver mais pontos (jogadores e monstros derrotados).</li>`
-    : '<li>Ondas de monstros sem parar. Quem fizer mais pontos vence.</li><li>Use o Devil\'s Invitation do nível da sua categoria.</li>'}
+    : I.kind === 'blood' ? '<li>Pode entrar sozinho ou em grupo, sem party.</li><li>1) Derrote os monstros da ponte · 2) derrube o Portão do Castelo · 3) destrua a Estátua de Cristal e recupere a Arma do Arcanjo.</li><li>Quem destrói a estátua vence; com a missão cumprida, 2º e 3º também ganham prêmio. Se o tempo acabar antes, todos com pontos recebem a participação.</li><li>Use o Cloak of Invisibility do nível da sua categoria (Scroll of Archangel + Blood Bone do mesmo nível + Jewel of Chaos na Chaos Machine).</li>'
+    : '<li>Pode entrar sozinho ou em grupo, sem party.</li><li>Ondas de monstros sem parar. Quem fizer mais pontos vence.</li><li>Use o Devil\'s Invitation do nível da sua categoria.</li>'}
         <li>Quem morre ou sai é eliminado e volta para Lorencia (sem perder EXP). O item de entrada só é gasto quando a partida começa.</li>
       </ul>`;
     $$('[data-ar]', body).forEach((b) => { b.onclick = () => {
@@ -3975,8 +3988,8 @@
       <div class="chaos-rate"><span>Chance de sucesso</span><b id="chaos-chance">${sel ? sel.chance + '%' : '—'}</b><small>máximo desta receita: ${r.maxChance}%</small></div>
       <p class="muted small">${esc(FAIL_TXT[r.onFail])}</p>
       ${r.id === 'wing1' || r.id === 'wing2' ? '<p class="chaos-luck">🎲 Resultado aleatório: qualquer classe pode receber qualquer asa, conforme as chances acima. A classe só importa na hora de equipar.</p>' : ''}
-      <h4>${r.mode === 'evolve' ? 'Escolha o item para evoluir' : r.mode === 'pair' ? "Escolha o Devil's Eye" : r.id === 'wing2' ? 'Escolha a asa de nível 1' : 'Escolha a Arma do Caos'}</h4>
-      ${r.mode === 'pair' ? `<p class="muted small"><span>O Devil's Eye e o Devil's Key precisam ter o mesmo nível (+1 a +7).</span> <span>Chance: +1 a +4: ${r.rates.low}% · +5 a +7: ${r.rates.high}%.</span></p>`
+      <h4>${r.mode === 'evolve' ? 'Escolha o item para evoluir' : r.mode === 'pair' ? `Escolha o ${esc(r.pairMain || "Devil's Eye")}` : r.id === 'wing2' ? 'Escolha a asa de nível 1' : 'Escolha a Arma do Caos'}</h4>
+      ${r.mode === 'pair' ? `<p class="muted small"><span>${esc(r.pairMain || "Devil's Eye")} e ${esc(r.pairKeyName || "Devil's Key")} precisam ter o mesmo nível (+1 a +7).</span> <span>Chance: +1 a +4: ${r.rates.low}% · +5 a +7: ${r.rates.high}%.</span></p>`
     : `<p class="muted small"><span>Aceita: ${r.main.bases.map((b) => esc(b.name)).join(', ')}${r.main.minPlus ? ` (+${r.main.minPlus} ou mais)` : ''}.</span> <span>${r.id === 'wing2' ? 'A asa nova começa em +0, preserva a raridade e exige nível 120.' : r.id === 'wing1' ? 'A asa recebe modelo e raridade aleatórios; todas exigem nível 120.' : 'O + e a raridade aumentam a chance.'}</span></p>`}
       <div class="chaos-cands" id="chaos-cands">${r.candidates.length ? '' : '<p class="muted">Nenhum na bolsa.</p>'}</div>
       ${missing.length ? `<ul class="chaos-missing">${missing.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}

@@ -17,6 +17,13 @@ const WINGS2 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === '
 const MATERIALS = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].slot === 'material');
 const EYES = [1, 2, 3, 4, 5, 6, 7].map((n) => 'devil_eye_' + n);
 const INVS = [1, 2, 3, 4, 5, 6, 7].map((n) => 'devil_inv_' + n);
+const SCROLLS = [1, 2, 3, 4, 5, 6, 7].map((n) => 'scroll_of_archangel_' + n);
+const CLOAKS = [1, 2, 3, 4, 5, 6, 7].map((n) => 'cloak_inv_' + n);
+// receitas em par (item principal +N + par +N = entrada +N)
+const PAIRS = {
+  devil: { key: 'devil_key_', out: 'devil_inv_', keyName: "Devil's Key do mesmo nível", keyIc: '#9ad8ff', mainName: "Devil's Eye" },
+  blood: { key: 'blood_bone_', out: 'cloak_inv_', keyName: 'Blood Bone do mesmo nível', keyIc: '#ff5a5a', mainName: 'Scroll of Archangel' },
+};
 const EVOLVE = { ...G.WING_EVOLVE, cape_lord: 'cape_emperor' };
 const ON_FAIL = ['lose_all', 'keep_main', 'keep_items'];
 // itens que o administrador pode ajustar (requisitos, atributos e classes)
@@ -60,6 +67,12 @@ const DEFAULTS = {
       // base = chance dos convites +1 a +4; high = +5 a +7
       rate: { base: 80, high: 70, perPlus: 0, perRarity: 0, max: 100 }, onFail: 'lose_all', results: INVS,
     },
+    blood: {
+      name: 'Cloak of Invisibility', enabled: true, mode: 'pair', classes: [],
+      main: { bases: SCROLLS, minPlus: 0, minRarity: 'common' },
+      materials: [{ item: 'jewel_of_chaos', qty: 1 }], zen: 100000,
+      rate: { base: 80, high: 70, perPlus: 0, perRarity: 0, max: 100 }, onFail: 'lose_all', results: CLOAKS,
+    },
   },
   items: {},  // ajustes do administrador: { wings_satan: { req, def, wdmg, absorb, classes } }
 };
@@ -71,6 +84,7 @@ const ALLOWED = {
   cape1: { main: CHAOS_WEAPONS, results: ['cape_lord'] },
   cape2: { main: ['cape_lord'], results: ['cape_emperor'] },
   devil: { main: EYES, results: INVS },
+  blood: { main: SCROLLS, results: CLOAKS },
 };
 const ORIGINAL = {};
 for (const k of TUNABLE) { const b = G.ITEM_BASES[k]; ORIGINAL[k] = { req: b.req, def: b.def, wdmg: b.wdmg, absorb: b.absorb, classes: [...(b.classes || Object.keys(G.CLASSES))] }; }
@@ -215,7 +229,8 @@ async function saveConfig(input) {
   return clean;
 }
 
-const pairLevel = (base) => Number((G.ITEM_BASES[base] || {}).devil) || 0;
+const pairLevel = (base) => Number((G.ITEM_BASES[base] || {}).devil || (G.ITEM_BASES[base] || {}).blood) || 0;
+const pairOf = (r) => (((r.main && r.main.bases) || [])[0] || '').startsWith('scroll_of_archangel') ? PAIRS.blood : PAIRS.devil;
 function chanceFor(r, it) {
   if (r.mode === 'pair') return Math.max(0, Math.min(100, pairLevel(it.base) <= 4 ? r.rate.base : r.rate.high));
   const ri = Math.max(0, RARITY_ORDER.indexOf(it.rarity));
@@ -227,7 +242,7 @@ function chanceFor(r, it) {
 function resultsFor(r, p, main) {
   if (r.mode === 'pair') {
     if (!main) return r.results.slice();
-    const to = 'devil_inv_' + pairLevel(main.base);
+    const to = pairOf(r).out + pairLevel(main.base);
     return r.results.includes(to) ? [to] : [];
   }
   if (r.mode === 'evolve') {
@@ -252,7 +267,7 @@ function mainProblem(r, it) {
 function atNpc(p) { return !!(p.map && (p.map.def.npcs || []).some((n) => n.kind === 'chaos')); }
 
 function matPlan(p, r, main) {
-  const mats = r.mode === 'pair' && main ? [{ item: 'devil_key_' + pairLevel(main.base), qty: 1 }, ...r.materials] : r.materials;
+  const mats = r.mode === 'pair' && main ? [{ item: pairOf(r).key + pairLevel(main.base), qty: 1 }, ...r.materials] : r.materials;
   return mats.map((m) => {
     const stacks = p.items.filter((i) => i.base === m.item && !i.equipped).sort((a, b) => Number(a.id) - Number(b.id));
     const have = stacks.reduce((a, i) => a + (Number(i.qty) || 1), 0);
@@ -283,7 +298,8 @@ function info(p, sources) {
     if (r.mode === 'pair') return { id, name: r.name, enabled: r.enabled, mode: r.mode, zen: r.zen, onFail: r.onFail, maxChance: Math.max(r.rate.base, r.rate.high), rates: { low: r.rate.base, high: r.rate.high },
       classes: r.classes, classOk: !r.classes.length || r.classes.includes(p.cls),
       main: { bases: r.main.bases.map((b) => ({ base: b, name: G.ITEM_BASES[b].name })), minPlus: 0, minRarity: 'common' },
-      materials: [{ item: 'devil_key_1', name: "Devil's Key do mesmo nível", icon: 'key', ic: '#9ad8ff', rarity: 'rare', qty: 1, have: 0, pairKey: true }, ...mats.map((m) => ({ item: m.item, name: G.ITEM_BASES[m.item].name, icon: G.ITEM_BASES[m.item].icon, rarity: G.ITEM_BASES[m.item].rarity, qty: m.qty, have: m.have }))],
+      pairMain: pairOf(r).mainName, pairKeyName: pairOf(r).keyName.replace(/ do mesmo nível$/, ''),
+      materials: [{ item: pairOf(r).key + '1', name: pairOf(r).keyName, icon: 'key', ic: pairOf(r).keyIc, rarity: 'rare', qty: 1, have: 0, pairKey: true }, ...mats.map((m) => ({ item: m.item, name: G.ITEM_BASES[m.item].name, icon: G.ITEM_BASES[m.item].icon, rarity: G.ITEM_BASES[m.item].rarity, qty: m.qty, have: m.have }))],
       candidates, results, noResults: false };
     const classOk = !r.classes.length || r.classes.includes(p.cls);
     return {
@@ -414,9 +430,9 @@ async function craft(world, p, recipeId, mainId) {
 
 // Devil's Eye +N + Devil's Key +N + materiais + Zen = Devil's Invitation +N (os dois do mesmo nível)
 async function craftPair(world, p, recipeId, r, eye, reply) {
-  if (!eye || !r.main.bases.includes(eye.base)) return reply(false, "Escolha um Devil's Eye.");
+  if (!eye || !r.main.bases.includes(eye.base)) return reply(false, `Escolha um ${pairOf(r).mainName}.`);
   const n = pairLevel(eye.base);
-  const resultBase = 'devil_inv_' + n;
+  const resultBase = pairOf(r).out + n;
   if (!r.results.includes(resultBase)) return reply(false, 'Este convite está desativado no momento.');
   const plan = [{ item: eye.base, qty: 1, stacks: [eye], have: Number(eye.qty) || 1 }, ...matPlan(p, r, eye)];
   const missing = plan.filter((m) => m.have < m.qty);

@@ -556,7 +556,7 @@
           ${c.categories.map((x, i) => `<tr data-cat="${i}"><td>${i + 1}</td><td><input data-f="name" value="${esc(x.name)}" maxlength="40"></td><td>${num('minLevel', x.minLevel, 'min="1"')}</td><td>${num('maxLevel', x.maxLevel, 'min="1"')}</td><td>${num('minResets', x.minResets || 0, 'min="0"')}</td></tr>`).join('')}</tbody></table></div>
         <p class="adt-sub">Prêmios por categoria (JSON). Tipos: zen, exp, item (com "base"), gear (com "rarity": rare, epic…). Lugares: winner, second, third, participant.</p>
         <textarea data-f="rewards" rows="8" style="width:100%;font:12px monospace">${esc(JSON.stringify(c.rewards, null, 1))}</textarea>
-        <details><summary class="muted small">Ids de itens</summary><p class="muted small">${V.items.filter((x) => /jewel|kundun|devil|guard|loch|feather|chaos_/.test(x.id)).map((x) => `${esc(x.id)} (${esc(x.name)})`).join(' · ')}</p></details>
+        <details><summary class="muted small">Ids de itens</summary><p class="muted small">${V.items.filter((x) => /jewel|kundun|devil|guard|loch|feather|chaos_|cloak|archangel|blood/.test(x.id)).map((x) => `${esc(x.id)} (${esc(x.name)})`).join(' · ')}</p></details>
         <button class="btn btn-gold" type="button" data-op="save">Salvar ${esc(c.name)}</button>
       </fieldset>`;
     };
@@ -564,7 +564,7 @@
       ${V.kinds.map(card).join('')}
       <h4>Últimas partidas</h4>
       <div class="adt-table-wrap"><table class="adt-table"><thead><tr><th>#</th><th>Evento</th><th>Início</th><th>Jogadores</th><th>Vencedor</th><th>Fim</th></tr></thead><tbody>
-      ${V.history.map((h) => `<tr><td>${h.id}</td><td>${h.kind === 'castle' ? 'Chaos Castle' : 'Devil Square'} ${h.category + 1}</td><td>${h.started_at ? dt(h.started_at) : '—'}</td><td>${h.players}</td><td>${esc(h.winner_name || '—')}</td>
+      ${V.history.map((h) => `<tr><td>${h.id}</td><td>${h.kind === 'castle' ? 'Chaos Castle' : h.kind === 'blood' ? 'Blood Castle' : 'Devil Square'} ${h.category + 1}</td><td>${h.started_at ? dt(h.started_at) : '—'}</td><td>${h.players}</td><td>${esc(h.winner_name || '—')}</td>
         <td>${esc(h.status)}${h.end_reason ? ' · ' + esc(h.end_reason) : ''}${h.data && h.data.results ? `<br><small class="muted">${h.data.results.slice(0, 5).map((r) => `${r.place}º ${esc(r.name)} ${r.score}`).join(' · ')}</small>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Nenhuma ainda.</td></tr>'}</tbody></table></div>`;
     const post = async (body) => { try { const r = await X.api('POST', '/api/admin/arena', body); msg(box, r.message); setTimeout(() => arena(box), 900); } catch (e) { msg(box, e.message, true); box.scrollIntoView({ block: 'start' }); } };
     for (const fs of $$('[data-kind]', box)) {
@@ -717,7 +717,7 @@
       <details class="adm-sec adt-sec" data-sec="invasion"><summary><h3>♛ Invasão Dourada e Box Kundun</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="equip"><summary><h3>Equipamentos por classe e evolução</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="vault"><summary><h3>Baú Pessoal</h3></summary><div class="adt-body"></div></details>
-      <details class="adm-sec adt-sec" data-sec="arena"><summary><h3>Eventos: Chaos Castle e Devil Square</h3></summary><div class="adt-body"></div></details>
+      <details class="adm-sec adt-sec" data-sec="arena"><summary><h3>Eventos: Chaos Castle, Devil Square e Blood Castle</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="upgrade"><summary><h3>Aprimoramento +0 a +15 e Ferreiro</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="chaos"><summary><h3>Chaos Machine (asas e capas)</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="excellent"><summary><h3>Opções Excellent semi-full</h3></summary><div class="adt-body"></div></details>

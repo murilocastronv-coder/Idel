@@ -726,7 +726,7 @@ class World {
       case 'duelAnswer': return this.duelAnswer(p, String(msg.id), !!msg.accept);
       case 'pvp': return this.setPvp(p, !!msg.on, Date.now());
       case 'room': return this.switchRoom(p, msg.room);
-      case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS, ...[1, 2, 3, 4, 5, 6, 7].flatMap((n) => ['devil_eye_' + n, 'devil_key_' + n])])));
+      case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS, ...[1, 2, 3, 4, 5, 6, 7].flatMap((n) => ['devil_eye_' + n, 'devil_key_' + n, 'scroll_of_archangel_' + n, 'blood_bone_' + n])])));
       case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
       case 'openBox': return p.run(() => KUNDUN.open(this, p, String(msg.id || '')));
       case 'trade':
@@ -1574,6 +1574,7 @@ class World {
 
   tickMonster(m, map, now, dt) {
     if (m.dead) { if (now >= m.respawnAt) this.respawnMonster(map, m); return; }
+    if (m.T.structure) return; // portão/estátua de evento: parado, sem ataque e sem regeneração
     let t = m.target;
     if (t && (t.dead || t.map !== map || !map.players.has(t.id) || (m.trainingArea && !insideRect(t, m.trainingArea)))) t = m.target = null;
     if (!t && m.T.aggro) {
