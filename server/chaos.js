@@ -10,8 +10,10 @@ const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancest
 const WING_RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 const CHAOS_WEAPONS = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].chaos);
 const CAPES = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === 'cape');
-const WINGS1 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === 'wings' && G.ITEM_BASES[k].tier === 1).concat(CAPES.filter((k) => G.ITEM_BASES[k].tier === 1));
-const WINGS2 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === 'wings' && G.ITEM_BASES[k].tier === 2).concat(CAPES.filter((k) => G.ITEM_BASES[k].tier === 2));
+// asas de Natal (Noel) são só da loja premium: não entram na Chaos Machine
+const CRAFTABLE = (k) => !G.ITEM_BASES[k].seasonal && !/^festive_/.test(k);
+const WINGS1 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === 'wings' && G.ITEM_BASES[k].tier === 1 && CRAFTABLE(k)).concat(CAPES.filter((k) => G.ITEM_BASES[k].tier === 1));
+const WINGS2 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].cat === 'wings' && G.ITEM_BASES[k].tier === 2 && CRAFTABLE(k)).concat(CAPES.filter((k) => G.ITEM_BASES[k].tier === 2));
 const MATERIALS = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].slot === 'material');
 const EYES = [1, 2, 3, 4, 5, 6, 7].map((n) => 'devil_eye_' + n);
 const INVS = [1, 2, 3, 4, 5, 6, 7].map((n) => 'devil_inv_' + n);
@@ -95,6 +97,14 @@ async function init(helpers) {
     for (const id of ['wing1', 'wing2']) { c.recipes[id].results = DEFAULTS.recipes[id].results.slice(); c.recipes[id].weights = {}; }
     await SET.save('chaos', c).catch(() => {});
     await SET.save('migr_wing120', { done: true }).catch(() => {});
+  }
+  // remove das receitas salvas qualquer asa que não pode ser criada (ex.: asas de Natal)
+  for (const id of ['wing1', 'wing2']) {
+    const r = c.recipes && c.recipes[id]; if (!r) continue;
+    const allowed = id === 'wing1' ? WINGS1 : WINGS2;
+    if (Array.isArray(r.results)) { const f = r.results.filter((b) => allowed.includes(b)); r.results = f.length ? f : allowed.slice(); }
+    if (r.weights) for (const b of Object.keys(r.weights)) if (!allowed.includes(b)) delete r.weights[b];
+    if (r.main && Array.isArray(r.main.bases)) r.main.bases = r.main.bases.filter((b) => !/^festive_/.test(b));
   }
   // Regra fixa do sistema: qualquer asa/capa exige exatamente nível 120.
   for (const k of TUNABLE) if (G.ITEM_BASES[k].slot === 'wings') {
