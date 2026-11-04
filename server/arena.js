@@ -72,6 +72,10 @@ let seq = 0;
 const pendingChars = new Set();
 
 function cfg() { return SET.get('arena', DEFAULTS); }
+// Devil Square é sempre individual ou em grupo: nunca exige mínimo de participantes nem party.
+const minPlayersOf = (kind) => (kind === 'devil' ? 1 : K(kind).minPlayers);
+// poucos jogadores = ondas menores (sozinho ≈ metade dos monstros vivos), igual ao normal a partir de 3 jogadores
+const soloScale = (n) => Math.min(1, (Math.max(1, n) + 1) / 4);
 const K = (kind) => cfg()[kind];
 const fmt = (n) => Math.round(n).toLocaleString('pt-BR');
 const nameOf = (base) => (G.ITEM_BASES[base] || {}).name || base;
@@ -114,7 +118,7 @@ function info(p, kind) {
   const slot = st.slot || nextSlotAfter(kind, now);
   return {
     type: 'arenaInfo', kind, name: k.name, enabled: k.enabled, phase: st.phase, slot, openAt: slot - k.openMin * 60000, now,
-    durationMin: k.durationMin, minPlayers: k.minPlayers, maxPlayers: k.maxPlayers, pvp: !!k.pvp, shrink: !!k.shrink.enabled, disguise: !!k.disguise,
+    durationMin: k.durationMin, minPlayers: minPlayersOf(kind), maxPlayers: k.maxPlayers, pvp: !!k.pvp, shrink: !!k.shrink.enabled, disguise: !!k.disguise,
     atNpc: atNpc(p, kind), myCat: my, registered: reg ? reg.cat : null, inMatch: !!p.arena,
     categories: k.categories.map((c, i) => {
       const base = entryItemOf(kind, i);
@@ -243,10 +247,10 @@ async function start(kind) {
       await db.query("UPDATE arena_entries SET status = 'no_show', elim_reason = $2 WHERE id = $1 AND status = 'registered' RETURNING id", [r.entryId, why]).catch(() => {});
       if (p) p.send({ type: 'arena', phase: 'notice', text: `Você não entrou no ${k.categories[cat].name} (${why}). Nenhum item foi usado.` });
     }
-    if (ok.length < k.minPlayers) {
+    if (ok.length < minPlayersOf(kind)) {
       for (const [, r, p] of ok) {
         await db.query("UPDATE arena_entries SET status = 'cancelled', elim_reason = 'poucos participantes' WHERE id = $1 RETURNING id", [r.entryId]).catch(() => {});
-        p.send({ type: 'arena', phase: 'notice', text: `${k.categories[cat].name} não começou: precisa de pelo menos ${k.minPlayers} participantes. Seu item de entrada não foi usado.` });
+        p.send({ type: 'arena', phase: 'notice', text: `${k.categories[cat].name} não começou: precisa de pelo menos ${minPlayersOf(kind)} participantes. Seu item de entrada não foi usado.` });
       }
       continue;
     }
@@ -305,7 +309,7 @@ async function start(kind) {
       const mc = k.monsters, n = Math.max(mc.min, Math.round(mc.base + mc.perPlayer * m.started));
       for (let i = 0; i < n; i++) spawnMon(m, kind);
     } else {
-      for (let i = 0; i < Math.min(K(kind).monsters.maxAlive, 6 + m.started * 2); i++) spawnMon(m, kind);
+      for (let i = 0; i < Math.min(Math.round(K(kind).monsters.maxAlive * soloScale(m.started)), 6 + m.started * 2); i++) spawnMon(m, kind);
     }
     for (const part of m.parts.values()) part.p.send({ type: 'arena', phase: 'start', text: `${def.name} começou! ${kind === 'castle' ? 'Seja o último de pé.' : 'Derrote o máximo de monstros.'}`, ...hud(m, part) });
     announce(`${def.name} começou com ${m.started} participante${m.started > 1 ? 's' : ''}!`, false);
@@ -374,7 +378,7 @@ function tickMatch(m, now) {
   }
   // Devil Square: novas ondas
   if (m.kind === 'devil') {
-    const mc = k.monsters, cap = Math.min(60, mc.maxAlive + mc.perPlayer * aliveParts(m).length);
+    const np = aliveParts(m).length, mc = k.monsters, cap = Math.min(60, Math.round(mc.maxAlive * soloScale(np)) + mc.perPlayer * np);
     if (now - m.lastSpawn >= mc.everySec * 1000) {
       m.lastSpawn = now;
       const need = Math.min(4, cap - aliveMons(m));
