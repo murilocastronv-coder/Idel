@@ -147,13 +147,25 @@ function rollTrainingItem(p, level) {
 // o que aparece no corpo do herói: arma (item exato), conjunto de cada peça de armadura e asa/capa
 function gearVisual(items) {
   const out = { w: null };
+  // só aparência (brilho/aura no 3D): nível médio do conjunto, peças Excellent, arma Excellent e conjunto Ancient completo
+  let plusSum = 0, exc = 0; const sets = {};
+  const isExc = (it) => Array.isArray(it.excellent_options) && it.excellent_options.length > 0;
   for (const it of items) {
     const b = G.ITEM_BASES[it.base];
     if (!b) continue;
-    if (b.slot === 'weapon') { out.w = it.base; out.wr = it.rarity; out.wp = it.plus || 0; }
+    if (b.slot === 'weapon') { out.w = it.base; out.wr = it.rarity; out.wp = it.plus || 0; if (isExc(it)) out.we = 1; }
     else if (b.slot === 'wings') { out.wings = it.base; out.wingRarity = it.rarity; out.wingPlus = it.plus || 0; }
-    else if (['helm', 'armor', 'gloves', 'boots'].includes(b.slot) && b.set) out[b.slot] = b.set;
+    else if (['helm', 'armor', 'pants', 'gloves', 'boots'].includes(b.slot)) {
+      if (b.slot !== 'pants' && b.set) out[b.slot] = b.set;
+      plusSum += Number(it.plus) || 0; if (isExc(it)) exc++;
+      if (b.set) sets[b.set] = (sets[b.set] || 0) + 1;
+    }
   }
+  const lvl = Math.floor(plusSum / 5);
+  if (lvl) out.ap = lvl;
+  if (exc) out.ax = exc;
+  const anc = Object.entries(sets).find(([k, n]) => n >= 4 && G.SETS[k] && G.SETS[k].seasonal);
+  if (anc) out.anc = 1;
   return out;
 }
 function publicItem(it) {

@@ -712,7 +712,7 @@
   function load3D() {
     const files = ['vendor/three/three.min.js', 'vendor/three/GLTFLoader.js', 'vendor/three/SkeletonUtils.js', 'vendor/three/RoomEnvironment.js',
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
-      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=2', 'world3d-actors.js?v=2'];
+      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=3', 'world3d-actors.js?v=3', 'world3d-fx.js?v=1'];
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();
@@ -2040,7 +2040,22 @@
     $('#me-name').textContent = c.name;
     const meP = S.players.get(S.youId) || { rx: null };
     meP.info = { id: c.id, name: c.name, cls: c.cls, ap: c.ap, level: c.level, weaponRarity: (c.items.find((i) => i.equipped && i.slot === 'weapon') || {}).rarity, vip: c.vip ? c.vip.tier : 0,
-      eq: (() => { const o = { w: null }; for (const i of c.items) { if (!i.equipped) continue; if (i.slot === 'weapon') { o.w = i.base; o.wr = i.rarity; o.wp = i.plus || 0; } else if (i.slot === 'wings') { o.wings = i.base; o.wingRarity = i.rarity; o.wingPlus = i.plus || 0; } else if (i.set && Sprites.ARMOR.includes(i.slot)) o[i.slot] = i.set; } return o; })() };
+      eq: (() => {
+        // igual ao gearVisual do servidor (o brilho/aura do 3D usa o nível médio, Excellent e Ancient)
+        const o = { w: null }; let plus = 0, exc = 0; const sets = {};
+        for (const i of c.items) {
+          if (!i.equipped) continue;
+          if (i.slot === 'weapon') { o.w = i.base; o.wr = i.rarity; o.wp = i.plus || 0; if (i.excellent) o.we = 1; }
+          else if (i.slot === 'wings') { o.wings = i.base; o.wingRarity = i.rarity; o.wingPlus = i.plus || 0; }
+          else if (['helm', 'armor', 'pants', 'gloves', 'boots'].includes(i.slot)) {
+            if (i.set && Sprites.ARMOR.includes(i.slot)) o[i.slot] = i.set;
+            plus += i.plus || 0; if (i.excellent) exc++; if (i.set) sets[i.set] = (sets[i.set] || 0) + 1;
+          }
+        }
+        const lvl = Math.floor(plus / 5); if (lvl) o.ap = lvl; if (exc) o.ax = exc;
+        if (Object.entries(sets).some(([k, n]) => n >= 4 && S.data && S.data.sets[k] && S.data.sets[k].seasonal)) o.anc = 1;
+        return o;
+      })() };
     S.players.set(S.youId || c.id, meP);
     renderSkills();
     if (S.panel === 'chaos') { clearTimeout(CH.t); CH.t = setTimeout(() => send({ type: 'chaosInfo' }), 250); }

@@ -50,6 +50,7 @@
   };
   W3.setQuality = function (q) {
     QL = QUALITY3D[q] || QUALITY3D.media;
+    W3.qname = QUALITY3D[q] ? q : 'media';
     if (!renderer) return;
     renderer.shadowMap.enabled = QL.shadows;
     if (world && world.sun) {

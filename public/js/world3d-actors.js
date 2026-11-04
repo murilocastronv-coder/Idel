@@ -257,6 +257,7 @@
         } else {
           const color = WING_COL[eq.wings] || (W3.wingColor && W3.wingColor(eq.wings)) || '#ffffff';
           const wings = wingModel(eq.wings, color);
+          this.wingColor = color;
           // presas nas costas (no corpo todo, sem herdar o giro dos ossos)
           wings.position.set(0, 1.12, -0.22); wings.scale.setScalar(BAT.test(eq.wings) ? 0.75 : 0.62); this.root.add(wings);
           this.wings = wings;
@@ -266,6 +267,8 @@
       this.mixer = new THREE.AnimationMixer(model);
       this.play(def.style + '_idle', 0);
       this.mixer.update(Math.random() * 3);
+      // brilho, aura e rastro conforme o equipamento real (+nível, Excellent, Ancient, arma e asas)
+      if (eq && W3.heroFx) { try { this.fx = W3.heroFx(this, eq, setCol || null); } catch (e) { console.warn('[3d fx]', e && e.message); } }
     }
     async buildMon(type, tintOverride, golden) {
       const d = MON[type] || MON.goblin;
@@ -384,6 +387,7 @@
         if (d.act === 'attack') this.model.position.z = Math.max(0, Math.sin(t * 14)) * 0.15;
         if (d.act === 'death') { this.model.rotation.z = Math.min(Math.PI, this.model.rotation.z + dt * 6); }
       } else if (this.proc === 'chest') { /* parado */ }
+      if (this.fx) this.fx.update(dt, t, d);
       // asas abrindo e fechando
       if (this.wings) {
         const moving = sp > 10, f = Math.sin(t * (moving ? 6 : 2.2));
@@ -398,6 +402,7 @@
       this.root.visible = d.visible !== false;
     }
     dispose() {
+      if (this.fx) this.fx.dispose();
       W3.scene() && this.root.parent && this.root.parent.remove(this.root);
       if (this.mixer) this.mixer.stopAllAction();
       this.root.traverse((o) => { if (o.isMesh && o.material) [].concat(o.material).forEach((m) => m.dispose()); });
