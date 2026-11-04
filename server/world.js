@@ -207,7 +207,9 @@ class Player {
     this.stats = { str: row.str, agi: row.agi, vit: row.vit, ene: row.ene, cmd: row.cmd };
     this.free = row.free_points;
     this.pots = { hp: row.pot_hp, mp: row.pot_mp };
+    // cópia própria das escolhas de skills (antes o objeto padrão era o mesmo para todos: marcar/desmarcar de um herói mexia nos outros)
     this.settings = { ...DEFAULT_SETTINGS, ...(row.settings || {}) };
+    this.settings.skills = { ...((row.settings && typeof row.settings.skills === 'object' && row.settings.skills) || {}) };
     this.kills = Number(row.kills);
     this.deaths = row.deaths;
     this.bossesKilled = row.bosses_killed;
