@@ -427,7 +427,7 @@ route('POST', '/api/admin/drops', bad(async (req) => {
     case 'deleteRule': await DROPS.deleteRule(body.id); message = 'Regra removida.'; break;
     case 'event': await DROPS.saveEvent(body.event || {}); message = 'Evento iniciado.'; break;
     case 'stopEvent': await DROPS.stopEvent(body.id); message = 'Evento encerrado.'; break;
-    case 'simulate': return { ok: true, sim: DROPS.simulate(String(body.monster), String(body.map || ''), body.n, body.level, !!body.events) };
+    case 'simulate': return { ok: true, sim: DROPS.simulate(String(body.monster), String(body.map || ''), body.n, body.level, !!body.events, body.vip) };
     default: throw new HttpError(400, 'Operação inválida.');
   }
   CMDS.log(who, 'panel:drops:' + body.op, null, body, null, null, 'ok', message, null);

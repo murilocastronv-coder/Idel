@@ -24,6 +24,13 @@ const TARGETS = ['all', 'jewel', 'wing', 'cape', 'boss', 'devil', 'castle'];
 const RARE_CAP = 0.01; // em %
 const RARE_ITEMS = new Set(['jewel_of_bless', 'jewel_of_soul', 'jewel_of_chaos', 'jewel_of_life', 'jewel_of_creation', 'scroll_of_archangel', 'blood_bone']);
 const isRare = (k) => RARE_ITEMS.has(k) || /^(devil_eye|devil_key|scroll_of_archangel|blood_bone)(_\d+)?$/.test(String(k));
+// Joias (Bless, Soul, Chaos, Life, Creation e qualquer outra jewel_of_*): chance FIXA pelo plano da conta, por joia e por morte,
+// em todo monstro/chefe que tem a joia na tabela. Free 1,2% · VIP Ouro 2,4% · VIP Diamante 3,2%. Não soma com evento,
+// bônus de drop do VIP nem nada; sorteio independente a cada morte (sem garantia); 1 unidade por drop.
+const JEWEL_RATE = { 0: 1.2, 1: 2.4, 2: 3.2 }; // em %
+const isJewel = (k) => /^jewel_of_[a-z_]+$/.test(String(k));
+const jewelRate = (vipTier) => JEWEL_RATE[vipTier] || JEWEL_RATE[0];
+const vipTierOf = (p) => { try { return (p && p.vip && p.vip().tier) || 0; } catch { return 0; } };
 
 let rules = [];
 let events = [];
@@ -83,7 +90,7 @@ function boost(r, T, now) {
 const randi = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 
 // sorteia as regras para um monstro; devolve [{rule, item, qty}]
-function roll(mType, T, mapId, plevel, now = Date.now()) {
+function roll(mType, T, mapId, plevel, now = Date.now(), vipTier = 0) {
   const out = [];
   const seenRare = new Set();
   for (const r of rules) {
@@ -91,7 +98,7 @@ function roll(mType, T, mapId, plevel, now = Date.now()) {
     const rare = isRare(r.item);
     if (rare) { if (seenRare.has(r.item)) continue; seenRare.add(r.item); }
     const { cm, qm } = boost(r, T, now);
-    const ch = rare ? Math.min(RARE_CAP, r.chance) : Math.min(100, r.chance * cm);
+    const ch = isJewel(r.item) ? jewelRate(vipTier) : rare ? Math.min(RARE_CAP, r.chance) : Math.min(100, r.chance * cm);
     if (Math.random() * 100 >= ch) continue;
     const qty = rare ? 1 : Math.max(1, Math.round(randi(r.qtyMin, r.qtyMax) * qm));
     out.push({ rule: r, item: r.item, qty });
@@ -232,7 +239,7 @@ function questOk(p, d) { return !G.ITEM_BASES[d.item].quest || require('./classe
 
 function onKill(world, p, m, map) {
   const tier = tierOf(m.T);
-  const got = roll(m.type, m.T, map.id, p.level).filter((d) => questOk(p, d));
+  const got = roll(m.type, m.T, map.id, p.level, Date.now(), vipTierOf(p)).filter((d) => questOk(p, d));
   if (!got.length) return;
   const ctx = { source: m.T.name, mapId: map.id, tier, x: m.x, y: m.y };
   p.run(async () => { for (const d of got) await deliver(world, p, d, ctx); });
@@ -242,6 +249,7 @@ function onKill(world, p, m, map) {
 function offline(world, p, def, mapId, kills) {
   const found = [];
   if (!kills) return found;
+  const vt = vipTierOf(p);
   for (const g of def.groups) {
     const T = G.MONSTERS[g.type];
     const share = kills * (g.count / def.groups.reduce((a, x) => a + x.count, 0));
@@ -250,7 +258,7 @@ function offline(world, p, def, mapId, kills) {
       if (!matches(r, g.type, T, mapId, p.level)) continue;
       const rare = isRare(r.item);
       if (rare) { if (seenRare.has(r.item)) continue; seenRare.add(r.item); }
-      const exp = share * (rare ? Math.min(RARE_CAP, r.chance) : Math.min(100, r.chance)) / 100 * (0.7 + Math.random() * 0.4);
+      const exp = share * (isJewel(r.item) ? jewelRate(vt) : rare ? Math.min(RARE_CAP, r.chance) : Math.min(100, r.chance)) / 100 * (0.7 + Math.random() * 0.4);
       let n = Math.floor(exp) + (Math.random() < exp % 1 ? 1 : 0);
       n = Math.min(20, n);
       for (let i = 0; i < n; i++) { const d = { rule: r, item: r.item, qty: rare ? 1 : randi(r.qtyMin, r.qtyMax) }; if (questOk(p, d)) found.push(d); }
@@ -269,7 +277,7 @@ function sources(items) {
         : r.scope === 'map' ? (G.WORLD[r.scopeId] || {}).name || r.scopeId
           : r.tier === 'boss' ? 'Bosses' : r.tier === 'elite' ? 'Elites e chefes' : 'Monstros';
       const lv = r.monMin > 0 ? ` (nível ${r.monMin}+)` : '';
-      return show ? `${who}${lv}: ${String(r.chance).replace('.', ',')}%` : `${who}${lv}`;
+      return show ? `${who}${lv}: ${isJewel(r.item) ? 'Free 1,2% · VIP Ouro 2,4% · VIP Diamante 3,2%' : String(r.chance).replace('.', ',') + '%'}` : `${who}${lv}`;
     }).filter((v, i, a) => a.indexOf(v) === i);
   }
   return { show, list: out };
@@ -286,7 +294,7 @@ function sanitizeRule(i) {
   const tier = TIERS.includes(i.tier) ? i.tier : 'any';
   const chance = Number(String(i.chance).replace(',', '.'));
   if (!(chance > 0 && chance <= 100)) throw new Error('A chance precisa ser maior que 0 e no máximo 100%.');
-  if (isRare(item) && chance > RARE_CAP) throw new Error(`Joias e materiais de entrada têm chance máxima de ${String(RARE_CAP).replace('.', ',')}% por item.`);
+  if (isRare(item) && !isJewel(item) && chance > RARE_CAP) throw new Error(`Joias e materiais de entrada têm chance máxima de ${String(RARE_CAP).replace('.', ',')}% por item.`);
   if (isRare(item)) { i.qtyMin = 1; i.qtyMax = 1; }
   const qtyMin = Math.round(Number(i.qtyMin)), qtyMax = Math.round(Number(i.qtyMax));
   if (!(qtyMin >= 1 && qtyMax >= qtyMin && qtyMax <= 100)) throw new Error('Quantidade: mínimo 1, máximo até 100 e o máximo não pode ser menor que o mínimo.');
@@ -358,7 +366,7 @@ async function history(limit = 100, name = '') {
 }
 
 // teste da tabela sem entregar nada
-function simulate(mType, mapId, n, plevel, withEvents) {
+function simulate(mType, mapId, n, plevel, withEvents, vipTier = 0) {
   const T = G.MONSTERS[mType];
   if (!T) throw new Error('Monstro desconhecido.');
   n = Math.max(1, Math.min(200000, Math.round(Number(n) || 1000)));
@@ -367,7 +375,7 @@ function simulate(mType, mapId, n, plevel, withEvents) {
   if (!withEvents) events = [];
   const tot = {};
   try {
-    for (let i = 0; i < n; i++) for (const d of roll(mType, T, mapId, plevel)) tot[d.item] = (tot[d.item] || 0) + d.qty;
+    for (let i = 0; i < n; i++) for (const d of roll(mType, T, mapId, plevel, Date.now(), Number(vipTier) || 0)) tot[d.item] = (tot[d.item] || 0) + d.qty;
   } finally { events = saved; }
   return { monster: T.name, tier: tierOf(T), level: T.level, kills: n, playerLevel: plevel,
     items: Object.entries(tot).map(([k, q]) => ({ item: k, name: G.ITEM_BASES[k].name, qty: q, perKill: q / n, everyKills: q ? Math.round(n / q) : null })) };
@@ -383,5 +391,5 @@ function adminView() {
   };
 }
 
-module.exports = { RARE_CAP, isRare, init, cfg, onKill, offline, deliver, spawnGround, removeGround, publicGround, expire, ownedNear, pickup, fits,
+module.exports = { RARE_CAP, JEWEL_RATE, isJewel, isRare, init, cfg, onKill, offline, deliver, spawnGround, removeGround, publicGround, expire, ownedNear, pickup, fits,
   sources, saveRule, deleteRule, saveConfig, saveEvent, stopEvent, history, simulate, adminView, reload, tierOf };
