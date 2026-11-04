@@ -20,6 +20,7 @@ const TRADE = require('./trade');
 const MARKET = require('./market');
 const RSTAT = require('./reset-status');
 const SOCIAL = require('./social');
+const FRIENDS = require('./friends');
 const EXCELLENT = require('./excellent');
 
 const TICK_MS = 100;
@@ -571,6 +572,7 @@ class World {
     p.send({ type: 'chatlog', lines: this.chat.slice(-30) });
     p.send({ type: 'invasion', phase: 'status', ...INV.status() });
     ARENA.onJoin(p);
+    FRIENDS.onJoin(this, p);
     p.send(Q.state(p));
     if (report) p.send({ type: 'offline', ...report });
     p.dirty = true;
@@ -594,6 +596,7 @@ class World {
     if (!this.players.has(p.charId) || this.players.get(p.charId) !== p) return;
     this.players.delete(p.charId);
     SOCIAL.onLeave(p);
+    FRIENDS.onLeave(this, p);
     TRADE.drop(p);
     ARENA.onLeave(p);
     if (p.duel) this.endDuel(null, null, 'draw', p);
@@ -724,6 +727,7 @@ class World {
       case 'autoequip': return p.run(() => this.autoEquip(p));
       case 'chat': return SOCIAL.chat(this, p, msg);
       case 'social': return SOCIAL.act(this, p, msg);
+      case 'friends': return p.run(() => FRIENDS.act(this, p, msg));
       case 'claim': return p.run(() => this.claim(p, String(msg.kind), String(msg.id || '')));
       case 'duel': return this.duelRequest(p, String(msg.id));
       case 'duelAnswer': return this.duelAnswer(p, String(msg.id), !!msg.accept);

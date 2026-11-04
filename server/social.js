@@ -103,6 +103,11 @@ function partyAct(p, action, targetName) {
     parties.set(id,new Set([id])); partyOf.set(id,id);
     return info(p);
   }
+  if (action === 'quickInvite') {
+    // menu do jogador: se ainda não tem party, cria uma (você vira líder) e manda o convite normal
+    if (!party) { parties.set(id,new Set([id])); partyOf.set(id,id); }
+    return partyAct(p, 'invite', targetName);
+  }
   if (action === 'invite') {
     if (!party || party.leader !== id) throw new Error('Somente o líder da party pode convidar.');
     const target=onlineByName(targetName);

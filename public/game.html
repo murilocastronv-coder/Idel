@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=2">
   <link rel="stylesheet" href="/css/style.css?v=20">
-  <link rel="stylesheet" href="/css/game.css?v=31">
+  <link rel="stylesheet" href="/css/game.css?v=32">
   <link rel="stylesheet" href="/css/art-upgrade.css?v=4">
   <link rel="stylesheet" href="/css/gfx-fx.css?v=13">
 </head>
@@ -53,6 +53,7 @@
   <div class="gold-flash" id="gold-flash" aria-hidden="true"></div>
   <div class="duel-bar" id="duel-bar" hidden></div>
   <div class="pcard window" id="pcard" hidden></div>
+  <div class="duel-invite window soc-invite" id="soc-invite" hidden role="alertdialog" aria-live="assertive"></div>
   <div class="duel-invite window" id="duel-invite" hidden role="alertdialog"></div>
   <div class="center-msg" id="center-msg" hidden></div>
   <div class="room-pick window" id="room-pick" hidden role="dialog" aria-label="Escolha a sala"></div>
@@ -77,6 +78,7 @@
       <button type="button" data-panel="market">Mercado</button>
       <button type="button" data-panel="rank">Ranking</button>
       <button type="button" data-panel="chat">Chat<i class="badge" id="chat-badge" hidden></i></button>
+      <button type="button" data-panel="friends">Amigos<i class="badge" id="friends-badge" hidden></i></button>
       <button type="button" id="btn-exit" title="Voltar à seleção de heróis">Heróis</button>
     </nav>
     <div class="xpbar"><span id="xp-fill"></span><em id="xp-text">EXP 0%</em></div>
@@ -238,6 +240,15 @@
     </form>
   </section>
 
+  <section class="panel window" id="panel-friends" hidden aria-labelledby="friends-title">
+    <header><h2 id="friends-title">Amigos <small id="friends-count"></small></h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <div class="fr-add"><input id="fr-name" maxlength="20" placeholder="Nome do personagem" aria-label="Nome do personagem para adicionar"><button class="btn small btn-gold" type="button" id="fr-add">Adicionar amigo</button></div>
+    <p class="fr-msg" id="fr-msg" role="status"></p>
+    <div id="fr-requests"></div>
+    <ul class="fr-list" id="fr-list"></ul>
+    <p class="muted small">Toque ou clique em um jogador no mapa (ou segure o dedo / botão direito) para abrir o menu: amigo, troca, guilda e party.</p>
+  </section>
+
   <section class="panel window" id="panel-guild" hidden aria-labelledby="guild-title">
     <header><h2 id="guild-title">Guilda e Party</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
     <p id="social-summary" class="social-summary">Carregando seus grupos…</p>
@@ -279,6 +290,6 @@
   <script src="/js/sprites.js?v=27"></script>
   <script src="/js/sfx.js?v=20"></script>
   <script src="/js/admin-tools.js?v=13"></script>
-  <script src="/js/game.js?v=72"></script>
+  <script src="/js/game.js?v=73"></script>
 </body>
 </html>

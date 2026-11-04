@@ -118,7 +118,9 @@
       case 'chat': return addChat(m, true);
       case 'chatlog': CHAT_CHANNELS.forEach((c) => { CHAT_LOGS[c] = []; }); m.lines.forEach((l) => addChat(l, false)); return;
       case 'social': if (m.action === 'partyChanged') { send({ type: 'social', area: 'party', action: 'info' }); return; } if (m.action === 'info') { S.social = m; renderSocialInfo(); return; } return;
-      case 'socialInvite': { const ok = window.confirm(m.kind === 'guild' ? `${m.from} convidou você para a guilda ${m.guildName}. Aceitar?` : `${m.from} convidou você para a party. Aceitar?`); send({ type: 'social', area: m.kind, action: ok ? 'accept' : 'decline' }); return; }
+      case 'socialInvite': socInvite(m.kind === 'guild' ? `<b>${esc(m.from)}</b> convidou você para a guilda <b>${esc(m.guildName)}</b>.` : `<b>${esc(m.from)}</b> convidou você para a party.`,
+        (ok) => send({ type: 'social', area: m.kind, action: ok ? 'accept' : 'decline' })); return;
+      case 'friends': onFriends(m); return;
       case 'kicked': S.kicked = true; centerMsg(esc(m.reason), true); return;
       case 'left': location.href = backHome(); return;
       case 'error':
@@ -1911,9 +1913,32 @@
     S.clickMark = { x: next.rx, y: next.ry, t0: performance.now() };
   }
 
+  // segurar o dedo (ou botão direito) num jogador abre o menu, mesmo em mapa de PvP
+  let lpTimer = null;
+  function armLongPress(ev, pl) {
+    clearTimeout(lpTimer);
+    const x0 = ev.clientX, y0 = ev.clientY;
+    lpTimer = setTimeout(() => openPlayerCard(pl, { x: x0, y: y0 }), 550);
+    const stop = (e) => { if (e.type !== 'pointermove' || Math.hypot(e.clientX - x0, e.clientY - y0) > 12) { clearTimeout(lpTimer); cv.removeEventListener('pointerup', stop); cv.removeEventListener('pointermove', stop); cv.removeEventListener('pointercancel', stop); } };
+    cv.addEventListener('pointerup', stop); cv.addEventListener('pointermove', stop); cv.addEventListener('pointercancel', stop);
+  }
+  function playerAtScreen(cx, cy) {
+    let wx = camX + cx * dpr / zoom, wy = camY + cy * dpr / zoom;
+    if (is3d) { const q = W3().pick(cx, cy); if (!q) return null; wx = q[0]; wy = q[1]; }
+    let pl = null, pd = 16;
+    S.players.forEach((p, id) => { if (id === S.youId || !p.info || p.dead) return; const d = Math.hypot(p.rx - wx, p.ry - 14 - wy); if (d < pd) { pd = d; pl = p; pl.id = id; } });
+    return pl;
+  }
+  cv.addEventListener('contextmenu', (ev) => {
+    ev.preventDefault();
+    if (!S.map || !S.me) return;
+    const pl = playerAtScreen(ev.clientX, ev.clientY);
+    if (pl) openPlayerCard(pl, { x: ev.clientX, y: ev.clientY });
+  });
   // ================= toque / clique no mapa =================
   cv.addEventListener('pointerdown', (ev) => {
     ev.preventDefault(); // sem destaque/seleção do navegador ao tocar no mapa
+    if (ev.button === 2) return; // botão direito: só abre o menu do jogador (contextmenu)
     if (!S.map || !S.me || S.me.dead) return;
     if (S.panel && window.innerWidth < 700) closePanel();
     let wx = camX + ev.clientX * dpr / zoom, wy = camY + ev.clientY * dpr / zoom;
@@ -1950,8 +1975,8 @@
     if (pl) {
       // inimigo: ataca na hora; outros: abre o cartão (duelo)
       const pid = [...S.players.entries()].find(([, v]) => v === pl)[0]; pl.id = pid;
-      if (hostileTo(pl)) { send({ type: 'target', id: pid }); S.clickMark = { x: pl.rx, y: pl.ry, t0: performance.now() }; return; }
-      openPlayerCard(pl); return;
+      if (hostileTo(pl)) { send({ type: 'target', id: pid }); S.clickMark = { x: pl.rx, y: pl.ry, t0: performance.now() }; armLongPress(ev, pl); return; }
+      openPlayerCard(pl, { x: ev.clientX, y: ev.clientY }); return;
     }
     let best = null, bd = 18;
     S.monsters.forEach((m) => {
@@ -2165,6 +2190,7 @@
     else if (name === 'smith') renderSmith();
     else if (name === 'cquest') { renderCQ(); send({ type: 'cqInfo', npc: CQ.npc }); }
     else if (name === 'guild') send({ type: 'social', area: 'guild', action: 'info' });
+    else if (name === 'friends') { renderFriends(); send({ type: 'friends', action: 'list' }); }
     else if (name === 'admin') { if (!ADM.open) { ADM.open = true; renderAdmin(); } }
   }
   $$('.menu [data-panel]').forEach((b) => { b.onclick = () => openPanel(b.dataset.panel); });
@@ -4064,26 +4090,109 @@
     el.textContent = text;
     el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
   }
-  function openPlayerCard(p) {
+  // ---- menu de interação com outro jogador (perto do personagem) ----
+  function openPlayerCard(p, at) {
     const card = $('#pcard');
     const info = p.info;
+    if (!info) return;
     const cls = S.data.classes[info.cls];
     p.id = info.id;
     const canAttack = hostileTo(p);
+    const inArena = !!(S.map && S.map.arena);
+    const isFriend = !!(FR.data && FR.data.friends.some((f) => f.name === info.name));
     card.innerHTML = `<button class="close" type="button" aria-label="Fechar">×</button>
-      <b>${(p.flags & 1) ? '<span style="color:#ff6a5a">[PK]</span> ' : ''}${esc(info.name)}</b><small>${esc(info.className || cls.name)} · Nível ${info.level}</small>
+      <b>${(p.flags & 1) ? '<span style="color:#ff6a5a">[PK]</span> ' : ''}${esc(info.name)}</b><small>${esc(info.className || (cls && cls.name) || '')} · Nível ${info.level}</small>
+      <div class="pc-grid">
+        <button class="btn small btn-gold" type="button" data-act="friend" ${isFriend ? 'disabled' : ''}>${isFriend ? '✔ Amigo' : '＋ Adicionar amigo'}</button>
+        <button class="btn small" type="button" data-act="trade" ${TR.s || inArena ? 'disabled' : ''}>⇄ Trade</button>
+        <button class="btn small" type="button" data-act="guild">⚑ Guilda</button>
+        <button class="btn small" type="button" data-act="party">☰ Party</button>
+      </div>
       <div class="row">
         <button class="btn small ${canAttack ? 'btn-danger' : ''}" type="button" data-act="attack" ${canAttack ? '' : 'disabled'}>Atacar</button>
-        <button class="btn small btn-gold" type="button" data-act="duel" ${S.duel ? 'disabled' : ''}>Desafiar para duelo</button>
-        <button class="btn small" type="button" data-act="trade" ${TR.s || (S.map && S.map.arena) ? 'disabled' : ''}>Trocar itens</button>
-      </div>
-      ${canAttack ? '' : `<small class="muted">${S.map.safe ? 'Na cidade não há PvP: desafie para um duelo.' : !S.me.pvpOn ? 'Ligue o botão PvP para atacar.' : 'Este jogador está com o PvP desligado.'}</small>`}`;
+        <button class="btn small" type="button" data-act="duel" ${S.duel ? 'disabled' : ''}>Duelo</button>
+        <button class="btn small" type="button" data-act="pm">Mensagem</button>
+      </div>`;
     card.hidden = false;
-    card.querySelector('.close').onclick = () => { card.hidden = true; };
-    card.querySelector('[data-act="attack"]').onclick = () => { send({ type: 'target', id: info.id }); card.hidden = true; };
-    card.querySelector('[data-act="duel"]').onclick = () => { send({ type: 'duel', id: info.id }); card.hidden = true; };
-    card.querySelector('[data-act="trade"]').onclick = () => { send({ type: 'trade', action: 'invite', to: info.id }); card.hidden = true; };
+    card.classList.toggle('near', !!at);
+    if (at) {
+      const w = card.offsetWidth || 260, h = card.offsetHeight || 150;
+      const x = Math.max(8, Math.min(window.innerWidth - w - 8, at.x - w / 2));
+      const y = at.y - h - 24 > 8 ? at.y - h - 24 : Math.min(window.innerHeight - h - 8, at.y + 24);
+      card.style.left = x + 'px'; card.style.top = y + 'px';
+    } else { card.style.left = ''; card.style.top = ''; }
+    const close = () => { card.hidden = true; };
+    const act = (k, fn) => { card.querySelector(`[data-act="${k}"]`).onclick = () => { fn(); close(); }; };
+    card.querySelector('.close').onclick = close;
+    act('attack', () => send({ type: 'target', id: info.id }));
+    act('duel', () => send({ type: 'duel', id: info.id }));
+    act('trade', () => { send({ type: 'trade', action: 'invite', to: info.id }); feed(`Convite de troca enviado para ${info.name}.`, 'gold'); });
+    act('friend', () => send({ type: 'friends', action: 'request', id: info.id }));
+    act('guild', () => send({ type: 'social', area: 'guild', action: 'invite', target: info.name }));
+    act('party', () => send({ type: 'social', area: 'party', action: 'quickInvite', target: info.name }));
+    act('pm', () => privateTo(info.name));
   }
+  // fecha o menu ao tocar fora dele
+  document.addEventListener('pointerdown', (e) => { const c = $('#pcard'); if (!c.hidden && !c.contains(e.target)) c.hidden = true; }, true);
+  function privateTo(name) {
+    activeChatChannel = 'private';
+    if (S.panel !== 'chat') openPanel('chat'); else paintChat();
+    $('#chat-target').hidden = false; $('#chat-target').value = name;
+    setTimeout(() => { const i = $('#chat-form').text; if (i) i.focus(); }, 0);
+  }
+  // convites (party, guilda, amizade): caixa com Aceitar / Recusar no lugar do confirm do navegador
+  const SOCQ = [];
+  function socInvite(html, answer) { SOCQ.push({ html, answer }); if (SOCQ.length === 1) showSocInvite(); }
+  function showSocInvite() {
+    const box = $('#soc-invite'), cur = SOCQ[0];
+    if (!cur) { box.hidden = true; return; }
+    box.innerHTML = `<p>${cur.html}</p><div class="row"><button class="btn small btn-ok" type="button" data-a="1">Aceitar</button><button class="btn small btn-danger" type="button" data-a="0">Recusar</button></div>`;
+    box.hidden = false;
+    if (window.Sfx && Sfx.duel) Sfx.duel();
+    const done = (ok) => { clearTimeout(cur.t); SOCQ.shift(); try { cur.answer(ok); } catch (_) { /* nada */ } showSocInvite(); };
+    box.querySelector('[data-a="1"]').onclick = () => done(true);
+    box.querySelector('[data-a="0"]').onclick = () => done(false);
+    cur.t = setTimeout(() => { if (SOCQ[0] === cur) { SOCQ.shift(); showSocInvite(); } }, 60000);
+  }
+  // ---- amigos ----
+  const FR = { data: null };
+  function onFriends(m) {
+    if (m.action === 'list') { FR.data = m; const n = m.requests.length; $('#friends-badge').hidden = !n; $('#friends-badge').textContent = n || ''; if (S.panel === 'friends') renderFriends(); return; }
+    if (m.action === 'request') {
+      feed(`${m.from.name} quer ser seu amigo.`, 'gold');
+      socInvite(`<b>${esc(m.from.name)}</b> (${esc(m.from.className)}, nível ${m.from.level}) quer ser seu amigo.`, (ok) => send({ type: 'friends', action: 'answer', from: m.from.id, accept: ok }));
+      return;
+    }
+    if (m.action === 'status' && FR.data) {
+      const f = FR.data.friends.find((x) => x.id === m.id);
+      if (f) { f.online = m.online; if (m.level) f.level = m.level; feed(`${m.name} ${m.online ? 'entrou no jogo' : 'saiu do jogo'}.`, m.online ? 'gold' : ''); }
+      if (S.panel === 'friends') renderFriends();
+      return;
+    }
+    if (m.action === 'result') { feed(m.text, m.ok ? 'gold' : 'warn'); const el = $('#fr-msg'); if (el) { el.textContent = m.text; el.className = 'fr-msg ' + (m.ok ? 'ok' : 'bad'); } }
+  }
+  function renderFriends() {
+    const D = FR.data;
+    if (!D) { $('#fr-list').innerHTML = '<li class="muted">Carregando…</li>'; return; }
+    const on = D.friends.filter((f) => f.online).length;
+    $('#friends-count').textContent = `${on}/${D.friends.length} online`;
+    $('#fr-requests').innerHTML = (D.requests.length ? `<h4>Solicitações recebidas</h4><ul class="fr-list">${D.requests.map((r) => `<li><span class="fr-dot"></span><span class="fr-who"><b>${esc(r.name)}</b><small>${esc(r.className)} · Nível ${r.level}</small></span>
+        <span class="fr-btns"><button class="btn small btn-ok" type="button" data-fr-acc="${r.id}">Aceitar</button><button class="btn small btn-danger" type="button" data-fr-dec="${r.id}">Recusar</button></span></li>`).join('')}</ul>` : '')
+      + (D.sent.length ? `<p class="muted small">Aguardando resposta: ${D.sent.map((r) => `${esc(r.name)} <button class="link-btn" type="button" data-fr-cancel="${r.id}">cancelar</button>`).join(', ')}</p>` : '');
+    const list = [...D.friends].sort((a, b) => (b.online - a.online) || a.name.localeCompare(b.name));
+    $('#fr-list').innerHTML = list.length ? list.map((f) => `<li class="${f.online ? 'on' : 'off'}"><span class="fr-dot" title="${f.online ? 'Online' : 'Offline'}"></span>
+        <span class="fr-who"><b>${esc(f.name)}</b><small>${esc(f.className)} · Nível ${f.level} · ${f.online ? `<em class="fr-on">Online${f.map ? ' · ' + esc(f.map) : ''}</em>` : 'Offline'}</small></span>
+        <span class="fr-btns"><button class="btn small" type="button" data-fr-pm="${esc(f.name)}" ${f.online ? '' : 'disabled'}>Mensagem</button><button class="btn small btn-danger" type="button" data-fr-rm="${f.id}" data-n="${esc(f.name)}">Remover</button></span></li>`).join('')
+      : '<li class="muted">Você ainda não tem amigos. Adicione pelo nome ou tocando em um jogador no mapa.</li>';
+    const body = $('#panel-friends');
+    $$('[data-fr-acc]', body).forEach((b) => { b.onclick = () => send({ type: 'friends', action: 'answer', from: b.dataset.frAcc, accept: true }); });
+    $$('[data-fr-dec]', body).forEach((b) => { b.onclick = () => send({ type: 'friends', action: 'answer', from: b.dataset.frDec, accept: false }); });
+    $$('[data-fr-cancel]', body).forEach((b) => { b.onclick = () => send({ type: 'friends', action: 'cancel', id: b.dataset.frCancel }); });
+    $$('[data-fr-pm]', body).forEach((b) => { b.onclick = () => privateTo(b.dataset.frPm); });
+    $$('[data-fr-rm]', body).forEach((b) => { b.onclick = () => { if (confirm(`Remover ${b.dataset.n} da sua lista de amigos?`)) send({ type: 'friends', action: 'remove', id: b.dataset.frRm }); }; });
+  }
+  $('#fr-add').onclick = () => { const n = $('#fr-name').value.trim(); if (n) { send({ type: 'friends', action: 'request', name: n }); $('#fr-name').value = ''; } };
+  $('#fr-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#fr-add').click(); });
   let inviteTimer = null;
   function showDuelInvite(m) {
     const box = $('#duel-invite');
