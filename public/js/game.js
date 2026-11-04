@@ -135,7 +135,7 @@
     S.monsters = new Map(m.monsters.map((mo) => [mo.id, { ...mo, x: 0, y: 0, rx: null, ry: null, hp: mo.maxHp, dead: false }]));
     const keep = S.players.get(m.you);
     S.players = new Map(m.players.map((p) => [p.id, { info: p, x: 0, y: 0, rx: null }]));
-    S.players.set(m.you, keep && keep.info ? { ...keep, rx: null } : { info: null, x: 0, y: 0, rx: null });
+    S.players.set(m.you, keep && keep.info ? { ...keep, rx: null, dyingAt: 0, dead: false, attackUntil: 0, hurtUntil: 0 } : { info: null, x: 0, y: 0, rx: null });
     S.fx = []; S.floats = []; S.drops = []; S.dangers = []; S.parts = []; S.hitParticles = [];
     S.gitems = new Map((m.ground || []).map((g) => [g.gid, { ...g, t0: performance.now() }]));
     S.enterAt = performance.now(); S.camInit = false;
@@ -161,7 +161,8 @@
     for (const [id, x, y, hp, maxHp, dead, flip, buff, flags] of m.P) {
       let p = S.players.get(id);
       if (!p) { p = { info: null, rx: null }; S.players.set(id, p); }
-      if (p.dead && !dead) p.dyingAt = 0;
+      // vivo de novo: tira a animação de morte (também quando o servidor reviveu antes de mandar o 'morto')
+      if ((p.dead && !dead) || (!dead && p.dyingAt && now - p.dyingAt > 2500)) p.dyingAt = 0;
       Object.assign(p, { id, x, y, hp, maxHp, dead: !!dead, flip: !!flip, buff: buff || 0, flags: flags || 0 });
       if (p.rx === null) { p.rx = x; p.ry = y; }
     }
