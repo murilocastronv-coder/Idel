@@ -1980,7 +1980,7 @@
     const targetHud = $('#target-hud');
     if (target && !target.dead) {
       targetHud.hidden = false;
-      targetHud.innerHTML = `<b>${esc(target.name)} · Nv. ${target.level}</b><br><span>HP ${fmt.format(Math.max(0, target.hp))}/${fmt.format(target.maxHp)} · EXP ${fmt.format(target.exp || 0)} · Ataque ${target.dmgMin}–${target.dmgMax} · Defesa ${target.defense}</span>`;
+      targetHud.innerHTML = `<b>${esc(target.name)} · Nv. ${target.level}</b><br><span>HP ${fmt.format(Math.max(0, target.hp))}/${fmt.format(target.maxHp)} · EXP ≈ ${expEstimate(target)} · Ataque ${target.dmgMin}–${target.dmgMax} · Defesa ${target.defense}</span>`;
     } else targetHud.hidden = true;
     setBar('#hp-fill', '#hp-text', me.hp, me.maxHp);
     setBar('#mp-fill', '#mp-text', me.mp, me.maxMp);
@@ -2036,6 +2036,16 @@
   }
 
   // ================= ficha do personagem =================
+  // EXP estimada deste monstro para você (mesma conta do servidor: 1% do nível × nível do monstro × VIP × bônus do mapa)
+  function expEstimate(t) {
+    if (!S.char) return '?';
+    const L = S.char.level, next = Math.floor(100 * Math.pow(L, 2.1) + 200), d = (t.level || 1) - L;
+    const lf = d >= 0 ? 1 + Math.min(10, d) * 0.03 : d >= -3 ? 1 : Math.max(0.1, 1 + (d + 3) * 0.06);
+    const vip = 1 + ((S.char.vip && S.char.vip.tier) || 0);
+    const w = S.data && S.map && S.data.world.find((x) => x.id === S.map.map);
+    const pct = 1 * lf * vip * (1 + ((w && w.expBonus) || 0) / 100) * (t.boss ? 15 : 1);
+    return `${fmt.format(Math.round(next * pct / 100))} (${pct.toFixed(pct < 1 ? 2 : 1)}%)`;
+  }
   function renderChar() {
     const c = S.char;
     $('#me-name').textContent = c.name;

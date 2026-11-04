@@ -63,6 +63,26 @@ function autoFarmMapId(p) {
 // Hard XP: curva pesada (nível 2 = 300 EXP, nível 10 ≈ 12.800, nível 25 ≈ 86.500)
 function expToNext(level) { return Math.floor(100 * Math.pow(level, 2.1) + 200); }
 const XP = () => G.GAME_MODE.expRate;
+// ---------- EXP por monstro (Hard, equilibrado) ----------
+// Matar um monstro do seu nível dá 1% da EXP do nível (Free), 2% (VIP Ouro) ou 3% (VIP Diamante) — o multiplicador de EXP do VIP.
+// Monstro mais fraco que você dá menos (até 0,1%), mais forte dá um pouco mais (até +30%). Os monstros grandes/raros do mapa
+// (golens, Death Knight, Bone Mage...) valem 2,5×. Por cima ainda entra o bônus do mapa. Chefes: 15% do nível, dividido pelo dano.
+const KILL_PCT = 0.01, BOSS_PCT = 0.15;
+function levelFactor(diff) {
+  if (diff >= 0) return 1 + Math.min(10, diff) * 0.03;
+  if (diff >= -3) return 1;
+  return Math.max(0.1, 1 + (diff + 3) * 0.06);
+}
+const MAP_MIN_EXP = {};
+function eliteK(T, def) {
+  if (!def || !def.groups) return 1;
+  const id = def.name || '';
+  if (MAP_MIN_EXP[id] === undefined) MAP_MIN_EXP[id] = Math.min(...def.groups.map((g) => (G.MONSTERS[g.type] || {}).exp || Infinity));
+  return T.exp >= MAP_MIN_EXP[id] * 3 ? 2.5 : 1;
+}
+function killExp(p, T, def, pk) {
+  return Math.max(1, Math.round(expToNext(p.level) * KILL_PCT * levelFactor((T.level || 1) - p.level) * eliteK(T, def) * mapExp(def) * (pk ? pk.exp : 1) * XP()));
+}
 // bônus de EXP por mapa (servidor continua Hard): mapas mais altos dão um pouco mais de EXP por monstro
 // cada mapa um pouco mais: Vulcanus +3% · Dungeon +8% · Atlans +15% … Kalima +43% · Crywolf +50%
 function mapExp(def) {
@@ -921,7 +941,8 @@ class World {
     const types = def.groups.map((g) => ({ T: G.MONSTERS[g.type], n: g.count }));
     const totalN = types.reduce((a, t) => a + t.n, 0);
     const avg = (f) => types.reduce((a, t) => a + f(t.T) * t.n, 0) / totalN;
-    const mHp = avg((T) => T.hp), mDmg = avg((T) => T.dmg), mExp = avg((T) => T.exp);
+    const mHp = avg((T) => T.hp), mDmg = avg((T) => T.dmg);
+    const killExpAvg = () => avg((T) => killExp(p, T, def, pk));
     const mZen = avg((T) => monsterZen(T)), mDrop = avg((T) => dropChance(T)), mLvl = avg((T) => T.level);
     let kills = 0, exp = 0, zen = 0, levels = 0, potsUsed = 0, died = false, elapsed = 0;
     while (elapsed < secs) {
@@ -935,8 +956,9 @@ class World {
       }
       elapsed += killTime / 0.6; // eficiência offline de 60%
       if (elapsed > secs) break;
-      kills++; exp += mExp * XP() * mapExp(def) * pk.exp; zen += mZen;
-      p.exp += mExp * XP() * mapExp(def) * pk.exp;
+      const ke = killExpAvg();
+      kills++; exp += ke; zen += mZen;
+      p.exp += ke;
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p, true); levels++; }
       if (kills > 50000) break;
     }
@@ -1407,7 +1429,7 @@ class World {
     const pk = p.perks();
     const trainingGap = m.T.training ? p.level - m.T.level : 0;
     const trainingExpFactor = trainingGap <= 2 ? 1 : trainingGap <= 8 ? 0.7 : trainingGap <= 15 ? 0.35 : 0.15;
-    const exp = Math.round(m.T.exp * XP() * mapExp(map && map.def) * pk.exp * trainingExpFactor), zen = Math.round(monsterZen(m.T) * pk.zen);
+    const exp = Math.max(1, Math.round(killExp(p, m.T, map && map.def, pk) * trainingExpFactor)), zen = Math.round(monsterZen(m.T) * pk.zen);
     p.exp += exp; p.kills++; p.zen += zen;
     const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100);
     if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
@@ -1439,7 +1461,7 @@ class World {
   // EXP e Zen de um monstro dividido por contribuição (Invasão Dourada)
   grantShare(p, m, share) {
     const pk = p.perks();
-    const exp = Math.round(m.T.exp * XP() * mapExp(p.map && p.map.def) * pk.exp * share);
+    const exp = Math.round(killExp(p, m.T, p.map && p.map.def, pk) * 3 * Math.max(0, share));
     const zen = Math.min(5, Math.max(0, Math.round(monsterZen(m.T) * Math.max(0, share) * pk.zen)));
     p.exp += exp; p.zen += zen; p.kills++;
     const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; p.map.emit({ k: 'heal', t: p.id, d: recovered }); }
@@ -1464,7 +1486,7 @@ class World {
       distributed += baseZen;
       const pk = p.perks();
       const zen = Math.round(baseZen * pk.zen);
-      const exp = Math.round(m.T.exp * XP() * mapExp(map && map.def) * pk.exp * Math.max(0.1, share));
+      const exp = Math.round(expToNext(p.level) * BOSS_PCT * mapExp(map && map.def) * pk.exp * XP() * Math.max(0.1, share));
       p.exp += exp; p.zen += zen; p.bossesKilled++;
       const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
       if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
