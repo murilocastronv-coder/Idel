@@ -25,9 +25,9 @@ const RARE_CAP = 0.01; // em %
 const RARE_ITEMS = new Set(['jewel_of_bless', 'jewel_of_soul', 'jewel_of_chaos', 'jewel_of_life', 'jewel_of_creation', 'scroll_of_archangel', 'blood_bone']);
 const isRare = (k) => RARE_ITEMS.has(k) || /^(devil_eye|devil_key|scroll_of_archangel|blood_bone)(_\d+)?$/.test(String(k));
 // Joias (Bless, Soul, Chaos, Life, Creation e qualquer outra jewel_of_*): chance FIXA pelo plano da conta, por joia e por morte,
-// em todo monstro/chefe que tem a joia na tabela. Free 1% · VIP Ouro 2% · VIP Diamante 3%. Não soma com evento,
+// em todo monstro/chefe que tem a joia na tabela. Free 0,5% · VIP Ouro 1,2% · VIP Diamante 1,9%. Não soma com evento,
 // bônus de drop do VIP nem nada; sorteio independente a cada morte (sem garantia); 1 unidade por drop.
-const JEWEL_RATE = { 0: 1, 1: 2, 2: 3 }; // em %
+const JEWEL_RATE = { 0: 0.5, 1: 1.2, 2: 1.9 }; // em %
 const isJewel = (k) => /^jewel_of_[a-z_]+$/.test(String(k));
 const jewelRate = (vipTier) => JEWEL_RATE[vipTier] || JEWEL_RATE[0];
 const vipTierOf = (p) => { try { return (p && p.vip && p.vip().tier) || 0; } catch { return 0; } };
@@ -277,7 +277,7 @@ function sources(items) {
         : r.scope === 'map' ? (G.WORLD[r.scopeId] || {}).name || r.scopeId
           : r.tier === 'boss' ? 'Bosses' : r.tier === 'elite' ? 'Elites e chefes' : 'Monstros';
       const lv = r.monMin > 0 ? ` (nível ${r.monMin}+)` : '';
-      return show ? `${who}${lv}: ${isJewel(r.item) ? 'Free 1% · VIP Ouro 2% · VIP Diamante 3%' : String(r.chance).replace('.', ',') + '%'}` : `${who}${lv}`;
+      return show ? `${who}${lv}: ${isJewel(r.item) ? 'Free 0,5% · VIP Ouro 1,2% · VIP Diamante 1,9%' : String(r.chance).replace('.', ',') + '%'}` : `${who}${lv}`;
     }).filter((v, i, a) => a.indexOf(v) === i);
   }
   return { show, list: out };
