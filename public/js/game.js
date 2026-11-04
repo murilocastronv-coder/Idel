@@ -141,7 +141,7 @@
     S.enterAt = performance.now(); S.camInit = false;
     const wInfo = S.data && S.data.world.find((w) => w.id === m.map);
     const ban = $('#map-banner');
-    ban.innerHTML = `<b>${esc(m.name)}</b><small>${m.arena ? (m.pvp ? 'Evento · todos contra todos' : 'Evento · derrote os monstros') : m.safe ? 'Zona segura' : wInfo && wInfo.pvp ? 'Zona PvP · jogadores podem se atacar' : wInfo ? `Nível ${wInfo.minLevel}+` : ''}</small>`;
+    ban.innerHTML = `<b>${esc(m.name)}</b><small>${m.arena ? (m.pvp ? 'Evento · todos contra todos' : 'Evento · derrote os monstros') : m.safe ? 'Zona segura' : wInfo && wInfo.pvp ? 'Zona PvP · jogadores podem se atacar' : wInfo ? `Nível ${wInfo.minLevel}+${wInfo.expBonus ? ` · EXP +${wInfo.expBonus}%` : ''}` : ''}</small>`;
     if (!m.arena) { AR.hud = null; S.arenaZone = null; arenaHud(); }
     ban.classList.remove('show'); void ban.offsetWidth; ban.classList.add('show');
     if (window.Sfx) Sfx.ambient(m.theme);
@@ -2640,7 +2640,7 @@
       img.src = `/assets/maps/${w.id}.jpg`; img.alt = '';
       li.appendChild(img);
       const info = document.createElement('div');
-      info.innerHTML = `<b>${esc(w.name)}</b><small>${w.safe ? 'Cidade · zona segura · loja' : `Nível ${w.minLevel}+ · ${esc(w.monsters.join(', '))}`}</small>`;
+      info.innerHTML = `<b>${esc(w.name)}</b><small>${w.safe ? 'Cidade · zona segura · loja' : `Nível ${w.minLevel}+${w.expBonus ? ` · <span class="exp-bonus">EXP +${w.expBonus}%</span>` : ''} · ${esc(w.monsters.join(', '))}`}</small>`;
       li.appendChild(info);
       const ok = S.char.level >= w.minLevel;
       const b = document.createElement('button');

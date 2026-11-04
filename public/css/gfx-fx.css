@@ -128,3 +128,4 @@
 #world3d { position: fixed; inset: 0; width: 100vw; height: 100dvh; display: block; pointer-events: none; z-index: 0; }
 body.gfx3d #world { filter: none; image-rendering: auto; background: transparent; }
 .play-3d { background: linear-gradient(180deg, #7a5ad8, #4a2a98) !important; color: #fff !important; border-color: #b49af0 !important; }
+.exp-bonus { color: #9affd0; font-weight: 700; }
