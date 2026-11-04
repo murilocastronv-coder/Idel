@@ -487,7 +487,7 @@
       <p class="muted small">${fmt.format(st.items)} itens guardados · ${fmt.format(Number(st.zen))} Zen em ${st.vaults} baús · ${st.denied} tentativas recusadas nas últimas 24 h</p>
       <fieldset class="adt-card" id="adt-vcfg"><legend>Configuração</legend>
         <label class="adt-check"><input type="checkbox" data-f="enabled" ${c.enabled ? 'checked' : ''}> Baú aberto</label>
-        <label class="adt-check"><input type="checkbox" data-f="shared" ${c.shared ? 'checked' : ''}> Compartilhado entre os personagens da conta (desligado = um baú por personagem)</label>
+        <p class="muted">Baú compartilhado por conta: todos os personagens da conta usam o mesmo baú.</p>
         <label class="adt-check"><input type="checkbox" data-f="allowQuestItems" ${c.allowQuestItems ? 'checked' : ''}> Permitir guardar itens de missão</label>
         <div class="adm-row"><label>Colunas ${num('cols', c.cols, 'min="4" max="12"')}</label><label>Linhas ${num('rows', c.rows, 'min="1" max="40"')}</label>
           <label>Zen máx. no baú ${num('maxVaultZen', c.maxVaultZen, 'min="1" style="width:150px"')}</label><label>Zen máx. do personagem ${num('maxCharZen', c.maxCharZen, 'min="1" style="width:150px"')}</label></div>
@@ -514,7 +514,7 @@
       for (const el of $$(':scope > label [data-f], :scope > .adm-row:not([data-vno]) [data-f]', f)) o[el.dataset.f] = el.type === 'checkbox' ? el.checked : Number(el.value);
       for (const el of $$('#adt-vmaps input', f)) o.maps[el.value] = el.checked;
       for (const row of $$('[data-vno]', f)) { const v = {}; for (const el of $$('[data-f]', row)) v[el.dataset.f] = el.type === 'checkbox' ? el.checked : el.dataset.f === 'name' ? el.value : Number(el.value); o.vaults[row.dataset.vno] = v; }
-      if (o.shared !== c.shared && !confirm(o.shared ? 'Juntar os baús dos personagens de cada conta em um só? Os itens e o Zen vão para o baú da conta quando o jogador abrir o baú.' : 'Separar os baús por personagem? Cada item volta para o baú do personagem que o guardou.')) return;
+      if (false && !confirm(o.shared ? 'Juntar os baús dos personagens de cada conta em um só? Os itens e o Zen vão para o baú da conta quando o jogador abrir o baú.' : 'Separar os baús por personagem? Cada item volta para o baú do personagem que o guardou.')) return;
       post({ op: 'config', config: o });
     };
     $('#adt-vgo').onclick = () => vault(box, $('#adt-vname').value.trim());

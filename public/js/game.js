@@ -3679,7 +3679,7 @@
     const D = VT.data;
     const grid = $('#vault-grid');
     if (!D || !S.char) { grid.innerHTML = '<p class="muted">Abrindo o baú…</p>'; return; }
-    $('#vault-sub').textContent = D.shared ? '· compartilhado na conta' : '';
+    $('#vault-sub').textContent = '· todos os personagens da conta';
     // abas dos baús
     $('#vault-tabs').innerHTML = D.vaults.length > 1 ? D.vaults.map((v) => `<button type="button" role="tab" data-no="${v.no}" class="${v.no === D.no ? 'on' : ''}" aria-selected="${v.no === D.no}" ${v.locked ? `disabled title="${esc(v.locked)}"` : ''}>${esc(v.name)}${v.locked ? ' 🔒' : ''}</button>`).join('') : '';
     $$('#vault-tabs [data-no]').forEach((b) => { b.onclick = () => { VT.no = Number(b.dataset.no); VT.sel = null; VT.data = null; renderVault(); vaultSend({ action: 'open', no: VT.no }); }; });

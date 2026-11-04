@@ -11,7 +11,7 @@ const SET = require('./settings');
 
 const DEFAULTS = {
   enabled: true,
-  shared: false,                  // false = um baú por personagem; true = o mesmo baú para a conta
+  shared: true,                   // sempre compartilhado: um baú por conta (todos os personagens usam o mesmo)
   cols: 8, rows: 15,              // 120 espaços
   maps: { lorencia: true, noria: false, devias: false },
   vaults: {
@@ -30,7 +30,8 @@ let H = null;
 function cfg() { return SET.get('vault', DEFAULTS); }
 async function init(helpers) { H = helpers; await SET.load('vault', DEFAULTS); }
 const capOf = (c) => c.cols * c.rows;
-const ownerOf = (p) => (cfg().shared ? 'a:' + p.accountId : 'c:' + p.charId);
+// o baú é da CONTA (nunca do personagem): todos os heróis da conta veem e usam o mesmo conteúdo
+const ownerOf = (p) => 'a:' + p.accountId;
 const fmt = (n) => Math.round(n).toLocaleString('pt-BR');
 
 // NPC do baú aparece neste mapa?
@@ -141,7 +142,7 @@ async function load(p, no) {
 function view(p, no, data, extra = {}) {
   const c = cfg();
   return {
-    type: 'vault', no, owner: data.owner, shared: !!c.shared, cols: c.cols, rows: Math.ceil(data.capacity / c.cols), capacity: data.capacity,
+    type: 'vault', no, owner: data.owner, shared: true, cols: c.cols, rows: Math.ceil(data.capacity / c.cols), capacity: data.capacity,
     used: data.items.length, zen: data.zen, charZen: p.zen, maxVaultZen: c.maxVaultZen, maxCharZen: c.maxCharZen,
     vaults: NOS.filter((n) => c.vaults[n].enabled).map((n) => ({ no: n, name: c.vaults[n].name, locked: vaultAccess(p, n) })),
     items: data.items.map((r) => ({ ...H.publicItem(r), pos: r.vault_pos, cat: category(r.base) })),
@@ -155,7 +156,18 @@ async function act(world, p, msg) {
   if (r === SKIP) return;
   const no = NOS.includes(Number(msg.no)) ? Number(msg.no) : 1;
   p.send(p.charState());
+  if (String(msg.action || 'open') === 'open') { p.vaultSeen = Date.now(); p.vaultNo = no; }
   if (!guard(p) && !vaultAccess(p, no)) p.send(view(p, no, await load(p, no)));
+  // tempo real: os outros personagens da mesma conta que estão online com o baú aberto veem a mudança na hora
+  if (String(msg.action || 'open') !== 'open' && world && world.players) syncAccount(world, p).catch(() => {});
+}
+async function syncAccount(world, p) {
+  for (const o of world.players.values()) {
+    if (o === p || String(o.accountId) !== String(p.accountId) || !o.vaultSeen || Date.now() - o.vaultSeen > 30 * 60 * 1000) continue;
+    const no = o.vaultNo || 1;
+    if (vaultAccess(o, no)) continue;
+    o.send(view(o, no, await load(o, no), { synced: true }));
+  }
 }
 const SKIP = Symbol('skip');
 async function doAct(world, p, msg) {
@@ -402,7 +414,7 @@ function sanitize(i) {
   const c = cfg();
   const n = (v, a, b, label) => { const x = Math.round(Number(v)); if (!(x >= a && x <= b)) throw new Error(`${label}: use um número de ${a} a ${b}.`); return x; };
   const out = {
-    enabled: i.enabled !== false, shared: !!i.shared,
+    enabled: i.enabled !== false, shared: true,
     cols: n(i.cols ?? c.cols, 4, 12, 'Colunas'), rows: n(i.rows ?? c.rows, 1, 40, 'Linhas'),
     maps: {}, vaults: {},
     maxVaultZen: n(i.maxVaultZen ?? c.maxVaultZen, 1, 9e15, 'Zen máximo do baú'),
