@@ -154,12 +154,12 @@ const MONSTERS = {
   // ---- Kalima (130+) ----
   void_skeleton: { name: 'Esqueleto do Vazio', sprite: 'skeleton', tint: '#5a3aff', level: 130, hp: 9800, dmg: 260, def: 120, exp: 3300, zen: [620, 1450], speed: 56, range: 22, atkMs: 1250, aggro: 170, drop: 0.15, size: 1 },
   demon_hound: { name: 'Cão Demoníaco', sprite: 'lava_hound', tint: '#a02aff', level: 135, hp: 9400, dmg: 275, def: 114, exp: 3450, zen: [640, 1500], speed: 74, range: 22, atkMs: 1000, aggro: 180, drop: 0.15, size: 1 },
-  kundun: { name: 'Kundun', sprite: 'skeleton_king', tint: '#9a2aff', scale: 1.15, level: 160, hp: 420000, dmg: 520, def: 190, exp: 420000, zen: [60000, 110000], speed: 36, range: 36, atkMs: 1800, aggro: 190, drop: 1, size: 2.5, boss: true, respawnMs: 15 * 60 * 1000 },
+  kundun: { name: 'Kundun', sprite: 'skeleton_king', tint: '#9a2aff', scale: 1.15, level: 160, hp: 420000, dmg: 520, def: 190, exp: 420000, zen: [60000, 110000], speed: 36, range: 36, atkMs: 1800, aggro: 190, drop: 1, size: 2.5, boss: true, respawnMs: 90 * 60 * 1000 },
   // ---- Crywolf (150+) ----
   frost_wolf: { name: 'Lobo Gélido', sprite: 'lava_hound', tint: '#bfe8ff', level: 150, hp: 13000, dmg: 330, def: 150, exp: 4300, zen: [800, 1850], speed: 76, range: 22, atkMs: 1000, aggro: 180, drop: 0.15, size: 1 },
   glacier_golem: { name: 'Golem Glacial', sprite: 'ice_golem', tint: '#5ab8ff', scale: 1.5, level: 160, hp: 56000, dmg: 470, def: 200, exp: 21000, zen: [3500, 6800], speed: 28, range: 34, atkMs: 1900, aggro: 170, drop: 0.5, size: 1.6, elite: true },
-  balgass: { name: 'Balgass', sprite: 'skeleton_king', tint: '#ff3a3a', scale: 1.2, level: 190, hp: 900000, dmg: 760, def: 260, exp: 950000, zen: [120000, 220000], speed: 36, range: 38, atkMs: 1800, aggro: 200, drop: 1, size: 2.6, boss: true, respawnMs: 20 * 60 * 1000 },
-  skeleton_king: { name: 'Rei Esqueleto', sprite: 'skeleton_king', level: 35, hp: 22000, dmg: 95, def: 30, exp: 26000, zen: [5000, 10000], speed: 38, range: 34, atkMs: 1800, aggro: 170, drop: 1, size: 2.2, boss: true, respawnMs: 10 * 60 * 1000 },
+  balgass: { name: 'Balgass', sprite: 'skeleton_king', tint: '#ff3a3a', scale: 1.2, level: 190, hp: 900000, dmg: 760, def: 260, exp: 950000, zen: [120000, 220000], speed: 36, range: 38, atkMs: 1800, aggro: 200, drop: 1, size: 2.6, boss: true, respawnMs: 90 * 60 * 1000 },
+  skeleton_king: { name: 'Rei Esqueleto', sprite: 'skeleton_king', level: 35, hp: 22000, dmg: 95, def: 30, exp: 26000, zen: [5000, 10000], speed: 38, range: 34, atkMs: 1800, aggro: 170, drop: 1, size: 2.2, boss: true, respawnMs: 90 * 60 * 1000 },
 };
 
 // Mapas abertos agora (os outros aparecem na galeria como "em breve")
