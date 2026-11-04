@@ -70,6 +70,23 @@ function roll(base) {
   }
   return out;
 }
+// set do ADM: 6 opções excelentes no valor máximo, para qualquer peça (inclui anel, pendente e asa)
+const FULL6 = {
+  armor: POOLS.armor,
+  gloves: POOLS.gloves,
+  boots: POOLS.boots,
+  weapon: ['critical_damage', 'critical_chance', 'excellent_damage', 'excellent_chance', 'attack_speed', 'hp_on_kill'],
+  shield: ['defense_success', 'defense_add', 'damage_reduction', 'reflect_damage', 'max_hp', 'shield_luck'],
+  ring: ['max_hp', 'defense_success', 'damage_reduction', 'reflect_damage', 'hp_recovery', 'defense_add'],
+  necklace: ['excellent_damage', 'critical_damage', 'critical_chance', 'excellent_chance', 'attack_speed', 'mana_on_kill'],
+  wings: ['max_hp', 'damage_reduction', 'defense_add', 'reflect_damage', 'excellent_damage', 'critical_damage'],
+};
+function full6(base) {
+  const slot = (G.ITEM_BASES[base] || {}).slot;
+  const ids = FULL6[category(slot) || slot];
+  if (!ids) return [];
+  return ids.map((id) => { const d = DEFINITIONS[id]; return { id, name: d.name, value: d.max, unit: d.unit, effect: d.effect }; });
+}
 function effects(options) {
   const out = {};
   for (const x of Array.isArray(options) ? options : []) {
@@ -83,4 +100,4 @@ function effects(options) {
 }
 function adminView() { return { config: config(), definitions: DEFINITIONS, pools: POOLS }; }
 async function save(input) { const c = cleanConfig(input || {}); await SET.save('excellent_options', c); return c; }
-module.exports = { init, roll, effects, adminView, save, cleanConfig, DEFAULTS };
+module.exports = { init, roll, full6, effects, adminView, save, cleanConfig, DEFAULTS };

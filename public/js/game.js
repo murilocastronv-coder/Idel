@@ -2872,13 +2872,13 @@
     body.innerHTML = `
       <p class="adm-msg" id="adm-msg" role="status"></p>
       <section class="adm-sec"><h3>Personagem</h3>
-        <div class="adm-row"><input id="adm-name" maxlength="16" value="${esc(S.char.name)}" aria-label="Nome do personagem"><button class="btn small" type="button" id="adm-find">Buscar</button><button class="btn small" type="button" id="adm-me">Eu</button></div>
+        <div class="adm-row"><input id="adm-name" maxlength="32" value="${esc(S.char.name)}" placeholder="Personagem ou conta" aria-label="Nome do personagem ou da conta"><button class="btn small" type="button" id="adm-find">Buscar</button><button class="btn small" type="button" id="adm-me">Eu</button></div>
         <div id="adm-char" class="adm-char"></div>
         <p class="muted small">Também dá para usar comandos no Chat: digite <code>/ajuda</code>.</p>
       </section>
       <section class="adm-sec"><h3>Ações rápidas</h3>
         <div class="adm-grid">
-          <button class="btn btn-gold" type="button" data-adm="kit">Melhor equipamento (ancestral +15)</button><button class="btn btn-gold" type="button" data-adm="festive">Dar set Especial Christmas completo</button>
+          <button class="btn btn-gold" type="button" data-adm="kit">Melhor equipamento (ancestral +15)</button><button class="btn btn-gold" type="button" data-adm="exc6">Set excelente 6 opções (set + arma + asa + pendente + anéis, +15)</button><button class="btn btn-gold" type="button" data-adm="festive">Dar set Especial Christmas completo</button>
           <button class="btn btn-gold" type="button" data-adm="maxlevel">Nível máximo (${D.maxLevel})</button>
           <button class="btn btn-gold" type="button" data-adm="maxstats">Atributos no máximo</button>
         </div>

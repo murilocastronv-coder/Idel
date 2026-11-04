@@ -369,6 +369,9 @@ route('POST', '/api/admin/action', async (req) => {
     } else if (a === 'kit') {
       const got = await world.adminGiveItems(c.id, world.bestKit(c.cls));
       msg = `Melhor equipamento (${got.length} itens ancestrais +15) enviado para ${c.name}.`;
+    } else if (a === 'exc6') {
+      const got = await world.adminGiveItems(c.id, world.excellentKit(c.cls));
+      msg = `Set excelente com 6 opções (${got.length} itens +15: set completo, arma, asa, pendente e anéis) enviado para ${c.name} (conta ${c.account}).`;
     } else if (a === 'level') {
       const lv = await world.adminSetLevel(c.id, body.level === 'max' ? game.LIMITS.maxLevel : body.level);
       msg = `${c.name} agora está no nível ${lv || body.level}.`;

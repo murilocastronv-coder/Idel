@@ -113,7 +113,9 @@ function itemStats(it) {
   if (b.slot === 'wings') {
     const wb = UPG.wingBonus(it.plus || 0);
     const scale = (CHAOS.cfg().rarityAttributes || {})[it.rarity] || { def: 100, wdmg: 100, absorb: 100 };
-    return { def: Math.round((b.def + wb.def) * scale.def / 100), wdmg: Math.round((b.wdmg + wb.wdmg) * scale.wdmg / 100), absorb: Math.min(60, Math.round((b.absorb + wb.absorb) * scale.absorb / 100)) };
+    const w = { def: Math.round((b.def + wb.def) * scale.def / 100), wdmg: Math.round((b.wdmg + wb.wdmg) * scale.wdmg / 100), absorb: Math.min(60, Math.round((b.absorb + wb.absorb) * scale.absorb / 100)) };
+    for (const [k, v] of Object.entries(EXCELLENT.effects(it.excellent_options))) w[k] = (w[k] || 0) + v;
+    return w;
   }
   if (b.slot === 'material' || b.slot === 'box' || b.slot === 'quest') return {};
   // bônus do aprimoramento (+0 a +15) por tipo de equipamento, configurável no painel
@@ -1045,7 +1047,7 @@ class World {
   // item comum de drop especial (arma do Caos): vai para a bolsa se houver lugar. Devolve a linha ou null.
   async giveItemRow(p, it, opts = {}) {
     if (bagUsed(p) >= G.INVENTORY_SIZE) return null;
-    const excellent = opts.excellent === true ? EXCELLENT.roll(it.base) : [];
+    const excellent = Array.isArray(it.options) ? it.options : opts.excellent === true ? EXCELLENT.roll(it.base) : [];
     const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus, excellent_options) VALUES ($1,$2,$3,$4,$5)
       RETURNING id, base, rarity, plus, equipped, qty, excellent_options`, [p.charId, it.base, it.rarity, it.plus || 0, JSON.stringify(excellent)]);
     p.items.push(rows[0]);
@@ -1090,8 +1092,15 @@ class World {
     const { rows } = await db.query(`SELECT c.id, c.name, c.class, c.level, c.resets, c.zen, c.free_points, c.str, c.agi, c.vit, c.ene, c.cmd,
         a.username, a.vip1_until, a.vip2_until,
         (SELECT count(*) FROM items i WHERE i.character_id = c.id AND NOT i.equipped AND i.vault_no IS NULL)::int AS bag
-      FROM characters c JOIN accounts a ON a.id = c.account_id WHERE lower(c.name) = lower($1)`, [String(name || '').trim()]);
-    const r = rows[0];
+      FROM characters c JOIN accounts a ON a.id = c.account_id WHERE lower(c.name) = lower($1)
+      ORDER BY 1 LIMIT 1`, [String(name || '').trim()]);
+    let r = rows[0];
+    if (!r) {
+      // não achou personagem: tenta pelo nome da conta (pega o personagem de maior nível da conta)
+      const { rows: byAcc } = await db.query(`SELECT c.name FROM characters c JOIN accounts a ON a.id = c.account_id
+        WHERE lower(a.username) = lower($1) ORDER BY c.level DESC, c.id LIMIT 1`, [String(name || '').trim()]);
+      if (byAcc[0]) return this.adminChar(byAcc[0].name);
+    }
     if (!r) return null;
     const p = this.players.get(String(r.id));
     const out = { id: String(r.id), name: r.name, cls: r.class, level: r.level, resets: r.resets, zen: Number(r.zen), free: r.free_points,
@@ -1109,7 +1118,7 @@ class World {
       if (!b) throw new Error('Item desconhecido.');
       if (!RARITY_ORDER.includes(it.rarity)) throw new Error('Raridade inválida.');
       const fixed = b.stack || b.slot === 'wings';
-      clean.push({ base: it.base, rarity: fixed ? (b.rarity || 'common') : it.rarity, plus: b.stack ? 0 : clamp(Math.round(Number(it.plus) || 0), 0, 15) });
+      clean.push({ base: it.base, rarity: fixed ? (b.rarity || 'common') : it.rarity, plus: b.stack ? 0 : clamp(Math.round(Number(it.plus) || 0), 0, 15), options: Array.isArray(it.options) ? it.options : undefined });
     }
     return this.editChar(charId, async (p) => {
       const stacks = {}, rows = [];
@@ -1135,6 +1144,14 @@ class World {
     const r1 = best((x) => x.slot === 'ring' && !x.special); if (r1) out.push(r1[0]);
     if (kinds.some((k) => k === 'sword' || k === 'scepter' || k === 'book') && ['dark_knight', 'dark_wizard', 'dark_lord'].includes(cls)) { const sh = best((x) => x.slot === 'shield'); if (sh) out.push(sh[0]); }
     return out.map((base) => ({ base, rarity: 'ancestral', plus: 15 }));
+  }
+
+  // set do ADM: melhor equipamento da classe + asa nível 2 da classe, tudo +15 com 6 opções excelentes no máximo
+  excellentKit(cls) {
+    const WING = { dark_knight: 'wings_dragon', dark_wizard: 'wings_soul', fairy_elf: 'wings_spirit', magic_gladiator: 'wings_darkness', summoner: 'wings_despair', dark_lord: 'cape_emperor' };
+    const list = this.bestKit(cls);
+    if (WING[cls] && G.ITEM_BASES[WING[cls]]) list.push({ base: WING[cls], rarity: 'ancestral', plus: 15 });
+    return list.map((it) => ({ ...it, options: EXCELLENT.full6(it.base) }));
   }
 
   async adminSetLevel(charId, level) {
