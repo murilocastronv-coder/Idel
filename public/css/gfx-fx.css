@@ -6,7 +6,10 @@
 .gbar em { z-index: 2; }
 .gbar span::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 0 38%, rgba(255, 255, 255, .34) 46%, transparent 54% 100%); background-size: 260% 100%; background-position: 130% 0; pointer-events: none; }
 .gbar.low { border-color: #b8322a; }
-.xpbar span { position: relative; overflow: hidden; }
+/* barra de EXP: o preenchimento fica por cima do fundo (absoluto), dourado e com brilho */
+.xpbar span { position: absolute; inset: 0 auto 0 0; display: block; overflow: hidden; min-width: 2px; z-index: 1;
+  background: linear-gradient(180deg, #fff3a8 0%, #ffd36b 40%, #e09a2a 75%, #9a5a14 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 0 10px rgba(255,200,90,.45); transition: width .4s ease; }
+.xpbar em { z-index: 2; }
 .xpbar span::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 0 40%, rgba(255, 255, 255, .45) 50%, transparent 60% 100%); background-size: 300% 100%; background-position: 150% 0; pointer-events: none; }
 .act.skill { position: relative; transition: transform .08s ease, box-shadow .2s ease, filter .15s ease; }
 .act.skill:not(.off):not(.locked) { box-shadow: inset 0 0 0 1px rgba(122, 208, 255, .28), inset 0 10px 14px -10px rgba(170, 220, 255, .35), 2px 2px 0 var(--edge); }
