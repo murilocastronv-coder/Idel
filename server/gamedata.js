@@ -179,7 +179,6 @@ const WORLD = {
       { id: 'events', name: 'Guarda dos Eventos', x: 680, y: 330, kind: 'castle_guard' },
       { id: 'quests', name: 'Marlon, Mestre de Missões', x: 760, y: 330, kind: 'marlon' },
       { id: 'teleport', name: 'Guardião do Portal', x: 840, y: 330, kind: 'teleport' },
-      { id: 'guild', name: 'Mestre de Guildas', x: 920, y: 330, kind: 'guild' },
     ], groups: [
       { type: 'noria_bull_fighter', count: 15, area: { x: 870, y: 495, w: 290, h: 42 } },
       { type: 'noria_hound', count: 12, area: { x: 870, y: 543, w: 290, h: 42 } },
@@ -188,7 +187,7 @@ const WORLD = {
       { type: 'noria_elite_bull_fighter', count: 5, area: { x: 870, y: 687, w: 290, h: 42 } },
     ] },
   devias: { name: 'Devias', theme: 'snow', w: 1200, h: 800, minLevel: 10, safe: true, spawn: [120, 400],
-    npcs: [{ id: 'sevina', name: 'Priestess Sevina', x: 210, y: 330, kind: 'sevina' }, { id: 'vault', name: 'Baú Pessoal', x: 170, y: 460, kind: 'vault', optional: true }],
+    npcs: [{ id: 'sevina', name: 'Priestess Sevina', x: 210, y: 330, kind: 'sevina' }, { id: 'vault', name: 'Baú Pessoal', x: 170, y: 460, kind: 'vault', optional: true }, { id: 'guild', name: 'Mestre de Guildas', x: 300, y: 300, kind: 'guild' }],
     groups: [{ type: 'spider', count: 12 }, { type: 'ice_golem', count: 3 }] },
   dungeon: { name: 'Dungeon', theme: 'dungeon', w: 1200, h: 800, minLevel: 25, spawn: [120, 400],
     groups: [{ type: 'skeleton', count: 14 }], boss: { type: 'skeleton_king', x: 950, y: 400 } },
