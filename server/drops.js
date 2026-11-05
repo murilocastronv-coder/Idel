@@ -180,7 +180,7 @@ function pickup(world, p, e) {
         log(p, e.base, got, 'pickup', { map: map.id, room: map.room, source: e.source, tier: e.tier });
         return;
       } else {
-        const row = await world.giveItemRow(p, { base: e.base, rarity: e.rarity, plus: Math.min(8, e.plus || 0) }, { src: e.source });
+        const row = await world.giveItemRow(p, { base: e.base, rarity: e.rarity, plus: Math.min(5, e.plus || 0) }, { src: e.source });
         if (!row) { map.ground.set(e.gid, e); for (const o of map.players.values()) o.send({ type: 'gadd', g: publicGround(e) }); return; }
       }
       log(p, e.base, e.qty, 'pickup', { map: map.id, room: map.room, source: e.source, tier: e.tier });

@@ -151,8 +151,8 @@ function rollPlus(table) {
   const pr = Math.random(), plusChance = table === 'boss' ? 0.12 : 0.06;
   return pr < plusChance * 0.12 ? 3 : pr < plusChance * 0.4 ? 2 : pr < plusChance ? 1 : 0;
 }
-// chance geral de um monstro comum deixar item ao morrer (1%); chefes continuam com o drop próprio
-const GENERAL_DROP = 0.01;
+// chance geral de um monstro comum deixar item ao morrer (0,6%); chefes continuam com o drop próprio
+const GENERAL_DROP = 0.006;
 const dropChance = (T) => (T.boss ? T.drop : Math.min(T.drop, GENERAL_DROP));
 const RANDOM_POOL = () => Object.entries(G.ITEM_BASES).filter(([, b]) => !b.special);
 function rollItem(level, table) {

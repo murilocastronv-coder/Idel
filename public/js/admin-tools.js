@@ -288,7 +288,7 @@
         <span class="adt-p" data-k="zen pot material">mín ${num('min', e.min ?? 1, 'min="1"')} máx ${num('max', e.max ?? 1, 'min="1"')}</span>
         <span class="adt-p" data-k="pot">${sel('pot', [['hp', 'vida'], ['mp', 'mana']], e.pot || 'hp')}</span>
         <span class="adt-p" data-k="material">${sel('item', V.materials.map((m) => [m.id, m.name]), e.item || V.materials[0].id)}</span>
-        <span class="adt-p" data-k="item chaosweapon">${sel('rarity', RAR.map((k) => [k, RAR_PT[k]]), e.rarity || 'common')} +${num('plusMin', e.plusMin ?? 0, 'min="0" max="8"')} a +${num('plusMax', e.plusMax ?? 0, 'min="0" max="8"')}</span>
+        <span class="adt-p" data-k="item chaosweapon">${sel('rarity', RAR.map((k) => [k, RAR_PT[k]]), e.rarity || 'common')} +${num('plusMin', e.plusMin ?? 0, 'min="0" max="5"')} a +${num('plusMax', e.plusMax ?? 0, 'min="0" max="5"')}</span>
         <button class="btn small" type="button" data-del-entry>×</button></div>`;
       box.innerHTML = `<p class="adt-msg" role="status"></p>
         <fieldset class="adt-card"><legend>Agora</legend>

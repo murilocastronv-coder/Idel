@@ -38,7 +38,7 @@ const DEFAULTS = {
     { kind: 'item', w: 22, rarity: 'rare', plusMin: 2, plusMax: 5 },
     { kind: 'item', w: 26, rarity: 'epic', plusMin: 2, plusMax: 5 },
     { kind: 'item', w: 6, rarity: 'legendary', plusMin: 2, plusMax: 5 },
-    { kind: 'item', w: 1, rarity: 'ancestral', plusMin: 3, plusMax: 7 },
+    { kind: 'item', w: 1, rarity: 'ancestral', plusMin: 3, plusMax: 5 },
     { kind: 'material', w: 12, item: 'jewel_of_chaos', min: 3, max: 6 },
     { kind: 'material', w: 9, item: 'loch_feather', min: 1, max: 2 },
     { kind: 'chaosweapon', w: 4, rarity: 'rare', plusMin: 1, plusMax: 4 },
@@ -48,15 +48,15 @@ const DEFAULTS = {
   ],
   // Caixa semi-full de loja: só raros/épicos e adicionais moderados; sem drops full.
   kundun_promo: [
-    { kind: 'item', w: 58, rarity: 'rare', plusMin: 3, plusMax: 6 },
-    { kind: 'item', w: 32, rarity: 'epic', plusMin: 4, plusMax: 8 },
+    { kind: 'item', w: 58, rarity: 'rare', plusMin: 3, plusMax: 5 },
+    { kind: 'item', w: 32, rarity: 'epic', plusMin: 4, plusMax: 5 },
     { kind: 'material', w: 7, item: 'jewel_of_chaos', min: 1, max: 3 },
     { kind: 'zen', w: 3, min: 25000, max: 100000 },
   ],
 };
 
-// nenhum item que sai de caixa/drop passa de +8 (vale também para configurações antigas salvas no painel)
-const DROP_PLUS_MAX = 8;
+// nenhum item que sai de caixa/drop passa de +5 (vale também para configurações antigas salvas no painel)
+const DROP_PLUS_MAX = 5;
 let H = null;
 function cfg() { return { ...DEFAULTS, ...(SET.get('kundun', DEFAULTS) || {}) }; }
 async function init(helpers) { H = helpers; await SET.load('kundun', DEFAULTS); }
@@ -213,7 +213,7 @@ function sanitize(input) {
       if (e.kind === 'item' || e.kind === 'chaosweapon') {
         if (!RARITY_ORDER.includes(e.rarity)) throw new Error(`${lbl}: raridade inválida.`);
         if (box === 'kundun_promo' && !['rare', 'epic'].includes(e.rarity)) throw new Error(`${lbl}: a caixa promocional aceita apenas itens raros ou épicos.`);
-        o.rarity = e.rarity; o.plusMin = n(e.plusMin || 0, 0, DROP_PLUS_MAX, '+ mínimo (máximo 8)'); o.plusMax = n(e.plusMax || 0, o.plusMin, DROP_PLUS_MAX, '+ máximo (máximo 8)');
+        o.rarity = e.rarity; o.plusMin = n(e.plusMin || 0, 0, DROP_PLUS_MAX, '+ mínimo (máximo 5)'); o.plusMax = n(e.plusMax || 0, o.plusMin, DROP_PLUS_MAX, '+ máximo (máximo 5)');
       }
       return o;
     });
