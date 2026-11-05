@@ -6,7 +6,8 @@
     // Fairy Elf → Fada (soco de 16 quadros: 2 socos; o quadro 0 é a pose parada)
     fairy_elf: { soco: { src: '/assets/px/fada_soco.png', n: 16, ms: 70, half: true } },
     // Dark Knight → Lutadora (soco de 8 quadros e golpe especial de 8 quadros nas habilidades)
-    dark_knight: { soco: { src: '/assets/px/lutadora_soco.png', n: 8, ms: 60 }, especial: { src: '/assets/px/lutadora_especial.png', n: 8, ms: 70 } },
+    // golpes normais alternam o soco e as duas metades do combo de 16 quadros
+    dark_knight: { soco: { src: '/assets/px/lutadora_soco.png', n: 8, ms: 60 }, combo: { src: '/assets/px/lutadora_combo.png', n: 16, ms: 55, half: true }, especial: { src: '/assets/px/lutadora_especial.png', n: 8, ms: 70 } },
   };
   const FOOT_X = 30, FOOT_Y = 49, CHAR_H = 38; // ponto de apoio (pés) e altura útil do desenho
   const imgs = {};
@@ -28,7 +29,7 @@
     attack(e, tx, ty, special) {
       if (!e) return;
       if (tx != null && e.rx != null) { const dx = tx - e.rx, dy = ty - e.ry; if (Math.hypot(dx, dy) > 1) e.pxRow = dirRow(dx, dy); }
-      e.pxAtk = performance.now(); e.pxSpecial = !!special; e.pxHalf = !e.pxHalf;
+      e.pxAtk = performance.now(); e.pxSpecial = !!special; e.pxHalf = !e.pxHalf; e.pxN = (e.pxN || 0) + 1;
     },
     // desenha; devolve false se não for um personagem pixel art (aí o jogo desenha como sempre)
     draw(ctx, e, cls, act, now, x, y, heightPx, dpr) {
@@ -40,6 +41,7 @@
       let A = C.soco, frame = 0, bob = 0;
       const atkAge = e.pxAtk ? now - e.pxAtk : 1e9;
       if (e.pxSpecial && C.especial && atkAge < C.especial.n * C.especial.ms) { A = C.especial; frame = Math.floor(atkAge / A.ms); }
+      else if (C.combo && (e.pxN || 0) % 3 !== 0 && atkAge < (C.combo.n / 2) * C.combo.ms) { A = C.combo; frame = Math.floor(atkAge / A.ms) + (e.pxN % 3 === 2 ? A.n / 2 : 0); }
       else if (atkAge < (C.soco.half ? C.soco.n / 2 : C.soco.n) * C.soco.ms) { frame = Math.floor(atkAge / C.soco.ms) + (C.soco.half && e.pxHalf ? C.soco.n / 2 : 0); }
       else if (moving) { const run = (e.speed || 0) > 65; bob = Math.abs(Math.sin((now + (e.phase || 0)) / (run ? 77 : 133) * Math.PI / 2)) * 1.6; }
       else bob = (Math.sin((now + (e.phase || 0)) / 700) + 1) * 0.5; // parada: flutua 1 px bem devagar
