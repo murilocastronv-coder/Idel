@@ -3022,8 +3022,6 @@
       <label class="cfg-check"><input type="checkbox" id="cfg-pvp" ${st.pvpAuto ? 'checked' : ''}> Atacar jogadores inimigos automaticamente (Vulcanus ou PvP ligado)</label>
       <div class="cfg-row"><label for="cfg-gfx">Gráfico do jogo</label>
         <select id="cfg-gfx"><option value="2d">2D (pixel art)</option><option value="3d">3D (realista)</option></select></div>
-      <div class="cfg-row"><label for="cfg-px">Visual novo da Fada e da Lutadora (2D)</label>
-        <select id="cfg-px"><option value="1">Ligado</option><option value="0">Desligado (visual clássico)</option></select></div>
       <div class="cfg-row"><label for="cfg-quality">Qualidade gráfica</label>
         <select id="cfg-quality"><option value="baixa">Baixa (celular fraco)</option><option value="media">Média</option><option value="alta">Alta</option><option value="ultra">Ultra (mais efeitos)</option></select></div>
       <div class="cfg-row"><label for="cfg-vol">Volume <b id="cfg-vol-v"></b></label><input type="range" id="cfg-vol" min="0" max="100" step="5"></div>
