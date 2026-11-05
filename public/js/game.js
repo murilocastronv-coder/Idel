@@ -247,6 +247,7 @@
       }
       S.fx.push({ kind: 'impact', at: t, sprite: IMPACT[ev.fx] || 'impact_energy', t0: now + delay, dur: 260 });
       hitVfx(ev, a, t, now, delay, ranged);
+      if (ev.vx && !ev.aoe && a && window.AFX) AFX.cast(ev.vx, { x: a.rx, y: a.ry - 8 }, { x: t.rx, y: t.ry - 8 }, null, now);
       S.floats.push({ at: t, text: ev.c ? `${ev.d}!` : String(ev.d), color, big: !!ev.c, t0: now + delay });
       if (window.Sfx) {
         setTimeout(() => {
@@ -278,6 +279,10 @@
       S.fx.push({ kind: 'burst', x: ev.x, y: ev.y, r: ev.r, sprite: BURST[ev.fx] || 'burst_energy', t0: now, dur: 460 });
       const a = ent(ev.a); if (a) { a.attackStart = now; a.attackUntil = now + 340; if (window.PX && a.info) PX.attack(a, ev.x, ev.y, true); }
       const [cols, lc] = pal(ev.fx);
+      if (ev.vx && window.AFX) {
+        const ends = [...S.monsters.values()].filter((m) => !m.dead && Math.hypot(m.rx - ev.x, m.ry - ev.y) <= ev.r).slice(0, 5).map((m) => ({ x: m.rx, y: m.ry - 8 }));
+        AFX.cast(ev.vx, a ? { x: a.rx, y: a.ry - 8 } : { x: ev.x, y: ev.y }, { x: ev.x, y: ev.y - 8 }, ends, now);
+      }
       S.fx.push({ kind: 'ring', x: ev.x, y: ev.y, r: ev.r * 1.1, col: lc, t0: now, dur: 420, w: 3 });
       if (a && a.info) S.fx.push({ kind: 'circle', at: a, col: lc, t0: now, dur: 520, r: 20 });
       if (ev.fx === 'meteor') S.fx.push({ kind: 'meteor', x: ev.x, y: ev.y, t0: now, dur: 170 });
@@ -1391,6 +1396,7 @@
       drawDrops(now, me);
       drawGoldFx(now);
       drawFx(now);
+      if (window.AFX) AFX.draw(ctx, toScreen, zoom, now);
       drawAmbient(now, dt, me);
       drawVfx(dt);
       if (!is3d) drawLighting(now, me);
@@ -1719,8 +1725,11 @@
         }
         const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : undefined;
         if (act === 'run') drawRunPuff(x, y, now, e.phase, heroFlip, '#c9b98f');
+        const goldW = !!(eq && eq.wings === 'wings_angel_gold' && window.PX);
+        if (goldW) { delete eq.wings; PX.wings(ctx, e, x + recoil, y, HERO_H * sc, false); }
         const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, act, now, x + recoil, y, HERO_H * sc, dpr));
         if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - runBob - idleBob, sc, heroFlip, { once, equip: eq });
+        if (goldW) PX.wings(ctx, e, x + recoil, y, HERO_H * sc, true);
         if (e.dead) continue;
         const top = pxDrawn && e.pxTop != null ? Math.min(y - HERO_H * sc - 4 * dpr, e.pxTop - 6 * dpr) : y - HERO_H * sc - 4 * dpr;
         hpBar(x, top, 16 * zoom, e.hpShow / e.maxHp, isMe ? '#6aa84f' : (e.flags & 1) ? '#ff5a4a' : '#4aa3ff');
@@ -3022,8 +3031,8 @@
       <label class="cfg-check"><input type="checkbox" id="cfg-pvp" ${st.pvpAuto ? 'checked' : ''}> Atacar jogadores inimigos automaticamente (Vulcanus ou PvP ligado)</label>
       <div class="cfg-row"><label for="cfg-gfx">Gráfico do jogo</label>
         <select id="cfg-gfx"><option value="2d">2D (pixel art)</option><option value="3d">3D (realista)</option></select></div>
-      <div class="cfg-row"><label for="cfg-px">Visual novo da Fada e da Lutadora (2D)</label>
-        <select id="cfg-px"><option value="1">Ligado</option><option value="0">Desligado (visual clássico)</option></select></div>
+      <div class="cfg-row"><label for="cfg-px">Visual dos personagens (2D)</label>
+        <select id="cfg-px"><option value="aether">Heróis Aether (novos)</option><option value="1">Fada e Lutadora</option><option value="0">Clássico</option></select></div>
       <div class="cfg-row"><label for="cfg-quality">Qualidade gráfica</label>
         <select id="cfg-quality"><option value="baixa">Baixa (celular fraco)</option><option value="media">Média</option><option value="alta">Alta</option><option value="ultra">Ultra (mais efeitos)</option></select></div>
       <div class="cfg-row"><label for="cfg-vol">Volume <b id="cfg-vol-v"></b></label><input type="range" id="cfg-vol" min="0" max="100" step="5"></div>
@@ -3043,7 +3052,7 @@
     $('#cfg-pvp').onchange = (e) => sendS({ pvpAuto: e.target.checked });
     $('#cfg-quality').value = quality; $('#cfg-quality').onchange = (e) => setQuality(e.target.value);
     $('#cfg-gfx').value = is3d ? '3d' : '2d'; $('#cfg-gfx').onchange = (e) => setGfx(e.target.value);
-    if (window.PX) { $('#cfg-px').value = PX.enabled() ? '1' : '0'; $('#cfg-px').onchange = (e) => PX.set(e.target.value === '1'); }
+    if (window.PX) { $('#cfg-px').value = PX.mode(); $('#cfg-px').onchange = (e) => PX.set(e.target.value); }
     if (window.Sfx) {
       $('#cfg-vol').value = Math.round(Sfx.volume * 100); $('#cfg-vol-v').textContent = Math.round(Sfx.volume * 100) + '%';
       $('#cfg-vol').oninput = (e) => { Sfx.setVolume(Number(e.target.value) / 100); $('#cfg-vol-v').textContent = e.target.value + '%'; };

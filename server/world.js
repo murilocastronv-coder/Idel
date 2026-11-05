@@ -1444,15 +1444,15 @@ class World {
       const cx = sk.self ? p.x : target.x, cy = sk.self ? p.y : target.y;
       const hits = map.monsters.filter((m) => !m.dead && Math.hypot(m.x - cx, m.y - cy) <= sk.aoe).slice(0, 8);
       const foes = [...map.players.values()].filter((o) => this.hostile(p, o) && Math.hypot(o.x - cx, o.y - cy) <= sk.aoe).slice(0, 4);
-      map.emit({ k: 'aoe', a: p.id, x: Math.round(cx), y: Math.round(cy), r: sk.aoe, fx: sk.fx });
+      map.emit({ k: 'aoe', a: p.id, x: Math.round(cx), y: Math.round(cy), r: sk.aoe, fx: sk.fx, ...(sk.vx ? { vx: sk.vx } : {}) });
       for (const m of hits) { const d = this.damageMonster(p, m, sk.mult, crit, now); map.emit({ k: 'h', a: p.id, t: m.id, d, c: crit ? 1 : 0, fx: sk.fx, aoe: 1 }); }
       for (const o of foes) { if (o.dead) continue; const d = this.damagePlayer(p, o, sk.mult, crit, now); map.emit({ k: 'h', a: p.id, t: o.id, d, c: crit ? 1 : 0, fx: sk.fx, aoe: 1 }); }
     } else if (target.isPlayer) {
       const d = this.damagePlayer(p, target, sk.mult, crit, now);
-      map.emit({ k: 'h', a: p.id, t: target.id, d, c: crit ? 1 : 0, fx: sk.fx });
+      map.emit({ k: 'h', a: p.id, t: target.id, d, c: crit ? 1 : 0, fx: sk.fx, ...(sk.vx ? { vx: sk.vx } : {}) });
     } else {
       const d = this.damageMonster(p, target, sk.mult, crit, now);
-      map.emit({ k: 'h', a: p.id, t: target.id, d, c: crit ? 1 : 0, fx: sk.fx });
+      map.emit({ k: 'h', a: p.id, t: target.id, d, c: crit ? 1 : 0, fx: sk.fx, ...(sk.vx ? { vx: sk.vx } : {}) });
     }
   }
 

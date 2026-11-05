@@ -224,6 +224,11 @@ const SKILLS = {
     { id: 'thunder', name: 'Lâmina Trovejante', mult: 2.6, mana: 26, cd: 8000, range: 30, aoe: 40, fx: 'lightning', lvl: 30 },
     { id: 'deathstab', name: 'Golpe Fatal', mult: 3.2, mana: 30, cd: 7000, range: 30, fx: 'slash', lvl: 1, evo: 1 },
     { id: 'masterfury', name: 'Fúria do Mestre', mult: 2.5, mana: 40, cd: 10000, range: 30, aoe: 72, self: true, fx: 'whirl', lvl: 1, evo: 2 },
+    // Poderes do Aether Reborn (Cavaleiro Carmesim)
+    { id: 'ae_crimson', name: 'Corte Carmesim', mult: 2.2, mana: 12, cd: 2500, range: 30, fx: 'slash', vx: 'slash', lvl: 40 },
+    { id: 'ae_steel', name: 'Turbilhão de Aço', mult: 1.7, mana: 20, cd: 4500, range: 30, aoe: 60, self: true, fx: 'whirl', vx: 'whirl', lvl: 60 },
+    { id: 'ae_quake', name: 'Ruptura da Terra', mult: 2.6, mana: 28, cd: 6000, range: 70, aoe: 50, fx: 'meteor', vx: 'quake', lvl: 80 },
+    { id: 'ae_swords', name: 'Espadas do Julgamento', mult: 3.2, mana: 40, cd: 10000, range: 30, aoe: 72, self: true, fx: 'lightning', vx: 'swords', lvl: 100 },
   ],
   dark_wizard: [
     { id: 'basic', name: 'Bola de Energia', mult: 1, mana: 0, cd: 0, range: 130, fx: 'energy' },
@@ -233,6 +238,11 @@ const SKILLS = {
     { id: 'lightning', name: 'Relâmpago', mult: 2.6, mana: 28, cd: 8000, range: 150, aoe: 50, fx: 'lightning', lvl: 30 },
     { id: 'inferno', name: 'Inferno', mult: 2.3, mana: 34, cd: 8000, range: 140, aoe: 80, fx: 'fire', lvl: 1, evo: 1 },
     { id: 'arcanenova', name: 'Nova Arcana', mult: 3.0, mana: 44, cd: 11000, range: 150, aoe: 90, fx: 'lightning', lvl: 1, evo: 2 },
+    // Poderes do Aether Reborn (Mago Arcano)
+    { id: 'ae_orb', name: 'Orbe Arcano', mult: 2.2, mana: 12, cd: 2500, range: 145, fx: 'energy', vx: 'orb', lvl: 40 },
+    { id: 'ae_frost', name: 'Nova Glacial', mult: 1.8, mana: 20, cd: 4500, range: 40, aoe: 70, self: true, fx: 'ice', vx: 'frost', lvl: 60 },
+    { id: 'ae_chain', name: 'Corrente de Raios', mult: 2.6, mana: 28, cd: 6000, range: 150, aoe: 60, fx: 'lightning', vx: 'lightning', lvl: 80 },
+    { id: 'ae_meteors', name: 'Chuva de Meteoros', mult: 3.2, mana: 40, cd: 10000, range: 145, aoe: 72, fx: 'meteor', vx: 'meteors', lvl: 100 },
   ],
   fairy_elf: [
     { id: 'basic', name: 'Flecha', mult: 1, mana: 0, cd: 0, range: 135, fx: 'arrow' },
@@ -242,6 +252,11 @@ const SKILLS = {
     { id: 'rain', name: 'Chuva de Flechas', mult: 1.9, mana: 26, cd: 9000, range: 150, aoe: 70, fx: 'arrow3', lvl: 30 },
     { id: 'piercing', name: 'Flecha Penetrante', mult: 3.1, mana: 30, cd: 7000, range: 160, fx: 'arrow', lvl: 1, evo: 1 },
     { id: 'queenbless', name: 'Bênção da Rainha', buff: 'dmg', bmult: 1.35, dur: 20000, mana: 30, cd: 45000, fx: 'buff_dmg', lvl: 1, evo: 2 },
+    // Poderes do Aether Reborn (Elfa Esmeralda)
+    { id: 'ae_emerald', name: 'Disparo Esmeralda', mult: 2.2, mana: 12, cd: 2500, range: 150, fx: 'arrow', vx: 'arrow', lvl: 40 },
+    { id: 'ae_fan', name: 'Leque de Flechas', mult: 1.8, mana: 20, cd: 4500, range: 145, aoe: 56, fx: 'arrow3', vx: 'fan', lvl: 60 },
+    { id: 'ae_roots', name: 'Raízes Selvagens', mult: 2.6, mana: 28, cd: 6000, range: 140, aoe: 60, fx: 'ice', vx: 'roots', lvl: 80 },
+    { id: 'ae_phoenix', name: 'Fênix da Floresta', mult: 3.2, mana: 40, cd: 10000, range: 155, aoe: 40, fx: 'fire', vx: 'phoenix', lvl: 100 },
   ],
   magic_gladiator: [
     { id: 'basic', name: 'Golpe', mult: 1, mana: 0, cd: 0, range: 26, fx: 'slash' },
@@ -250,6 +265,11 @@ const SKILLS = {
     { id: 'double', name: 'Golpe Duplo', mult: 2.4, mana: 16, cd: 5000, range: 30, fx: 'slash', lvl: 15 },
     { id: 'fury', name: 'Fúria Elemental', mult: 2.0, mana: 28, cd: 9000, range: 120, aoe: 64, fx: 'dark', lvl: 30 },
     { id: 'spiral', name: 'Explosão Espiral', mult: 2.7, mana: 36, cd: 9000, range: 120, aoe: 74, fx: 'dark', lvl: 1, evo: 1 },
+    // Poderes do Aether Reborn (Gladiador Violeta)
+    { id: 'ae_violet', name: 'Lâmina Violeta', mult: 2.2, mana: 12, cd: 2500, range: 120, fx: 'dark', vx: 'blade', lvl: 40 },
+    { id: 'ae_cross', name: 'Cruz do Caos', mult: 1.8, mana: 20, cd: 4500, range: 30, aoe: 64, self: true, fx: 'dark', vx: 'cross', lvl: 60 },
+    { id: 'ae_crystals', name: 'Lanças Cristalinas', mult: 2.6, mana: 28, cd: 6000, range: 100, aoe: 50, fx: 'ice', vx: 'crystals', lvl: 80 },
+    { id: 'ae_vortex', name: 'Vórtice Dimensional', mult: 3.2, mana: 40, cd: 10000, range: 120, aoe: 72, fx: 'dark', vx: 'vortex', lvl: 100 },
   ],
   dark_lord: [
     { id: 'basic', name: 'Golpe de Cetro', mult: 1, mana: 0, cd: 0, range: 34, fx: 'slash' },
@@ -258,6 +278,11 @@ const SKILLS = {
     { id: 'aura', name: 'Aura do Senhor', buff: 'dmg', bmult: 1.25, dur: 20000, mana: 20, cd: 40000, fx: 'buff_dmg', lvl: 15 },
     { id: 'imperial', name: 'Explosão Imperial', mult: 2.6, mana: 28, cd: 8000, range: 120, aoe: 50, fx: 'meteor', lvl: 30 },
     { id: 'emperorwrath', name: 'Ira do Imperador', mult: 2.9, mana: 38, cd: 9000, range: 120, aoe: 80, fx: 'meteor', lvl: 1, evo: 1 },
+    // Poderes do Aether Reborn (Lorde Sombrio)
+    { id: 'ae_claw', name: 'Garra das Sombras', mult: 2.2, mana: 12, cd: 2500, range: 40, fx: 'dark', vx: 'claw', lvl: 40 },
+    { id: 'ae_ravens', name: 'Corvos da Ruína', mult: 1.8, mana: 20, cd: 4500, range: 130, aoe: 52, fx: 'dark', vx: 'ravens', lvl: 60 },
+    { id: 'ae_chains', name: 'Correntes Malditas', mult: 2.6, mana: 28, cd: 6000, range: 120, aoe: 60, fx: 'lightning', vx: 'chains', lvl: 80 },
+    { id: 'ae_eclipse', name: 'Eclipse do Abismo', mult: 3.2, mana: 40, cd: 10000, range: 120, aoe: 80, fx: 'meteor', vx: 'eclipse', lvl: 100 },
   ],
   summoner: [
     { id: 'basic', name: 'Espírito', mult: 1, mana: 0, cd: 0, range: 130, fx: 'spirit' },
@@ -448,6 +473,7 @@ const ITEM_BASES = {
   scroll_of_archangel_7: { name: 'Scroll of Archangel +7', slot: 'material', icon: 'scroll', ic: '#ffe08a', req: 1, stack: 999, rarity: 'rare', value: 39200, special: true, blood: 7, desc: 'Junte com Blood Bone +7 e uma Jewel of Chaos na Chaos Machine para criar o Cloak of Invisibility +7.' },
   blood_bone_7: { name: 'Blood Bone +7', slot: 'material', icon: 'key', ic: '#ff5a5a', req: 1, stack: 999, rarity: 'rare', value: 39200, special: true, blood: 7, desc: 'Junte com Scroll of Archangel +7 e uma Jewel of Chaos na Chaos Machine para criar o Cloak of Invisibility +7.' },
   cloak_inv_7: { name: 'Cloak of Invisibility +7', slot: 'material', icon: 'cape', ic: '#ffb43a', req: 1, stack: 999, rarity: 'legendary', value: 122500, special: true, blood: 7, event: 'blood', desc: 'Entrada do Blood Castle +7. Só é gasta quando a entrada no evento é confirmada.' },
+  wings_angel_gold: { name: 'Asas Angelicais Douradas', price: 3000000, item: 'wings_angel_gold', icon: 'wings', desc: 'Asas nível 1 (defesa, dano e absorção +10%). Requer nível 120.' },
   reset_status: { name: 'Reset Status', slot: 'material', icon: 'scroll', ic: '#7affc8', req: 1, stack: 999, rarity: 'epic', value: 1000, special: true,
     desc: 'Permite resetar todos os pontos distribuídos nos atributos do personagem, devolvendo os pontos para redistribuição.' },
   loch_feather: { name: "Loch's Feather", slot: 'material', icon: 'feather', ic: '#ffb43a', req: 1, stack: 999, rarity: 'epic', value: 9000, special: true,
@@ -464,6 +490,8 @@ const ITEM_BASES = {
   wings_life: { name: 'Wings of Life', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#54ed9b', req: 120, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true },
   wings_dragon_l1: { name: 'Wings of Dragon', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#ff7840', req: 120, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true },
   wings_spirit_l1: { name: 'Wings of Spirit', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#86eaff', req: 120, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true },
+  // Asas Angelicais Douradas (Aether Reborn): só na loja; não entram na Chaos Machine (seasonal)
+  wings_angel_gold: { name: 'Asas Angelicais Douradas', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#ffd36b', req: 120, def: 10, wdmg: 10, absorb: 10, rarity: 'epic', value: 60000, special: true, seasonal: true, desc: 'Asas de penas douradas do Aether Reborn. Aparecem nas costas do personagem.' },
   // asas de nível 2
   wings_dragon: { name: 'Wings of Dragon', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#ff5a2a', req: 120, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true },
   wings_soul: { name: 'Wings of Soul', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#5ac8ff', req: 120, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true },
@@ -623,6 +651,7 @@ const RARITY_WEIGHTS = {
 const SHOP = {
   pot_hp: { name: 'Poção de Vida', price: 20, desc: 'Recupera 35% da vida' },
   pot_mp: { name: 'Poção de Mana', price: 20, desc: 'Recupera 50% da mana' },
+  wings_angel_gold: { name: 'Asas Angelicais Douradas', price: 3000000, item: 'wings_angel_gold', icon: 'wings', desc: 'Asas nível 1 (defesa, dano e absorção +10%). Requer nível 120.' },
   reset_status: { name: 'Reset Status', price: 2000000, item: 'reset_status', icon: 'scroll', desc: 'Reseta os pontos dos atributos (1 uso por item)' },
 };
 
