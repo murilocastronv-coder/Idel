@@ -145,7 +145,7 @@ async function act(world,p,msg) {
   W=world;
   try {
     if (msg.action === 'info') return await info(p);
-    if (msg.area === 'guild') await guildAct(p,String(msg.action||''),msg.target);
+    if (msg.area === 'guild') return require('./guild').act(world, p, { ...msg, action: String(msg.action || '') === 'create' ? 'create' : msg.action, name: msg.name || msg.target });
     else partyAct(p,String(msg.action||''),msg.target);
   } catch(e) { send(p,'log',{kind:'warn',text:e.message||'Não foi possível concluir a ação.'}); }
 }

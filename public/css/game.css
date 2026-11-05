@@ -677,3 +677,43 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .entry-tbl th:first-child, .entry-tbl td:first-child { text-align: left; }
 .entry-tbl th { color: var(--bone-dim); font-weight: 500; }
 .entry-tbl td.bad { color: #ff8a7a; } .entry-tbl td.ok { color: #8affa0; }
+/* ---- guilda ---- */
+.gld-panel { width: min(620px, calc(100vw - 16px)); }
+.gld-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }
+.gld-tabs button { flex: 1 1 auto; padding: 6px 8px; border: 1px solid rgba(200,160,90,.35); border-radius: 6px; background: rgba(30,20,10,.6); color: var(--bone, #efe4c8); font: inherit; font-size: 12.5px; cursor: pointer; position: relative; }
+.gld-tabs button.on { background: linear-gradient(#6a4a1c, #3a2810); border-color: #e0b45a; color: #ffe2a0; }
+.gld-tabs .badge { position: absolute; top: -6px; right: -4px; }
+.gld-body { max-height: min(62vh, 560px); overflow: auto; }
+.gld-body h4 { margin: 10px 0 4px; color: #ffd36b; font-size: 13px; }
+.gld-none { font-size: 15px; color: #ffcf7a; text-align: center; margin: 10px 0; }
+.gld-card { border: 1px solid rgba(200,160,90,.3); border-radius: 8px; padding: 8px 10px; background: rgba(20,14,8,.5); margin-bottom: 8px; }
+.gld-name { font-size: 20px; font-weight: 700; color: #55a5ff; text-shadow: 0 1px 0 #000; }
+.gld-desc { margin: 4px 0 6px; color: var(--bone-dim, #c9b98f); white-space: pre-wrap; }
+.gld-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px 10px; font-size: 12.5px; color: var(--bone-dim, #c9b98f); }
+.gld-stats b { color: #fff; margin-left: 4px; }
+.gld-role { font-style: normal; font-size: 11px; padding: 1px 6px; border-radius: 10px; margin-left: 4px; background: #3a3a3a; color: #ddd; }
+.gld-role.r-leader { background: #7a5a10; color: #ffe08a; } .gld-role.r-submaster { background: #5a2a7a; color: #e8c0ff; }
+.gld-role.r-captain { background: #1f4a7a; color: #bfe0ff; } .gld-role.r-subcaptain { background: #1f5a4a; color: #bfffe8; }
+.gld-members select { max-width: 120px; }
+.gld-create, .gld-donate { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; margin: 6px 0; }
+.gld-create label, .gld-donate label { display: grid; gap: 2px; flex: 1 1 200px; font-size: 12.5px; }
+.gld-create textarea { resize: vertical; }
+.gld-create .chk { display: flex; align-items: center; gap: 6px; flex-basis: 100%; }
+.gld-bar { display: block; height: 5px; background: rgba(255,255,255,.12); border-radius: 3px; margin-top: 3px; overflow: hidden; }
+.gld-bar i { display: block; height: 100%; background: linear-gradient(90deg, #4fe36a, #b6ff6a); }
+.gld-top, .gld-hist { margin: 0; padding-left: 18px; font-size: 12.5px; display: grid; gap: 2px; }
+.gld-hist { list-style: none; padding-left: 0; }
+.gld-hist .res-win { color: #8affa0; } .gld-hist .res-loss { color: #ff9a8a; }
+.gld-scroll { overflow-x: auto; }
+.gld-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.gld-table th, .gld-table td { padding: 5px 6px; border-bottom: 1px solid rgba(200,160,90,.18); text-align: left; white-space: nowrap; }
+.gld-table th { color: #ffd36b; font-weight: 600; }
+.gld-table .pos { text-align: center; width: 28px; }
+.gld-table tr.top1 td { background: rgba(255,210,80,.14); } .gld-table tr.top2 td { background: rgba(200,210,230,.1); } .gld-table tr.top3 td { background: rgba(205,127,50,.12); }
+.gld-table tr.mine td { outline: 1px solid rgba(85,165,255,.6); }
+.gld-war { border: 1px solid #c0392b; border-radius: 8px; padding: 8px; background: linear-gradient(rgba(90,10,10,.55), rgba(30,6,6,.6)); text-align: center; margin-bottom: 8px; }
+.gld-war-t { color: #ff6a5a; font-weight: 800; letter-spacing: 2px; }
+.gld-war-s { display: flex; justify-content: center; align-items: center; gap: 12px; font-size: 15px; margin: 4px 0; }
+.gld-war-s b { font-size: 24px; color: #fff; }
+.gld-foot { margin-top: 6px; text-align: right; }
+@media (max-width: 520px) { .gld-tabs button { flex: 1 1 30%; font-size: 12px; padding: 6px 2px; } }

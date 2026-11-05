@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=2">
   <link rel="stylesheet" href="/css/style.css?v=20">
-  <link rel="stylesheet" href="/css/game.css?v=33">
+  <link rel="stylesheet" href="/css/game.css?v=34">
   <link rel="stylesheet" href="/css/art-upgrade.css?v=4">
   <link rel="stylesheet" href="/css/gfx-fx.css?v=13">
 </head>
@@ -79,6 +79,7 @@
       <button type="button" data-panel="rank">Ranking</button>
       <button type="button" data-panel="chat">Chat<i class="badge" id="chat-badge" hidden></i></button>
       <button type="button" data-panel="friends">Amigos<i class="badge" id="friends-badge" hidden></i></button>
+      <button type="button" data-panel="gld">Guilda<i class="badge" id="gld-badge" hidden></i></button>
       <button type="button" id="btn-exit" title="Voltar à seleção de heróis">Heróis</button>
     </nav>
     <div class="xpbar"><span id="xp-fill"></span><em id="xp-text">EXP 0%</em></div>
@@ -249,17 +250,22 @@
     <p class="muted small">Toque ou clique em um jogador no mapa (ou segure o dedo / botão direito) para abrir o menu: amigo, troca, guilda e party.</p>
   </section>
 
+  <section class="panel window gld-panel" id="panel-gld" hidden aria-labelledby="gld-title">
+    <header><h2 id="gld-title">Guilda</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <nav class="gld-tabs" id="gld-tabs" role="tablist">
+      <button type="button" data-gt="info" class="on">Informações</button><button type="button" data-gt="members">Membros</button>
+      <button type="button" data-gt="donate">Doações</button><button type="button" data-gt="war">Guerra<i class="badge" id="gld-war-badge" hidden></i></button>
+      <button type="button" data-gt="rank">Ranking</button><button type="button" data-gt="admin">Administração</button>
+    </nav>
+    <p class="fr-msg" id="gld-msg" role="status"></p>
+    <div id="gld-body" class="gld-body"></div>
+    <p class="muted small gld-foot"><button class="link-btn" type="button" id="gld-party">Abrir Party</button></p>
+  </section>
+
   <section class="panel window" id="panel-guild" hidden aria-labelledby="guild-title">
-    <header><h2 id="guild-title">Guilda e Party</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <header><h2 id="guild-title">Party</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
     <p id="social-summary" class="social-summary">Carregando seus grupos…</p>
     <div class="social-columns">
-      <section><h3>Guilda</h3><label>Nome da guilda <input id="guild-name" maxlength="20"></label>
-        <button class="btn small btn-gold" data-social="guild:create">Criar guilda</button>
-        <label>Convidar jogador <input id="guild-target" maxlength="20"></label>
-        <button class="btn small" data-social="guild:invite">Convidar</button>
-        <button class="btn small" data-social="guild:accept">Aceitar convite</button>
-        <button class="btn small btn-danger" data-social="guild:leave">Sair / desfazer</button>
-      </section>
       <section><h3>Party</h3><button class="btn small btn-gold" data-social="party:create">Criar party</button>
         <label>Convidar jogador <input id="party-target" maxlength="20"></label>
         <button class="btn small" data-social="party:invite">Convidar</button>
@@ -290,6 +296,6 @@
   <script src="/js/sprites.js?v=27"></script>
   <script src="/js/sfx.js?v=20"></script>
   <script src="/js/admin-tools.js?v=15"></script>
-  <script src="/js/game.js?v=74"></script>
+  <script src="/js/game.js?v=76"></script>
 </body>
 </html>

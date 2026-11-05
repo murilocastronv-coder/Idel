@@ -120,7 +120,8 @@
       case 'chatlog': CHAT_CHANNELS.forEach((c) => { CHAT_LOGS[c] = []; }); m.lines.forEach((l) => addChat(l, false)); return;
       case 'social': if (m.action === 'partyChanged') { send({ type: 'social', area: 'party', action: 'info' }); return; } if (m.action === 'info') { S.social = m; renderSocialInfo(); return; } return;
       case 'socialInvite': socInvite(m.kind === 'guild' ? `<b>${esc(m.from)}</b> convidou você para a guilda <b>${esc(m.guildName)}</b>.` : `<b>${esc(m.from)}</b> convidou você para a party.`,
-        (ok) => send({ type: 'social', area: m.kind, action: ok ? 'accept' : 'decline' })); return;
+        (ok) => (m.kind === 'guild' ? send({ type: 'guild', action: ok ? 'accept' : 'decline' }) : send({ type: 'social', area: m.kind, action: ok ? 'accept' : 'decline' }))); return;
+      case 'guild': onGuild(m); return;
       case 'friends': onFriends(m); return;
       case 'kicked': S.kicked = true; centerMsg(esc(m.reason), true); return;
       case 'left': location.href = backHome(); return;
@@ -228,7 +229,7 @@
     if (ev.k === 'h') {
       const a = ent(ev.a), t = ent(ev.t);
       if (!t) return;
-      if (a) { a.attackStart = now; a.attackUntil = now + 340; a.atkT = t; }
+      if (a) { a.attackStart = now; a.attackUntil = now + 340; a.atkT = t; if (window.PX && a.info) PX.attack(a, t.rx, t.ry, false); }
       t.hurtUntil = now + 160;
       const color = ev.t === S.youId ? '#ff6b5b' : ev.c ? '#ffb02e' : '#ffffff';
       const ranged = RANGED.has(ev.fx) && a && !ev.aoe;
@@ -266,7 +267,7 @@
       S.fx.push({ kind: 'ring', x: ev.x, y: ev.y, r: ev.r * 1.2, col: '255,90,60', t0: now, dur: 520, w: 4 });
       sparks(ev.x, ev.y - 4, 36, ['#ff4d1f', '#ffb02e', '#8a3aff', '#3a2a2a'], 140, { spread: ev.r * 0.6, up: 50, life: 0.8, g: 160, add: true });
       dlight(ev.x, ev.y, ev.r * 2.4, '255,90,50', 600, 2, now);
-      const a = ent(ev.a); if (a) { a.attackStart = now; a.attackUntil = now + 340; }
+      const a = ent(ev.a); if (a) { a.attackStart = now; a.attackUntil = now + 340; if (window.PX && a.info) PX.attack(a, ev.x, ev.y, true); }
     } else if (ev.k === 'enrage') {
       const t = ent(ev.t); if (t) S.floats.push({ at: t, text: 'FÚRIA!', color: '#ff4030', big: true, t0: now });
       shake(8, 600); if (window.Sfx) Sfx.boss();
@@ -275,7 +276,7 @@
       alertBanner('O Rei Esqueleto despertou!'); shake(8, 700); if (window.Sfx) Sfx.boss();
     } else if (ev.k === 'aoe') {
       S.fx.push({ kind: 'burst', x: ev.x, y: ev.y, r: ev.r, sprite: BURST[ev.fx] || 'burst_energy', t0: now, dur: 460 });
-      const a = ent(ev.a); if (a) { a.attackStart = now; a.attackUntil = now + 340; }
+      const a = ent(ev.a); if (a) { a.attackStart = now; a.attackUntil = now + 340; if (window.PX && a.info) PX.attack(a, ev.x, ev.y, true); }
       const [cols, lc] = pal(ev.fx);
       S.fx.push({ kind: 'ring', x: ev.x, y: ev.y, r: ev.r * 1.1, col: lc, t0: now, dur: 420, w: 3 });
       if (a && a.info) S.fx.push({ kind: 'circle', at: a, col: lc, t0: now, dur: 520, r: 20 });
@@ -1718,14 +1719,16 @@
         }
         const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : undefined;
         if (act === 'run') drawRunPuff(x, y, now, e.phase, heroFlip, '#c9b98f');
-        Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - runBob - idleBob, sc, heroFlip, { once, equip: eq });
+        const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, act, now, x + recoil, y, HERO_H * sc, dpr));
+        if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - runBob - idleBob, sc, heroFlip, { once, equip: eq });
         if (e.dead) continue;
-        const top = y - HERO_H * sc - 4 * dpr;
+        const top = pxDrawn && e.pxTop != null ? Math.min(y - HERO_H * sc - 4 * dpr, e.pxTop - 6 * dpr) : y - HERO_H * sc - 4 * dpr;
         hpBar(x, top, 16 * zoom, e.hpShow / e.maxHp, isMe ? '#6aa84f' : (e.flags & 1) ? '#ff5a4a' : '#4aa3ff');
         const pk = e.flags & 1, inDuel = e.flags & 2, pvpOn = e.flags & 4;
         const enemy = !isMe && hostileTo(e);
         if (enemy && e.id !== myTarget) { ctx.strokeStyle = `rgba(255,70,60,${0.35 + 0.2 * Math.sin(now / 200)})`; ctx.lineWidth = dpr * 1.5; ctx.beginPath(); ctx.ellipse(x, y, 11 * zoom, 3.6 * zoom, 0, 0, Math.PI * 2); ctx.stroke(); }
         const vipT = info.vip || 0;
+        if (info.guild) label(info.guild, x, top - 17 * dpr, GLD.enemies.has(info.gid) ? '#ff7a6a' : '#55a5ff', 10);
         label(`${pk ? '[PK] ' : ''}${pvpOn ? '⚔ ' : ''}${vipT === 2 ? '◆ ' : vipT === 1 ? '★ ' : ''}${info.name} ${info.level}`, x, top - 4 * dpr, pk ? '#ff6a5a' : inDuel ? '#ffb02e' : enemy ? '#ff9a6a' : vipT === 2 ? '#7fe3ff' : vipT === 1 || isMe ? '#ffd36b' : '#bfe0ff', 11);
       }
     }
@@ -1895,6 +1898,7 @@
     if (!S.me || !p || !p.info || p.dead || p.id === S.youId) return false;
     if (S.duel && S.duel.with === p.id) return true;
     if (!S.map || S.map.safe) return false;
+    if (p.info.gid && GLD.enemies.has(p.info.gid) && !S.map.arena) return true; // guerra de guildas
     const pvpMap = S.data.world.find((w) => w.id === S.map.map && w.pvp);
     if (pvpMap) return true;
     return !!S.me.pvpOn && !!(p.flags & 4);
@@ -1958,7 +1962,7 @@
     for (const n of S.map.npcs || []) {
       if (Math.hypot(n.x - wx, n.y - 10 - wy) < 16) {
         if (n.kind === 'sevina' || n.kind === 'marlon') { CQ.npc = n.kind; openPanel('cquest'); return; }
-        if (n.kind === 'guild') { openPanel('guild'); return; }
+        if (n.kind === 'guild') { GLD.tab = GLD.data && GLD.data.guild ? GLD.tab : 'info'; openPanel('gld'); return; }
         if (n.kind === 'vault') { if (S.panel !== 'vault') openPanel('vault'); return; }
         if (n.kind === 'smith') { if (S.panel !== 'smith') openPanel('smith'); return; }
         if (n.kind === 'teleport') { openPanel('maps'); return; }
@@ -2192,6 +2196,7 @@
     else if (name === 'cquest') { renderCQ(); send({ type: 'cqInfo', npc: CQ.npc }); }
     else if (name === 'guild') send({ type: 'social', area: 'guild', action: 'info' });
     else if (name === 'friends') { renderFriends(); send({ type: 'friends', action: 'list' }); }
+    else if (name === 'gld') { renderGuild(); send({ type: 'guild', action: 'state' }); }
     else if (name === 'admin') { if (!ADM.open) { ADM.open = true; renderAdmin(); } }
   }
   $$('.menu [data-panel]').forEach((b) => { b.onclick = () => openPanel(b.dataset.panel); });
@@ -3017,6 +3022,8 @@
       <label class="cfg-check"><input type="checkbox" id="cfg-pvp" ${st.pvpAuto ? 'checked' : ''}> Atacar jogadores inimigos automaticamente (Vulcanus ou PvP ligado)</label>
       <div class="cfg-row"><label for="cfg-gfx">Gráfico do jogo</label>
         <select id="cfg-gfx"><option value="2d">2D (pixel art)</option><option value="3d">3D (realista)</option></select></div>
+      <div class="cfg-row"><label for="cfg-px">Visual novo da Fada e da Lutadora (2D)</label>
+        <select id="cfg-px"><option value="1">Ligado</option><option value="0">Desligado (visual clássico)</option></select></div>
       <div class="cfg-row"><label for="cfg-quality">Qualidade gráfica</label>
         <select id="cfg-quality"><option value="baixa">Baixa (celular fraco)</option><option value="media">Média</option><option value="alta">Alta</option><option value="ultra">Ultra (mais efeitos)</option></select></div>
       <div class="cfg-row"><label for="cfg-vol">Volume <b id="cfg-vol-v"></b></label><input type="range" id="cfg-vol" min="0" max="100" step="5"></div>
@@ -3096,7 +3103,7 @@
   $$('[data-social]').forEach((b) => {
     b.onclick = () => {
       const [area, action] = b.dataset.social.split(':');
-      const target = area === 'guild' && action === 'create' ? $('#guild-name').value : area === 'guild' ? $('#guild-target').value : $('#party-target').value;
+      const target = $('#party-target').value;
       send({ type: 'social', area, action, target });
     };
   });
@@ -4177,7 +4184,7 @@
     act('duel', () => send({ type: 'duel', id: info.id }));
     act('trade', () => { send({ type: 'trade', action: 'invite', to: info.id }); feed(`Convite de troca enviado para ${info.name}.`, 'gold'); });
     act('friend', () => send({ type: 'friends', action: 'request', id: info.id }));
-    act('guild', () => send({ type: 'social', area: 'guild', action: 'invite', target: info.name }));
+    act('guild', () => send({ type: 'guild', action: 'invite', id: info.id }));
     act('party', () => send({ type: 'social', area: 'party', action: 'quickInvite', target: info.name }));
     act('pm', () => privateTo(info.name));
   }
@@ -4240,6 +4247,126 @@
     $$('[data-fr-pm]', body).forEach((b) => { b.onclick = () => privateTo(b.dataset.frPm); });
     $$('[data-fr-rm]', body).forEach((b) => { b.onclick = () => { if (confirm(`Remover ${b.dataset.n} da sua lista de amigos?`)) send({ type: 'friends', action: 'remove', id: b.dataset.frRm }); }; });
   }
+  // ---- guilda: informações, membros, doações, guerra, ranking e administração ----
+  const GLD = { data: null, tab: 'info', enemies: new Set(), war: null, profile: null };
+  const fmtZ = (n) => Number(n || 0).toLocaleString('pt-BR');
+  const fmtD = (t) => { try { return new Date(t).toLocaleDateString('pt-BR'); } catch (_) { return ''; } };
+  function onGuild(m) {
+    if (m.action === 'state') { GLD.data = m; if (!m.guild) { GLD.enemies = new Set(); GLD.war = null; } updGuildBadge(); if (S.panel === 'gld') renderGuild(); return; }
+    if (m.action === 'result') { feed(m.text, m.ok ? 'gold' : 'warn'); const el = $('#gld-msg'); if (el) { el.textContent = m.text; el.className = 'fr-msg ' + (m.ok ? 'ok' : 'bad'); } return; }
+    if (m.action === 'war') { GLD.war = m.war; GLD.enemies = new Set(m.enemies || []); if (S.panel === 'gld' && GLD.tab === 'war') renderGuild(); return; }
+    if (m.action === 'warInvite') { feed(`A guilda ${m.from} declarou guerra contra vocês! Responda na aba Guerra.`, 'warn'); $('#gld-war-badge').hidden = false; $('#gld-war-badge').textContent = '!'; return; }
+    if (m.action === 'profile') { GLD.profile = m.profile; renderGuild(); return; }
+    if (m.action === 'ranking' && GLD.data) { GLD.data.ranking = m.ranking; if (S.panel === 'gld') renderGuild(); }
+  }
+  function updGuildBadge() {
+    const D = GLD.data, pend = D && D.wars ? D.wars.filter((w) => w.status === 'pending' && !w.attacker).length : 0;
+    $('#gld-war-badge').hidden = !pend; $('#gld-war-badge').textContent = pend || '';
+    $('#gld-badge').hidden = !pend; $('#gld-badge').textContent = pend ? '!' : '';
+  }
+  const rankRow = (r) => `<tr class="${r.pos <= 3 ? 'top' + r.pos : ''} ${GLD.data && GLD.data.guild && GLD.data.guild.id === r.id ? 'mine' : ''}">
+      <td class="pos">${r.pos <= 3 ? ['🥇', '🥈', '🥉'][r.pos - 1] : r.pos}</td><td><button class="link-btn" type="button" data-gprof="${r.id}">${esc(r.name)}</button></td>
+      <td>${esc(r.leader)}</td><td>${r.members}</td><td><b>${fmtZ(r.score)}</b></td><td>${r.wins}</td><td>${fmtZ(r.contrib)}</td></tr>`;
+  function rankTable(list) {
+    if (!list || !list.length) return '<p class="muted">Nenhuma guilda cadastrada ainda.</p>';
+    return `<div class="gld-scroll"><table class="gld-table"><thead><tr><th>#</th><th>Guilda</th><th>Mestre</th><th>Membros</th><th>Pontos</th><th>Vitórias</th><th>Contribuição</th></tr></thead><tbody>${list.map(rankRow).join('')}</tbody></table></div>`;
+  }
+  function renderGuild() {
+    const body = $('#gld-body'), D = GLD.data;
+    if (!body) return;
+    $$('#gld-tabs [data-gt]').forEach((b) => { b.classList.toggle('on', b.dataset.gt === GLD.tab); b.hidden = !(D && D.guild) && !['info', 'rank'].includes(b.dataset.gt); });
+    if (!D) { body.innerHTML = '<p class="muted">Carregando…</p>'; return; }
+    if (GLD.profile) {
+      const P = GLD.profile;
+      body.innerHTML = `<button class="btn small" type="button" id="gld-back">← Voltar</button>
+        <div class="gld-card"><div class="gld-name">${esc(P.name)}</div><p class="gld-desc">${esc(P.description || 'Sem descrição.')}</p>
+        <div class="gld-stats"><span>Mestre <b>${esc(P.leader)}</b></span><span>Ranking <b>#${P.pos || '-'}</b></span><span>Membros <b>${P.members.length}</b></span><span>Pontos <b>${fmtZ(P.score)}</b></span>
+        <span>Vitórias <b>${P.wins}</b></span><span>Derrotas <b>${P.losses}</b></span><span>Contribuições <b>${fmtZ(P.contrib)}</b></span></div></div>
+        <ul class="fr-list">${P.members.map((m) => `<li class="${m.online ? 'on' : 'off'}"><span class="fr-dot"></span><span class="fr-who"><b>${esc(m.name)}</b><small>${esc(m.roleName)} · ${esc(m.className)} · Nível ${m.level}</small></span></li>`).join('')}</ul>`;
+      $('#gld-back').onclick = () => { GLD.profile = null; renderGuild(); };
+      return;
+    }
+    if (!D.guild) {
+      const hereTxt = D.canCreateHere
+        ? `<div class="gld-create"><h4>Criar Guilda</h4><label>Nome da guilda <input id="gc-name" maxlength="20" placeholder="Ex.: Fênix"></label>
+            <label>Descrição <textarea id="gc-desc" maxlength="200" rows="2" placeholder="Fale sobre a sua guilda"></textarea></label>
+            <p class="muted small">Custa ${fmtZ(D.createCost)} Zen e exige nível ${D.createLevel || 20}. Você será o Mestre.</p>
+            <button class="btn btn-gold" type="button" id="gc-go">Confirmar criação</button></div>`
+        : '<p class="muted small">Para criar uma guilda, fale com o <b>Mestre de Guildas em Devias</b>. Para entrar em uma, peça um convite a um Mestre, Submestre ou Capitão.</p>';
+      body.innerHTML = GLD.tab === 'rank' ? rankTable(D.ranking) : `<p class="gld-none">Você não pertence a nenhuma guilda.</p>${hereTxt}<h4>Guildas existentes</h4>${rankTable(D.ranking)}`;
+      const go = $('#gc-go');
+      if (go) go.onclick = () => { const n = $('#gc-name').value.trim(); if (!n) return; if (confirm(`Criar a guilda "${n}" por ${fmtZ(D.createCost)} Zen?`)) send({ type: 'guild', action: 'create', name: n, description: $('#gc-desc').value }); };
+      bindProfiles(body);
+      return;
+    }
+    const g = D.guild, me = D.me, P = me.perms;
+    $('#gld-title').textContent = `Guilda ${g.name}`;
+    let h = '';
+    if (GLD.tab === 'info') {
+      h = `<div class="gld-card"><div class="gld-name">${esc(g.name)}</div><p class="gld-desc">${esc(g.description || 'Sem descrição.')}</p>
+        <div class="gld-stats"><span>Mestre <b>${esc(g.leader)}</b></span><span>Sua patente <b>${esc(me.roleName)}</b></span><span>Ranking <b>#${g.pos || '-'}</b></span>
+        <span>Membros <b>${g.members}/${g.max}</b></span><span>Pontos <b>${fmtZ(g.score)}</b></span><span>Fundo <b>${fmtZ(g.zen)} Zen</b></span>
+        <span>Vitórias <b>${g.wins}</b></span><span>Derrotas <b>${g.losses}</b></span><span>Empates <b>${g.draws}</b></span></div>
+        <p class="muted small">Fundada em ${fmtD(g.created)}. O nome <b style="color:#55a5ff">${esc(g.name)}</b> aparece em azul acima da cabeça de todos os membros.</p></div>
+        ${me.role !== 'leader' ? '<button class="btn small btn-danger" type="button" id="gld-leave">Sair da guilda</button>' : ''}`;
+    } else if (GLD.tab === 'members') {
+      const roleOpts = (cur) => D.roles.filter((r) => r.id !== 'leader').map((r) => `<option value="${r.id}" ${r.id === cur ? 'selected' : ''}>${r.name}</option>`).join('');
+      h = `<p class="muted small">${D.members.filter((m) => m.online).length} online de ${D.members.length}. Recrute tocando em um jogador no mapa → Guilda.</p>
+        <ul class="fr-list gld-members">${D.members.map((m) => `<li class="${m.online ? 'on' : 'off'}"><span class="fr-dot"></span>
+          <span class="fr-who"><b>${esc(m.name)} <em class="gld-role r-${m.role}">${esc(m.roleName)}</em></b><small>${esc(m.className)} · Nível ${m.level} · ${m.online ? '<em class="fr-on">Online</em>' : 'Offline'} · Contribuição ${fmtZ(m.contribution)} · desde ${fmtD(m.joined)}</small></span>
+          <span class="fr-btns">${P.roles && m.role !== 'leader' ? `<select data-grole="${m.id}" aria-label="Patente de ${esc(m.name)}">${roleOpts(m.role)}</select>` : ''}
+          ${P.kick && m.role !== 'leader' && m.name !== S.char.name ? `<button class="btn small btn-danger" type="button" data-gkick="${m.id}" data-n="${esc(m.name)}">Expulsar</button>` : ''}</span></li>`).join('')}</ul>`;
+    } else if (GLD.tab === 'donate') {
+      h = `<div class="gld-stats"><span>Zen arrecadado <b>${fmtZ(g.zen)}</b></span><span>Pontos de contribuição <b>${fmtZ(g.points)}</b></span></div>
+        <div class="gld-donate"><label>Doar Zen <input id="gd-zen" type="number" min="1000" step="1000" placeholder="10000"></label><button class="btn small btn-gold" type="button" id="gd-go">Doar</button>
+        <span class="muted small">Cada 10.000 Zen = 1 ponto. Você tem ${fmtZ(S.char && S.char.zen)} Zen.</span></div>
+        <h4>Missões de contribuição (diárias)</h4><ul class="fr-list">${D.missions.map((x) => `<li><span class="fr-who"><b>${esc(x.name)} · +${x.pts} pontos</b><small>${esc(x.desc)} · ${x.have}/${x.need}</small>
+          <span class="gld-bar"><i style="width:${Math.round((x.have / x.need) * 100)}%"></i></span></span>
+          <span class="fr-btns">${x.claimed ? '<em class="fr-on">Entregue</em>' : `<button class="btn small btn-ok" type="button" data-gclaim="${x.id}" ${x.have >= x.need ? '' : 'disabled'}>Entregar</button>`}</span></li>`).join('')}</ul>
+        <h4>Maiores contribuidores</h4>${D.top.length ? `<ol class="gld-top">${D.top.map((m) => `<li><b>${esc(m.name)}</b> · ${fmtZ(m.contribution)} pts · ${fmtZ(m.zen)} Zen</li>`).join('')}</ol>` : '<p class="muted small">Ninguém contribuiu ainda.</p>'}
+        <h4>Histórico</h4>${D.donations.length ? `<ul class="gld-hist">${D.donations.map((d) => `<li>${fmtD(d.t)} · <b>${esc(d.name)}</b> ${d.kind === 'zen' ? `doou ${fmtZ(d.zen)} Zen (+${d.points} pts)` : `completou "${esc(d.note)}" (+${d.points} pts)`}</li>`).join('')}</ul>` : '<p class="muted small">Sem doações ainda.</p>'}`;
+    } else if (GLD.tab === 'war') {
+      const W8 = GLD.war, act = D.wars.find((w) => w.status === 'active');
+      const live = W8 || (act && { me: act.me, them: act.them, myKills: act.myKills, theirKills: act.theirKills, endsAt: act.endsAt, goal: act.goal });
+      const pend = D.wars.filter((w) => w.status === 'pending');
+      h = (live ? `<div class="gld-war"><div class="gld-war-t">EM GUERRA</div><div class="gld-war-s"><span>${esc(live.me)}</span><b>${live.myKills} × ${live.theirKills}</b><span>${esc(live.them)}</span></div>
+          <small>Vence quem chegar a ${live.goal} eliminações ou estiver na frente ao fim do tempo · termina às ${new Date(live.endsAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}. Fora das cidades vocês podem se atacar.</small></div>` : '')
+        + pend.map((w) => `<div class="gld-card">${w.attacker ? `Declaração enviada para <b>${esc(w.them)}</b>. Aguardando resposta.${P.war ? ` <button class="btn small" type="button" data-gwcancel="${w.id}">Cancelar</button>` : ''}`
+          : `<b>${esc(w.them)}</b> declarou guerra contra vocês (por ${esc(w.declaredBy)}).${P.warAnswer ? ` <button class="btn small btn-ok" type="button" data-gwans="${w.id}" data-a="1">Aceitar</button> <button class="btn small btn-danger" type="button" data-gwans="${w.id}" data-a="0">Recusar</button>` : ' Só o Mestre ou um Submestre pode responder.'}`}</div>`).join('')
+        + (P.war && !live && !pend.length ? `<div class="gld-donate"><label>Declarar guerra contra <input id="gw-name" maxlength="20" placeholder="Nome da guilda"></label><button class="btn small btn-danger" type="button" id="gw-go">Declarar guerra</button></div>` : '')
+        + `<h4>Histórico de guerras</h4>${D.wars.filter((w) => w.status === 'ended').length ? `<ul class="gld-hist">${D.wars.filter((w) => w.status === 'ended').map((w) => `<li class="res-${w.result}">${fmtD(w.created)} · ${esc(w.me)} <b>${w.myKills} × ${w.theirKills}</b> ${esc(w.them)} — ${w.result === 'win' ? 'Vitória' : w.result === 'loss' ? 'Derrota' : 'Empate'}</li>`).join('')}</ul>` : '<p class="muted small">Nenhuma guerra terminada ainda.</p>'}`;
+    } else if (GLD.tab === 'rank') {
+      h = rankTable(D.ranking);
+    } else if (GLD.tab === 'admin') {
+      const others = D.members.filter((m) => m.role !== 'leader');
+      h = `<p class="muted small">Sua patente: <b>${esc(me.roleName)}</b>. Mestre: tudo · Submestre: convidar, expulsar e responder guerras · Capitão: recrutar · Subcapitão: recrutar quando autorizado · Membro: doar e participar.</p>`
+        + (P.edit ? `<div class="gld-create"><label>Descrição <textarea id="ga-desc" maxlength="200" rows="2">${esc(g.description || '')}</textarea></label>
+            <label class="chk"><input type="checkbox" id="ga-sub" ${g.subcapInvite ? 'checked' : ''}> Subcapitães podem recrutar</label>
+            <button class="btn small btn-gold" type="button" id="ga-save">Salvar</button></div>` : '')
+        + (P.invite ? `<div class="gld-donate"><label>Convidar jogador online <input id="ga-inv" maxlength="20" placeholder="Nome do personagem"></label><button class="btn small" type="button" id="ga-inv-go">Convidar</button></div>` : '')
+        + (P.transfer && others.length ? `<div class="gld-donate"><label>Transferir liderança para <select id="ga-tr">${others.map((m) => `<option value="${m.id}">${esc(m.name)} (${esc(m.roleName)})</option>`).join('')}</select></label><button class="btn small" type="button" id="ga-tr-go">Transferir</button></div>` : '')
+        + (P.disband ? '<div class="gld-donate"><button class="btn small btn-danger" type="button" id="ga-dis">Desfazer guilda</button></div>' : '')
+        + (!P.edit && !P.invite ? '<p class="muted">Sua patente não tem opções de administração.</p>' : '');
+    }
+    body.innerHTML = h;
+    const on = (sel, fn) => { const el = $(sel, body); if (el) el.onclick = fn; };
+    on('#gld-leave', () => { if (confirm('Sair da guilda?')) send({ type: 'guild', action: 'leave' }); });
+    on('#gd-go', () => { const z = Math.floor(Number($('#gd-zen').value) || 0); if (z >= 1000 && confirm(`Doar ${fmtZ(z)} Zen para a guilda?`)) send({ type: 'guild', action: 'donate', zen: z }); });
+    on('#gw-go', () => { const n = $('#gw-name').value.trim(); if (n && confirm(`Declarar guerra contra ${n}?`)) send({ type: 'guild', action: 'warDeclare', name: n }); });
+    on('#ga-save', () => send({ type: 'guild', action: 'edit', description: $('#ga-desc').value, subcapInvite: $('#ga-sub').checked }));
+    on('#ga-inv-go', () => { const n = $('#ga-inv').value.trim(); if (n) send({ type: 'guild', action: 'invite', target: n }); });
+    on('#ga-tr-go', () => { const sel = $('#ga-tr'); if (confirm(`Passar a liderança para ${sel.options[sel.selectedIndex].text}? Você vira Submestre.`)) send({ type: 'guild', action: 'transfer', id: sel.value }); });
+    on('#ga-dis', () => { const c = prompt(`Para desfazer a guilda, digite o nome dela (${g.name}):`); if (c) send({ type: 'guild', action: 'disband', confirm: c }); });
+    $$('[data-grole]', body).forEach((el) => { el.onchange = () => send({ type: 'guild', action: 'setRole', id: el.dataset.grole, role: el.value }); });
+    $$('[data-gkick]', body).forEach((el) => { el.onclick = () => { if (confirm(`Expulsar ${el.dataset.n} da guilda?`)) send({ type: 'guild', action: 'kick', id: el.dataset.gkick }); }; });
+    $$('[data-gclaim]', body).forEach((el) => { el.onclick = () => send({ type: 'guild', action: 'claim', mission: el.dataset.gclaim }); });
+    $$('[data-gwans]', body).forEach((el) => { el.onclick = () => send({ type: 'guild', action: 'warAnswer', id: el.dataset.gwans, accept: el.dataset.a === '1' }); });
+    $$('[data-gwcancel]', body).forEach((el) => { el.onclick = () => send({ type: 'guild', action: 'warCancel', id: el.dataset.gwcancel }); });
+    bindProfiles(body);
+  }
+  function bindProfiles(body) { $$('[data-gprof]', body).forEach((el) => { el.onclick = () => send({ type: 'guild', action: 'profile', id: el.dataset.gprof }); }); }
+  $$('#gld-tabs [data-gt]').forEach((b) => { b.onclick = () => { GLD.tab = b.dataset.gt; GLD.profile = null; $('#gld-msg').textContent = ''; renderGuild(); if (GLD.tab === 'rank') send({ type: 'guild', action: 'ranking' }); }; });
+  $('#gld-party').onclick = () => { closePanel(); openPanel('guild'); };
   $('#fr-add').onclick = () => { const n = $('#fr-name').value.trim(); if (n) { send({ type: 'friends', action: 'request', name: n }); $('#fr-name').value = ''; } };
   $('#fr-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#fr-add').click(); });
   let inviteTimer = null;

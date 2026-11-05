@@ -22,6 +22,7 @@ const MARKET = require('./market');
 const RSTAT = require('./reset-status');
 const SOCIAL = require('./social');
 const FRIENDS = require('./friends');
+const GUILD = require('./guild');
 const EXCELLENT = require('./excellent');
 
 const TICK_MS = 100;
@@ -417,6 +418,7 @@ class World {
     TRADE.init(this, helpers);
     MARKET.init(this, helpers);
     SOCIAL.init(this);
+    await GUILD.init(this);
     await INV.init(this, helpers);
     this.invasion = INV;
     this.expToNext = expToNext;
@@ -575,6 +577,7 @@ class World {
     p.send({ type: 'invasion', phase: 'status', ...INV.status() });
     ARENA.onJoin(p);
     FRIENDS.onJoin(this, p);
+    GUILD.onJoin(this, p);
     p.send(Q.state(p));
     if (report) p.send({ type: 'offline', ...report });
     p.dirty = true;
@@ -599,6 +602,7 @@ class World {
     this.players.delete(p.charId);
     SOCIAL.onLeave(p);
     FRIENDS.onLeave(this, p);
+    GUILD.onLeave(p);
     TRADE.drop(p);
     ARENA.onLeave(p);
     if (p.duel) this.endDuel(null, null, 'draw', p);
@@ -651,7 +655,7 @@ class World {
     // disfarce do Chaos Castle: só a aparência muda; itens e atributos reais continuam no servidor
     if (ARENA.disguise(p)) return { id: p.id, name: p.name, cls: 'dark_knight', ap: { hair: 0, skin: 1 }, level: p.level, evo: 0, className: 'Guerreiro do Castelo', weaponRarity: 'common', vip: 0, disguise: 1,
       eq: { helm: 'abyss', armor: 'abyss', gloves: 'abyss', boots: 'abyss', w: 'sword' } };
-    return { id: p.id, name: p.name, cls: p.cls, ap: p.ap, level: p.level, evo: p.evo, className: p.className(), weaponRarity: w ? w.rarity : 'common', vip: p.vip().tier, eq: gearVisual(p.equipped()) };
+    return { id: p.id, name: p.name, cls: p.cls, ap: p.ap, level: p.level, evo: p.evo, className: p.className(), weaponRarity: w ? w.rarity : 'common', vip: p.vip().tier, eq: gearVisual(p.equipped()), ...GUILD.tagOf(p) };
   }
 
   // ---------- mensagens do navegador ----------
@@ -730,6 +734,7 @@ class World {
       case 'chat': return SOCIAL.chat(this, p, msg);
       case 'social': return SOCIAL.act(this, p, msg);
       case 'friends': return p.run(() => FRIENDS.act(this, p, msg));
+      case 'guild': return p.run(() => GUILD.act(this, p, msg));
       case 'claim': return p.run(() => this.claim(p, String(msg.kind), String(msg.id || '')));
       case 'duel': return this.duelRequest(p, String(msg.id));
       case 'duelAnswer': return this.duelAnswer(p, String(msg.id), !!msg.accept);
@@ -1207,6 +1212,7 @@ class World {
     if (a.map.def.safe) return false;
     if (a.map.def.arena) return !!a.map.def.pvp;
     if (a.map.def.pvp) return true;
+    if (GUILD.atWar(a, b)) return true; // guerra de guildas: inimigos podem se atacar fora das cidades
     // nos outros mapas de caça: luta quem ligou o modo PvP (os dois)
     return !!a.settings.pvpOn && !!b.settings.pvpOn;
   }
@@ -1254,6 +1260,14 @@ class World {
     }
     const map = k.map;
     k.pvp.kills++; v.pvp.deaths++;
+    if (!map.def.arena && !map.def.pvp && GUILD.atWar(k, v)) {
+      GUILD.onWarKill(this, k, v).catch((e) => console.error('[guild] kill', e.message));
+      this.killPlayer(v, now, { T: { name: k.name } });
+      if (k.target === v) k.target = null;
+      k.dirty = true; v.dirty = true;
+      return;
+    }
+    if (map.def.pvp && GUILD.atWar(k, v)) GUILD.onWarKill(this, k, v).catch(() => {});
     if (map.def.arena) {
       ARENA.onPvpKill(this, k, v);
       this.killPlayer(v, now, { T: { name: k.name } });
@@ -1463,6 +1477,7 @@ class World {
     // Zen de monstros normais é sempre creditado diretamente; bônus VIP/evento não ultrapassam o teto.
     this.quest(p, 'kill', 1); this.quest(p, 'zen', zen);
     if (m.T.elite) this.quest(p, 'elite', 1);
+    GUILD.onMonsterKill(p, m.T);
     if (p.kills % 50 === 0 || p.kills === 100) this.achieve(p);
     p.send({ type: 'reward', exp, zen, mon: m.T.name });
     while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
@@ -1493,6 +1508,7 @@ class World {
     const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; p.map.emit({ k: 'heal', t: p.id, d: recovered }); }
     if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
     this.quest(p, 'kill', 1); this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
+    GUILD.onMonsterKill(p, m.T, { elite: true });
     p.send({ type: 'reward', exp, zen, mon: m.T.name, share: share < 1 ? Math.round(share * 100) : undefined });
     while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
     p.dirty = true;
@@ -1517,6 +1533,7 @@ class World {
       const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
       if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
       this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
+      GUILD.onMonsterKill(p, m.T, { boss: true });
       p.send({ type: 'reward', exp, zen, mon: m.T.name, share: Math.round(share * 100) });
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
       const rolls = (i === 0 ? 2 : (share >= 0.1 && Math.random() < 0.5 ? 1 : 0)) + (Math.random() < Math.min(0.5, pk.bossDrop - 1) ? 1 : 0);
