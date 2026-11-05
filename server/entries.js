@@ -8,7 +8,8 @@ const G = require('./gamedata');
 
 const MAX_LV = 7;
 const LEVELS = [1, 2, 3, 4, 5, 6, 7];
-const ZEN_PER_LV = 100000;
+// custo em Zen por nível da entrada (igual para Blood Castle e Devil Square); +8/+9 ficam prontos para quando existirem
+const ZEN_COST = { 1: 5000, 2: 20000, 3: 40000, 4: 70000, 5: 110000, 6: 160000, 7: 210000, 8: 255000, 9: 300000 };
 const KINDS = {
   blood: { name: 'Blood Castle', main: 'scroll_of_archangel_', mainName: "Archangel's Scroll", key: 'blood_bone_', keyName: 'Blood Bone', out: 'cloak_inv_' },
   devil: { name: 'Devil Square', main: 'devil_eye_', mainName: "Devil's Eye", key: 'devil_key_', keyName: "Devil's Key", out: 'devil_inv_' },
@@ -18,7 +19,7 @@ const CHAOS = 'jewel_of_chaos';
 let H = null;
 function init(helpers) { H = helpers; }
 
-const recipe = (n) => ({ main: n + 1, key: n, chaos: n, zen: ZEN_PER_LV * n });
+const recipe = (n) => ({ main: n + 1, key: n, chaos: n, zen: ZEN_COST[n] });
 const atNoria = (p) => !!(p.map && (p.map.id || (p.map.def && p.map.def.id)) === 'noria');
 // grupos de material: todos os níveis contam; ordem de gasto = nível mais baixo, depois o item mais antigo
 function stacksOf(p, prefix) {

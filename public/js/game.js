@@ -4091,7 +4091,7 @@
         <tr><td>Zen</td><td>${fmt.format(L.zen)}</td><td>${fmt.format(E.zen)}</td><td class="${E.zen >= L.zen ? 'ok' : 'bad'}">${E.zen >= L.zen ? '✓' : fmt.format(L.zen - E.zen)}</td></tr></tbody></table>
       <p class="muted small">${esc(K.mainName)} e ${esc(K.keyName)} de qualquer nível (+1 a +7) servem; os de nível mais baixo são usados primeiro. Sucesso garantido: gera exatamente 1 entrada.</p>
       ${missing.length ? `<ul class="chaos-missing">${missing.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
-      <button class="btn btn-gold chaos-go" type="button" id="entry-do" ${missing.length || CH.busy ? 'disabled' : ''}>Combinar ${esc(L.result.title)}</button>`;
+      <button class="btn btn-gold chaos-go" type="button" id="entry-do" ${missing.length || CH.busy ? 'disabled' : ''}>Combinar ${esc(L.result.title)} · ${fmt.format(L.zen)} Zen</button>`;
     const img = $('#entry-img'); img.prepend(chaosIcon(L.result, 56));
     $$('[data-emat]', body).forEach((el) => { const m = L.mats.find((x) => x.group === el.dataset.emat); el.prepend(chaosIcon(m, 32)); el.title = m.name; });
     const rb = $('#entry-res'); const d = document.createElement('div'); d.className = 'chaos-out'; d.title = L.result.name; d.appendChild(chaosIcon(L.result, 34)); d.insertAdjacentHTML('beforeend', `<small>${esc(L.result.title)}</small>`); rb.appendChild(d);

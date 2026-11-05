@@ -30,6 +30,13 @@ const isRare = (k) => RARE_ITEMS.has(k) || /^(devil_eye|devil_key|scroll_of_arch
 const JEWEL_RATE = { 0: 0.05, 1: 0.12, 2: 0.2 }; // em %
 const isJewel = (k) => /^jewel_of_[a-z_]+$/.test(String(k));
 const jewelRate = (vipTier) => JEWEL_RATE[vipTier] || JEWEL_RATE[0];
+// Materiais das entradas (Devil's Eye/Key, Archangel's Scroll, Blood Bone) e Jewel of Chaos: +25% sobre a chance atual
+// (multiplicada por 1,25, não +25 pontos). Ex.: 0,01% → 0,0125%; Chaos Free 0,05% → 0,0625%.
+const ENTRY_MAT_BOOST = 1.25;
+const isEntryMat = (k) => k === 'jewel_of_chaos' || /^(devil_eye|devil_key|scroll_of_archangel|blood_bone)(_\d+)?$/.test(String(k));
+const matBoost = (k) => (isEntryMat(k) ? ENTRY_MAT_BOOST : 1);
+// chance final (%) de uma regra para um jogador
+const ruleChance = (r, vipTier, cm = 1) => (isJewel(r.item) ? jewelRate(vipTier) : isRare(r.item) ? Math.min(RARE_CAP, r.chance) : Math.min(100, r.chance * cm)) * matBoost(r.item);
 const vipTierOf = (p) => { try { return (p && p.vip && p.vip().tier) || 0; } catch { return 0; } };
 
 let rules = [];
@@ -98,7 +105,7 @@ function roll(mType, T, mapId, plevel, now = Date.now(), vipTier = 0) {
     const rare = isRare(r.item);
     if (rare) { if (seenRare.has(r.item)) continue; seenRare.add(r.item); }
     const { cm, qm } = boost(r, T, now);
-    const ch = isJewel(r.item) ? jewelRate(vipTier) : rare ? Math.min(RARE_CAP, r.chance) : Math.min(100, r.chance * cm);
+    const ch = ruleChance(r, vipTier, cm);
     if (Math.random() * 100 >= ch) continue;
     const qty = rare ? 1 : Math.max(1, Math.round(randi(r.qtyMin, r.qtyMax) * qm));
     out.push({ rule: r, item: r.item, qty });
@@ -258,7 +265,7 @@ function offline(world, p, def, mapId, kills) {
       if (!matches(r, g.type, T, mapId, p.level)) continue;
       const rare = isRare(r.item);
       if (rare) { if (seenRare.has(r.item)) continue; seenRare.add(r.item); }
-      const exp = share * (isJewel(r.item) ? jewelRate(vt) : rare ? Math.min(RARE_CAP, r.chance) : Math.min(100, r.chance)) / 100 * (0.7 + Math.random() * 0.4);
+      const exp = share * ruleChance(r, vt) / 100 * (0.7 + Math.random() * 0.4);
       let n = Math.floor(exp) + (Math.random() < exp % 1 ? 1 : 0);
       n = Math.min(20, n);
       for (let i = 0; i < n; i++) { const d = { rule: r, item: r.item, qty: rare ? 1 : randi(r.qtyMin, r.qtyMax) }; if (questOk(p, d)) found.push(d); }
@@ -277,7 +284,8 @@ function sources(items) {
         : r.scope === 'map' ? (G.WORLD[r.scopeId] || {}).name || r.scopeId
           : r.tier === 'boss' ? 'Bosses' : r.tier === 'elite' ? 'Elites e chefes' : 'Monstros';
       const lv = r.monMin > 0 ? ` (nível ${r.monMin}+)` : '';
-      return show ? `${who}${lv}: ${isJewel(r.item) ? 'Free 0,05% · VIP Ouro 0,12% · VIP Diamante 0,2%' : String(r.chance).replace('.', ',') + '%'}` : `${who}${lv}`;
+      const pct = (v) => String(+v.toFixed(4)).replace('.', ',') + '%';
+      return show ? `${who}${lv}: ${isJewel(r.item) ? `Free ${pct(ruleChance(r, 0))} · VIP Ouro ${pct(ruleChance(r, 1))} · VIP Diamante ${pct(ruleChance(r, 2))}` : pct(ruleChance(r, 0))}` : `${who}${lv}`;
     }).filter((v, i, a) => a.indexOf(v) === i);
   }
   return { show, list: out };
@@ -391,5 +399,5 @@ function adminView() {
   };
 }
 
-module.exports = { RARE_CAP, JEWEL_RATE, isJewel, isRare, init, cfg, onKill, offline, deliver, spawnGround, removeGround, publicGround, expire, ownedNear, pickup, fits,
+module.exports = { RARE_CAP, JEWEL_RATE, ENTRY_MAT_BOOST, isEntryMat, ruleChance, isJewel, isRare, init, cfg, onKill, offline, deliver, spawnGround, removeGround, publicGround, expire, ownedNear, pickup, fits,
   sources, saveRule, deleteRule, saveConfig, saveEvent, stopEvent, history, simulate, adminView, reload, tierOf };
