@@ -154,7 +154,7 @@ function info(p, kind) {
         registered: [...st.regs.values()].filter((r) => r.cat === i).length, running: !!(st.matches.get(i) && !st.matches.get(i).ended) };
     }),
     buyZen: k.buyZen, zen: p.zen,
-    rewards: my >= 0 ? Object.fromEntries(Object.entries(k.rewards[my] || {}).map(([tag, list]) => [tag, list.map(rewardLabel)])) : null,
+    rewards: my >= 0 ? Object.fromEntries(Object.entries(scaleRw(kind, k.rewards[my])).map(([tag, list]) => [tag, list.map(rewardLabel)])) : null,
   };
 }
 
@@ -458,12 +458,16 @@ function onDeath(p, by) {
   if (part) eliminate(m, part, part.zoneDeath ? 'zona' : 'derrotado', by && by.T ? by.T.name : null);
   p.send({ type: 'log', kind: 'warn', text: `Você foi eliminado do ${m.inst.def.name}. Voltando para Lorencia…` });
 }
+// EXP reduzida no Devil Square e no Blood Castle: metade da EXP por monstro e dos prêmios de EXP
+const EVENT_EXP = { devil: 0.5, blood: 0.5 };
+const expK = (kind) => EVENT_EXP[kind] || 1;
+const scaleRw = (kind, rw) => Object.fromEntries(Object.entries(rw || {}).map(([tag, list]) => [tag, (list || []).map((r) => (r.kind === 'exp' ? { ...r, qty: Math.max(1, Math.round(r.qty * expK(kind))) } : r))]));
 function onMonsterKill(world, mo, map, killer) {
   const m = killer.arena;
   const part = m && m.parts.get(killer.charId);
   if (m && part && part.alive) { part.mk++; part.score += K(m.kind).score.monster * (m.kind === 'devil' ? 1 + Math.floor(m.cat / 2) : 1); }
   if (m && m.kind === 'blood' && m.bc && !m.ended) bloodProgress(m, mo, part);
-  world.grantShare(killer, mo, 1);
+  world.grantShare(killer, mo, 1, m ? expK(m.kind) : 1);
   map.emit({ k: 'die', t: mo.id });
   // remove o corpo depois de um tempo
   setTimeout(() => { const i = map.monsters.indexOf(mo); if (i >= 0) { map.monsters.splice(i, 1); for (const o of map.players.values()) o.send({ type: 'mdel', id: mo.id }); } }, 1500).unref();
@@ -538,7 +542,7 @@ async function end(m, reason) {
     }
   }
   ranked.forEach((x, i) => { x.place = i + 1; });
-  const rw = k.rewards[m.cat] || {};
+  const rw = scaleRw(m.kind, k.rewards[m.cat]);
   const results = [];
   for (const x of ranked) {
     let tag = null;

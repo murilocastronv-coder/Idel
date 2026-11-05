@@ -1500,9 +1500,9 @@ class World {
   }
 
   // EXP e Zen de um monstro dividido por contribuição (Invasão Dourada)
-  grantShare(p, m, share) {
+  grantShare(p, m, share, expMult = 1) {
     const pk = p.perks();
-    const exp = Math.round(killExp(p, m.T, p.map && p.map.def, pk) * 3 * Math.max(0, share));
+    const exp = Math.round(killExp(p, m.T, p.map && p.map.def, pk) * 3 * Math.max(0, share) * expMult);
     const zen = Math.min(5, Math.max(0, Math.round(monsterZen(m.T) * Math.max(0, share) * pk.zen)));
     p.exp += exp; p.zen += zen; p.kills++;
     const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; p.map.emit({ k: 'heal', t: p.id, d: recovered }); }
