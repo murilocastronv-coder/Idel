@@ -2642,7 +2642,7 @@
   const RK = { by: 'level', seq: 0 };
   async function renderRank() {
     $$('#rank-tabs [data-by]').forEach((t) => { const on = t.dataset.by === RK.by; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); });
-    const last = { level: 'Poder', resets: 'Resets', power: 'Poder', bosses: 'Bosses', pvp: 'PvP' }[RK.by];
+    const last = { level: 'Resets', resets: 'Resets', bosses: 'Bosses', pvp: 'PvP' }[RK.by];
     $('#g-rank-last').textContent = last;
     const tb = $('#g-rank-body');
     if (!tb.children.length) tb.innerHTML = '<tr><td colspan="5" class="muted">Carregando…</td></tr>';
@@ -2651,7 +2651,7 @@
       const r = await fetch(`/api/ranking?by=${RK.by}`, { credentials: 'same-origin' });
       const { ranking } = await r.json();
       if (seq !== RK.seq || S.panel !== 'rank') return;
-      const val = (x) => RK.by === 'pvp' ? `${x.pvp_kills} · ${x.duel_wins} duelos` : RK.by === 'bosses' ? x.bosses_killed : RK.by === 'resets' ? x.resets : fmt.format(x.combat_power);
+      const val = (x) => RK.by === 'pvp' ? `${x.pvp_kills} · ${x.duel_wins} duelos` : RK.by === 'bosses' ? x.bosses_killed : x.resets;
       const medal = ['🥇', '🥈', '🥉'];
       tb.innerHTML = ranking.length ? ranking.map((x, i) => `<tr class="${S.char && x.name === S.char.name ? 'me' : ''}">
         <td>${medal[i] || i + 1}</td><td>${esc(x.name)}</td><td>${esc((S.data.classes[x.class] || {}).name || x.class)}</td><td>${x.level}</td><td>${val(x)}</td></tr>`).join('')
