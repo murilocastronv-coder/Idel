@@ -55,6 +55,8 @@ const DEFAULTS = {
   ],
 };
 
+// nenhum item que sai de caixa/drop passa de +8 (vale também para configurações antigas salvas no painel)
+const DROP_PLUS_MAX = 8;
 let H = null;
 function cfg() { return { ...DEFAULTS, ...(SET.get('kundun', DEFAULTS) || {}) }; }
 async function init(helpers) { H = helpers; await SET.load('kundun', DEFAULTS); }
@@ -79,7 +81,8 @@ function equipFor(level, kinds) {
 function roll(box, p) {
   const list = cfg()[box] || DEFAULTS[box];
   const e = pick(list);
-  const plus = () => Math.min(15, randi(e.plusMin || 0, Math.max(e.plusMin || 0, e.plusMax || 0)));
+  const pMin = Math.min(DROP_PLUS_MAX, e.plusMin || 0), pMax = Math.min(DROP_PLUS_MAX, Math.max(pMin, e.plusMax || 0));
+  const plus = () => randi(pMin, pMax);
   switch (e.kind) {
     case 'zen': return { kind: 'zen', qty: randi(e.min, e.max) };
     case 'pot': return { kind: 'pot', pot: e.pot === 'mp' ? 'mp' : 'hp', qty: randi(e.min, e.max) };
@@ -178,7 +181,7 @@ function contents(box) {
   const out = [];
   for (const e of (cfg()[box] || DEFAULTS[box] || [])) {
     let t;
-    if (e.kind === 'item') t = `Equipamentos ${RAR_PT[e.rarity] || e.rarity}${e.plusMax ? ` (até +${e.plusMax})` : ''}`;
+    if (e.kind === 'item') t = `Equipamentos ${RAR_PT[e.rarity] || e.rarity}${e.plusMax ? ` (até +${Math.min(DROP_PLUS_MAX, e.plusMax)})` : ''}`;
     else if (e.kind === 'material') t = G.ITEM_BASES[e.item] ? G.ITEM_BASES[e.item].name : e.item;
     else if (e.kind === 'pot') t = e.pot === 'mp' ? 'Poções de mana' : 'Poções de vida';
     else t = KIND_PT[e.kind] || e.kind;
@@ -210,7 +213,7 @@ function sanitize(input) {
       if (e.kind === 'item' || e.kind === 'chaosweapon') {
         if (!RARITY_ORDER.includes(e.rarity)) throw new Error(`${lbl}: raridade inválida.`);
         if (box === 'kundun_promo' && !['rare', 'epic'].includes(e.rarity)) throw new Error(`${lbl}: a caixa promocional aceita apenas itens raros ou épicos.`);
-        o.rarity = e.rarity; o.plusMin = n(e.plusMin || 0, 0, 8, box === 'kundun_promo' ? '+ mínimo (máximo 8)' : '+ mínimo'); o.plusMax = n(e.plusMax || 0, o.plusMin, box === 'kundun_promo' ? 8 : 15, box === 'kundun_promo' ? '+ máximo (máximo 8)' : '+ máximo');
+        o.rarity = e.rarity; o.plusMin = n(e.plusMin || 0, 0, DROP_PLUS_MAX, '+ mínimo (máximo 8)'); o.plusMax = n(e.plusMax || 0, o.plusMin, DROP_PLUS_MAX, '+ máximo (máximo 8)');
       }
       return o;
     });

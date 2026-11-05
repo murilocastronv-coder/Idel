@@ -25,9 +25,9 @@ const RARE_CAP = 0.01; // em %
 const RARE_ITEMS = new Set(['jewel_of_bless', 'jewel_of_soul', 'jewel_of_chaos', 'jewel_of_life', 'jewel_of_creation', 'scroll_of_archangel', 'blood_bone']);
 const isRare = (k) => RARE_ITEMS.has(k) || /^(devil_eye|devil_key|scroll_of_archangel|blood_bone)(_\d+)?$/.test(String(k));
 // Joias (Bless, Soul, Chaos, Life, Creation e qualquer outra jewel_of_*): chance FIXA pelo plano da conta, por joia e por morte,
-// em todo monstro/chefe que tem a joia na tabela. Free 0,2% · VIP Ouro 0,5% · VIP Diamante 0,8%. Não soma com evento,
+// em todo monstro/chefe que tem a joia na tabela. Free 0,05% · VIP Ouro 0,12% · VIP Diamante 0,2%. Não soma com evento,
 // bônus de drop do VIP nem nada; sorteio independente a cada morte (sem garantia); 1 unidade por drop.
-const JEWEL_RATE = { 0: 0.2, 1: 0.5, 2: 0.8 }; // em %
+const JEWEL_RATE = { 0: 0.05, 1: 0.12, 2: 0.2 }; // em %
 const isJewel = (k) => /^jewel_of_[a-z_]+$/.test(String(k));
 const jewelRate = (vipTier) => JEWEL_RATE[vipTier] || JEWEL_RATE[0];
 const vipTierOf = (p) => { try { return (p && p.vip && p.vip().tier) || 0; } catch { return 0; } };
@@ -180,7 +180,7 @@ function pickup(world, p, e) {
         log(p, e.base, got, 'pickup', { map: map.id, room: map.room, source: e.source, tier: e.tier });
         return;
       } else {
-        const row = await world.giveItemRow(p, { base: e.base, rarity: e.rarity, plus: e.plus || 0 }, { src: e.source });
+        const row = await world.giveItemRow(p, { base: e.base, rarity: e.rarity, plus: Math.min(8, e.plus || 0) }, { src: e.source });
         if (!row) { map.ground.set(e.gid, e); for (const o of map.players.values()) o.send({ type: 'gadd', g: publicGround(e) }); return; }
       }
       log(p, e.base, e.qty, 'pickup', { map: map.id, room: map.room, source: e.source, tier: e.tier });
@@ -277,7 +277,7 @@ function sources(items) {
         : r.scope === 'map' ? (G.WORLD[r.scopeId] || {}).name || r.scopeId
           : r.tier === 'boss' ? 'Bosses' : r.tier === 'elite' ? 'Elites e chefes' : 'Monstros';
       const lv = r.monMin > 0 ? ` (nível ${r.monMin}+)` : '';
-      return show ? `${who}${lv}: ${isJewel(r.item) ? 'Free 0,2% · VIP Ouro 0,5% · VIP Diamante 0,8%' : String(r.chance).replace('.', ',') + '%'}` : `${who}${lv}`;
+      return show ? `${who}${lv}: ${isJewel(r.item) ? 'Free 0,05% · VIP Ouro 0,12% · VIP Diamante 0,2%' : String(r.chance).replace('.', ',') + '%'}` : `${who}${lv}`;
     }).filter((v, i, a) => a.indexOf(v) === i);
   }
   return { show, list: out };
