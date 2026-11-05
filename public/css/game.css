@@ -656,3 +656,24 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .fr-btns { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 .link-btn { background: none; border: 0; color: #ffcf7a; text-decoration: underline; cursor: pointer; padding: 0; font: inherit; }
 @media (max-width: 520px) { .fr-list li { flex-wrap: wrap; } .fr-btns { width: 100%; } .fr-btns .btn { flex: 1; } }
+
+/* Chaos Machine de Noria: fabricação de entradas Blood Castle / Devil Square */
+.chaos-tabs button.entry { border-color: #8a2a2a; }
+.chaos-tabs button.entry.on { background: #3a1010; color: #ffd36b; }
+.entry-lv { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 6px 0; }
+.entry-lv button { min-width: 40px; min-height: 34px; background: var(--night); color: var(--bone-dim); border: 2px solid var(--edge); font: 600 14px var(--display); cursor: pointer; }
+.entry-lv button.ready { color: #8affa0; }
+.entry-lv button.on { border-color: #ffd36b; color: #ffd36b; background: #2a2008; }
+.entry-card { display: flex; gap: 10px; align-items: center; padding: 8px; background: rgba(0, 0, 0, .3); border: 2px solid var(--edge); }
+.entry-card b { font: 600 17px var(--display); color: #ffd36b; display: block; }
+.entry-card small { color: var(--bone-dim); }
+.entry-card p { margin: 4px 0 0; }
+.entry-card.r-legendary { border-color: #ff9a3a; box-shadow: 0 0 14px rgba(255, 154, 58, .35); }
+.entry-card.r-epic { border-color: #b07aff; box-shadow: 0 0 12px rgba(176, 122, 255, .3); }
+.entry-img { position: relative; flex: none; width: 64px; height: 64px; display: grid; place-items: center; background: var(--night); border: 2px solid #b07aff; }
+.entry-img .lv { position: absolute; right: 2px; bottom: 0; font: 600 13px var(--display); color: #fff; text-shadow: 1px 1px 0 #000; }
+.entry-tbl { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 13px; }
+.entry-tbl th, .entry-tbl td { padding: 3px 6px; border-bottom: 1px solid rgba(255, 255, 255, .08); text-align: center; }
+.entry-tbl th:first-child, .entry-tbl td:first-child { text-align: left; }
+.entry-tbl th { color: var(--bone-dim); font-weight: 500; }
+.entry-tbl td.bad { color: #ff8a7a; } .entry-tbl td.ok { color: #8affa0; }

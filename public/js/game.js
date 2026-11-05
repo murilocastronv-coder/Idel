@@ -110,6 +110,7 @@
       case 'evolved': goldFlash(`${m.className}!`); if (window.Sfx) Sfx.levelUp(); return;
       case 'gdel': S.gitems.delete(m.gid); return;
       case 'chaosInfo': CH.info = m; if (S.panel === 'chaos') renderChaos(); return;
+      case 'entryInfo': CH.entry = m; if (S.panel === 'chaos' && CH.tab.startsWith('entry_') && !CH.busy) renderChaos(); return;
       case 'chaosResult': return chaosResult(m);
       case 'cmdres': return cmdResult(m);
       case 'log': return feed(m.text, m.kind === 'warn' ? 'warn' : m.kind === 'quest' ? 'quest' : m.kind === 'pvp' ? 'pvp' : '');
@@ -2105,7 +2106,7 @@
       })() };
     S.players.set(S.youId || c.id, meP);
     renderSkills();
-    if (S.panel === 'chaos') { clearTimeout(CH.t); CH.t = setTimeout(() => send({ type: 'chaosInfo' }), 250); }
+    if (S.panel === 'chaos') { clearTimeout(CH.t); CH.t = setTimeout(() => { send({ type: 'chaosInfo' }); send({ type: 'entryInfo' }); }, 250); }
     if (S.panel && S.panel !== 'rank' && S.panel !== 'chaos') renderPanel(S.panel);
     if (TR.s) renderTrade();
   }
@@ -2183,7 +2184,7 @@
     else if (name === 'config') renderConfig();
     else if (name === 'quests') renderQuests();
     else if (name === 'rank') renderRank();
-    else if (name === 'chaos') { renderChaos(); send({ type: 'chaosInfo' }); }
+    else if (name === 'chaos') { if (S.map && S.map.map === 'noria' && !CH.entryPicked) { CH.tab = 'entry_blood'; CH.entryPicked = true; } renderChaos(); send({ type: 'chaosInfo' }); send({ type: 'entryInfo' }); }
     else if (name === 'vault') renderVault();
     else if (name === 'market') { MK.msg = null; mkLoad(MK.tab); send({ type: 'market', action: 'wallet' }); renderMarket(); }
     else if (name === 'arena') renderArena();
@@ -3970,7 +3971,8 @@
   $('#inv-timer').onclick = () => feed(S.inv && S.inv.active ? 'Monstros dourados estão nos mapas de caça! Derrote-os para ganhar Box Kundun.' : 'A cada 40 minutos monstros dourados invadem os mapas de caça.', 'gold');
 
   // ================= Chaos Machine =================
-  const CH = { info: null, tab: 'wing1', sel: {}, busy: false, t: 0 };
+  const CH = { info: null, entry: null, tab: 'wing1', sel: {}, lvl: { blood: 1, devil: 1 }, busy: false, t: 0 };
+  const ENTRY_TABS = [['entry_blood', 'Criar Entrada Blood Castle'], ['entry_devil', 'Criar Entrada Devil Square']];
   const FAIL_TXT = { lose_all: 'Se falhar: perde o item principal, os materiais e o Zen.', keep_main: 'Se falhar: o item principal volta para a bolsa; perde os materiais e o Zen.', keep_items: 'Se falhar: só o Zen é cobrado; os itens voltam.' };
   function chaosIcon(it, size = 40) {
     const c = document.createElement('canvas'); c.width = 48; c.height = 48; c.style.width = c.style.height = size + 'px';
@@ -3982,8 +3984,10 @@
     const I = CH.info;
     if (!I) { body.innerHTML = '<p class="muted">Ligando a Chaos Machine…</p>'; return; }
     const tabs = $('#chaos-tabs');
-    tabs.innerHTML = I.recipes.map((r) => `<button type="button" role="tab" data-r="${r.id}" class="${CH.tab === r.id ? 'on' : ''}" aria-selected="${CH.tab === r.id}">${esc(r.name)}</button>`).join('');
+    const sub = $('#chaos-title small'); if (sub) sub.textContent = S.map && S.map.map === 'noria' ? 'Chaos Goblin · Noria' : 'Chaos Goblin · Lorencia';
+    tabs.innerHTML = [...I.recipes.map((r) => [r.id, r.name]), ...ENTRY_TABS].map(([id, nm]) => `<button type="button" role="tab" data-r="${id}" class="${CH.tab === id ? 'on' : ''}${id.startsWith('entry_') ? ' entry' : ''}" aria-selected="${CH.tab === id}">${esc(nm)}</button>`).join('');
     $$('button', tabs).forEach((b) => { b.onclick = () => { CH.tab = b.dataset.r; renderChaos(); }; });
+    if (CH.tab.startsWith('entry_')) return renderEntry(CH.tab.slice(6));
     const r = I.recipes.find((x) => x.id === CH.tab) || I.recipes[0];
     const okCands = r.candidates.filter((c) => c.ok);
     let selId = CH.sel[r.id];
@@ -4051,16 +4055,61 @@
       send({ type: 'chaos', recipe: r.id, main: sel.item.id });
     };
   }
+  // Fabricação de entradas (só na Chaos Machine de Noria): +N = (N+1) principal + N par + N Chaos + Zen
+  function renderEntry(kind) {
+    const body = $('#chaos-body');
+    const E = CH.entry;
+    if (!E) { body.innerHTML = '<p class="muted">Ligando a Chaos Machine…</p>'; return; }
+    const K = E.kinds[kind];
+    const n = Math.min(E.maxLevel, Math.max(1, CH.lvl[kind] || 1));
+    const L = K.levels[n - 1];
+    const missing = L.mats.filter((m) => m.missing).map((m) => `Falta ${m.missing}× ${m.name}.`);
+    if (E.zen < L.zen) missing.push(`Faltam ${fmt.format(L.zen - E.zen)} Zen.`);
+    if (E.bagFree < 1) missing.push('Inventário cheio: libere um espaço.');
+    if (!E.atNoria) missing.push('Vá até a Chaos Machine de Noria.');
+    body.innerHTML = `
+      ${!E.atNoria ? '<p class="chaos-warn">As entradas só são fabricadas na Chaos Machine de Noria (Chaos Goblin). <button class="btn small" type="button" id="entry-go">Ir para Noria</button></p>' : ''}
+      <div class="entry-lv" role="group" aria-label="Nível da entrada">${K.levels.map((x) => `<button type="button" data-lv="${x.n}" class="${x.n === n ? 'on' : ''}${x.ready ? ' ready' : ''}" aria-pressed="${x.n === n}">+${x.n}</button>`).join('')}</div>
+      <div class="entry-card r-${esc(L.result.rarity)}">
+        <div class="entry-img" id="entry-img"><span class="lv">+${n}</span></div>
+        <div><b>${esc(L.result.title)}</b><small>${esc(L.result.name)} · <span style="color:${RAR[L.result.rarity]}">${RAR_NAME[L.result.rarity] || ''}</span></small><p class="muted small">${esc(L.result.desc || '')}</p></div>
+      </div>
+      <div class="chaos-machine" id="chaos-machine">
+        ${L.mats.map((m) => `<div class="chaos-slot ${m.missing ? 'need' : 'filled'}" data-emat="${esc(m.group)}"><b class="${m.missing ? 'bad' : ''}">${m.have}/${m.need}</b></div>`).join('<span class="chaos-plus">+</span>')}
+        <span class="chaos-plus">+</span>
+        <div class="chaos-zen ${E.zen >= L.zen ? '' : 'bad'}"><b>${fmt.format(L.zen)}</b><small>Zen</small></div>
+        <span class="chaos-plus">=</span>
+        <div class="chaos-results" id="entry-res"></div>
+      </div>
+      <table class="entry-tbl"><thead><tr><th>Material</th><th>Precisa</th><th>Possui</th><th>Falta</th></tr></thead><tbody>
+        ${L.mats.map((m) => `<tr><td>${esc(m.name)}</td><td>${m.need}</td><td>${m.have}</td><td class="${m.missing ? 'bad' : 'ok'}">${m.missing || '✓'}</td></tr>`).join('')}
+        <tr><td>Zen</td><td>${fmt.format(L.zen)}</td><td>${fmt.format(E.zen)}</td><td class="${E.zen >= L.zen ? 'ok' : 'bad'}">${E.zen >= L.zen ? '✓' : fmt.format(L.zen - E.zen)}</td></tr></tbody></table>
+      <p class="muted small">${esc(K.mainName)} e ${esc(K.keyName)} de qualquer nível (+1 a +7) servem; os de nível mais baixo são usados primeiro. Sucesso garantido: gera exatamente 1 entrada.</p>
+      ${missing.length ? `<ul class="chaos-missing">${missing.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+      <button class="btn btn-gold chaos-go" type="button" id="entry-do" ${missing.length || CH.busy ? 'disabled' : ''}>Combinar ${esc(L.result.title)}</button>`;
+    const img = $('#entry-img'); img.prepend(chaosIcon(L.result, 56));
+    $$('[data-emat]', body).forEach((el) => { const m = L.mats.find((x) => x.group === el.dataset.emat); el.prepend(chaosIcon(m, 32)); el.title = m.name; });
+    const rb = $('#entry-res'); const d = document.createElement('div'); d.className = 'chaos-out'; d.title = L.result.name; d.appendChild(chaosIcon(L.result, 34)); d.insertAdjacentHTML('beforeend', `<small>${esc(L.result.title)}</small>`); rb.appendChild(d);
+    $$('[data-lv]', body).forEach((b) => { b.onclick = () => { CH.lvl[kind] = Number(b.dataset.lv); renderChaos(); }; });
+    const go = $('#entry-go'); if (go) go.onclick = () => send({ type: 'teleport', map: 'noria' });
+    $('#entry-do').onclick = () => {
+      if (CH.busy) return;
+      CH.busy = true; $('#entry-do').disabled = true;
+      $('#chaos-machine').classList.add('spin');
+      send({ type: 'entryCraft', kind, level: n });
+    };
+  }
   function chaosResult(m) {
     const show = () => {
       CH.busy = false;
       const mach = $('#chaos-machine'); if (mach) mach.classList.remove('spin');
+      if (m.entry && S.panel === 'chaos') renderChaos();
       const box = $('#chaos-result');
-      if (!m.ok) { feed(m.text, 'warn'); if (S.panel === 'chaos') renderChaos(); return; }
+      if (!m.ok) { feed(m.text + (m.missing && m.missing.length ? ' Falta: ' + m.missing.join(', ') + '.' : ''), 'warn'); if (S.panel === 'chaos') renderChaos(); return; }
       box.innerHTML = '';
       box.className = 'chaos-result ' + (m.success ? 'win' : 'lose');
       if (m.item) box.appendChild(chaosIcon(m.item, 64));
-      box.insertAdjacentHTML('beforeend', `<b>${m.success ? 'Sucesso!' : 'Falhou'}</b><p>${esc(m.text)}</p>${m.item ? `<small style="color:${RAR[m.item.rarity]}">${RAR_NAME[m.item.rarity]} · ${m.item.tier === 2 ? 'Asa nível 2' : 'Asa nível 1'} · requisito: nível 120</small>` : ''}${m.lost && m.lost.length ? `<small>Perdeu: ${m.lost.map(esc).join(', ')}</small>` : ''}${m.kept ? '<small>O item principal voltou para a bolsa.</small>' : ''}<button class="btn small" type="button">OK</button>`);
+      box.insertAdjacentHTML('beforeend', `<b>${m.success ? 'Sucesso!' : 'Falhou'}</b><p>${esc(m.text)}</p>${m.item && m.entry ? `<small style="color:${RAR[m.item.rarity]}">${esc(m.title || '')} · ${esc(m.item.name)}</small>${m.used && m.used.length ? `<small>Materiais usados: ${m.used.map(esc).join(', ')}</small>` : ''}` : m.item ? `<small style="color:${RAR[m.item.rarity]}">${RAR_NAME[m.item.rarity]} · ${m.item.tier === 2 ? 'Asa nível 2' : 'Asa nível 1'} · requisito: nível 120</small>` : ''}${m.lost && m.lost.length ? `<small>Perdeu: ${m.lost.map(esc).join(', ')}</small>` : ''}${m.kept ? '<small>O item principal voltou para a bolsa.</small>' : ''}<button class="btn small" type="button">OK</button>`);
       box.hidden = false;
       $('button', box).onclick = () => { box.hidden = true; };
       if (window.Sfx) { if (m.success) Sfx.levelUp(); else Sfx.warn(); }

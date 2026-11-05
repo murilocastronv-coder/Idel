@@ -7,6 +7,7 @@ const Q = require('./quests');
 const VIP = require('./vip');
 const ADMIN = require('./admin');
 const CHAOS = require('./chaos');
+const ENTRIES = require('./entries');
 const DROPS = require('./drops');
 const CMDS = require('./commands');
 const INV = require('./invasion');
@@ -404,6 +405,7 @@ class World {
     const helpers = { publicItem, bagUsed, itemValue, rollRarity, rollPlus };
     await EXCELLENT.init(helpers);
     await CHAOS.init(helpers);
+    ENTRIES.init(helpers);
     await DROPS.init(helpers);
     CMDS.init(this, expToNext);
     this.commands = CMDS;
@@ -735,6 +737,8 @@ class World {
       case 'room': return this.switchRoom(p, msg.room);
       case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS, ...[1, 2, 3, 4, 5, 6, 7].flatMap((n) => ['devil_eye_' + n, 'devil_key_' + n, 'scroll_of_archangel_' + n, 'blood_bone_' + n])])));
       case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
+      case 'entryInfo': return p.send(ENTRIES.info(p));
+      case 'entryCraft': return p.run(() => ENTRIES.craft(this, p, String(msg.kind), Number(msg.level)));
       case 'openBox': return p.run(() => KUNDUN.open(this, p, String(msg.id || '')));
       case 'trade':
         if (MARKET.isBlocked(p) && (msg.action === 'invite' || (msg.action === 'answer' && msg.accept))) return p.send({ type: 'log', kind: 'warn', text: 'Sua conta está bloqueada no mercado e nas trocas até pagar a comissão pendente (Mercado → Minhas vendas).' });
