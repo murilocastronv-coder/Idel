@@ -3043,6 +3043,7 @@
     $('#cfg-pvp').onchange = (e) => sendS({ pvpAuto: e.target.checked });
     $('#cfg-quality').value = quality; $('#cfg-quality').onchange = (e) => setQuality(e.target.value);
     $('#cfg-gfx').value = is3d ? '3d' : '2d'; $('#cfg-gfx').onchange = (e) => setGfx(e.target.value);
+    if (window.PX) { $('#cfg-px').value = PX.enabled() ? '1' : '0'; $('#cfg-px').onchange = (e) => PX.set(e.target.value === '1'); }
     if (window.Sfx) {
       $('#cfg-vol').value = Math.round(Sfx.volume * 100); $('#cfg-vol-v').textContent = Math.round(Sfx.volume * 100) + '%';
       $('#cfg-vol').oninput = (e) => { Sfx.setVolume(Number(e.target.value) / 100); $('#cfg-vol-v').textContent = e.target.value + '%'; };
