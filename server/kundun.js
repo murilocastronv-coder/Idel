@@ -6,6 +6,7 @@ const db = require('./db');
 const G = require('./gamedata');
 const EXCELLENT = require('./excellent');
 const SET = require('./settings');
+const EQUIP = require('./equip');
 
 const BOXES = ['kundun_bronze', 'kundun_prata', 'kundun_ouro', 'kundun_promo'];
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancestral'];
@@ -14,37 +15,38 @@ const HIGH = ['legendary', 'ancestral'];
 
 // w = peso (a chance é w ÷ soma dos pesos da caixa)
 const DEFAULTS = {
+  // Comum/Raro = equipamento sem opções excelentes; Excelente = Épico com opções excelentes; Lendário = com opções excelentes.
+  // Pesos somam 100 em cada caixa (peso = % de chance). Sem itens Ancestrais.
   kundun_bronze: [
-    { kind: 'zen', w: 30, min: 5000, max: 25000 },
-    { kind: 'pot', w: 18, pot: 'hp', min: 20, max: 60 },
-    { kind: 'pot', w: 10, pot: 'mp', min: 20, max: 60 },
-    { kind: 'item', w: 24, rarity: 'common', plusMin: 0, plusMax: 1 },
-    { kind: 'item', w: 12, rarity: 'uncommon', plusMin: 0, plusMax: 2 },
-    { kind: 'material', w: 5, item: 'jewel_of_chaos', min: 1, max: 1 },
-    { kind: 'item', w: 1, rarity: 'rare', plusMin: 0, plusMax: 2 },
+    { kind: 'zen', w: 30.95, min: 5000, max: 25000 },
+    { kind: 'item', w: 30, rarity: 'common', plusMin: 0, plusMax: 1, reqMin: 1, reqMax: 40, low: true, exc: false },
+    { kind: 'item', w: 16, rarity: 'rare', plusMin: 0, plusMax: 2, reqMin: 1, reqMax: 40, low: true, exc: false },
+    { kind: 'item', w: 4, rarity: 'epic', plusMin: 0, plusMax: 2, reqMin: 1, reqMax: 40, low: true, exc: true },
+    { kind: 'item', w: 0.05, rarity: 'legendary', plusMin: 0, plusMax: 2, reqMin: 1, reqMax: 40, low: true, exc: true },
+    { kind: 'material', w: 8, item: 'jewel_of_chaos', min: 1, max: 1 },
+    { kind: 'material', w: 5, item: 'jewel_of_bless', min: 1, max: 1 },
+    { kind: 'material', w: 4, item: 'jewel_of_soul', min: 1, max: 1 },
+    { kind: 'material', w: 2, item: 'jewel_of_creation', min: 1, max: 1 },
   ],
   kundun_prata: [
-    { kind: 'zen', w: 20, min: 30000, max: 120000 },
-    { kind: 'item', w: 28, rarity: 'rare', plusMin: 0, plusMax: 3 },
-    { kind: 'item', w: 14, rarity: 'uncommon', plusMin: 1, plusMax: 3 },
-    { kind: 'material', w: 16, item: 'jewel_of_chaos', min: 1, max: 3 },
-    { kind: 'material', w: 5, item: 'loch_feather', min: 1, max: 1 },
-    { kind: 'chaosweapon', w: 7, rarity: 'uncommon', plusMin: 0, plusMax: 2 },
-    { kind: 'item', w: 8, rarity: 'epic', plusMin: 0, plusMax: 3 },
-    { kind: 'pot', w: 2, pot: 'hp', min: 100, max: 200 },
+    { kind: 'zen', w: 26, min: 50000, max: 150000 },
+    { kind: 'item', w: 14, rarity: 'common', plusMin: 0, plusMax: 2, reqMin: 30, reqMax: 80, exc: false },
+    { kind: 'item', w: 24, rarity: 'rare', plusMin: 1, plusMax: 3, reqMin: 30, reqMax: 80, exc: false },
+    { kind: 'item', w: 8, rarity: 'epic', plusMin: 1, plusMax: 3, reqMin: 30, reqMax: 80, exc: true },
+    { kind: 'material', w: 10, item: 'jewel_of_chaos', min: 1, max: 2 },
+    { kind: 'material', w: 8, item: 'jewel_of_bless', min: 1, max: 2 },
+    { kind: 'material', w: 6, item: 'jewel_of_soul', min: 1, max: 2 },
+    { kind: 'material', w: 4, item: 'jewel_of_creation', min: 1, max: 1 },
   ],
   kundun_ouro: [
-    { kind: 'zen', w: 18, min: 200000, max: 600000 },
-    { kind: 'item', w: 22, rarity: 'rare', plusMin: 2, plusMax: 5 },
-    { kind: 'item', w: 26, rarity: 'epic', plusMin: 2, plusMax: 5 },
-    { kind: 'item', w: 6, rarity: 'legendary', plusMin: 2, plusMax: 5 },
-    { kind: 'item', w: 1, rarity: 'ancestral', plusMin: 3, plusMax: 5 },
-    { kind: 'material', w: 12, item: 'jewel_of_chaos', min: 3, max: 6 },
-    { kind: 'material', w: 9, item: 'loch_feather', min: 1, max: 2 },
-    { kind: 'chaosweapon', w: 4, rarity: 'rare', plusMin: 1, plusMax: 4 },
-    { kind: 'wing1', w: 1.5 },
-    { kind: 'wing2', w: 0.2 },
-    { kind: 'cape', w: 0.3 },
+    { kind: 'zen', w: 22, min: 300000, max: 800000 },
+    { kind: 'item', w: 10, rarity: 'rare', plusMin: 2, plusMax: 4, reqMin: 60, reqMax: 120, exc: false },
+    { kind: 'item', w: 30, rarity: 'epic', plusMin: 2, plusMax: 5, reqMin: 60, reqMax: 120, exc: true },
+    { kind: 'item', w: 1, rarity: 'legendary', plusMin: 3, plusMax: 5, reqMin: 60, reqMax: 120, exc: true }, // exatamente 1%
+    { kind: 'material', w: 12, item: 'jewel_of_chaos', min: 2, max: 4 },
+    { kind: 'material', w: 10, item: 'jewel_of_bless', min: 2, max: 3 },
+    { kind: 'material', w: 9, item: 'jewel_of_soul', min: 2, max: 3 },
+    { kind: 'material', w: 6, item: 'jewel_of_creation', min: 1, max: 2 },
   ],
   // Caixa semi-full de loja: só raros/épicos e adicionais moderados; sem drops full.
   kundun_promo: [
@@ -77,6 +79,23 @@ function equipFor(level, kinds) {
   return all[Math.floor(Math.random() * all.length)][0];
 }
 
+// equipamento da faixa de nível da caixa que a classe de quem abre pode usar.
+// Fica no máximo 10 níveis acima do personagem (dentro da faixa); low = prefere os de nível mais baixo.
+function gearFor(p, reqMin, reqMax, low) {
+  const cap = Math.max(reqMin, Math.min(reqMax, (p.level || 1) + 10));
+  const ok = (k, b, lo, hi) => {
+    if (b.special || b.seasonal || b.slot === 'material' || b.slot === 'wings' || b.stack || !EQUIP.equipable(b)) return false;
+    const r = EQUIP.rule(k);
+    return r.enabled && r.level >= lo && r.level <= hi && r.classes.includes(p.cls) && (r.minEvo || 0) <= (p.evo || 0);
+  };
+  let pool = Object.entries(G.ITEM_BASES).filter(([k, b]) => ok(k, b, reqMin, cap));
+  if (!pool.length) pool = Object.entries(G.ITEM_BASES).filter(([k, b]) => ok(k, b, reqMin, reqMax));
+  if (!pool.length) return null;
+  pool.sort((a, b) => EQUIP.rule(a[0]).level - EQUIP.rule(b[0]).level);
+  const r = low ? Math.random() * Math.random() : Math.random();
+  return pool[Math.min(pool.length - 1, Math.floor(r * pool.length))][0];
+}
+
 // sorteia o conteúdo (sem entregar)
 function roll(box, p) {
   const list = cfg()[box] || DEFAULTS[box];
@@ -87,7 +106,10 @@ function roll(box, p) {
     case 'zen': return { kind: 'zen', qty: randi(e.min, e.max) };
     case 'pot': return { kind: 'pot', pot: e.pot === 'mp' ? 'mp' : 'hp', qty: randi(e.min, e.max) };
     case 'material': return { kind: 'material', base: e.item, qty: randi(e.min, e.max) };
-    case 'item': return { kind: 'item', base: equipFor(p.level), rarity: e.rarity, plus: plus() };
+    case 'item': {
+      const base = (e.reqMin || e.reqMax) ? gearFor(p, e.reqMin || 1, e.reqMax || G.LIMITS.maxLevel, !!e.low) : null;
+      return { kind: 'item', base: base || equipFor(p.level), rarity: e.rarity, plus: plus(), exc: e.exc !== false };
+    }
     case 'chaosweapon': {
       const list2 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].chaos);
       return { kind: 'item', base: list2[Math.floor(Math.random() * list2.length)], rarity: e.rarity || 'common', plus: plus() };
@@ -111,7 +133,7 @@ function describe(r) {
   if (r.kind === 'pot') return `${r.qty} ${r.pot === 'mp' ? 'poções de mana' : 'poções de vida'}`;
   const b = G.ITEM_BASES[r.base];
   if (r.kind === 'material') return `${r.qty}× ${b.name}`;
-  return `${b.name}${r.plus ? ' +' + r.plus : ''}`;
+  return `${b.name}${r.plus ? ' +' + r.plus : ''}${r.kind === 'item' && r.rarity === 'legendary' ? ' (Lendário)' : r.kind === 'item' && r.exc && r.rarity === 'epic' ? ' (Excelente)' : ''}`;
 }
 
 // abre uma caixa: precisa ser do jogador, estar na bolsa e caber o prêmio
@@ -136,7 +158,7 @@ async function open(world, p, itemId) {
       if (!d.rows[0]) throw new Error('A caixa mudou. Tente de novo.');
       let out = null;
       if (r.kind === 'item') {
-        const opts = EXCELLENT.roll(r.base);
+        const opts = r.exc === false ? [] : EXCELLENT.roll(r.base);
         out = (await q(`INSERT INTO items (character_id, base, rarity, plus, excellent_options) VALUES ($1,$2,$3,$4,$5) RETURNING id, base, rarity, plus, equipped, qty, excellent_options`,
           [p.charId, r.base, r.rarity, r.plus, JSON.stringify(opts)])).rows[0];
       } else if (r.kind === 'material') {
@@ -181,7 +203,7 @@ function contents(box) {
   const out = [];
   for (const e of (cfg()[box] || DEFAULTS[box] || [])) {
     let t;
-    if (e.kind === 'item') t = `Equipamentos ${RAR_PT[e.rarity] || e.rarity}${e.plusMax ? ` (até +${Math.min(DROP_PLUS_MAX, e.plusMax)})` : ''}`;
+    if (e.kind === 'item') t = `Equipamentos ${e.exc && e.rarity === 'epic' ? 'excelentes' : RAR_PT[e.rarity] || e.rarity}${e.reqMax ? ` nível ${e.reqMin || 1}–${e.reqMax}` : ''}${e.plusMax ? ` (até +${Math.min(DROP_PLUS_MAX, e.plusMax)})` : ''}`;
     else if (e.kind === 'material') t = G.ITEM_BASES[e.item] ? G.ITEM_BASES[e.item].name : e.item;
     else if (e.kind === 'pot') t = e.pot === 'mp' ? 'Poções de mana' : 'Poções de vida';
     else t = KIND_PT[e.kind] || e.kind;
@@ -213,7 +235,11 @@ function sanitize(input) {
       if (e.kind === 'item' || e.kind === 'chaosweapon') {
         if (!RARITY_ORDER.includes(e.rarity)) throw new Error(`${lbl}: raridade inválida.`);
         if (box === 'kundun_promo' && !['rare', 'epic'].includes(e.rarity)) throw new Error(`${lbl}: a caixa promocional aceita apenas itens raros ou épicos.`);
+        if (box !== 'kundun_promo' && e.rarity === 'ancestral') throw new Error(`${lbl}: as caixas Kundun não entregam itens Ancestrais.`);
         o.rarity = e.rarity; o.plusMin = n(e.plusMin || 0, 0, DROP_PLUS_MAX, '+ mínimo (máximo 5)'); o.plusMax = n(e.plusMax || 0, o.plusMin, DROP_PLUS_MAX, '+ máximo (máximo 5)');
+        if (e.kind === 'item' && (e.reqMin || e.reqMax)) { o.reqMin = n(e.reqMin || 1, 1, G.LIMITS.maxLevel, 'nível mínimo'); o.reqMax = n(e.reqMax || o.reqMin, o.reqMin, G.LIMITS.maxLevel, 'nível máximo'); }
+        if (e.kind === 'item' && typeof e.exc === 'boolean') o.exc = e.exc;
+        if (e.kind === 'item' && e.low) o.low = true;
       }
       return o;
     });
@@ -222,6 +248,7 @@ function sanitize(input) {
     const low = clean.filter((e) => (e.kind === 'item' || e.kind === 'chaosweapon') && ['common', 'uncommon', 'rare'].includes(e.rarity)).reduce((a, e) => a + e.w, 0);
     const total = clean.reduce((a, e) => a + e.w, 0);
     if (high && (low ? high >= low : high >= total * 0.2)) throw new Error(`${name}: a chance de itens lendários e ancestrais precisa ser menor que a de itens comuns, incomuns e raros.`);
+    if (box === 'kundun_ouro') { const leg = clean.filter((e) => e.kind !== 'material' && e.rarity === 'legendary').reduce((a, e) => a + e.w, 0); if (leg / total > 0.01 + 1e-9) throw new Error(`${name}: a chance de equipamento Lendário não pode passar de 1%.`); }
     out[box] = clean;
   }
   return out;
