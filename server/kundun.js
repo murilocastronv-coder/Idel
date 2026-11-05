@@ -79,12 +79,27 @@ function equipFor(level, kinds) {
   return all[Math.floor(Math.random() * all.length)][0];
 }
 
+// Box Prata e Ouro: todo equipamento sai com 2 a 4 atributos (opções excelentes) sem repetir.
+// [quantidade, peso %]; a Ouro tem distribuição mais difícil que a Prata. A Bronze não usa este sistema.
+const ATTR_DIST = {
+  kundun_prata: [[2, 65], [3, 28], [4, 7]],
+  kundun_ouro: [[2, 76], [3, 20.5], [4, 3.5]],
+};
+const ATTR_TIER = { 2: 'Especial', 3: 'Superior', 4: 'Lendária especial' };
+function attrCount(box) {
+  const d = ATTR_DIST[box]; if (!d) return 0;
+  let r = Math.random() * d.reduce((a, x) => a + x[1], 0);
+  for (const [n, w] of d) { r -= w; if (r <= 0) return n; }
+  return d[0][0];
+}
+
 // equipamento da faixa de nível da caixa que a classe de quem abre pode usar.
 // Fica no máximo 10 níveis acima do personagem (dentro da faixa); low = prefere os de nível mais baixo.
-function gearFor(p, reqMin, reqMax, low) {
+function gearFor(p, reqMin, reqMax, low, needAttrs) {
   const cap = Math.max(reqMin, Math.min(reqMax, (p.level || 1) + 10));
   const ok = (k, b, lo, hi) => {
     if (b.special || b.seasonal || b.slot === 'material' || b.slot === 'wings' || b.stack || !EQUIP.equipable(b)) return false;
+    if (needAttrs && !EXCELLENT.hasPool(k)) return false; // só peças que aceitam atributos
     const r = EQUIP.rule(k);
     return r.enabled && r.level >= lo && r.level <= hi && r.classes.includes(p.cls) && (r.minEvo || 0) <= (p.evo || 0);
   };
@@ -98,6 +113,7 @@ function gearFor(p, reqMin, reqMax, low) {
 
 // sorteia o conteúdo (sem entregar)
 function roll(box, p) {
+  // (box é usado também para o número de atributos)
   const list = cfg()[box] || DEFAULTS[box];
   const e = pick(list);
   const pMin = Math.min(DROP_PLUS_MAX, e.plusMin || 0), pMax = Math.min(DROP_PLUS_MAX, Math.max(pMin, e.plusMax || 0));
@@ -107,8 +123,9 @@ function roll(box, p) {
     case 'pot': return { kind: 'pot', pot: e.pot === 'mp' ? 'mp' : 'hp', qty: randi(e.min, e.max) };
     case 'material': return { kind: 'material', base: e.item, qty: randi(e.min, e.max) };
     case 'item': {
-      const base = (e.reqMin || e.reqMax) ? gearFor(p, e.reqMin || 1, e.reqMax || G.LIMITS.maxLevel, !!e.low) : null;
-      return { kind: 'item', base: base || equipFor(p.level), rarity: e.rarity, plus: plus(), exc: e.exc !== false };
+      const attrs = attrCount(box);
+      const base = (e.reqMin || e.reqMax) ? gearFor(p, e.reqMin || 1, e.reqMax || G.LIMITS.maxLevel, !!e.low, attrs > 0) : null;
+      return { kind: 'item', base: base || equipFor(p.level), rarity: e.rarity, plus: plus(), exc: attrs > 0 || e.exc !== false, attrs: attrs || undefined };
     }
     case 'chaosweapon': {
       const list2 = Object.keys(G.ITEM_BASES).filter((k) => G.ITEM_BASES[k].chaos);
@@ -133,7 +150,11 @@ function describe(r) {
   if (r.kind === 'pot') return `${r.qty} ${r.pot === 'mp' ? 'poções de mana' : 'poções de vida'}`;
   const b = G.ITEM_BASES[r.base];
   if (r.kind === 'material') return `${r.qty}× ${b.name}`;
-  return `${b.name}${r.plus ? ' +' + r.plus : ''}${r.kind === 'item' && r.rarity === 'legendary' ? ' (Lendário)' : r.kind === 'item' && r.exc && r.rarity === 'epic' ? ' (Excelente)' : ''}`;
+  const tags = [];
+  if (r.kind === 'item' && r.rarity === 'legendary') tags.push('Lendário');
+  else if (r.kind === 'item' && r.exc && r.rarity === 'epic') tags.push('Excelente');
+  if (r.attrs) tags.push(`${r.attrs} atributos · ${ATTR_TIER[r.attrs]}`);
+  return `${b.name}${r.plus ? ' +' + r.plus : ''}${tags.length ? ` (${tags.join(' · ')})` : ''}`;
 }
 
 // abre uma caixa: precisa ser do jogador, estar na bolsa e caber o prêmio
@@ -158,7 +179,7 @@ async function open(world, p, itemId) {
       if (!d.rows[0]) throw new Error('A caixa mudou. Tente de novo.');
       let out = null;
       if (r.kind === 'item') {
-        const opts = r.exc === false ? [] : EXCELLENT.roll(r.base);
+        const opts = r.attrs ? EXCELLENT.roll(r.base, r.attrs) : r.exc === false ? [] : EXCELLENT.roll(r.base);
         out = (await q(`INSERT INTO items (character_id, base, rarity, plus, excellent_options) VALUES ($1,$2,$3,$4,$5) RETURNING id, base, rarity, plus, equipped, qty, excellent_options`,
           [p.charId, r.base, r.rarity, r.plus, JSON.stringify(opts)])).rows[0];
       } else if (r.kind === 'material') {
@@ -190,9 +211,9 @@ async function open(world, p, itemId) {
   p.dirty = true;
   const item = row ? H.publicItem(r.kind === 'material' ? row : row) : null;
   const text = describe(r);
-  reply(true, text, { box: box.base, reward: { ...r, text }, item, high: !!(row && HIGH.includes(row.rarity)) });
+  reply(true, text, { box: box.base, reward: { ...r, text }, item, high: !!(row && (HIGH.includes(row.rarity) || r.attrs === 4)) });
   p.send(p.charState());
-  if (row && (HIGH.includes(row.rarity) || G.ITEM_BASES[row.base].slot === 'wings')) world.system(`${p.name} abriu uma ${G.ITEM_BASES[box.base].name} e ganhou ${text}!`);
+  if (row && (HIGH.includes(row.rarity) || r.attrs === 4 || G.ITEM_BASES[row.base].slot === 'wings')) world.system(`${p.name} abriu uma ${G.ITEM_BASES[box.base].name} e ganhou ${text}!`);
   return undefined;
 }
 
@@ -203,7 +224,8 @@ function contents(box) {
   const out = [];
   for (const e of (cfg()[box] || DEFAULTS[box] || [])) {
     let t;
-    if (e.kind === 'item') t = `Equipamentos ${e.exc && e.rarity === 'epic' ? 'excelentes' : RAR_PT[e.rarity] || e.rarity}${e.reqMax ? ` nível ${e.reqMin || 1}–${e.reqMax}` : ''}${e.plusMax ? ` (até +${Math.min(DROP_PLUS_MAX, e.plusMax)})` : ''}`;
+    if (e.kind === 'item' && ATTR_DIST[box]) t = `Equipamentos ${e.rarity === 'legendary' ? 'lendários' : e.exc && e.rarity === 'epic' ? 'excelentes' : RAR_PT[e.rarity] || e.rarity}${e.reqMax ? ` nível ${e.reqMin || 1}–${e.reqMax}` : ''} com 2 a 4 atributos`;
+    else if (e.kind === 'item') t = `Equipamentos ${e.exc && e.rarity === 'epic' ? 'excelentes' : RAR_PT[e.rarity] || e.rarity}${e.reqMax ? ` nível ${e.reqMin || 1}–${e.reqMax}` : ''}${e.plusMax ? ` (até +${Math.min(DROP_PLUS_MAX, e.plusMax)})` : ''}`;
     else if (e.kind === 'material') t = G.ITEM_BASES[e.item] ? G.ITEM_BASES[e.item].name : e.item;
     else if (e.kind === 'pot') t = e.pot === 'mp' ? 'Poções de mana' : 'Poções de vida';
     else t = KIND_PT[e.kind] || e.kind;
@@ -269,7 +291,7 @@ function simulate(box, n, level, cls) {
     if (r.kind === 'zen') { zen += r.qty; k = 'Zen'; }
     else if (r.kind === 'pot') k = r.pot === 'mp' ? 'Poções de mana' : 'Poções de vida';
     else if (r.kind === 'material') k = G.ITEM_BASES[r.base].name;
-    else { const b = G.ITEM_BASES[r.base]; k = b.slot === 'wings' ? b.name : `Equipamentos ${RAR_PT[r.rarity] || r.rarity}`; }
+    else { const b = G.ITEM_BASES[r.base]; k = b.slot === 'wings' ? b.name : `Equipamentos ${RAR_PT[r.rarity] || r.rarity}${r.attrs ? ` · ${r.attrs} atributos` : ''}`; }
     tot[k] = (tot[k] || 0) + 1;
   }
   return { box: G.ITEM_BASES[box].name, opens: n, level: fake.level, zenAvg: Math.round(zen / n),

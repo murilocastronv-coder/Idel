@@ -52,13 +52,15 @@ function cleanConfig(input) {
   return { enabled: input.enabled !== false, minOptions, maxOptions, pools };
 }
 async function init(helpers) { H = helpers; await SET.load('excellent_options', DEFAULTS); }
-function roll(base) {
+// count (opcional): quantidade exata de opções (sem repetir; limitada às opções válidas do tipo de peça)
+function hasPool(base) { const c = config(); const slot = category((G.ITEM_BASES[base] || {}).slot); return !!(c.enabled && slot && (c.pools[slot] || []).some((x) => x.weight > 0)); }
+function roll(base, want) {
   const c = config();
   const slot = category((G.ITEM_BASES[base] || {}).slot);
   if (!c.enabled || !slot) return [];
   const pool = (c.pools[slot] || []).filter((x) => x.weight > 0);
   if (!pool.length) return [];
-  const count = Math.min(pool.length, c.minOptions + Math.floor(Math.random() * (c.maxOptions - c.minOptions + 1)));
+  const count = Math.min(pool.length, want ? Math.max(1, Math.round(want)) : c.minOptions + Math.floor(Math.random() * (c.maxOptions - c.minOptions + 1)));
   const remaining = pool.slice(), out = [];
   while (out.length < count && remaining.length) {
     const total = remaining.reduce((s, x) => s + x.weight, 0);
@@ -100,4 +102,4 @@ function effects(options) {
 }
 function adminView() { return { config: config(), definitions: DEFINITIONS, pools: POOLS }; }
 async function save(input) { const c = cleanConfig(input || {}); await SET.save('excellent_options', c); return c; }
-module.exports = { init, roll, full6, effects, adminView, save, cleanConfig, DEFAULTS };
+module.exports = { init, roll, hasPool, full6, effects, adminView, save, cleanConfig, DEFAULTS };
