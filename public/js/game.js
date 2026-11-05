@@ -1726,10 +1726,13 @@
         const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : undefined;
         if (act === 'run') drawRunPuff(x, y, now, e.phase, heroFlip, '#c9b98f');
         const goldW = !!(eq && eq.wings === 'wings_angel_gold' && window.PX);
-        if (goldW) { delete eq.wings; PX.wings(ctx, e, x + recoil, y, HERO_H * sc, false); }
+        e.goldWings = goldW; // nos heróis Aether as asas são desenhadas presas ao corpo (heroanim.js)
+        const heroWings = goldW && PX.isHero(info.cls);
+        if (goldW) delete eq.wings;
+        if (goldW && !heroWings) PX.wings(ctx, e, x + recoil, y, HERO_H * sc, false);
         const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, act, now, x + recoil, y, HERO_H * sc, dpr));
         if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - runBob - idleBob, sc, heroFlip, { once, equip: eq });
-        if (goldW) PX.wings(ctx, e, x + recoil, y, HERO_H * sc, true);
+        if (goldW && !heroWings) PX.wings(ctx, e, x + recoil, y, HERO_H * sc, true);
         if (e.dead) continue;
         const top = pxDrawn && e.pxTop != null ? Math.min(y - HERO_H * sc - 4 * dpr, e.pxTop - 6 * dpr) : y - HERO_H * sc - 4 * dpr;
         hpBar(x, top, 16 * zoom, e.hpShow / e.maxHp, isMe ? '#6aa84f' : (e.flags & 1) ? '#ff5a4a' : '#4aa3ff');

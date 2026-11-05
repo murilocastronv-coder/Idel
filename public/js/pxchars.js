@@ -10,7 +10,7 @@
     dark_knight: { run: { src: '/assets/px/lutadora_corre.png', n: 8 }, soco: { src: '/assets/px/lutadora_soco.png', n: 8, ms: 60 }, combo: { src: '/assets/px/lutadora_combo.png', n: 16, ms: 55, half: true }, especial: { src: '/assets/px/lutadora_especial.png', n: 8, ms: 70 } },
   };
   // Heróis do Aether Reborn (Test1): folhas 80×80, 10 colunas = 4 quadros parado (respirando) + 6 andando
-  const AE = (cls) => ({ hero: { src: `/assets/px/heroi_${cls}.png`, idle: 4, walk: 6, fw: 80, foot: [40, 78], h: 74 } });
+  const AE = (cls) => ({ hero: { src: `/assets/px/heroi_${cls}.png`, cls, h: 74 } });
   const AETHER = { dark_knight: AE('dark_knight'), dark_wizard: AE('dark_wizard'), fairy_elf: AE('fairy_elf'), magic_gladiator: AE('magic_gladiator'), dark_lord: AE('dark_lord') };
   const WINGS = '/assets/px/asas_douradas.png';
   const FOOT_X = 30, FOOT_Y = 49, CHAR_H = 38; // ponto de apoio (pés) e altura útil do desenho
@@ -30,6 +30,7 @@
   }
   const PX = {
     has(cls) { return !!setOf()[cls]; },
+    isHero(cls) { const c = setOf()[cls]; return !!(c && c.hero); },
     enabled() { return on; },
     mode() { return mode; },
     set(v) { mode = v === true ? '1' : v === false ? '0' : String(v); if (!['0', '1', 'aether'].includes(mode)) mode = 'aether'; on = mode !== '0'; try { localStorage.setItem('mui_px', mode); } catch (_) { /* nada */ } },
@@ -84,29 +85,17 @@
       return true;
     },
   };
-  // herói Aether: andando = 6 quadros; parado = respiração de 4 quadros; golpe = avanço curto na direção do alvo
+  // herói Aether: animação completa (parado, andando, golpe e asas presas nas costas) fica no heroanim.js
   function drawHero(ctx, e, A, now, x, y, heightPx) {
+    const im = load(A.src);
+    if (!window.HeroAnim || !im.complete || !im.naturalWidth) { e.pxTop = null; return true; }
     const moving = (e.speed || 0) > 10 && !e.dyingAt;
     if (moving) e.pxRow = dirRow(e.vx || 0, e.vy || 0);
     if (e.pxRow == null) e.pxRow = 0;
-    const run = (e.speed || 0) > 65;
-    let col, lunge = 0;
-    const atkAge = e.pxAtk ? now - e.pxAtk : 1e9;
-    if (moving) col = A.idle + Math.floor((now + (e.phase || 0)) / (run ? 90 : 140)) % A.walk;
-    else col = Math.floor((now + (e.phase || 0)) / 220) % A.idle;
-    if (atkAge < 260) lunge = Math.sin(atkAge / 260 * Math.PI) * (e.pxSpecial ? 5 : 3);
-    const im = load(A.src);
-    if (!im.complete || !im.naturalWidth) { e.pxTop = null; return true; }
-    const k = heightPx * 1.15 / A.h;
-    const DIRV = [[0, 1], [-0.7, 0.7], [-1, 0], [-0.7, -0.7], [0, -1], [0.7, -0.7], [1, 0], [0.7, 0.7]][e.pxRow];
-    ctx.save();
-    ctx.imageSmoothingEnabled = false;
-    if (e.dyingAt) { const d = Math.min(1, (now - e.dyingAt) / 600); ctx.globalAlpha = 1 - d * 0.75; }
-    if (e.pxSpecial && atkAge < 400) ctx.filter = `brightness(${1.35 - atkAge / 400 * 0.35})`;
-    const dx = Math.round(x - A.foot[0] * k + DIRV[0] * lunge * k), dy = Math.round(y - A.foot[1] * k + DIRV[1] * lunge * k * 0.5);
-    ctx.drawImage(im, col * A.fw, e.pxRow * A.fw, A.fw, A.fw, dx, dy, Math.round(A.fw * k), Math.round(A.fw * k));
-    e.pxTop = dy + (A.foot[1] - A.h) * k;
-    ctx.restore();
+    const alpha = e.dyingAt ? 1 - Math.min(1, (now - e.dyingAt) / 600) * 0.75 : null;
+    const top = HeroAnim.draw(ctx, { im, wings: e.goldWings ? load(WINGS) : null, cls: A.cls, row: e.pxRow, moving, run: (e.speed || 0) > 65,
+      phase: e.phase || 0, atkAge: e.pxAtk ? performance.now() - e.pxAtk : 1e9, special: !!e.pxSpecial, x, y, sc: heightPx * 1.15 / A.h, now, alpha });
+    e.pxTop = top;
     return true;
   }
   for (const set of [PXSET, AETHER]) for (const c of Object.values(set)) for (const a of Object.values(c)) load(a.src);
