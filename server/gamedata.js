@@ -66,15 +66,15 @@ const MAPS = [
   { id: 'crywolf', name: 'Crywolf', type: 'Floresta gelada · Boss: Balgass', level: 150, playable: true },
   { id: 'kantru', name: 'Kantru', type: 'Ruínas antigas', level: 250 },
   { id: 'aida', name: 'Aida', type: 'Floresta sombria', level: 110, playable: true },
-  { id: 'kanturu_ruins', name: 'Kanturu Ruins', type: 'Ruínas de cristal', level: 310 },
+  { id: 'kanturu_ruins', name: 'Kanturu Ruins', type: 'Ruínas de cristal · nível 300–450', level: 300, playable: true },
   { id: 'barracks', name: 'Barracks', type: 'Quartel de guerra', level: 350 },
   { id: 'refuge', name: 'Refuge', type: 'Santuário sombrio', level: 380 },
   { id: 'swamp_of_peace', name: 'Swamp of Peace', type: 'Pântano', level: 410 },
   { id: 'vulcanus', name: 'Vulcanus', type: 'Zona PvP · Cão de Lava', level: 10, pvp: true, playable: true },
-  { id: 'raklion', name: 'Raklion', type: 'Deserto de pedra', level: 480 },
+  { id: 'raklion', name: 'Raklion', type: 'Geleira de pedra · nível 450–600', level: 450, playable: true },
   { id: 'crywolf_fortress', name: 'Crywolf Fortress', type: 'Fortaleza de guerra', level: 520 },
   { id: 'land_of_trials', name: 'Land of Trials', type: 'Área de desafios', level: 560 },
-  { id: 'acheron', name: 'Acheron', type: 'Abismo de cristais', level: 620 },
+  { id: 'acheron', name: 'Acheron', type: 'Abismo de fogo · nível 600–800 · Boss: Senhor de Acheron', level: 600, playable: true },
   { id: 'debenter', name: 'Debenter', type: 'Cidadela de pedra', level: 680 },
   { id: 'nars', name: 'Nars', type: 'Geleiras eternas', level: 750 },
 ];
@@ -159,6 +159,19 @@ const MONSTERS = {
   frost_wolf: { name: 'Lobo Gélido', sprite: 'lava_hound', tint: '#bfe8ff', level: 150, hp: 13000, dmg: 330, def: 150, exp: 4300, zen: [800, 1850], speed: 76, range: 22, atkMs: 1000, aggro: 180, drop: 0.15, size: 1 },
   glacier_golem: { name: 'Golem Glacial', sprite: 'ice_golem', tint: '#5ab8ff', scale: 1.5, level: 160, hp: 56000, dmg: 470, def: 200, exp: 21000, zen: [3500, 6800], speed: 28, range: 34, atkMs: 1900, aggro: 170, drop: 0.5, size: 1.6, elite: true },
   balgass: { name: 'Balgass', sprite: 'skeleton_king', tint: '#ff3a3a', scale: 1.2, level: 190, hp: 900000, dmg: 760, def: 260, exp: 950000, zen: [120000, 220000], speed: 36, range: 38, atkMs: 1800, aggro: 200, drop: 1, size: 2.6, boss: true, respawnMs: 90 * 60 * 1000 },
+  // ---- Kanturu Ruins (300+) ----
+  crystal_guardian: { name: 'Guardião de Cristal', sprite: 'skeleton', tint: '#4af0e0', level: 300, hp: 28800, dmg: 685, def: 300, exp: 9900, zen: [1500, 3200], speed: 56, range: 22, atkMs: 1200, aggro: 180, drop: 0.15, size: 1 },
+  crystal_hound: { name: 'Cão de Cristal', sprite: 'lava_hound', tint: '#7affff', level: 330, hp: 32200, dmg: 755, def: 330, exp: 11100, zen: [1600, 3400], speed: 76, range: 22, atkMs: 1000, aggro: 190, drop: 0.15, size: 1 },
+  crystal_golem: { name: 'Golem de Cristal', sprite: 'ice_golem', tint: '#3ad8ff', scale: 1.5, level: 360, hp: 153000, dmg: 1175, def: 478, exp: 60250, zen: [6000, 11000], speed: 28, range: 34, atkMs: 1900, aggro: 180, drop: 0.5, size: 1.6, elite: true },
+  // ---- Raklion (450+) ----
+  glacial_skeleton: { name: 'Esqueleto Glacial', sprite: 'skeleton', tint: '#9ad0ff', level: 450, hp: 46000, dmg: 1045, def: 450, exp: 16050, zen: [2200, 4500], speed: 56, range: 22, atkMs: 1200, aggro: 190, drop: 0.15, size: 1 },
+  ice_spider: { name: 'Aranha de Gelo', sprite: 'spider', tint: '#d8f4ff', level: 490, hp: 50700, dmg: 1145, def: 490, exp: 17800, zen: [2400, 4800], speed: 72, range: 20, atkMs: 1100, aggro: 200, drop: 0.15, size: 1 },
+  frost_giant: { name: 'Gigante de Gelo', sprite: 'ice_golem', tint: '#e8f6ff', scale: 1.55, level: 540, hp: 243900, dmg: 1800, def: 718, exp: 98000, zen: [8500, 15000], speed: 28, range: 36, atkMs: 1900, aggro: 190, drop: 0.5, size: 1.65, elite: true },
+  // ---- Acheron (600–800) ----
+  abyss_demon: { name: 'Demônio do Abismo', sprite: 'goblin', tint: '#ff3a3a', level: 600, hp: 64000, dmg: 1415, def: 600, exp: 22700, zen: [3000, 6000], speed: 60, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1.1 },
+  abyss_hound: { name: 'Cão do Abismo', sprite: 'lava_hound', tint: '#ff2a6a', level: 680, hp: 73900, dmg: 1615, def: 680, exp: 26350, zen: [3300, 6600], speed: 78, range: 22, atkMs: 1000, aggro: 210, drop: 0.15, size: 1 },
+  abyss_titan: { name: 'Titã do Abismo', sprite: 'ice_golem', tint: '#6a0a14', scale: 1.6, level: 760, hp: 361300, dmg: 2575, def: 1010, exp: 147700, zen: [12000, 20000], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.7, elite: true },
+  acheron_lord: { name: 'Senhor de Acheron', sprite: 'skeleton_king', tint: '#ff2a1a', scale: 1.3, level: 800, hp: 4900000, dmg: 3825, def: 1200, exp: 6400000, zen: [250000, 450000], speed: 36, range: 40, atkMs: 1800, aggro: 220, drop: 1, size: 2.8, boss: true, respawnMs: 90 * 60 * 1000 },
   skeleton_king: { name: 'Rei Esqueleto', sprite: 'skeleton_king', level: 35, hp: 22000, dmg: 95, def: 30, exp: 26000, zen: [5000, 10000], speed: 38, range: 34, atkMs: 1800, aggro: 170, drop: 1, size: 2.2, boss: true, respawnMs: 90 * 60 * 1000 },
 };
 
@@ -211,6 +224,13 @@ const WORLD = {
     groups: [{ type: 'void_skeleton', count: 10 }, { type: 'demon_hound', count: 8 }], boss: { type: 'kundun', x: 1050, y: 430 } },
   crywolf: { name: 'Crywolf', theme: 'snow', w: 1400, h: 900, minLevel: 150, spawn: [120, 450],
     groups: [{ type: 'frost_wolf', count: 12 }, { type: 'glacier_golem', count: 3 }], boss: { type: 'balgass', x: 1150, y: 450 } },
+  // Mapas do nível 300 ao 800 (2D e 3D): Kanturu Ruins → Raklion → Acheron
+  kanturu_ruins: { name: 'Kanturu Ruins', theme: 'crystal', w: 1400, h: 900, minLevel: 300, spawn: [120, 450],
+    groups: [{ type: 'crystal_guardian', count: 11 }, { type: 'crystal_hound', count: 8 }, { type: 'crystal_golem', count: 2 }] },
+  raklion: { name: 'Raklion', theme: 'glacier', w: 1400, h: 900, minLevel: 450, spawn: [120, 450],
+    groups: [{ type: 'glacial_skeleton', count: 11 }, { type: 'ice_spider', count: 9 }, { type: 'frost_giant', count: 2 }] },
+  acheron: { name: 'Acheron', theme: 'abyss', w: 1500, h: 950, minLevel: 600, spawn: [120, 475],
+    groups: [{ type: 'abyss_demon', count: 11 }, { type: 'abyss_hound', count: 9 }, { type: 'abyss_titan', count: 3 }], boss: { type: 'acheron_lord', x: 1250, y: 475 } },
 };
 
 // Habilidades: ataque básico + 4 poderes por classe (níveis 1, 5, 15 e 30).

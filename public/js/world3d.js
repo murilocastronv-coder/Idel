@@ -177,6 +177,9 @@
     void: { sky: 0x0a0414, fog: [0x140820, 0.015], hemi: [0x9a6ad8, 0x0a0410, 0.6], sun: [0xd09aff, 1.0], ground: () => groundTex('g_void', '#1e1428', 275, 25, 16, false), tint: 0.7, night: true },
     castle: { sky: 0x1a1414, fog: [0x1a1210, 0.02], hemi: [0x8a7a70, 0x1a100a, 0.4], sun: [0xffb070, 1.0], ground: () => flagTex('f_castle', 25, 8, 32, false), tint: 0.5, night: true },
     devilsq: { sky: 0x140816, fog: [0x1a0a1a, 0.022], hemi: [0x9a6ab0, 0x140a14, 0.4], sun: [0xd08aff, 0.8], ground: () => flagTex('f_devil', 300, 14, 22, false), tint: 0.5, night: true },
+    crystal: { sky: 0x061a1e, fog: [0x0a2428, 0.015], hemi: [0x7af0e8, 0x061214, 0.65], sun: [0xa8fff4, 1.1], ground: () => flagTex('f_crystal', 178, 14, 22, false), tint: 0.6, night: true },
+    glacier: { sky: 0x5a7090, fog: [0x8aa0b8, 0.014], hemi: [0xd8eaff, 0x4a5a6a, 0.8], sun: [0xe8f4ff, 1.7], ground: () => groundTex('g_glacier', '#6a7e94', 210, 18, 58, false), tint: 0.45 },
+    abyss: { sky: 0x140404, fog: [0x200806, 0.016], hemi: [0xb05040, 0x140404, 0.55], sun: [0xff8060, 1.1], ground: () => groundTex('g_abyss', '#1e0c0c', 6, 30, 12, false), tint: 0.75, night: true },
     arena: { sky: 0x3a5a8a, fog: [0x7aa0c8, 0.01], hemi: [0xddeeff, 0x4a3a28, 0.7], sun: [0xfff0d8, 2.0], ground: () => groundTex('g_sand', '#c89a5a', 32, 40, 55, false), tint: 0.5 },
   };
   W3.THEMES = THEMES;
@@ -289,13 +292,13 @@
           out.glows.push({ x, z, h: 0.8, color: c, size: 2.2 });
           break;
         }
-        case 'pillar': { const h = (k.h || 40) / K * 1.6; pillars.push({ x, z, h: h / 2, sx: 0.75, sy: h, sz: 0.75, ry: s0, c: k.tone === 'tower' ? col('#9a88c8') : col('#a8a0b0') }); caps.push({ x, z, h: h + 0.1, sx: 0.95, sy: 0.22, sz: 0.95 }); if (k.tone === 'tower') out.glows.push({ x, z: z + 0.4, h: h * 0.7, color: col('#d08aff'), size: 0.6 }); break; }
+        case 'pillar': { const h = (k.h || 40) / K * 1.6; pillars.push({ x, z, h: h / 2, sx: 0.75, sy: h, sz: 0.75, ry: s0, c: k.tone === 'tower' ? col('#9a88c8') : k.tone === 'crystal' ? col('#6a8e8a') : col('#a8a0b0') }); caps.push({ x, z, h: h + 0.1, sx: 0.95, sy: 0.22, sz: 0.95 }); if (k.tone === 'tower' || k.tone === 'crystal') out.glows.push({ x, z: z + 0.4, h: h * 0.7, color: col(k.tone === 'crystal' ? '#4af0e0' : '#d08aff'), size: 0.6 }); break; }
         case 'spike': { const h = (k.h || 40) / K * 1.7; spikes.push({ x, z, h: h / 2, sx: 0.5, sy: h, sz: 0.5, ry: s0 * 3, rz: (s0 - 0.5) * 0.25 }); break; }
         case 'coral': { const c = col(k.col || '#ff7aa0'); for (let i = 0; i < 5; i++) corals.push({ x: x + (rnd() - 0.5) * 0.5, z: z + (rnd() - 0.5) * 0.5, h: 0.35, sx: 0.07, sy: 0.6 + rnd() * 0.7, sz: 0.07, rx: (rnd() - 0.5) * 0.7, rz: (rnd() - 0.5) * 0.7, c }); break; }
         case 'column': { const h = (k.h || 50) / K * (k.broken ? 0.9 : 1.6); columns.push({ x, z, h: h / 2, sx: 0.32, sy: h, sz: 0.32, rz: k.broken ? (s0 - 0.5) * 0.2 : 0, c: col('#7a9a9a') }); caps.push({ x, z, h: h + 0.08, sx: 0.85, sy: 0.18, sz: 0.85 }); break; }
         case 'marble': { const h = (k.h || 50) / K * 1.6; marble.push({ x, z, h: h / 2, sx: 0.32, sy: h, sz: 0.32 }); caps.push({ x, z, h: h + 0.08, sx: 0.85, sy: 0.18, sz: 0.85, c: col('#f0ece4') }); caps.push({ x, z, h: 0.08, sx: 0.85, sy: 0.18, sz: 0.85, c: col('#c8c4bc') }); break; }
         case 'cactus': { const sc = (k.s || 1) * 1.15; cacti.push({ x, z, h: 1.2 * sc, sx: 0.22 * sc, sy: 2.4 * sc, sz: 0.22 * sc }); cacti.push({ x: x - 0.32 * sc, z, h: 1.35 * sc, sx: 0.14 * sc, sy: 0.8 * sc, sz: 0.14 * sc }); cacti.push({ x: x + 0.3 * sc, z, h: 1.0 * sc, sx: 0.14 * sc, sy: 0.7 * sc, sz: 0.14 * sc }); break; }
-        case 'obelisk': { const h = (k.h || 50) / K * 1.7; obelisks.push({ x, z, h: h / 2, sx: 0.55, sy: h, sz: 0.55, ry: s0 }); out.glows.push({ x, z, h: h * 0.6, color: col('#c060ff'), size: 1.4 }); break; }
+        case 'obelisk': { const h = (k.h || 50) / K * 1.7; obelisks.push({ x, z, h: h / 2, sx: 0.55, sy: h, sz: 0.55, ry: s0 }); out.glows.push({ x, z, h: h * 0.6, color: col(k.glow || '#c060ff'), size: 1.4 }); break; }
         default: break;
       }
     }

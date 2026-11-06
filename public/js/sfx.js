@@ -115,7 +115,9 @@
       else if (theme === 'dungeon') { loopNoise(220, 'lowpass', 0.18, 0.05); }
       else if (theme === 'water') { loopNoise(300, 'lowpass', 0.3, 0.2); }
       else if (theme === 'desert' || theme === 'sky') { loopNoise(theme === 'sky' ? 1200 : 600, 'bandpass', 0.2, 0.15); }
-      else if (theme === 'tower' || theme === 'void') { loopNoise(140, 'lowpass', 0.22, 0.07); }
+      else if (theme === 'tower' || theme === 'void' || theme === 'crystal') { loopNoise(140, 'lowpass', 0.22, 0.07); }
+      else if (theme === 'glacier') loopNoise(700, 'bandpass', 0.2, 0.14);
+      else if (theme === 'abyss') { loopNoise(160, 'lowpass', 0.35, 0.3); }
       else if (theme === 'darkforest') { loopNoise(900, 'bandpass', 0.06, 0.1); }
       else loopNoise(1800, 'bandpass', 0.05, 0.08);
       // detalhes aleatórios: pássaros, gotas, estalos

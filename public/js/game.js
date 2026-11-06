@@ -341,6 +341,9 @@
     void: { base: '#1a1024', a: '#22162e', b: '#140c1c', blade: '#2e1e3e' },
     castle: { base: '#2a2428', a: '#322a30', b: '#221c20', blade: '#3a3036' },
     devilsq: { base: '#24141e', a: '#2e1826', b: '#1c0e16', blade: '#3a1e2e' },
+    crystal: { base: '#1a3236', a: '#20403f', b: '#142628', blade: '#2e5a5a' },
+    glacier: { base: '#6a7e94', a: '#7a90a8', b: '#566a80', blade: '#a8c4dc' },
+    abyss: { base: '#1e0c0c', a: '#2a1010', b: '#140808', blade: '#3a1414' },
   };
   // Monta o chão (pintado uma vez) + objetos altos separados (balançam e entram na ordem de profundidade) + luzes
   function buildGround(m) {
@@ -682,6 +685,52 @@
       for (let i = 0; i < 60; i++) { const x = r() * W, y = r() * H; px(x - 1, y - 5, 3, 6, '#d8d0c0'); disc(x, y - 7, 5, '#3affb0'); disc(x - 1, y - 8, 3, '#bfffe8'); light(x, y - 6, 40, '80,255,180', 0.2); }
       for (let i = 0; i < 90; i++) tree(r() * W, r() * H, r() < 0.3 ? 1.4 : 1.1, true);
       for (let i = 0; i < 16; i++) crystal(r() * W, r() * H, ['#2a8a5a', '#bfffd8'], '90,255,170');
+    } else if (m.theme === 'crystal') {
+      // Kanturu Ruins: ruínas de pedra azulada tomadas por cristais ciano, colunas quebradas e runas
+      for (let y = 0; y < H; y += 40) for (let x = (y / 40 % 2) * 20; x < W; x += 40) if (r() < 0.55) {
+        px(x, y, 39, 39, ['#24403f', '#2a4a48', '#1e3634'][(r() * 3) | 0]); px(x, y, 39, 2, '#3a605c'); px(x, y + 37, 39, 2, '#102020');
+      }
+      for (let i = 0; i < 26; i++) { const x = r() * W, y = r() * H, rad = 16 + r() * 16; for (let k = 0; k < 26; k++) { const a = k / 26 * Math.PI * 2; px(x + Math.cos(a) * rad, y + Math.sin(a) * rad * 0.5, 2, 2, '#4af0e0'); } light(x, y, rad * 3, '80,240,220', 0.15); }
+      for (let i = 0; i < 34; i++) {
+        const x = r() * W, y = r() * H, hgt = Math.round(r() < 0.5 ? 18 + r() * 14 : 40 + r() * 22);
+        PKIND = { k: 'pillar', h: hgt, tone: 'crystal' }; prop(x, y, 30, hgt + 12, 15, hgt + 8, (ax, ay) => {
+          px(ax - 11, ay - hgt, 22, hgt, '#1a2c2c'); px(ax - 9, ay - hgt, 18, hgt, '#4a6a68'); px(ax - 9, ay - hgt, 5, hgt, '#6a8e8a');
+          px(ax - 12, ay - hgt - 5, 24, 5, '#6a8e8a'); for (let k = 0; k < 3; k++) px(ax - 9 + r() * 14, ay - hgt + r() * hgt, 3, 2, '#1a2c2c');
+        });
+      }
+      for (let i = 0; i < 44; i++) crystal(r() * W, r() * H, ['#1ab8c8', '#c8fff8'], '90,240,230');
+      for (let i = 0; i < 24; i++) rock(r() * W, r() * H, 1 + r());
+    } else if (m.theme === 'glacier') {
+      // Raklion: geleira de pedra, lagos congelados, picos de gelo e rochas cobertas de neve
+      for (let i = 0; i < 14; i++) water(r() * W, r() * H, 40 + r() * 50, 'ice');
+      for (let i = 0; i < 60; i++) { let x = r() * W, y = r() * H; for (let k = 0; k < 14; k++) { px(x, y, 2, 1, '#4a5a6e'); x += 3; y += (r() - 0.5) * 5; } }
+      for (let i = 0; i < 120; i++) { const x = r() * W, y = r() * H; disc(x, y, 6 + r() * 10, '#e8f2fa'); }
+      for (let i = 0; i < 30; i++) {
+        const x = r() * W, y = r() * H, hgt = Math.round(36 + r() * 30);
+        PKIND = { k: 'crystal', col: ['#9ac8e8', '#e8f8ff'] }; prop(x, y, 26, hgt + 8, 13, hgt + 4, (ax, ay) => { // pico de gelo (no 3D vira cristal de gelo)
+          g.fillStyle = '#9ac8e8'; g.beginPath(); g.moveTo(ax - 9, ay); g.lineTo(ax, ay - hgt); g.lineTo(ax + 9, ay); g.fill();
+          g.fillStyle = '#e8f8ff'; g.beginPath(); g.moveTo(ax - 2, ay - 4); g.lineTo(ax, ay - hgt + 4); g.lineTo(ax + 3, ay - 4); g.fill();
+        });
+      }
+      for (let i = 0; i < 26; i++) crystal(r() * W, r() * H, ['#7ac8ff', '#ffffff'], '180,225,255');
+      for (let i = 0; i < 40; i++) rock(r() * W, r() * H, 1 + r() * 1.4);
+    } else if (m.theme === 'abyss') {
+      // Acheron: chão negro rachado com lava, obeliscos de pedra vulcânica e cristais vermelhos
+      for (let i = 0; i < W * H / 1400; i++) px(r() * W, r() * H, 3 + r() * 12, 2, r() < 0.5 ? '#2e1212' : '#0a0404');
+      for (let i = 0; i < 50; i++) {
+        let x = r() * W, y = r() * H;
+        for (let k = 0; k < 30; k++) { px(x - 2, y - 2, 5, 5, '#3a0806'); px(x - 1, y - 1, 3, 3, '#ff4a1a'); px(x, y, 1, 1, '#ffd36b'); if (k % 10 === 0) light(x, y, 50, '255,80,30', 0.25); x += 3 + r() * 3; y += (r() - 0.5) * 8; }
+      }
+      for (let i = 0; i < 10; i++) { const x = r() * W, y = r() * H; water(x, y, 26 + r() * 30, 'lava'); emitter(x, y, 'flame'); }
+      for (let i = 0; i < 34; i++) {
+        const x = r() * W, y = r() * H, hgt = Math.round(40 + r() * 34);
+        PKIND = { k: 'obelisk', h: hgt, glow: '#ff3a1a' }; prop(x, y, 28, hgt + 10, 14, hgt + 6, (ax, ay) => {
+          g.fillStyle = '#120606'; g.beginPath(); g.moveTo(ax - 9, ay); g.lineTo(ax - 4, ay - hgt); g.lineTo(ax + 4, ay - hgt); g.lineTo(ax + 9, ay); g.fill();
+          px(ax - 2, ay - hgt + 10, 4, hgt - 20, '#7a1408'); px(ax - 1, ay - hgt + 14, 2, 6, '#ffb02e');
+        });
+      }
+      for (let i = 0; i < 28; i++) crystal(r() * W, r() * H, ['#a01414', '#ff9a6a'], '255,70,40');
+      for (let i = 0; i < 14; i++) torch(r() * W, r() * H);
     } else if (m.theme === 'void') {
       // Kalima: terra do vazio, rachaduras roxas, obeliscos e cristais escuros
       for (let i = 0; i < W * H / 1400; i++) px(r() * W, r() * H, 3 + r() * 12, 2, r() < 0.5 ? '#2a1a3a' : '#0a0610');
@@ -717,7 +766,7 @@
   function load3D() {
     const files = ['vendor/three/three.min.js', 'vendor/three/GLTFLoader.js', 'vendor/three/SkeletonUtils.js', 'vendor/three/RoomEnvironment.js',
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
-      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=3', 'world3d-actors.js?v=4', 'world3d-fx.js?v=1'];
+      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=4', 'world3d-actors.js?v=4', 'world3d-fx.js?v=1'];
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();
@@ -765,7 +814,7 @@
   let quality = (() => { try { return qStore && qStore.getItem('mui_quality'); } catch (_) { return null; } })() || (window.innerWidth < 700 ? 'media' : 'alta');
   if (!QUALITY[quality]) quality = 'media';
   function setQuality(q) { if (!QUALITY[q]) return; quality = q; try { if (qStore) qStore.setItem('mui_quality', q); } catch (_) { /* sem armazenamento */ } S.parts = []; if (is3d) W3().setQuality(q); }
-  const DARKNESS = { dungeon: 0.62, lava: 0.4, water: 0.3, tower: 0.55, darkforest: 0.5, void: 0.58 };
+  const DARKNESS = { dungeon: 0.62, lava: 0.4, water: 0.3, tower: 0.55, darkforest: 0.5, void: 0.58, crystal: 0.5, glacier: 0.15, abyss: 0.6 };
 
   // ---------- partículas do ambiente (com limite fixo, reaproveitadas) ----------
   S.parts = [];
@@ -818,6 +867,13 @@
       case 'darkforest': Object.assign(p, Math.random() < (QUALITY[quality].atmosphere ? 0.6 : 0.3)
         ? { kind: 'rain', y: camY - 10 + Math.random() * vh * 0.3, vx: -30, vy: 240 + Math.random() * 60, life: 0.4 + Math.random() * 0.8, col: '#9ab8c8', s: 1 }
         : { kind: 'spark', vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 6, life: 4 + Math.random() * 3, col: ['#c8ff6a', '#6affb8'][(Math.random() * 2) | 0], s: 2 }); break;
+      case 'crystal': Object.assign(p, { kind: 'spark', vx: (Math.random() - 0.5) * 5, vy: -4 - Math.random() * 6, life: 4 + Math.random() * 2, col: ['#4af0e0', '#c8fff8', '#7affff'][(Math.random() * 3) | 0], s: 2 }); break;
+      case 'glacier': Object.assign(p, Math.random() < 0.1
+        ? { kind: 'gust', x: camX - 30, vx: 110 + Math.random() * 60, vy: 8, life: 6, col: '#ffffff', s: 1 }
+        : { kind: 'snow', y: camY - 4, vx: 18 + Math.random() * 14, vy: 30 + Math.random() * 26, life: 12, col: '#ffffff', s: Math.random() < 0.3 ? 3 : 2 }); break;
+      case 'abyss': Object.assign(p, Math.random() < 0.75
+        ? { kind: 'ember', y: camY + vh + 4, vx: (Math.random() - 0.5) * 8, vy: -18 - Math.random() * 24, life: 4 + Math.random() * 3, col: ['#ff3a1a', '#ffb02e', '#ff6a8a'][(Math.random() * 3) | 0], s: 2 }
+        : { kind: 'ash', y: camY - 4, vx: 3, vy: 8 + Math.random() * 8, life: 10, col: '#4a3030', s: 2 }); break;
       case 'void': Object.assign(p, { kind: 'ember', y: camY + vh + 4, vx: (Math.random() - 0.5) * 6, vy: -12 - Math.random() * 16, life: 5, col: ['#a02aff', '#ff8ae8', '#5a1a8a'][(Math.random() * 3) | 0], s: 2 }); break;
       default: return null;
     }
@@ -877,7 +933,7 @@
     }
   }
 
-  const ATMOSPHERE = { town: '230,185,112', noria: '105,204,139', snow: '126,189,255', dungeon: '190,125,92', lava: '255,96,42', water: '70,196,224', tower: '175,120,255', desert: '255,196,117', sky: '190,221,255', darkforest: '112,255,168', void: '194,92,255', castle: '255,145,102', devilsq: '213,92,255' };
+  const ATMOSPHERE = { town: '230,185,112', noria: '105,204,139', snow: '126,189,255', dungeon: '190,125,92', lava: '255,96,42', water: '70,196,224', tower: '175,120,255', desert: '255,196,117', sky: '190,221,255', darkforest: '112,255,168', void: '194,92,255', castle: '255,145,102', devilsq: '213,92,255', crystal: '80,240,220', glacier: '170,215,255', abyss: '255,70,40' };
   function drawAtmosphere(now) {
     const Q = QUALITY[quality];
     if (!S.map || !Q.atmosphere) return;
