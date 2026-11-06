@@ -90,16 +90,19 @@ function killExp(p, T, def, pk) {
 }
 // bônus de EXP por mapa (servidor continua Hard): progressivo, cada mapa de caça dá um pouco mais que o anterior (+5% por mapa)
 // Vulcanus +5% · Dungeon +10% · Dungeon 2 +15% · Atlans +20% · Lost Tower +25% · Dungeon 3 +30% · Tarkan +35% · Icarus +40% · Aida +45% · Kalima +50% · Crywolf +55%
-const MAP_STEP = 0.05;
-let MAP_RANK = null;
+// Os 3 últimos mapas (nível 300+) dão um pouco mais que todos os outros: Kanturu Ruins +80% · Raklion +90% · Acheron +100%
+const MAP_STEP = 0.05, TOP_START = 0.8, TOP_STEP = 0.1, TOP_LEVEL = 300;
+let MAP_BONUS = null;
 function mapExp(def) {
   if (!def || def.safe || def.arena || !def.minLevel || def.minLevel <= 1) return 1;
-  if (!MAP_RANK) {
-    MAP_RANK = new Map(Object.values(G.WORLD).filter((d) => d.groups && d.groups.length && !d.safe && !d.arena && d.minLevel > 1)
-      .sort((a, b) => a.minLevel - b.minLevel).map((d, i) => [d, i + 1]));
+  if (!MAP_BONUS) {
+    MAP_BONUS = new Map();
+    const list = Object.values(G.WORLD).filter((d) => d.groups && d.groups.length && !d.safe && !d.arena && d.minLevel > 1).sort((a, b) => a.minLevel - b.minLevel);
+    let n = 0, top = 0;
+    for (const d of list) MAP_BONUS.set(d, d.minLevel >= TOP_LEVEL ? TOP_START + TOP_STEP * top++ : MAP_STEP * ++n);
   }
-  const r = MAP_RANK.get(def);
-  return 1 + (r ? r * MAP_STEP : Math.min(150, def.minLevel) / 3 / 100);
+  const b = MAP_BONUS.get(def);
+  return 1 + (b != null ? b : Math.min(150, def.minLevel) / 3 / 100);
 }
 // chefes continuam com o bônus antigo do mapa (não aumentou): até +50%
 function bossMapExp(def) {
