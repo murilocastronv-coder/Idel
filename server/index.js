@@ -264,7 +264,7 @@ route('GET', '/api/status', async (req) => {
 
 route('GET', '/api/gamedata', async () => ({
   classes: game.CLASSES, maps: game.MAPS, rarities: game.RARITIES, items: game.ITEMS, limits: game.LIMITS,
-  world: Object.entries(game.WORLD).map(([id, w]) => ({ id, name: w.name, theme: w.theme, minLevel: w.minLevel, safe: !!w.safe, pvp: !!w.pvp, expBonus: Math.round((require('./world').mapExp(w) - 1) * 100),
+  world: Object.entries(game.WORLD).map(([id, w]) => ({ id, name: w.name, theme: w.theme, minLevel: w.minLevel, safe: !!w.safe, pvp: !!w.pvp, expBonus: Math.round((require('./world').mapExp(w) - 1) * 100), bossExpBonus: Math.round((require('./world').bossMapExp(w) - 1) * 100),
     monsters: [...w.groups.map((g) => game.MONSTERS[g.type].name), ...(w.boss ? [game.MONSTERS[w.boss.type].name + ' (boss)'] : [])] })),
   shop: game.SHOP, sets: game.SETS, classRules: CLS.publicRules(),
   vip: { plans: VIP.publicPlans(), days: VIP.DAYS, currency: VIP.CURRENCY, enabled: VIP.enabled() },

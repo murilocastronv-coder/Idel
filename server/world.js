@@ -67,11 +67,12 @@ function autoFarmMapId(p) {
 function expToNext(level) { return Math.floor(100 * Math.pow(level, 2.1) + 200); }
 const XP = () => G.GAME_MODE.expRate;
 // ---------- EXP por monstro (Hard, equilibrado) ----------
-// Matar um monstro do seu nível dá 2% da EXP do nível (Free), 2,8% (VIP Ouro) ou 3,2% (VIP Diamante).
+// Matar um monstro do seu nível dá 0,5% da EXP do nível (Free), 0,7% (VIP Ouro) ou 0,8% (VIP Diamante).
 // Monstro mais fraco que você dá menos (até 0,1%), mais forte dá um pouco mais (até +30%). Os monstros grandes/raros do mapa
 // (golens, Death Knight, Bone Mage...) valem 2,5×. Por cima ainda entra o bônus do mapa. Chefes: 15% do nível, dividido pelo dano.
-// % da barra por monstro do seu nível, pelo plano da conta (já inclui o VIP; não multiplica de novo): Free 2% · VIP Ouro 2,8% · VIP Diamante 3,2%
-const KILL_PCT = { 0: 0.02, 1: 0.028, 2: 0.032 }, BOSS_PCT = 0.15;
+// % da barra por monstro do seu nível, pelo plano da conta (já inclui o VIP; não multiplica de novo): Free 0,5% · VIP Ouro 0,7% · VIP Diamante 0,8%
+// (reduzido a 1/4: antes 2% / 2,8% / 3,2% davam ~4 níveis por hora na Dungeon)
+const KILL_PCT = { 0: 0.005, 1: 0.007, 2: 0.008 }, BOSS_PCT = 0.15;
 function levelFactor(diff) {
   if (diff >= 0) return 1 + Math.min(10, diff) * 0.03;
   if (diff >= -3) return 1;
@@ -87,9 +88,14 @@ function eliteK(T, def) {
 function killExp(p, T, def, pk) {
   return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * levelFactor((T.level || 1) - p.level) * eliteK(T, def) * mapExp(def) * XP()));
 }
-// bônus de EXP por mapa (servidor continua Hard): mapas mais altos dão um pouco mais de EXP por monstro
-// cada mapa um pouco mais: Vulcanus +3% · Dungeon +8% · Atlans +15% … Kalima +43% · Crywolf +50%
+// bônus de EXP por mapa (servidor continua Hard): quanto mais alto o mapa, mais EXP; a última cidade (Crywolf) é a que mais dá
+// Vulcanus +7% · Dungeon +17% · Dungeon 2 +23% · Atlans +30% · Lost Tower +37% · Dungeon 3 +43% · Tarkan +50% · Icarus +60% · Aida +73% · Kalima +87% · Crywolf +100%
 function mapExp(def) {
+  if (!def || def.safe || def.arena || !def.minLevel || def.minLevel <= 1) return 1;
+  return 1 + Math.round(Math.min(150, def.minLevel) / 1.5) / 100;
+}
+// chefes continuam com o bônus antigo do mapa (não aumentou): até +50%
+function bossMapExp(def) {
   if (!def || def.safe || def.arena || !def.minLevel || def.minLevel <= 1) return 1;
   return 1 + Math.round(Math.min(150, def.minLevel) / 3) / 100;
 }
@@ -1528,7 +1534,7 @@ class World {
       distributed += baseZen;
       const pk = p.perks();
       const zen = Math.round(baseZen * pk.zen);
-      const exp = Math.round(expToNext(p.level) * BOSS_PCT * mapExp(map && map.def) * pk.exp * XP() * Math.max(0.1, share));
+      const exp = Math.round(expToNext(p.level) * BOSS_PCT * bossMapExp(map && map.def) * pk.exp * XP() * Math.max(0.1, share));
       p.exp += exp; p.zen += zen; p.bossesKilled++;
       const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
       if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
@@ -1839,4 +1845,4 @@ class World {
   }
 }
 
-module.exports = { mapExp, World, expToNext, gearVisual };
+module.exports = { mapExp, bossMapExp, World, expToNext, gearVisual };
