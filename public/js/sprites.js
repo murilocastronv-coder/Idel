@@ -251,17 +251,33 @@
     // de costas a asa/capa fica por cima do corpo; nas outras vistas, atrás
     const fromBack = /_back$/.test(action);
     // asa nova: atrás do corpo de frente/de lado (de lado fica estreita, em perspectiva), por cima de costas; bate devagar
+    // asa nova presa nas costas: a raiz fica fixa no ombro e só a ponta abre e fecha devagar.
+    // De frente/de costas: cada asa sai do meio das costas. De lado: a asa sai das costas (atrás do herói),
+    // com a outra asa um pouco acima e mais apagada.
     const newWing = (path, glow) => {
       const im = opts.white ? recolored('L:' + path, img(path), meta, false, null, true) : img(path);
       if (!im) return false;
       const side = !/_(front|back)$/.test(action);
-      const flap = Math.sin((Number(t) || 0) / 300);
-      const base = 1.4 * scale, w = im.width * base * (side ? 0.62 : 1) * (1 + flap * 0.05), h = im.height * base * (1 - flap * 0.02);
-      const top = (meta.top || 72) * scale, cy = -top * 0.66 - Math.round(flap * scale);
-      const cx = side ? -7 * scale : 0;
+      const open = 0.84 + 0.16 * (Math.sin((Number(t) || 0) / 320) + 1) / 2;
+      const base = 1.4 * scale, half = Math.floor(im.width / 2), ih = im.height;
+      const top = (meta.top || 72) * scale, rootY = -top * 0.7;
+      const h = Math.round(ih * base);
       ctx.save();
       if (glow && !opts.white) { ctx.shadowColor = glow; ctx.shadowBlur = 8 * scale; }
-      ctx.drawImage(im, Math.round(cx - w / 2), Math.round(cy - h / 2), Math.round(w), Math.round(h));
+      if (side) {
+        const back = -4 * scale;                  // costas (o desenho do herói olha para a direita)
+        const w = Math.round(half * base * open);
+        const ga = ctx.globalAlpha;
+        ctx.globalAlpha = ga * 0.7;               // asa do outro lado, atrás
+        const w2 = Math.round(w * 0.86), h2 = Math.round(h * 0.9);
+        ctx.drawImage(im, 0, 0, half, ih, Math.round(back + 3 * scale - w2), Math.round(rootY - 2 * scale - h2 / 2), w2, h2);
+        ctx.globalAlpha = ga;
+        ctx.drawImage(im, 0, 0, half, ih, Math.round(back - w), Math.round(rootY - h / 2), w, h);
+      } else {
+        const w = Math.round(half * base * open), gap = Math.round(scale);
+        ctx.drawImage(im, 0, 0, half, ih, -gap - w, Math.round(rootY - h / 2), w, h);
+        ctx.drawImage(im, half, 0, im.width - half, ih, gap, Math.round(rootY - h / 2), Math.round((im.width - half) * base * open), h);
+      }
       ctx.restore();
       return true;
     };
