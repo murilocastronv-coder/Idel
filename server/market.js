@@ -108,13 +108,8 @@ async function list(world, p, msg) {
     if (price > REAL.MAX_CENTS) return say(`O preço máximo em reais é ${REAL.brl(REAL.MAX_CENTS)}.`);
     const srow = REAL.enabled() ? await REAL.sellerRow(p.accountId) : null;
     if (srow && REAL.ready(srow)) { seller = srow; mode = 'connect'; }
-    else {
-      const w = await WALLET.wallet(p.accountId);
-      if (!w.pix_key) return say('Para vender em reais, conecte sua conta Stripe ou cadastre sua chave Pix (aba Vender → R$).');
-      const no = await WALLET.canListPix(p.accountId, price);
-      if (no) return say(no);
-      mode = 'pix'; pixKey = w.pix_key;
-    }
+    // vendas em reais só pelo Stripe (o Pix direto entre jogadores foi desligado por causa de golpes)
+    else return say(REAL.enabled() ? 'Para vender em reais, conecte e termine o cadastro da sua conta Stripe (aba Vender → R$). O pagamento por Pix entre jogadores foi desativado para evitar golpes.' : 'As vendas em reais estão desligadas no momento.');
   } else if (cur === 'usd') {
     if (!REAL.enabled()) return say('Vendas em dólar ainda não estão ligadas no servidor.');
     if (!Number.isFinite(price) || price < WALLET.USD_MIN) return say(`O preço mínimo em dólar é ${WALLET.usd(WALLET.USD_MIN)}.`);
@@ -168,7 +163,7 @@ async function buy(world, p, msg) {
     if (Number(msg.price) !== Number(r.price)) return say('O preço mudou. Confira de novo.');
     const mode = r.pay_mode || 'connect';
     if (mode === 'platform') return WALLET.buyUsd(p, r);
-    if (mode === 'pix') return WALLET.buyPix(p, r);
+    if (mode === 'pix') return say('Este anúncio era por Pix, que foi desativado para evitar golpes. Compre só itens pagos pelo Stripe.');
     return REAL.act(p, { ...msg, action: 'buyReal' });
   }
   if (String(r.seller_char) === String(p.charId)) return say('Você não pode comprar o seu próprio anúncio. Use "Minhas vendas" para cancelar.');

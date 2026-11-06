@@ -2525,11 +2525,10 @@
         if (!st || !w) sb.innerHTML = '<p class="muted" style="margin:0">Verificando suas formas de recebimento…</p>';
         else if (st.enabled && st.ready) { mode = 'connect'; sb.innerHTML = `<div class="row"><span>✔ Conta Stripe conectada (${esc(st.countries[st.country] || st.country)}). Cada venda cai direto na sua conta; o jogo desconta 10% na hora.</span><button class="btn small" type="button" id="mk-dash">Ver meus recebimentos</button></div>`; }
         else {
-          if (w.pixKey) mode = 'pix';
-          sb.innerHTML = `<p style="margin:0"><b>Receber por Pix:</b> o comprador paga direto na sua chave Pix e você confirma no jogo. A comissão de 10% vai acumulando; quando chegar a ${mkMoney(w.limit, 'brl')} você recebe um link para pagar (prazo de ${w.graceH} h, senão a conta é bloqueada no mercado e nas trocas).</p>
-            <div class="row"><input id="mk-pixkey" maxlength="120" placeholder="Sua chave Pix (CPF, e-mail, telefone ou aleatória)" value="${esc(w.pixKey)}"><button class="btn small" type="button" id="mk-pixsave">Salvar chave</button></div>
-            ${st.enabled ? `<p class="muted" style="margin:0">Ou conecte uma conta Stripe para receber por cartão com a comissão descontada automaticamente${st.connected ? ' (seu cadastro ainda não terminou)' : ''}:</p>
-            <div class="row">${st.connected ? '' : `<select id="mk-country">${Object.entries(st.countries).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select>`}<button class="btn small" type="button" id="mk-connect">${st.connected ? 'Continuar cadastro no Stripe' : 'Conectar conta Stripe'}</button>${st.connected ? '<button class="btn small" type="button" id="mk-recheck">Verificar de novo</button>' : ''}</div>` : ''}`;
+          // vendas em reais só pelo Stripe: o Pix direto entre jogadores foi desligado por causa de golpes
+          sb.innerHTML = `<p style="margin:0"><b>Vendas em reais só pelo Stripe.</b> O comprador paga com cartão no Stripe e o valor cai direto na sua conta, já com os 10% do mercado descontados. O pagamento por Pix entre jogadores foi desativado para evitar golpes.</p>
+            ${st.enabled ? `<p class="muted" style="margin:0">Conecte sua conta Stripe para vender em reais${st.connected ? ' (seu cadastro ainda não terminou)' : ''}:</p>
+            <div class="row">${st.connected ? '' : `<select id="mk-country">${Object.entries(st.countries).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select>`}<button class="btn small" type="button" id="mk-connect">${st.connected ? 'Continuar cadastro no Stripe' : 'Conectar conta Stripe'}</button>${st.connected ? '<button class="btn small" type="button" id="mk-recheck">Verificar de novo</button>' : ''}</div>` : ''}${st.enabled ? '' : '<p class="muted" style="margin:0">As vendas em reais estão desligadas no momento.</p>'}`;
         }
         body.appendChild(sb);
       } else if (cur === 'usd') {
