@@ -198,6 +198,11 @@
   const MON_H = { slime: 26, goblin: 46, goblin_elite: 46, spider: 30, skeleton: 52, skeleton_king: 62 };
   const HERO_H = 56;
   const HERO_HIP = 0.4; // altura do quadril no desenho do herói (fração da altura)
+  // medidas reais de cada herói (manifest): altura até o topo da cabeça, quadril para a montaria e cores da perna
+  const heroDim = (cls) => {
+    const m = window.Sprites && Sprites.meta('heroes', cls);
+    return { h: (m && m.top) || HERO_H, hip: (m && m.hip) || HERO_H * HERO_HIP, leg: (m && m.leg) || '#4a3a2c', boot: (m && m.boot) || '#6a4a2a' };
+  };
   const monSprite = (m) => m.sprite + (m.tint === 'elite' ? '_elite' : '');
 
   // efeitos extras de um golpe: círculo mágico, raio, meteoro, arco de espada, faíscas e luz no impacto
@@ -1638,8 +1643,8 @@
           gr.addColorStop(0, 'rgba(170,90,255,.45)'); gr.addColorStop(1, 'rgba(170,90,255,0)');
           ctx.fillStyle = gr; ctx.fillRect(x - r, y - 14 * zoom - r, r * 2, r * 2); ctx.restore();
           Sprites.monster(ctx, 'goblin', 'idle', now, x, y, sc * 1.05, false, { tint: '#8a3aff' });
-          label(e.name, x, y - HERO_H * sc - 4 * dpr, '#d8b0ff');
-          label('Chaos Machine', x, y - HERO_H * sc - 17 * dpr, '#ff9ad8', 10);
+          label(e.name, x, y - heroDim('dark_knight').h * sc - 4 * dpr, '#d8b0ff');
+          label('Chaos Machine', x, y - heroDim('dark_knight').h * sc - 17 * dpr, '#ff9ad8', 10);
           continue;
         }
         if (e.kind === 'sevina' || e.kind === 'marlon') {
@@ -1650,8 +1655,8 @@
           ctx.fillStyle = g4; ctx.fillRect(x - r2, y - 14 * zoom - r2, r2 * 2, r2 * 2); ctx.restore();
           if (e.kind === 'sevina') Sprites.hero(ctx, 'fairy_elf', { hair: 1, skin: 0 }, 'idle_front', now, x, y, sc, true, { equip: { w: null, armor: 'phoenix', helm: null } });
           else Sprites.hero(ctx, 'dark_knight', { hair: 4, skin: 1 }, 'idle_front', now, x, y, sc, true, { equip: { helm: 'storm', armor: 'storm', gloves: 'storm', boots: 'storm' } });
-          label(e.name, x, y - HERO_H * sc - 4 * dpr, e.kind === 'sevina' ? '#bfe8ff' : '#ffcf7a');
-          label('Evolução de classe', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
+          label(e.name, x, y - heroDim('dark_knight').h * sc - 4 * dpr, e.kind === 'sevina' ? '#bfe8ff' : '#ffcf7a');
+          label('Evolução de classe', x, y - heroDim('dark_knight').h * sc - 17 * dpr, '#9affd0', 10);
           continue;
         }
         if (e.kind === 'archangel') {
@@ -1661,8 +1666,8 @@
           g6.addColorStop(0, 'rgba(255,215,120,.45)'); g6.addColorStop(1, 'rgba(0,0,0,0)');
           ctx.fillStyle = g6; ctx.fillRect(x - r4, y - 16 * zoom - r4, r4 * 2, r4 * 2); ctx.restore();
           Sprites.hero(ctx, 'fairy_elf', { hair: 2, skin: 0 }, 'idle_front', now, x, y, sc, false, { equip: { armor: 'dragon', helm: 'dragon', wings: 'wings_heaven' } });
-          label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffe0a0');
-          label('Blood Castle', x, y - HERO_H * sc - 17 * dpr, '#ff6a6a', 10);
+          label(e.name, x, y - heroDim('dark_knight').h * sc - 4 * dpr, '#ffe0a0');
+          label('Blood Castle', x, y - heroDim('dark_knight').h * sc - 17 * dpr, '#ff6a6a', 10);
           continue;
         }
         if (e.kind === 'castle_guard' || e.kind === 'charon' || e.kind === 'teleport') {
@@ -1674,8 +1679,8 @@
           ctx.fillStyle = g5; ctx.fillRect(x - r3, y - 14 * zoom - r3, r3 * 2, r3 * 2); ctx.restore();
           if (guard) Sprites.hero(ctx, 'dark_knight', { hair: 0, skin: 1 }, 'idle_front', now, x, y, sc, true, { equip: { helm: 'abyss', armor: 'abyss', gloves: 'abyss', boots: 'abyss' } });
           else Sprites.hero(ctx, 'dark_wizard', { hair: 3, skin: 0 }, 'idle_front', now, x, y, sc, false, { equip: { armor: 'abyss', helm: 'abyss' } });
-          label(e.name, x, y - HERO_H * sc - 4 * dpr, guard ? '#ffb0a0' : '#d8b0ff');
-          label(e.kind === 'teleport' ? 'Viajar para outro mapa' : guard ? 'Chaos Castle' : 'Devil Square', x, y - HERO_H * sc - 17 * dpr, guard ? '#ff7a5a' : '#c88aff', 10);
+          label(e.name, x, y - heroDim('dark_knight').h * sc - 4 * dpr, guard ? '#ffb0a0' : '#d8b0ff');
+          label(e.kind === 'teleport' ? 'Viajar para outro mapa' : guard ? 'Chaos Castle' : 'Devil Square', x, y - heroDim('dark_knight').h * sc - 17 * dpr, guard ? '#ff7a5a' : '#c88aff', 10);
           continue;
         }
         if (e.kind === 'guild') {
@@ -1685,22 +1690,22 @@
           glow.addColorStop(0, 'rgba(255,211,107,.38)'); glow.addColorStop(1, 'rgba(255,211,107,0)');
           ctx.fillStyle = glow; ctx.fillRect(x - rg, y - 14 * zoom - rg, rg * 2, rg * 2); ctx.restore();
           Sprites.hero(ctx, 'fairy_elf', { hair: 2, skin: 1 }, 'idle_front', now, x, y, sc, false, { equip: { armor: 'phoenix', gloves: 'phoenix', boots: 'phoenix' } });
-          label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffe7a0');
-          label('Guildas e membros', x, y - HERO_H * sc - 17 * dpr, '#ffd36b', 10);
+          label(e.name, x, y - heroDim('dark_knight').h * sc - 4 * dpr, '#ffe7a0');
+          label('Guildas e membros', x, y - heroDim('dark_knight').h * sc - 17 * dpr, '#ffd36b', 10);
           continue;
         }
         if (e.kind === 'smith') {
           drawForge(x, y, now);
           const ph = now % 1600, hit = ph < 500;
           Sprites.hero(ctx, 'dark_knight', { hair: 2, skin: 2 }, hit ? 'attack' : 'idle', hit ? ph : now, x - 10 * zoom, y, sc, false, { once: hit, equip: { armor: 'bronze', gloves: 'bronze', w: 'sword' } });
-          label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffb46a');
-          label('Aprimorar +9 a +15', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
+          label(e.name, x, y - heroDim('dark_knight').h * sc - 4 * dpr, '#ffb46a');
+          label('Aprimorar +9 a +15', x, y - heroDim('dark_knight').h * sc - 17 * dpr, '#9affd0', 10);
           continue;
         }
         if (e.kind === 'vault') { drawVaultChest(x, y, now); label(e.name, x, y - 30 * zoom - 4 * dpr, '#ffd36b'); label('Guardar itens e Zen', x, y - 30 * zoom - 17 * dpr, '#9affd0', 10); continue; }
         Sprites.hero(ctx, 'dark_wizard', { hair: 1, skin: 1 }, 'idle_front', now, x, y, sc, true);
-        label(e.name, x, y - HERO_H * sc - 4 * dpr, '#ffd36b');
-        label('Loja', x, y - HERO_H * sc - 17 * dpr, '#9affd0', 10);
+        label(e.name, x, y - heroDim('dark_knight').h * sc - 4 * dpr, '#ffd36b');
+        label('Loja', x, y - heroDim('dark_knight').h * sc - 17 * dpr, '#9affd0', 10);
         continue;
       }
       const [x, y] = toScreen(e.rx, e.ry);
@@ -1784,6 +1789,7 @@
         if (act === 'run') drawRunPuff(x, y, now, e.phase, heroFlip, '#c9b98f');
         // montaria (Fenrir Dourado/Vermelho): o Fenrir anda embaixo e o herói vai sentado nas costas,
         // com os mesmos movimentos (parado, andando, atacando, usando poder) da cintura para cima
+        const dim = heroDim(info.cls);
         const mountV = eq && eq.pet && window.Fenrir && !e.dead ? Fenrir.variantOf(eq.pet) : null;
         const mounted = !!mountV;
         let lift = 0, seatY = 0, mountMoving = false, mp = 0, fdir = heroFlip ? -1 : 1;
@@ -1794,11 +1800,11 @@
           shadowAt(x, y, 20 * zoom);
           Fenrir.draw(ctx, x + fdir * 2 * mp, y, mp, heroFlip, mountMoving, now + (e.phase || 0), mountV);
           seatY = y + fBob - Fenrir.SEAT(mp) + mp;          // linha das costas
-          lift = y - seatY - HERO_H * sc * HERO_HIP;        // quadril do herói em cima das costas
+          lift = y - seatY - dim.hip * sc;                 // quadril do herói em cima das costas
         } else if (eq && eq.pet && window.Fenrir && Fenrir.isPet(eq.pet) && !e.dead) {
           // Imp / Fadinha: voa ao lado do ombro, sem ficar em cima do personagem
           const side = heroFlip ? 1 : -1;
-          Fenrir.drawPet(ctx, eq.pet, x + side * 27 * sc, y, sc * 2.2, now + (e.phase || 0), HERO_H * sc * 0.55);
+          Fenrir.drawPet(ctx, eq.pet, x + side * 27 * sc, y, sc * 2.2, now + (e.phase || 0), dim.h * sc * 0.55);
         }
         if (mounted) {
           // só a parte de cima do herói aparece: as pernas ficam do outro lado do corpo do Fenrir
@@ -1810,10 +1816,10 @@
         if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, riderAct, t, x + recoil, y - lift - (mounted ? 0 : runBob) - (mounted ? 0 : idleBob), sc, heroFlip, { once, equip: eq });
         if (mounted) {
           ctx.restore();
-          drawRiderLeg(x + recoil, seatY, sc, fdir, mountMoving ? Math.sin((now + (e.phase || 0)) / 110 * Math.PI) : 0);
+          drawRiderLeg(x + recoil, seatY, sc, fdir, mountMoving ? Math.sin((now + (e.phase || 0)) / 110 * Math.PI) : 0, dim.leg, dim.boot);
         }
         if (e.dead) continue;
-        const top = (pxDrawn && e.pxTop != null ? Math.min(y - lift - HERO_H * sc - 4 * dpr, e.pxTop - 6 * dpr) : y - lift - HERO_H * sc - 4 * dpr);
+        const top = (pxDrawn && e.pxTop != null ? Math.min(y - lift - dim.h * sc - 4 * dpr, e.pxTop - 6 * dpr) : y - lift - (mounted ? 0 : runBob) - dim.h * sc - 6 * dpr);
         hpBar(x, top, 16 * zoom, e.hpShow / e.maxHp, isMe ? '#6aa84f' : (e.flags & 1) ? '#ff5a4a' : '#4aa3ff');
         const pk = e.flags & 1, inDuel = e.flags & 2, pvpOn = e.flags & 4;
         const enemy = !isMe && hostileTo(e);
@@ -1825,17 +1831,17 @@
     }
   }
   // perna do lado de cá do cavaleiro: coxa para a frente e canela descendo pelo flanco do Fenrir, com bota
-  function drawRiderLeg(x, seatY, sc, dir, swing) {
+  function drawRiderLeg(x, seatY, sc, dir, swing, legCol = '#4a3a2c', bootCol = '#6a4a2a') {
     const k = sc, hx = x - dir * 1 * k, hy = seatY - 1 * k;
     const kx = hx + dir * 7 * k, ky = hy + 2 * k;
     const fx = kx + dir * (1 + swing) * k, fy = ky + 9 * k;
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.strokeStyle = '#120c08'; ctx.lineWidth = 6.2 * k;
     ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(kx, ky); ctx.lineTo(fx, fy); ctx.stroke();
-    ctx.strokeStyle = '#4a3a2c'; ctx.lineWidth = 4.2 * k;
+    ctx.strokeStyle = legCol; ctx.lineWidth = 4.2 * k;
     ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(kx, ky); ctx.lineTo(fx, fy); ctx.stroke();
     ctx.fillStyle = '#120c08'; ctx.fillRect(Math.round(fx - 3 * k + dir * 1 * k), Math.round(fy - 1 * k), Math.round(6.5 * k), Math.round(3.6 * k));
-    ctx.fillStyle = '#6a4a2a'; ctx.fillRect(Math.round(fx - 2.2 * k + dir * 1 * k), Math.round(fy - 0.3 * k), Math.round(5 * k), Math.round(2.2 * k));
+    ctx.fillStyle = bootCol; ctx.fillRect(Math.round(fx - 2.2 * k + dir * 1 * k), Math.round(fy - 0.3 * k), Math.round(5 * k), Math.round(2.2 * k));
     ctx.restore();
   }
   function hpBar(cx, y, w, frac, color) {

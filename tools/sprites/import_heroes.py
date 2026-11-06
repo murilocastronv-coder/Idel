@@ -109,6 +109,19 @@ def step(cells):
     return out
 
 
+def body_info(c):
+    """Altura (pés até o topo), quadril para montaria e cores da perna/bota, do herói parado de lado."""
+    bb = c.getbbox()
+    top = PIVOT[1] - bb[1]
+    hip = round(top * 0.45)
+    px = c.load()
+
+    def median(y0, y1):
+        cols = sorted((px[x, y][:3] for y in range(y0, y1) for x in range(FW) if px[x, y][3] > 200), key=sum)
+        return '#%02x%02x%02x' % cols[len(cols) // 2] if cols else '#4a3a2c'
+    return {'top': top, 'hip': hip, 'leg': median(PIVOT[1] - hip + 4, PIVOT[1] - 6), 'boot': median(PIVOT[1] - 5, PIVOT[1] + 1)}
+
+
 def avoid_skin_keys(im, keys):
     """O jogo troca as cores exatas de skinKeys (tom de pele). A arte nova não usa esse sistema,
     então mexe 1 ponto nessas cores para nada ser recolorido sem querer."""
@@ -149,7 +162,7 @@ def build(src):
         n = [len(r) for r in rows]
         meta = man['heroes'][cls]
         meta.update({
-            'fw': FW, 'fh': FH, 'pivot': PIVOT, 'full': True, 'hairKeys': None, 'defaultHair': None,
+            'fw': FW, 'fh': FH, 'pivot': PIVOT, 'full': True, **body_info(rows[0][0]), 'hairKeys': None, 'defaultHair': None,
             'actions': {
                 'idle': {'row': 0, 'frames': n[0], 'fps': 6},
                 'walk': {'row': 1, 'frames': n[1], 'fps': 10},

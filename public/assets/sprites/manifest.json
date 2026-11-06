@@ -1,5 +1,5 @@
 {
- "version": 11,
+ "version": 12,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",
@@ -74,7 +74,11 @@
    },
    "hairKeys": null,
    "defaultHair": null,
-   "full": true
+   "full": true,
+   "top": 72,
+   "hip": 32,
+   "leg": "#680a35",
+   "boot": "#680a35"
   },
   "dark_wizard": {
    "sheet": "heroes/dark_wizard.png",
@@ -149,7 +153,11 @@
    },
    "hairKeys": null,
    "defaultHair": null,
-   "full": true
+   "full": true,
+   "top": 70,
+   "hip": 32,
+   "leg": "#2c3b59",
+   "boot": "#241a27"
   },
   "fairy_elf": {
    "sheet": "heroes/fairy_elf.png",
@@ -224,7 +232,11 @@
    },
    "hairKeys": null,
    "defaultHair": null,
-   "full": true
+   "full": true,
+   "top": 68,
+   "hip": 31,
+   "leg": "#282338",
+   "boot": "#25142a"
   },
   "magic_gladiator": {
    "sheet": "heroes/magic_gladiator.png",
@@ -299,7 +311,11 @@
    },
    "hairKeys": null,
    "defaultHair": null,
-   "full": true
+   "full": true,
+   "top": 72,
+   "hip": 32,
+   "leg": "#291238",
+   "boot": "#110a1d"
   },
   "dark_lord": {
    "sheet": "heroes/dark_lord.png",
@@ -374,7 +390,11 @@
    },
    "hairKeys": null,
    "defaultHair": null,
-   "full": true
+   "full": true,
+   "top": 71,
+   "hip": 32,
+   "leg": "#641436",
+   "boot": "#151324"
   },
   "summoner": {
    "sheet": "heroes/summoner.png",
@@ -449,7 +469,11 @@
    },
    "hairKeys": null,
    "defaultHair": null,
-   "full": true
+   "full": true,
+   "top": 70,
+   "hip": 32,
+   "leg": "#2c3b59",
+   "boot": "#241a27"
   }
  },
  "monsters": {
