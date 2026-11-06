@@ -363,6 +363,13 @@
       const a = meta.actions[action] ? action : 'idle', f = frameOf(meta, a, t, false)[1];
       return { bob: ((meta.seatBob || {})[a] || [])[f] || 0, seat: meta.seat };
     },
+    // só o quanto a sela sobe/desce neste quadro (para desenhar o herói antes da montaria)
+    mountBob: (name, action, t) => {
+      const meta = S.manifest && S.manifest.mounts && S.manifest.mounts[name];
+      if (!meta) return 0;
+      const a = meta.actions[action] ? action : 'idle', f = frameOf(meta, a, t, false)[1];
+      return ((meta.seatBob || {})[a] || [])[f] || 0;
+    },
     // ícone da montaria (bolsa e loja): quadro parado de lado, centralizado no quadrado
     mountIcon: (ctx, name, x, y, size, tint) => {
       const meta = S.manifest && S.manifest.mounts && S.manifest.mounts[name];
