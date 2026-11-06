@@ -553,7 +553,7 @@ Object.assign(ITEM_BASES, {
   kundun_ouro: { name: 'Box Kundun Ouro', slot: 'box', icon: 'box', ic: '#ffc83a', req: 1, stack: 99, rarity: 'epic', value: 40000, special: true, tier: 3,
     desc: 'Caixa da Invasão Dourada. Equipamentos épicos, lendários e ancestrais, asas e capas, joias raras e materiais poderosos.' },
   kundun_promo: { name: 'Box Kundun Promocional', slot: 'box', icon: 'box', ic: '#ef4350', req: 1, stack: 99, rarity: 'epic', value: 5000, special: true, tier: 2,
-    desc: 'Caixa promocional com equipamentos raros e épicos semi-full, melhorias limitadas até +8 e materiais. Não contém itens lendários nem ancestrais.' },
+    desc: 'Caixa promocional com equipamentos raros e épicos semi-full, melhorias limitadas até +5 e materiais. Não contém itens lendários nem ancestrais.' },
 });
 
 // asa de nível 1 -> asa de nível 2 (o Magic Gladiator transforma Satan/Heaven em Darkness)
@@ -601,7 +601,7 @@ const WING_EVOLVE = { wings_satan: 'wings_dragon', wings_heaven: 'wings_soul', w
    const pack = PREMIUM_SET_PACKS[packIndex];
    const tier = packIndex + 1;
    pack.tier = tier;
-   pack.plus = 5 + Math.floor(((tier - 1) * 10) / (PREMIUM_SET_PACKS.length - 1));
+   pack.plus = 11; // todos os conjuntos semi-full da loja vêm +11 (máximo)
    const setId = pack.id;
    for (let n=0;n<PREMIUM_PARTS.length;n++) {
      const [slot,label] = PREMIUM_PARTS[n];

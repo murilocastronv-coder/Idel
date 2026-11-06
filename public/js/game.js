@@ -2840,7 +2840,7 @@
           const isBox = p.type === 'box';
           const detail = p.type === 'reset' ? 'Reset de atributos para o personagem selecionado'
             : isBox
-              ? p.qty + ' caixas · itens raros/épicos · até +8 · semi-full'
+              ? p.qty + ' caixas · itens raros/épicos · até +5 · semi-full'
               : p.pieces + ' peças · nível ' + p.req + '+ · melhoria +' + p.plus + ' · todas as classes';
           const attrsHtml = p.type === 'set' ? '<details class="premium-stats"><summary>Ver os 6 atributos antes de comprar</summary><ul>' + Object.entries(p.attributes || {}).map(([label, value]) => '<li><span>' + esc(label) + '</span><b>' + esc(value) + '</b></li>').join('') + '</ul><small>Excellent semi-full: cada peça recebe 2–4 opções aleatórias, definidas no resgate.</small></details>' : '';
           return '<article class="premium-card" style="--set-tone:' + esc(p.tone) + '">' +
