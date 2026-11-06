@@ -155,6 +155,7 @@
     if (!m.arena) { AR.hud = null; S.arenaZone = null; arenaHud(); }
     ban.classList.remove('show'); void ban.offsetWidth; ban.classList.add('show');
     if (window.Sfx) Sfx.ambient(m.theme);
+    if (window.Music) Music.play(m.map || m.theme, m.theme);   // música original de cada mapa
     const built = buildGround(m);
     S.ground = built.canvas; S.props = built.props; S.lights = built.lights; S.waters = built.waters || []; S.emit = built.emit || []; S.vfx = []; S.dlights = [];
     groundArt(m, () => {
@@ -3344,6 +3345,7 @@
         <select id="cfg-quality"><option value="baixa">Baixa (celular fraco)</option><option value="media">Média</option><option value="alta">Alta</option><option value="ultra">Ultra (mais efeitos)</option></select></div>
       <div class="cfg-row"><label for="cfg-vol">Volume <b id="cfg-vol-v"></b></label><input type="range" id="cfg-vol" min="0" max="100" step="5"></div>
       <label class="cfg-check"><input type="checkbox" id="cfg-mute"> Sem som</label>
+      <label class="cfg-check"><input type="checkbox" id="cfg-music"> Música dos mapas</label>
       <h3>Habilidades no automático</h3>
       ${S.char.skills.filter((s) => s.id !== 'basic').map((s) => `<label class="cfg-check"><input type="checkbox" data-skill="${s.id}" ${s.on ? 'checked' : ''}> ${esc(s.name)} <small class="muted">${s.mana} MP · ${(s.cd / 1000).toFixed(1)}s</small></label>`).join('')}
       <p class="muted">Com o AUTO ligado, seu herói procura monstros, ataca, usa poções e continua evoluindo por até 8 horas enquanto você está fora.</p>`;
@@ -3361,8 +3363,9 @@
     $('#cfg-gfx').value = is3d ? '3d' : '2d'; $('#cfg-gfx').onchange = (e) => setGfx(e.target.value);
     if (window.Sfx) {
       $('#cfg-vol').value = Math.round(Sfx.volume * 100); $('#cfg-vol-v').textContent = Math.round(Sfx.volume * 100) + '%';
-      $('#cfg-vol').oninput = (e) => { Sfx.setVolume(Number(e.target.value) / 100); $('#cfg-vol-v').textContent = e.target.value + '%'; };
-      $('#cfg-mute').checked = Sfx.muted; $('#cfg-mute').onchange = (e) => Sfx.setMuted(e.target.checked);
+      $('#cfg-vol').oninput = (e) => { Sfx.setVolume(Number(e.target.value) / 100); if (window.Music) Music.refresh(); $('#cfg-vol-v').textContent = e.target.value + '%'; };
+      $('#cfg-mute').checked = Sfx.muted; $('#cfg-mute').onchange = (e) => { Sfx.setMuted(e.target.checked); if (window.Music) Music.refresh(); };
+      if (window.Music) { $('#cfg-music').checked = Music.enabled; $('#cfg-music').onchange = (e) => Music.setEnabled(e.target.checked); }
     }
     const oa = $('#open-admin'); if (oa) oa.onclick = () => openPanel('admin');
   }
