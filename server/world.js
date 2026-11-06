@@ -164,6 +164,8 @@ function itemValue(it) {
   return Math.round((20 + (b ? b.req : 1) * 12) * (RARITY_ORDER.indexOf(it.rarity) + 1) * (1 + (it.plus || 0) * 0.2)) * q;
 }
 function canUse(p, it) { return EQUIP.meets(p, it); }
+// velocidade de movimento: montaria equipada (Fenrir Dourado +30%)
+function moveK(p) { const m = p.items && p.items.find((i) => i.equipped && (G.ITEM_BASES[i.base] || {}).slot === 'pet'); return 1 + ((m && G.ITEM_BASES[m.base].speed) || 0); }
 function rollRarity(table) {
   const w = G.RARITY_WEIGHTS[table];
   const total = Object.values(w).reduce((a, b) => a + b, 0);
@@ -204,6 +206,7 @@ function gearVisual(items) {
     if (!b) continue;
     if (b.slot === 'weapon') { out.w = it.base; out.wr = it.rarity; out.wp = it.plus || 0; if (isExc(it)) out.we = 1; }
     else if (b.slot === 'wings') { out.wings = it.base; out.wingRarity = it.rarity; out.wingPlus = it.plus || 0; }
+    else if (b.slot === 'pet') { out.pet = it.base; }
     else if (['helm', 'armor', 'pants', 'gloves', 'boots'].includes(b.slot)) {
       if (b.slot !== 'pants' && b.set) out[b.slot] = b.set;
       plusSum += Number(it.plus) || 0; if (isExc(it)) exc++;
@@ -1745,13 +1748,13 @@ class World {
       if (near) { DROPS.pickup(this, p, near); if (p.pickTarget === near.gid) { p.pickTarget = null; p.moveTo = null; } }
       else if (p.auto && !p.moveTo && !(p.target && p.target.isPlayer) && !(map.def.safe && !p.duel && !trainingCombat)) {
         const far = DROPS.ownedNear(p, map, 320);
-        if (far && !(p.target && p.target.target === p && dist(p, p.target) < 60)) { this.stepToward(p, far, PLAYER_SPEED * dt); return; }
+        if (far && !(p.target && p.target.target === p && dist(p, p.target) < 60)) { this.stepToward(p, far, PLAYER_SPEED * moveK(p) * dt); return; }
       }
     }
     // movimento manual tem prioridade
-    if (p.moveTo) { this.stepToward(p, p.moveTo, PLAYER_SPEED * dt); if (dist(p, p.moveTo) < 2) p.moveTo = null; return; }
+    if (p.moveTo) { this.stepToward(p, p.moveTo, PLAYER_SPEED * moveK(p) * dt); if (dist(p, p.moveTo) < 2) p.moveTo = null; return; }
     // evento com área segura diminuindo: o automático volta para dentro antes de lutar
-    if (p.auto && map.def.arena) { const e = ARENA.escape(p); if (e) { p.target = null; this.stepToward(p, e, PLAYER_SPEED * dt); return; } }
+    if (p.auto && map.def.arena) { const e = ARENA.escape(p); if (e) { p.target = null; this.stepToward(p, e, PLAYER_SPEED * moveK(p) * dt); return; } }
     if (map.def.safe && !p.duel && !trainingCombat) return;
 
     // escolhe alvo
@@ -1789,7 +1792,7 @@ class World {
     if (!sk) sk = skills[0];
     const d = dist(p, t);
     const reach = sk.range + 8 * (t.T ? t.T.size : 1);
-    if (d > reach) { this.stepToward(p, t, PLAYER_SPEED * dt, reach - 2); return; }
+    if (d > reach) { this.stepToward(p, t, PLAYER_SPEED * moveK(p) * dt, reach - 2); return; }
     if (now >= p.nextAtk) this.attack(p, sk, t, now);
   }
 

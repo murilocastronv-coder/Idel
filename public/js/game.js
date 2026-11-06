@@ -17,7 +17,7 @@
   const RAR = { common: '#c8c8c8', uncommon: '#5fd35f', rare: '#4aa3ff', epic: '#b45cff', legendary: '#ffb02e', ancestral: '#ff4d4d' };
   const RAR_NAME = { common: 'Comum', uncommon: 'Incomum', rare: 'Raro', epic: 'Épico', legendary: 'Lendário', ancestral: 'Ancestral' };
   const RAR_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancestral'];
-  const SLOT_NAME = { helm: 'Elmo', armor: 'Armadura', pants: 'Calças', gloves: 'Luvas', boots: 'Botas', weapon: 'Arma', shield: 'Escudo', wings: 'Asas', necklace: 'Colar', ring: 'Anel', ring2: 'Anel 2' };
+  const SLOT_NAME = { helm: 'Elmo', armor: 'Armadura', pants: 'Calças', gloves: 'Luvas', boots: 'Botas', weapon: 'Arma', shield: 'Escudo', wings: 'Asas', necklace: 'Colar', ring: 'Anel', ring2: 'Anel 2', pet: 'Montaria' };
   const STAT_PT = { str: 'Força', agi: 'Agilidade', ene: 'Energia', vit: 'Vitalidade', cmd: 'Comando' };
   const ACCENT = (it) => it.ic || RAR[it.rarity];
   const FX_COLOR = { fire: '#ff7a3d', energy: '#59c7ff', ice: '#bff0ff', arrow: '#efe4c8', arrow3: '#efe4c8', dark: '#c06bff',
@@ -766,7 +766,7 @@
   function load3D() {
     const files = ['vendor/three/three.min.js', 'vendor/three/GLTFLoader.js', 'vendor/three/SkeletonUtils.js', 'vendor/three/RoomEnvironment.js',
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
-      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=4', 'world3d-actors.js?v=4', 'world3d-fx.js?v=1'];
+      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=4', 'world3d-actors.js?v=5', 'world3d-fx.js?v=1'];
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();
@@ -1775,10 +1775,18 @@
         }
         const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : undefined;
         if (act === 'run') drawRunPuff(x, y, now, e.phase, heroFlip, '#c9b98f');
-        const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, act, now, x + recoil, y, HERO_H * sc, dpr));
-        if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - runBob - idleBob, sc, heroFlip, { once, equip: eq });
+        // montaria (Fenrir Dourado): desenhada embaixo; o herói sobe e fica sentado nas costas
+        const mounted = !!(eq && eq.pet === 'fenrir_gold' && window.Fenrir && !e.dead);
+        let lift = 0;
+        if (mounted) {
+          const mp = sc * 2.1;
+          Fenrir.draw(ctx, x, y, mp, heroFlip, act === 'run' || act === 'walk' || (e.speed || 0) > 10, now + (e.phase || 0));
+          lift = Fenrir.SEAT(mp) - 9 * sc;
+        }
+        const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, act, now, x + recoil, y - lift, HERO_H * sc, dpr));
+        if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - lift - (mounted ? 0 : runBob) - idleBob, sc, heroFlip, { once, equip: eq });
         if (e.dead) continue;
-        const top = pxDrawn && e.pxTop != null ? Math.min(y - HERO_H * sc - 4 * dpr, e.pxTop - 6 * dpr) : y - HERO_H * sc - 4 * dpr;
+        const top = (pxDrawn && e.pxTop != null ? Math.min(y - lift - HERO_H * sc - 4 * dpr, e.pxTop - 6 * dpr) : y - lift - HERO_H * sc - 4 * dpr);
         hpBar(x, top, 16 * zoom, e.hpShow / e.maxHp, isMe ? '#6aa84f' : (e.flags & 1) ? '#ff5a4a' : '#4aa3ff');
         const pk = e.flags & 1, inDuel = e.flags & 2, pvpOn = e.flags & 4;
         const enemy = !isMe && hostileTo(e);
@@ -2849,19 +2857,20 @@
         '<div class="premium-grid">' + catalog.map(p => {
           const isBox = p.type === 'box';
           const detail = p.type === 'reset' ? 'Reset de atributos para o personagem selecionado'
+            : p.type === 'mount' ? 'Montaria · +' + p.plus + ' · Semi Full · todas as classes'
             : isBox
               ? p.qty + ' caixas · itens raros/épicos · até +5 · semi-full'
               : p.pieces + ' peças · nível ' + p.req + '+ · melhoria +' + p.plus + ' · todas as classes';
-          const attrsHtml = p.type === 'set' ? '<details class="premium-stats"><summary>Ver os 6 atributos antes de comprar</summary><ul>' + Object.entries(p.attributes || {}).map(([label, value]) => '<li><span>' + esc(label) + '</span><b>' + esc(value) + '</b></li>').join('') + '</ul><small>Excellent semi-full: cada peça recebe 2–4 opções aleatórias, definidas no resgate.</small></details>' : '';
+          const attrsHtml = p.type === 'mount' ? '<details class="premium-stats" open><summary>Atributos fixos (iguais em toda compra)</summary><ul>' + Object.entries(p.attributes || {}).map(([label, value]) => '<li><span>' + esc(label) + '</span><b>' + esc(value) + '</b></li>').join('') + '</ul><small>Semi Full: 3 opções Excellent fixas. Equipe no espaço Montaria da Bolsa.</small></details>' : p.type === 'set' ? '<details class="premium-stats"><summary>Ver os 6 atributos antes de comprar</summary><ul>' + Object.entries(p.attributes || {}).map(([label, value]) => '<li><span>' + esc(label) + '</span><b>' + esc(value) + '</b></li>').join('') + '</ul><small>Excellent semi-full: cada peça recebe 2–4 opções aleatórias, definidas no resgate.</small></details>' : '';
           return '<article class="premium-card" style="--set-tone:' + esc(p.tone) + '">' +
             '<canvas width="72" height="72" data-premium-icon="' + esc(p.id) + '"></canvas><div><b>' + esc(p.name) + '</b>' +
             '<small>' + detail + '</small>' + attrsHtml + '<span>' + brl.format(p.price / 100) + '</span>' +
-            '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled || (p.type === 'reset' && !(RSI.info && !RSI.info.free)) ? ' disabled' : '') + '>' + (p.type === 'reset' && RSI.info && RSI.info.free ? 'Use o reset grátis no Herói' : data.enabled ? (p.type === 'reset' ? 'Comprar reset · R$ 5,00' : isBox ? 'Comprar caixas' : 'Comprar conjunto') : 'Pagamento indisponível') + '</button>' + (p.type === 'set' ? '<button class="btn small premium-preview-trigger" type="button" data-premium-preview="' + esc(p.id) + '">Ver no personagem</button>' : '') + '</div></article>';
+            '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled || (p.type === 'reset' && !(RSI.info && !RSI.info.free)) ? ' disabled' : '') + '>' + (p.type === 'reset' && RSI.info && RSI.info.free ? 'Use o reset grátis no Herói' : data.enabled ? (p.type === 'reset' ? 'Comprar reset · R$ 5,00' : isBox ? 'Comprar caixas' : p.type === 'mount' ? 'Comprar Fenrir' : 'Comprar conjunto') : 'Pagamento indisponível') + '</button>' + (p.type === 'set' ? '<button class="btn small premium-preview-trigger" type="button" data-premium-preview="' + esc(p.id) + '">Ver no personagem</button>' : '') + '</div></article>';
         }).join('') + '</div></section>';
       Array.from(holder.querySelectorAll('[data-premium-icon]')).forEach((canvas, i) => {
         const product = catalog[i];
         const pc = canvas.getContext('2d');
-        const piece = product && product.type === 'set' ? { base: product.id + '_' + ['armor','wings','sword','helm','shield'][i % 5] }
+        const piece = product && product.type === 'mount' ? { base: 'fenrir_gold' } : product && product.type === 'set' ? { base: product.id + '_' + ['armor','wings','sword','helm','shield'][i % 5] }
           : product && product.type === 'box' ? { base: 'kundun_promo', icon: 'box' } : product && product.type === 'reset' ? { base: 'reset_status', icon: 'scroll' } : null;
         if (!(piece && PA.drawItem(pc, piece, 0, 0, 72)))
           PA.drawIcon(pc, product && product.type === 'box' ? 'box' : ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, product ? product.tone : '#d82f3f');

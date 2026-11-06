@@ -484,6 +484,9 @@ const ITEM_BASES = {
   wings_life: { name: 'Wings of Life', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#54ed9b', req: 120, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true },
   wings_dragon_l1: { name: 'Wings of Dragon', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#ff7840', req: 120, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true },
   wings_spirit_l1: { name: 'Wings of Spirit', slot: 'wings', cat: 'wings', tier: 1, icon: 'wings', ic: '#86eaff', req: 120, def: 12, wdmg: 12, absorb: 12, rarity: 'epic', value: 60000, special: true },
+  // Montaria (slot 'pet'): Fenrir Dourado, só no Shopping Cash. Defesa e vida (+11), 3 opções fixas semi-full e +30% de velocidade de movimento.
+  fenrir_gold: { name: 'Fenrir Dourado', slot: 'pet', cat: 'pet', icon: 'fenrir', ic: '#ffd36b', req: 1, def: 30, hp: 300, speed: 0.3, rarity: 'legendary', value: 80000, special: true, seasonal: true,
+    desc: 'Montaria lendária de pelagem dourada. +30% de velocidade de movimento enquanto equipada.' },
   // asas de nível 2
   wings_dragon: { name: 'Wings of Dragon', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#ff5a2a', req: 120, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true },
   wings_soul: { name: 'Wings of Soul', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#5ac8ff', req: 120, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true },
@@ -542,7 +545,7 @@ const EVOLUTIONS = {
   dark_lord: ['Dark Lord', 'Lord Emperor'],
 };
 // lugares do corpo, na ordem da tela
-const EQUIP_SLOTS = ['helm', 'armor', 'pants', 'gloves', 'boots', 'weapon', 'shield', 'wings', 'necklace', 'ring', 'ring2'];
+const EQUIP_SLOTS = ['helm', 'armor', 'pants', 'gloves', 'boots', 'weapon', 'shield', 'wings', 'necklace', 'ring', 'ring2', 'pet'];
 
 // ---------- Invasão Dourada: caixas abertas na bolsa ----------
 Object.assign(ITEM_BASES, {

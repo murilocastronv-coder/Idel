@@ -8,7 +8,7 @@ const G = require('./gamedata');
 
 const CLASSES = Object.keys(G.CLASSES);
 const SLOTS = G.EQUIP_SLOTS;
-const SLOT_PT = { helm: 'Elmo', armor: 'Armadura', pants: 'Calças', gloves: 'Luvas', boots: 'Botas', weapon: 'Arma', shield: 'Escudo', wings: 'Asas/Capa', necklace: 'Colar', ring: 'Anel', ring2: 'Anel' };
+const SLOT_PT = { helm: 'Elmo', armor: 'Armadura', pants: 'Calças', gloves: 'Luvas', boots: 'Botas', weapon: 'Arma', shield: 'Escudo', wings: 'Asas/Capa', necklace: 'Colar', ring: 'Anel', ring2: 'Anel', pet: 'Montaria' };
 // grupos em que o administrador pode trocar o lugar de um item
 const SLOT_GROUPS = [['helm', 'armor', 'pants', 'gloves', 'boots'], ['necklace', 'ring'], ['weapon'], ['shield'], ['wings']];
 const SHIELD_CLASSES = ['dark_knight', 'dark_wizard', 'dark_lord'];

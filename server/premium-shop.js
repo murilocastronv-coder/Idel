@@ -8,6 +8,13 @@ const CHAOS = require('./chaos');
 const KEY = () => process.env.STRIPE_SECRET_KEY || '';
 const CURRENCY = 'brl';
 const RESET_STATUS = require('./reset-status');
+// Montaria do Shopping Cash: Fenrir Dourado +11 semi-full (3 opções fixas, iguais em toda compra)
+const FENRIR = { id:'fenrir-gold', name:'Fenrir Dourado +11 · Semi Full', price:6000, qty:1, tone:'#ffd36b', type:'mount', base:'fenrir_gold', plus:11 };
+const FENRIR_OPTS = [
+  { id:'excellent_damage', value:7 },
+  { id:'damage_reduction', value:3 },
+  { id:'max_hp', value:60 },
+];
 const STAT_RESET = { id:'stat-reset', name:'Reset de atributos', price:500, qty:1, tone:'#e8b84a', type:'reset' };
 // Pacotes fixos de Box Kundun Promocional: conteúdo semi-full, sem itens ancestrais/full.
 const BOX_PROMOS = [
@@ -19,7 +26,7 @@ let config = {};
 function findProduct(id) {
   const set = G.PREMIUM_SET_PACKS.find((p) => p.id === id);
   if (set) return { ...set, type:'set' };
-  return BOX_PROMOS.find((p) => p.id === id) || (id === STAT_RESET.id ? STAT_RESET : null);
+  return BOX_PROMOS.find((p) => p.id === id) || (id === FENRIR.id ? FENRIR : null) || (id === STAT_RESET.id ? STAT_RESET : null);
 }
 
 function setAttributes(pack) {
@@ -45,6 +52,16 @@ function setAttributes(pack) {
   };
 }
 
+function fenrirOptions() {
+  const defs = require('./excellent').adminView().definitions || {};
+  return FENRIR_OPTS.map((o) => { const d = defs[o.id] || {}; return { id:o.id, name:d.name || o.id, value:o.value, unit:d.unit || '', effect:d.effect }; });
+}
+function fenrirAttributes() {
+  const b = G.ITEM_BASES.fenrir_gold, m = (G.RARITY_MULT.legendary || 1) * UPG.mult('fenrir_gold', FENRIR.plus);
+  const out = { 'Defesa (+11)': Math.round(b.def * m), 'Vida (+11)': Math.round(b.hp * m), 'Velocidade de movimento': '+' + Math.round(b.speed * 100) + '%' };
+  for (const o of fenrirOptions()) out[o.name] = '+' + o.value + o.unit;
+  return out;
+}
 function publicCatalog(admin = false) {
   const sets = G.PREMIUM_SET_PACKS.map((p) => {
     const c = config[p.id] || {};
@@ -52,7 +69,10 @@ function publicCatalog(admin = false) {
       req:p.req, plus:p.plus, tier:p.tier, tone:p.tone, pieces:12, type:'set', attributes:setAttributes(p), excellentOptions:'2–4 opções Excellent semi-full por peça', admin };
   });
   const boxes = BOX_PROMOS.map((p) => ({ ...p, enabled:true, pieces:p.qty, req:1, plus:0, admin }));
-  return sets.concat(boxes, [{ ...STAT_RESET, enabled:true, pieces:1, req:1, plus:0, admin }]);
+  const c = config[FENRIR.id] || {};
+  const fenrir = { ...FENRIR, price:Number.isInteger(c.price)?c.price:FENRIR.price, enabled:c.enabled !== false, pieces:1, req:1, admin,
+    attributes:fenrirAttributes(), excellentOptions:'3 opções Excellent fixas (semi-full)' };
+  return [fenrir].concat(sets, boxes, [{ ...STAT_RESET, enabled:true, pieces:1, req:1, plus:0, admin }]);
 }
 async function init() {
   await db.query(`CREATE TABLE IF NOT EXISTS premium_orders (
@@ -107,7 +127,9 @@ async function checkout({account, productId, baseUrl, back, charId}) {
   f.set('line_items[0][price_data][unit_amount]',String(amount)); f.set('line_items[0][price_data][product_data][name]',product.name);
   f.set('line_items[0][price_data][product_data][description]', product.type==='reset'
     ? 'MU Idle Legends · um reset de atributos para o personagem escolhido'
-    : product.type==='box'
+    : product.type==='mount'
+      ? 'MU Idle Legends · montaria Fenrir Dourado +11 semi-full · resgate por personagem'
+      : product.type==='box'
       ? `MU Idle Legends · pacote com ${product.qty} Boxes Kundun semi-full · resgate por personagem`
       : 'MU Idle Legends · conjunto semi-full de 12 peças · resgate por personagem');
   let buyerCharId = resetCharacterId;
@@ -153,6 +175,7 @@ async function pending(accountId) {
 function itemList(productId) {
   const promo=BOX_PROMOS.find((p)=>p.id===productId);
   if (promo) return Array.from({length:promo.qty},()=>({base:'kundun_promo',rarity:'epic',plus:0}));
+  if (productId === FENRIR.id) return [{ base:FENRIR.base, rarity:'legendary', plus:FENRIR.plus, options:fenrirOptions() }];
   const p=G.PREMIUM_SET_PACKS.find(x=>x.id===productId); if(!p) throw new Error('Produto inválido.');
   const suffix=['helm','armor','pants','gloves','boots','wings','pendant','ring1','ring2','sword','bow','shield'];
   return suffix.map((s)=>({base:`${p.id}_${s}`,rarity:s==='wings'?'epic':'rare',plus:s==='wings'?0:p.plus}));

@@ -153,6 +153,33 @@
       }
     });
   }
+  // Fenrir Dourado (montaria): lobo dourado feito de formas simples, cabeça para +z
+  function fenrirModel() {
+    const g = new THREE.Group();
+    const gold = new MSM({ color: 0xe8b84a, metalness: 0.75, roughness: 0.32, emissive: 0x5a3a08, emissiveIntensity: 0.35 });
+    const dark = new MSM({ color: 0xa8761a, metalness: 0.6, roughness: 0.4 });
+    const light = new MSM({ color: 0xffe08a, metalness: 0.5, roughness: 0.35, emissive: 0x8a6a1a, emissiveIntensity: 0.4 });
+    const eye = new MSM({ color: 0xff3a1a, emissive: 0xff3a1a, emissiveIntensity: 2 });
+    const box = (w, h, d, m, x, y, z, rx = 0) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.rotation.x = rx; o.castShadow = true; g.add(o); return o; };
+    box(0.5, 0.42, 1.05, gold, 0, 0.62, 0);                  // corpo
+    box(0.56, 0.5, 0.42, light, 0, 0.7, 0.36);               // peito e juba
+    const head = new THREE.Group(); head.position.set(0, 0.92, 0.62); g.add(head);
+    const hb = (w, h, d, m, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = true; head.add(o); return o; };
+    hb(0.36, 0.32, 0.36, gold, 0, 0, 0); hb(0.22, 0.18, 0.3, light, 0, -0.06, 0.26);
+    hb(0.08, 0.16, 0.06, gold, -0.12, 0.22, -0.04); hb(0.08, 0.16, 0.06, gold, 0.12, 0.22, -0.04);
+    hb(0.05, 0.05, 0.02, eye, -0.09, 0.05, 0.18); hb(0.05, 0.05, 0.02, eye, 0.09, 0.05, 0.18);
+    const tail = new THREE.Group(); tail.position.set(0, 0.74, -0.52); g.add(tail);
+    const tm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.5), light); tm.position.set(0, 0.08, -0.22); tm.rotation.x = -0.5; tail.add(tm);
+    const legs = [];
+    for (const [x, z] of [[-0.17, 0.36], [0.17, 0.36], [-0.17, -0.36], [0.17, -0.36]]) {
+      const hip = new THREE.Group(); hip.position.set(x, 0.5, z); g.add(hip);
+      const l = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.5, 0.14), dark); l.position.y = -0.25; l.castShadow = true; hip.add(l);
+      const paw = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.06, 0.2), light); paw.position.set(0, -0.48, 0.03); hip.add(paw);
+      legs.push(hip);
+    }
+    g.userData = { legs, head, tail };
+    return g;
+  }
   function wingModel(base, color) {
     const bat = BAT.test(base || '');
     const g = new THREE.Group();
@@ -262,6 +289,11 @@
           wings.position.set(0, 1.12, -0.22); wings.scale.setScalar(BAT.test(eq.wings) ? 0.75 : 0.62); this.root.add(wings);
           this.wings = wings;
         }
+      }
+      // montaria: o herói fica sentado nas costas do Fenrir
+      if (eq && eq.pet === 'fenrir_gold') {
+        const wolf = fenrirModel(); this.root.add(wolf); this.fenrir = wolf;
+        model.position.y += 0.55; if (this.wings) this.wings.position.y += 0.55;
       }
       this.style = def.style; this.atkClips = def.atk; this.lenda = true;
       this.mixer = new THREE.AnimationMixer(model);
@@ -388,6 +420,13 @@
         if (d.act === 'death') { this.model.rotation.z = Math.min(Math.PI, this.model.rotation.z + dt * 6); }
       } else if (this.proc === 'chest') { /* parado */ }
       if (this.fx) this.fx.update(dt, t, d);
+      // patas e cauda do Fenrir
+      if (this.fenrir) {
+        const moving = sp > 10, ph = t * (sp > 65 ? 16 : 11), u = this.fenrir.userData;
+        u.legs.forEach((L, i) => { L.rotation.x = moving ? Math.sin(ph + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI / 2 : 0)) * 0.6 : 0; });
+        u.tail.rotation.y = Math.sin(t * (moving ? 10 : 3)) * 0.35;
+        u.head.position.y = 0.92 + (moving ? Math.abs(Math.sin(ph)) * 0.04 : Math.sin(t * 2) * 0.015);
+      }
       // asas abrindo e fechando
       if (this.wings) {
         const moving = sp > 10, f = Math.sin(t * (moving ? 6 : 2.2));
