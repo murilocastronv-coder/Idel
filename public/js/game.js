@@ -2134,13 +2134,23 @@
 
   // ================= ficha do personagem =================
   // EXP estimada deste monstro para você (mesma conta do servidor: 1% do nível × nível do monstro × VIP × bônus do mapa)
+  // EXP estimada deste monstro para você (mesma conta do servidor: % do nível × vida do monstro / vida padrão do seu nível × VIP × bônus do mapa)
+  function refHp(L) {
+    const R = (S.data.expRef && S.data.expRef.pts) || [[1, 40], [1000, 200000]];
+    L = Math.max(1, L);
+    const lerp = (a, b) => { const k = (Math.log(L) - Math.log(a[0])) / (Math.log(b[0]) - Math.log(a[0])); return Math.exp(Math.log(a[1]) + k * (Math.log(b[1]) - Math.log(a[1]))); };
+    if (L <= R[0][0]) return R[0][1] * Math.pow(L / R[0][0], 1.2);
+    for (let i = 0; i < R.length - 1; i++) if (L <= R[i + 1][0]) return lerp(R[i], R[i + 1]);
+    return lerp(R[R.length - 2], R[R.length - 1]);
+  }
   function expEstimate(t) {
     if (!S.char) return '?';
-    const L = S.char.level, next = Math.floor(100 * Math.pow(L, 2.1) + 200), d = (t.level || 1) - L;
-    const lf = d >= 0 ? 1 + Math.min(10, d) * 0.03 : d >= -3 ? 1 : Math.max(0.1, 1 + (d + 3) * 0.06);
+    const L = S.char.level, next = Math.floor(100 * Math.pow(L, 2.1) + 200);
     const vip = [0.5, 0.7, 0.8][(S.char.vip && S.char.vip.tier) || 0] || 0.5;
     const w = S.data && S.map && S.data.world.find((x) => x.id === S.map.map);
-    const pct = lf * (t.boss ? 15 * (1 + ((S.char.vip && S.char.vip.tier) || 0)) : vip) * (t.boss ? 1 + ((w && w.bossExpBonus) || 0) / 100 : 1 + ((w && w.expBonus) || 0) / 100);
+    const er = S.data.expRef || { min: 0.02, max: 6 };
+    const hk = Math.min(er.max || 6, Math.max(er.min || 0.02, (t.maxHp || 1) / refHp(L)));
+    const pct = t.boss ? 15 * (1 + ((S.char.vip && S.char.vip.tier) || 0)) * (1 + ((w && w.bossExpBonus) || 0) / 100) : vip * hk * (1 + ((w && w.expBonus) || 0) / 100);
     return `${fmt.format(Math.round(next * pct / 100))} (${pct.toFixed(pct < 1 ? 2 : 1)}%)`;
   }
   function renderChar() {

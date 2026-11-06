@@ -68,25 +68,32 @@ function expToNext(level) { return Math.floor(100 * Math.pow(level, 2.1) + 200);
 const XP = () => G.GAME_MODE.expRate;
 // ---------- EXP por monstro (Hard, equilibrado) ----------
 // Matar um monstro do seu nível dá 0,5% da EXP do nível (Free), 0,7% (VIP Ouro) ou 0,8% (VIP Diamante).
-// Monstro mais fraco que você dá menos (até 0,1%), mais forte dá um pouco mais (até +30%). Os monstros grandes/raros do mapa
-// (golens, Death Knight, Bone Mage...) valem 2,5×. Por cima ainda entra o bônus do mapa. Chefes: 15% do nível, dividido pelo dano.
+// A EXP de cada monstro é proporcional à vida dele comparada a um monstro comum do seu nível (bicho fraco dá pouco, elite dá mais).
+// Por cima ainda entra o bônus do mapa. Chefes: 15% do nível, dividido pelo dano.
 // % da barra por monstro do seu nível, pelo plano da conta (já inclui o VIP; não multiplica de novo): Free 0,5% · VIP Ouro 0,7% · VIP Diamante 0,8%
 // (reduzido a 1/4: antes 2% / 2,8% / 3,2% davam ~4 níveis por hora na Dungeon)
 const KILL_PCT = { 0: 0.005, 1: 0.007, 2: 0.008 }, BOSS_PCT = 0.15;
-function levelFactor(diff) {
-  if (diff >= 0) return 1 + Math.min(10, diff) * 0.03;
-  if (diff >= -3) return 1;
-  return Math.max(0.1, 1 + (diff + 3) * 0.06);
+// EXP ajustada ao monstro: quanto mais vida o monstro tem em relação a um monstro "padrão" do seu nível, mais EXP.
+// Assim matar rápido bicho fraco de mapa baixo não rende mais que caçar no mapa do seu nível (vale para todos os mapas).
+// Curva de referência = vida dos monstros comuns de cada nível (interpolada).
+const EXP_REF = (() => {
+  const pts = Object.values(G.MONSTERS).filter((T) => !T.boss && !T.elite && !T.training && T.hp > 0 && T.level > 0)
+    .map((T) => [T.level, T.hp]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const out = [];
+  for (const [l, h] of pts) { const last = out[out.length - 1]; if (last && last[0] === l) last[1] = Math.round((last[1] + h) / 2); else out.push([l, h]); }
+  return out;
+})();
+function refHp(level) {
+  const R = EXP_REF, L = Math.max(1, level);
+  const lerp = (a, b) => { const t = (Math.log(L) - Math.log(a[0])) / (Math.log(b[0]) - Math.log(a[0])); return Math.exp(Math.log(a[1]) + t * (Math.log(b[1]) - Math.log(a[1]))); };
+  if (L <= R[0][0]) return R[0][1] * Math.pow(L / R[0][0], 1.2);
+  for (let i = 0; i < R.length - 1; i++) if (L <= R[i + 1][0]) return lerp(R[i], R[i + 1]);
+  return lerp(R[R.length - 2], R[R.length - 1]);
 }
-const MAP_MIN_EXP = {};
-function eliteK(T, def) {
-  if (!def || !def.groups) return 1;
-  const id = def.name || '';
-  if (MAP_MIN_EXP[id] === undefined) MAP_MIN_EXP[id] = Math.min(...def.groups.map((g) => (G.MONSTERS[g.type] || {}).exp || Infinity));
-  return T.exp >= MAP_MIN_EXP[id] * 3 ? 2.5 : 1;
-}
+const HP_K_MIN = 0.02, HP_K_MAX = 6;
+const hpK = (T, level) => Math.min(HP_K_MAX, Math.max(HP_K_MIN, (T.hp || 1) / refHp(level)));
 function killExp(p, T, def, pk) {
-  return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * levelFactor((T.level || 1) - p.level) * eliteK(T, def) * mapExp(def) * XP()));
+  return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * hpK(T, p.level) * mapExp(def) * XP()));
 }
 // bônus de EXP por mapa (servidor continua Hard): progressivo, cada mapa de caça dá um pouco mais que o anterior (+3% por mapa)
 // Vulcanus +3% · Dungeon +6% · Dungeon 2 +9% · Atlans +12% · Lost Tower +15% · Dungeon 3 +18% · Tarkan +21% · Icarus +24% · Aida +27% · Kalima +30% · Crywolf +33%
@@ -1855,4 +1862,4 @@ class World {
   }
 }
 
-module.exports = { mapExp, bossMapExp, World, expToNext, gearVisual };
+module.exports = { mapExp, bossMapExp, World, expToNext, gearVisual, refHp, EXP_REF, HP_K_MIN, HP_K_MAX };
