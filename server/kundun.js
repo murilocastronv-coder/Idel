@@ -40,8 +40,8 @@ const DEFAULTS = {
   ],
   // Ouro: as únicas taxas especiais do jogo — Ancestral 0,50% e Lendário 1,50% (só nesta caixa)
   kundun_ouro: [
-    { kind: 'zen', w: 21, min: 300000, max: 800000 },
-    { kind: 'item', w: 10, rarity: 'rare', plusMin: 2, plusMax: 4, reqMin: 60, reqMax: 120, exc: false },
+    { kind: 'zen', w: 7, min: 60000, max: 150000 }, // Zen bem menor e mais raro (antes 21% · 300k-800k)
+    { kind: 'item', w: 24, rarity: 'rare', plusMin: 2, plusMax: 4, reqMin: 60, reqMax: 120, exc: false },
     { kind: 'item', w: 30, rarity: 'epic', plusMin: 2, plusMax: 5, reqMin: 60, reqMax: 120, exc: true },
     { kind: 'item', w: 1.5, rarity: 'legendary', plusMin: 3, plusMax: 5, reqMin: 60, reqMax: 120, exc: true }, // exatamente 1,50%
     { kind: 'item', w: 0.5, rarity: 'ancestral', plusMin: 3, plusMax: 5, reqMin: 60, reqMax: 120, exc: true }, // exatamente 0,50%
@@ -62,7 +62,13 @@ const DEFAULTS = {
 // nenhum item que sai de caixa/drop passa de +5 (vale também para configurações antigas salvas no painel)
 const DROP_PLUS_MAX = 5;
 let H = null;
-function cfg() { return { ...DEFAULTS, ...(SET.get('kundun', DEFAULTS) || {}) }; }
+// teto do Zen da Box Ouro: mesmo uma configuração antiga salva no painel não passa destes valores (só pode ser menor)
+const OURO_ZEN_CAP = { w: 7, min: 60000, max: 150000 };
+function capOuroZen(list) {
+  if (!Array.isArray(list)) return list;
+  return list.map((e) => (e && e.kind === 'zen' ? { ...e, w: Math.min(e.w, OURO_ZEN_CAP.w), min: Math.min(e.min, OURO_ZEN_CAP.min), max: Math.min(e.max, OURO_ZEN_CAP.max) } : e));
+}
+function cfg() { const c = { ...DEFAULTS, ...(SET.get('kundun', DEFAULTS) || {}) }; c.kundun_ouro = capOuroZen(c.kundun_ouro); return c; }
 async function init(helpers) { H = helpers; await SET.load('kundun', DEFAULTS); }
 
 const randi = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
