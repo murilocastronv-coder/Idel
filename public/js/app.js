@@ -1,4 +1,4 @@
-// MU Idle Legends — página inicial: contas, estatísticas ao vivo, galerias
+// MuonlineClaude — página inicial: contas, estatísticas ao vivo, galerias
 'use strict';
 (function () {
   const $ = (s, el = document) => el.querySelector(s);

@@ -112,7 +112,7 @@ async function createCheckout({ account, planId, days, baseUrl, back, gift }) {
   f.set('line_items[0][price_data][currency]', CURRENCY);
   f.set('line_items[0][price_data][unit_amount]', String(amount));
   f.set('line_items[0][price_data][product_data][name]', `${plan.name} — ${days} dias${gift ? ` (presente para ${gift.username})` : ''}`);
-  f.set('line_items[0][price_data][product_data][description]', `MU Idle Legends · ${gift ? `presente de ${account.username} para a conta ${gift.username}` : `conta ${account.username}`} · ${plan.perks.slice(0, 3).join(', ')}`);
+  f.set('line_items[0][price_data][product_data][description]', `MuonlineClaude · ${gift ? `presente de ${account.username} para a conta ${gift.username}` : `conta ${account.username}`} · ${plan.perks.slice(0, 3).join(', ')}`);
   for (const pre of ['metadata', 'payment_intent_data[metadata]']) {
     f.set(`${pre}[game]`, 'muidle');
     f.set(`${pre}[acc]`, String(account.id));

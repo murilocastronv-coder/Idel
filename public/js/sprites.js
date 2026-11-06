@@ -1,4 +1,4 @@
-// MU Idle Legends — carregador de sprites em alta resolução (folhas PNG + manifest.json)
+// MuonlineClaude — carregador de sprites em alta resolução (folhas PNG + manifest.json)
 'use strict';
 (function () {
   const BASE = '/assets/sprites/';

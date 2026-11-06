@@ -1,4 +1,4 @@
-// MU Idle Legends — ferramentas do Super ADM: Chaos Machine, tabela de drops, regras de reset e histórico.
+// MuonlineClaude — ferramentas do Super ADM: Chaos Machine, tabela de drops, regras de reset e histórico.
 // Montado dentro do painel de administração (game.js chama MUAdminTools.mount).
 'use strict';
 (function () {

@@ -1,4 +1,4 @@
-// MU Idle Legends — brilho, auras e efeitos do equipamento (só no gráfico 3D).
+// MuonlineClaude — brilho, auras e efeitos do equipamento (só no gráfico 3D).
 // Lê o equipamento real do herói (nível médio do conjunto, Excellent, Ancient, arma e asas) e monta:
 //  • armadura metálica PBR com reflexo do ambiente, borda brilhante (fresnel) e faixa de energia percorrendo o corpo
 //  • aura animada (dourada, azul elétrica, vermelha de chamas ou roxa mística) com partículas em pool

@@ -55,7 +55,7 @@ async function payLink(acc) {
   const f = { mode: 'payment', locale: 'pt-BR', success_url: `${R.BASE()}/app?mercado=comissao-paga`, cancel_url: `${R.BASE()}/app`, client_reference_id: String(acc),
     expires_at: String(Math.floor(Date.now() / 1000) + 23 * 3600),
     'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': 'brl', 'line_items[0][price_data][unit_amount]': String(due),
-    'line_items[0][price_data][product_data][name]': 'Comissão do Mercado — MU Idle Legends', 'line_items[0][price_data][product_data][description]': `Comissão de 10% das vendas por Pix · conta ${acct.username || acc}` };
+    'line_items[0][price_data][product_data][name]': 'Comissão do Mercado — MuonlineClaude', 'line_items[0][price_data][product_data][description]': `Comissão de 10% das vendas por Pix · conta ${acct.username || acc}` };
   if (acct.email) f.customer_email = acct.email;
   for (const pre of ['metadata', 'payment_intent_data[metadata]']) { f[`${pre}[game]`] = 'muidle-market'; f[`${pre}[kind]`] = 'commission'; f[`${pre}[acc]`] = String(acc); f[`${pre}[amt]`] = String(due); }
   try {
@@ -116,7 +116,7 @@ async function buyUsd(p, r) {
   const f = { mode: 'payment', locale: 'pt-BR', success_url: back + 'pago', cancel_url: back + 'cancelado', client_reference_id: String(p.accountId),
     expires_at: String(Math.floor(Date.now() / 1000) + R.HOLD_MIN * 60),
     'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': 'usd', 'line_items[0][price_data][unit_amount]': String(price),
-    'line_items[0][price_data][product_data][name]': `${nameOf(L.base)}${L.plus ? ' +' + L.plus : ''}${L.qty > 1 ? ' ×' + L.qty : ''} — MU Idle Legends`,
+    'line_items[0][price_data][product_data][name]': `${nameOf(L.base)}${L.plus ? ' +' + L.plus : ''}${L.qty > 1 ? ' ×' + L.qty : ''} — MuonlineClaude`,
     'line_items[0][price_data][product_data][description]': `Item do mercado entre jogadores · vendedor ${L.seller_name} · entregue para ${p.name}` };
   for (const pre of ['metadata', 'payment_intent_data[metadata]']) { f[`${pre}[game]`] = 'muidle-market'; f[`${pre}[kind]`] = 'platform'; f[`${pre}[listing]`] = String(L.id); f[`${pre}[buyer]`] = String(p.charId); f[`${pre}[amt]`] = String(price); }
   let s;

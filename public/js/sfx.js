@@ -1,4 +1,4 @@
-// MU Idle Legends — efeitos sonoros e ambiente gerados com Web Audio (sem arquivos de áudio)
+// MuonlineClaude — efeitos sonoros e ambiente gerados com Web Audio (sem arquivos de áudio)
 'use strict';
 (function () {
   let ac = null, master = null, sfxBus = null, ambBus = null, ambNodes = [], ambTheme = null, ambTimer = null;

@@ -1,5 +1,5 @@
 'use strict';
-// MU Idle Legends — mundo em tempo real. O servidor é a autoridade de movimento,
+// MuonlineClaude — mundo em tempo real. O servidor é a autoridade de movimento,
 // combate, EXP, Zen, drops e inventário. O navegador só envia intenções.
 const db = require('./db');
 const G = require('./gamedata');
@@ -1170,7 +1170,7 @@ class World {
       const v = p.vip();
       p.send(p.charState());
       if (p.map) for (const o of p.map.players.values()) o.send({ type: 'pj', ...this.pinfo(p) });
-      if (v.tier > 0) p.send({ type: 'log', kind: 'quest', text: `${v.name} ativo até ${new Date(v.until).toLocaleDateString('pt-BR')}! Obrigado por apoiar o MU Idle Legends.` });
+      if (v.tier > 0) p.send({ type: 'log', kind: 'quest', text: `${v.name} ativo até ${new Date(v.until).toLocaleDateString('pt-BR')}! Obrigado por apoiar o MuonlineClaude.` });
       else p.send({ type: 'log', kind: 'info', text: 'Seu VIP terminou.' });
     }
   }

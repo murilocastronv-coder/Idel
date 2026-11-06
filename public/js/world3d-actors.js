@@ -1,4 +1,4 @@
-// MU Idle Legends — personagens 3D: heróis (modelos do Lenda 97), monstros e NPCs (Nova-versao-mu + modelos feitos aqui).
+// MuonlineClaude — personagens 3D: heróis (modelos do Lenda 97), monstros e NPCs (Nova-versao-mu + modelos feitos aqui).
 // Recebe a lista de entidades do game.js a cada quadro e só anima/desenha.
 (function () {
   'use strict';

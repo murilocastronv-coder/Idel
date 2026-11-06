@@ -3,22 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>MU Idle Legends — MMORPG Idle em pixel art</title>
-  <meta name="description" content="MMORPG Idle 2D em pixel art inspirado nos clássicos. Seis classes, 29 regiões, bosses, guildas e progressão automática.">
+  <title>MuonlineClaude — MMORPG em pixel art 2D e 3D</title>
+  <meta name="description" content="MuonlineClaude: MMORPG em pixel art 2D e 3D. Heróis com asas e montarias, mapas até o nível 1000, bosses, eventos, guildas, mercado e caça automática.">
   <meta name="theme-color" content="#141b33">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=2">
   <link rel="stylesheet" href="/css/style.css?v=22">
+  <link rel="stylesheet" href="/css/landing.css?v=1">
 </head>
 <body>
   <a class="skip" href="#conteudo">Pular para o conteúdo</a>
 
   <header class="topbar">
-    <a class="brand" href="#topo" aria-label="MU Idle Legends, início">
+    <a class="brand" href="#topo" aria-label="MuonlineClaude, início">
       <canvas id="brand-icon" width="32" height="32" aria-hidden="true"></canvas>
-      <span>MU Idle Legends</span>
+      <span class="brand-name">Muonline<b>Claude</b></span>
     </a>
     <nav class="nav" aria-label="Seções">
+      <a href="#jogo">O jogo</a>
       <a href="#classes">Classes</a>
       <a href="#mapas">Mapas</a>
       <a href="#equipamentos">Equipamentos</a>
@@ -38,8 +40,9 @@
     <section class="hero" id="topo">
       <canvas id="hero-scene" aria-label="Cena animada: os seis heróis enfrentam monstros em Lorencia ao entardecer" role="img"></canvas>
       <div class="hero-copy">
-        <h1 class="logo">MU Idle<br>Legends</h1>
-        <p class="tagline">Seu herói luta, evolui e coleta tesouros mesmo quando você está fora. Escolha uma classe e entre em Lorencia.</p>
+        <p class="logo-kicker">MMORPG em pixel art · 2D e 3D</p>
+        <h1 class="logo logo-mc"><span class="lg-a">Muonline</span><span class="lg-b">Claude</span></h1>
+        <p class="tagline">Monte seu herói, abra as asas e suba até o nível 1000. Seu herói caça, evolui e coleta tesouros até quando você está fora.</p>
         <p class="mode-badge"><b>Servidor Hard XP</b> · 4 poderes por classe · missões diárias e prêmios de login</p>
         <div class="hero-actions">
           <button class="btn btn-gold" id="btn-play" type="button" title="Gráfico em pixel art">Jogar 2D</button>
@@ -74,6 +77,35 @@
       </div>
     </div>
 
+
+    <section class="block showcase" id="jogo" aria-labelledby="jogo-title">
+      <p class="eyebrow">Tudo que tem no jogo</p>
+      <h2 id="jogo-title">Um mundo inteiro em pixel art</h2>
+      <figure class="show-hero"><img src="/assets/landing/heroes.png?v=1" alt="Cinco heróis de frente: Cavaleiro com asas de dragão, Mago com asas de anjo, Elfa com asas de folhas, Lorde Sombrio de capa e Assassino com asas de ceifador" width="1300" height="300" loading="lazy"></figure>
+      <div class="feat-grid">
+        <article class="feat"><b class="feat-num">5</b><h3>Classes de herói</h3><p>Cavaleiro, Mago, Elfa, Lorde Sombrio e Assassino, cada um com animações de andar, atacar, levar dano e cair em todas as direções.</p></article>
+        <article class="feat"><b class="feat-num">34</b><h3>Mapas até o nível 1000</h3><p>De Lorencia ao Exile: masmorras, desertos, ilhas no céu, torres e abismos, com área segura na entrada de cada mapa de caça.</p></article>
+        <article class="feat"><b class="feat-num">31</b><h3>Asas para colecionar</h3><p>Seis famílias (Angelical, Demoníaca, Dragônica, Cristalina, Elemental e Sombria) do nível 1 ao 5, batendo nas costas do herói.</p></article>
+        <article class="feat"><b class="feat-num">1000</b><h3>Servidor Hard XP</h3><p>Cada nível conta. Monstros fortes dão mais experiência, e todo mapa dá EXP para todo mundo.</p></article>
+      </div>
+      <div class="show-row">
+        <figure class="show-card"><img src="/assets/landing/mount.png?v=1" alt="Elfa montada no touro dourado, a montaria do jogo" width="320" height="300" loading="lazy">
+          <figcaption><h3>Montaria</h3><p>O touro de juba dourada leva seu herói sentado na sela, andando, correndo e atacando junto.</p></figcaption></figure>
+        <figure class="show-card"><img src="/assets/landing/wings.png?v=1" alt="Seis asas de nível 5, uma de cada família" width="840" height="140" loading="lazy">
+          <figcaption><h3>Asas e conjuntos premium</h3><p>Conjuntos Guardião de Aço, Sentinela Esmeralda, Soberano Solar, Arauto Astral e Soberano Carmesim, que mudam a cor do herói.</p></figcaption></figure>
+      </div>
+      <figure class="show-monsters"><img src="/assets/landing/monsters.png?v=1" alt="Monstros do jogo: goblin, lobisomem, yeti, titã de gelo, senhor minotauro, arquilich, demônio das brasas e rei esqueleto" width="1536" height="220" loading="lazy">
+        <figcaption>Monstros e chefes em todos os mapas: Rei Esqueleto, Rainha de Cristal, Imperador do Vazio, Senhor da Torre, Rei do Exílio e mais.</figcaption></figure>
+      <ul class="feat-list">
+        <li><b>Caça automática</b> até 8 horas fora do jogo, com relatório na volta</li>
+        <li><b>Eventos</b> Blood Castle, Chaos Castle e Devil Square</li>
+        <li><b>Mercado de jogadores</b>, guildas, amigos, chat e ranking</li>
+        <li><b>2D e 3D</b> no mesmo servidor, no navegador e no app Android</li>
+        <li><b>Música própria</b> em cada mapa</li>
+        <li><b>Itens de 6 raridades</b>, melhorias até +15 e opções Excelente</li>
+      </ul>
+    </section>
+
     <section class="block market-promo" id="mercado" aria-labelledby="mercado-title">
       <div class="window market-card">
         <span class="market-tag">Novo · já está ativo</span>
@@ -99,7 +131,7 @@
     </section>
 
     <section class="block" id="mapas" aria-labelledby="mapas-title">
-      <h2 id="mapas-title">Um mundo de 29 regiões</h2>
+      <h2 id="mapas-title">34 mapas, do nível 1 ao 1000</h2>
       <p class="lead">De Lorencia às geleiras de Nars. Os mapas marcados como “Aberto agora” já podem ser jogados; os outros abrem nas próximas atualizações.</p>
       <div class="map-filter" role="group" aria-label="Filtrar mapas por nível">
         <button type="button" class="chip is-on" data-range="all">Todos</button>
@@ -124,7 +156,7 @@
 
     <section class="block" id="roadmap" aria-labelledby="roadmap-title">
       <h2 id="roadmap-title">Roadmap do jogo</h2>
-      <p class="lead">Tudo o que já está no MU Idle Legends e o que vem nas próximas atualizações.</p>
+      <p class="lead">Tudo o que já está no MuonlineClaude e o que vem nas próximas atualizações.</p>
       <div class="rm-legend"><span class="rm-tag rm-done">✓ No jogo</span><span class="rm-tag rm-test">◐ Em teste</span><span class="rm-tag rm-next">◇ Próximas atualizações</span></div>
       <div class="rm-grid">
         <article class="window rm-card">
@@ -241,7 +273,8 @@
 
   <footer class="footer">
     <p><a class="btn btn-discord" href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Comunidade no Discord</a></p>
-    <p>MU Idle Legends é um projeto de fã independente com arte original. Não é afiliado a nenhuma empresa ou marca.</p>
+    <p class="footer-brand">Muonline<b>Claude</b></p>
+    <p>MuonlineClaude é um projeto de fã independente com arte original. Não é afiliado a nenhuma empresa ou marca.</p>
   </footer>
 
   <!-- Janela de acesso: entrar / criar conta / recuperar -->
@@ -323,7 +356,7 @@
     <p class="muted" id="account-meta"></p>
     <ul class="char-list" id="char-list"></ul>
     <p class="note" id="world-note">Escolha um herói e toque em “Entrar no mundo”.</p>
-    <p class="note discord-note">Encontre grupo, tire dúvidas e veja novidades no <a href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Discord do MU Idle Legends</a>.</p>
+    <p class="note discord-note">Encontre grupo, tire dúvidas e veja novidades no <a href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Discord do MuonlineClaude</a>.</p>
 
     <details class="create-char" id="create-char">
       <summary class="btn">Criar novo herói</summary>

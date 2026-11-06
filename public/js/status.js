@@ -1,4 +1,4 @@
-// MU Idle Legends — página /status (jogadores online e crescimento)
+// MuonlineClaude — página /status (jogadores online e crescimento)
 'use strict';
 (function () {
   const $ = (s) => document.querySelector(s);

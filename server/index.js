@@ -1,5 +1,5 @@
 'use strict';
-// MU Idle Legends — servidor HTTP + WebSocket (Node.js, sem framework)
+// MuonlineClaude — servidor HTTP + WebSocket (Node.js, sem framework)
 
 // Carrega .env local (em produção a Render injeta as variáveis)
 try {
@@ -901,7 +901,7 @@ function serveStatic(req, res, pathname) {
   fs.stat(file, (err, st) => {
     if (err || !st.isFile()) {
       res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end('<h1>404</h1><p><a href="/">Voltar ao MU Idle Legends</a></p>');
+      return res.end('<h1>404</h1><p><a href="/">Voltar ao MuonlineClaude</a></p>');
     }
     const ext = path.extname(file);
     // Sempre revalida com o servidor: depois de um deploy, o navegador pega a versão nova na hora
@@ -962,7 +962,7 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
         return res.end(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Acesso restrito</title><link rel="stylesheet" href="/css/fonts.css"><link rel="stylesheet" href="/css/style.css"></head>
 <body style="display:grid;place-items:center;min-height:100vh;text-align:center;padding:16px"><div><h1 style="font-family:var(--display);color:var(--gold)">Acesso restrito</h1>
-<p>Esta página é só para a administração do MU Idle Legends.</p><p><a class="btn btn-gold" href="/">Voltar ao início</a></p></div>
+<p>Esta página é só para a administração do MuonlineClaude.</p><p><a class="btn btn-gold" href="/">Voltar ao início</a></p></div>
 <script src="/js/i18n-en.js"></script><script src="/js/i18n.js"></script></body></html>`);
       }
       res.setHeader('Cache-Control', 'no-store');
@@ -992,9 +992,9 @@ const server = http.createServer(async (req, res) => {
           const when = new Date().toLocaleString('pt-BR', { timeZone: 'Europe/Paris' });
           await mail.sendMail({
             to: 'murilocastronv@gmail.com',
-            subject: 'Nova compra VIP — MU Idle Legends',
+            subject: 'Nova compra VIP — MuonlineClaude',
             text: 'Uma compra VIP foi confirmada.\\nJogador: ' + buyer.username + '\\nPlano: ' + plan.name + '\\nDuração: ' + days + ' dias\\nValor: ' + money + ' ' + VIP.CURRENCY.toUpperCase() + '\\nConta compradora: ' + (buyer.email || 'não informada') + '\\nData: ' + when,
-            html: '<div style="font-family:Arial,sans-serif"><h2>Nova compra VIP — MU Idle Legends</h2><p><b>Jogador:</b> ' + String(buyer.username).replace(/[&<>"]/g, '') + '</p><p><b>Plano:</b> ' + plan.name + '</p><p><b>Duração:</b> ' + days + ' dias</p><p><b>Valor:</b> ' + money + ' ' + VIP.CURRENCY.toUpperCase() + '</p><p><b>E-mail da conta:</b> ' + String(buyer.email || 'não informado').replace(/[&<>"]/g, '') + '</p><p><b>Data:</b> ' + when + '</p></div>'
+            html: '<div style="font-family:Arial,sans-serif"><h2>Nova compra VIP — MuonlineClaude</h2><p><b>Jogador:</b> ' + String(buyer.username).replace(/[&<>"]/g, '') + '</p><p><b>Plano:</b> ' + plan.name + '</p><p><b>Duração:</b> ' + days + ' dias</p><p><b>Valor:</b> ' + money + ' ' + VIP.CURRENCY.toUpperCase() + '</p><p><b>E-mail da conta:</b> ' + String(buyer.email || 'não informado').replace(/[&<>"]/g, '') + '</p><p><b>Data:</b> ' + when + '</p></div>'
           });
         } catch (e) { console.error('[vip] aviso de compra por e-mail:', e.message); }
       }, async (session) => {
@@ -1094,7 +1094,7 @@ setInterval(() => {
   // amostra a cada 5 minutos (e logo após iniciar)
   setTimeout(() => sampleStats().catch((e) => console.error('[status]', e.message)), 20000).unref();
   setInterval(() => sampleStats().catch((e) => console.error('[status]', e.message)), 5 * 60 * 1000).unref();
-  server.listen(PORT, () => console.log(`[server] MU Idle Legends ouvindo na porta ${PORT}`));
+  server.listen(PORT, () => console.log(`[server] MuonlineClaude ouvindo na porta ${PORT}`));
 })().catch((e) => { console.error('[server] falha ao iniciar:', e); process.exit(1); });
 
 function shutdown() {

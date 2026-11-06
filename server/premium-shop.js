@@ -148,12 +148,12 @@ async function checkout({account, productId, baseUrl, back, charId, promo}) {
   f.set('locale','pt-BR'); f.set('line_items[0][quantity]','1'); f.set('line_items[0][price_data][currency]',CURRENCY);
   f.set('line_items[0][price_data][unit_amount]',String(amount)); f.set('line_items[0][price_data][product_data][name]',product.name + (promoApplied ? ` · ${promoApplied.code} (-${promoApplied.pct}%)` : ''));
   f.set('line_items[0][price_data][product_data][description]', product.type==='reset'
-    ? 'MU Idle Legends · um reset de atributos para o personagem escolhido'
+    ? 'MuonlineClaude · um reset de atributos para o personagem escolhido'
     : product.type==='mount'
-      ? 'MU Idle Legends · montaria Fenrir Dourado +11 semi-full · resgate por personagem'
+      ? 'MuonlineClaude · montaria Fenrir Dourado +11 semi-full · resgate por personagem'
       : product.type==='box'
-      ? `MU Idle Legends · pacote com ${product.qty} Boxes Kundun semi-full · resgate por personagem`
-      : 'MU Idle Legends · conjunto semi-full de 12 peças · resgate por personagem');
+      ? `MuonlineClaude · pacote com ${product.qty} Boxes Kundun semi-full · resgate por personagem`
+      : 'MuonlineClaude · conjunto semi-full de 12 peças · resgate por personagem');
   let buyerCharId = resetCharacterId;
   if (!buyerCharId && /^\d{1,18}$/.test(String(charId || ''))) {
     const own = await db.query('SELECT id FROM characters WHERE id=$1 AND account_id=$2', [String(charId), account.id]);

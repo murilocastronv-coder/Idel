@@ -1,4 +1,4 @@
-// MU Idle Legends — página inicial do app (/app)
+// MuonlineClaude — página inicial do app (/app)
 'use strict';
 (function () {
   const $ = (s, r = document) => r.querySelector(s);

@@ -1,4 +1,4 @@
-// MU Idle Legends — gráfico 3D (three.js r147). Só desenha: posições, combate e regras continuam no servidor e no game.js.
+// MuonlineClaude — gráfico 3D (three.js r147). Só desenha: posições, combate e regras continuam no servidor e no game.js.
 // Mundo: x do mapa = X (metros), y do mapa = Z. 1 metro = K unidades do mapa.
 (function () {
   'use strict';

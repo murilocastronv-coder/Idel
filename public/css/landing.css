@@ -1,0 +1,106 @@
+/* MuonlineClaude — visual da página inicial (por cima de style.css) */
+:root {
+  --mc-gold-1: #fff3c4;
+  --mc-gold-2: #f2c75c;
+  --mc-gold-3: #b8862a;
+  --mc-ember-1: #ffd0a0;
+  --mc-ember-2: #ff7a3a;
+  --mc-ember-3: #a8281e;
+  --mc-glass: rgba(16, 22, 44, .78);
+  --mc-line: rgba(232, 184, 74, .35);
+}
+
+body {
+  background:
+    radial-gradient(1200px 700px at 50% -10%, rgba(232, 184, 74, .10), transparent 60%),
+    radial-gradient(900px 600px at 100% 30%, rgba(160, 74, 255, .08), transparent 60%),
+    var(--night);
+}
+
+/* ---------- marca ---------- */
+.brand-name { font-family: var(--title); font-weight: 700; letter-spacing: .03em; color: var(--bone); }
+.brand-name b, .footer-brand b { color: var(--gold); }
+
+.logo-kicker {
+  margin: 0 0 .4em; font: 600 14px/1.2 var(--display); letter-spacing: .28em; text-transform: uppercase;
+  color: var(--mc-gold-2); text-shadow: 0 2px 8px rgba(0, 0, 0, .6);
+}
+.logo.logo-mc {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 .12em;
+  font-family: var(--title); font-weight: 700; line-height: .95; letter-spacing: .01em;
+  font-size: clamp(44px, 9vw, 104px); margin: 0 0 .25em; text-shadow: none;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .65)) drop-shadow(0 0 22px rgba(232, 184, 74, .25));
+}
+.logo-mc span {
+  background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: none;
+  animation: mc-shine 7s linear infinite;
+}
+.logo-mc .lg-a { background-image: linear-gradient(100deg, var(--mc-gold-3) 0%, var(--mc-gold-1) 22%, var(--mc-gold-2) 40%, var(--mc-gold-3) 60%, var(--mc-gold-1) 80%, var(--mc-gold-3) 100%); }
+.logo-mc .lg-b { background-image: linear-gradient(100deg, var(--mc-ember-3) 0%, var(--mc-ember-1) 22%, var(--mc-ember-2) 40%, var(--mc-ember-3) 60%, var(--mc-ember-1) 80%, var(--mc-ember-3) 100%); }
+@keyframes mc-shine { from { background-position: 0% 0; } to { background-position: 200% 0; } }
+@media (prefers-reduced-motion: reduce) { .logo-mc span { animation: none; } }
+
+/* herói (topo): escurece a cena para o texto ler bem */
+.hero { position: relative; }
+.hero::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(10, 14, 30, .78) 0%, rgba(10, 14, 30, .35) 55%, rgba(10, 14, 30, 0) 100%),
+              linear-gradient(0deg, var(--night) 0%, rgba(20, 27, 51, 0) 28%);
+}
+.hero-copy { position: relative; z-index: 1; }
+.hero .tagline { font-size: clamp(18px, 2.2vw, 22px); max-width: 34em; text-shadow: 0 2px 6px rgba(0, 0, 0, .7); }
+.btn-gold { box-shadow: 0 0 0 1px rgba(255, 230, 160, .25) inset, 0 6px 18px rgba(232, 184, 74, .28); }
+.btn-gold:hover { box-shadow: 0 0 0 1px rgba(255, 230, 160, .4) inset, 0 8px 26px rgba(232, 184, 74, .45); }
+
+/* ---------- vitrine: tudo que tem no jogo ---------- */
+.showcase { position: relative; }
+.eyebrow { margin: 0 0 .3em; font: 700 13px/1.2 var(--display); letter-spacing: .26em; text-transform: uppercase; color: var(--mc-ember-2); }
+.showcase h2 { text-wrap: balance; }
+.showcase figure { margin: 0; }
+.showcase img { display: block; max-width: 100%; height: auto; image-rendering: pixelated; }
+
+.show-hero {
+  margin: 8px 0 22px; padding: 18px 12px 6px; border-radius: 10px; overflow: hidden;
+  background: radial-gradient(60% 90% at 50% 100%, rgba(232, 184, 74, .18), transparent 70%), linear-gradient(180deg, #1b2342, #10162c);
+  border: 1px solid var(--mc-line);
+}
+.show-hero img { margin: 0 auto; width: min(100%, 1040px); }
+
+.feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin: 0 0 18px; }
+.feat {
+  padding: 16px 16px 14px; border-radius: 8px; background: var(--mc-glass);
+  border: 1px solid rgba(255, 255, 255, .06); border-top: 2px solid var(--gold-dim);
+}
+.feat h3 { margin: .1em 0 .3em; font-size: 19px; }
+.feat p { margin: 0; color: var(--bone-dim); font-size: 16px; }
+.feat-num { display: block; font: 800 clamp(34px, 5vw, 46px)/1 var(--display); color: var(--gold); font-variant-numeric: tabular-nums; text-shadow: 0 0 18px rgba(232, 184, 74, .35); }
+
+.show-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 14px; margin-bottom: 18px; }
+.show-card {
+  display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 8px;
+  background: linear-gradient(180deg, rgba(27, 35, 66, .9), rgba(16, 22, 44, .9)); border: 1px solid rgba(255, 255, 255, .06);
+}
+.show-card img { margin: 0 auto; max-height: 220px; width: auto; }
+.show-card h3 { margin: 0 0 .2em; }
+.show-card p { margin: 0; color: var(--bone-dim); font-size: 16px; }
+
+.show-monsters { padding: 14px; border-radius: 8px; background: linear-gradient(180deg, #10162c, #1b1430); border: 1px solid rgba(200, 69, 44, .3); margin-bottom: 18px; overflow: hidden; }
+.show-monsters img { margin: 0 auto; width: min(100%, 1100px); }
+.show-monsters figcaption { margin-top: 8px; text-align: center; color: var(--bone-dim); font-size: 16px; }
+
+.feat-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 18px; }
+.feat-list li { position: relative; padding-left: 22px; color: var(--bone-dim); font-size: 16px; }
+.feat-list li::before { content: ""; position: absolute; left: 4px; top: .55em; width: 8px; height: 8px; transform: rotate(45deg); background: var(--gold); box-shadow: 0 0 8px rgba(232, 184, 74, .6); }
+.feat-list b { color: var(--bone); }
+
+/* seções com fio dourado separando */
+.block + .block::before { content: ""; display: block; height: 1px; margin: 0 0 28px; background: linear-gradient(90deg, transparent, var(--mc-line), transparent); }
+
+.footer-brand { font: 700 22px/1 var(--title); letter-spacing: .04em; color: var(--bone); }
+
+@media (max-width: 720px) {
+  .show-row { grid-template-columns: minmax(0, 1fr); }
+  .hero::after { background: linear-gradient(0deg, rgba(10, 14, 30, .9) 0%, rgba(10, 14, 30, .45) 60%, rgba(10, 14, 30, .2) 100%); }
+  .logo-kicker { letter-spacing: .18em; font-size: 12px; }
+}

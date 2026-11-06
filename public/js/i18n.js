@@ -1,4 +1,4 @@
-// MU Idle Legends — idiomas (português / inglês)
+// MuonlineClaude — idiomas (português / inglês)
 // O jogo é escrito em português; em inglês, os textos são trocados pelo dicionário
 // (window.I18N_EN). Frases com números/nomes usam padrões com {0}, {1}...
 'use strict';

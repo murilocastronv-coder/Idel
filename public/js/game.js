@@ -1,4 +1,4 @@
-// MU Idle Legends — cliente do mundo. Desenha o que o servidor manda e envia só intenções.
+// MuonlineClaude — cliente do mundo. Desenha o que o servidor manda e envia só intenções.
 'use strict';
 (function () {
   const $ = (s, el = document) => el.querySelector(s);

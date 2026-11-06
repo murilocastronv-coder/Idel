@@ -1,4 +1,4 @@
-// MU Idle Legends — músicas originais de cada mapa, compostas na hora com Web Audio (sem arquivos de áudio).
+// MuonlineClaude — músicas originais de cada mapa, compostas na hora com Web Audio (sem arquivos de áudio).
 // Cada mapa tem um perfil (escala, andamento, progressão de acordes e instrumentos) e uma melodia
 // gerada por um sorteio com semente fixa: o mesmo mapa toca sempre a mesma música.
 'use strict';

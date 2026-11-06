@@ -76,7 +76,7 @@ async function connect(p, msg) {
     if (!COUNTRIES[country]) return say('Escolha o país da sua conta bancária.');
     const email = (await db.query('SELECT email FROM accounts WHERE id = $1', [p.accountId])).rows[0];
     const form = { type: 'express', country, business_type: 'individual', 'capabilities[transfers][requested]': 'true', 'capabilities[card_payments][requested]': 'true',
-      'business_profile[product_description]': 'Venda de itens do jogo MU Idle Legends no mercado entre jogadores', 'business_profile[url]': BASE(),
+      'business_profile[product_description]': 'Venda de itens do jogo MuonlineClaude no mercado entre jogadores', 'business_profile[url]': BASE(),
       'metadata[game]': 'muidle', 'metadata[acc]': String(p.accountId) };
     if (email && email.email) form.email = email.email;
     let acct;
@@ -137,7 +137,7 @@ async function checkout(p, msg) {
     mode: 'payment', locale: 'pt-BR', success_url: back + 'pago', cancel_url: back + 'cancelado', client_reference_id: String(p.accountId),
     expires_at: String(Math.floor(Date.now() / 1000) + HOLD_MIN * 60),
     'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': CURRENCY, 'line_items[0][price_data][unit_amount]': String(price),
-    'line_items[0][price_data][product_data][name]': `${nameOf(r.base)}${r.plus ? ' +' + r.plus : ''}${r.qty > 1 ? ' ×' + r.qty : ''} — MU Idle Legends`,
+    'line_items[0][price_data][product_data][name]': `${nameOf(r.base)}${r.plus ? ' +' + r.plus : ''}${r.qty > 1 ? ' ×' + r.qty : ''} — MuonlineClaude`,
     'line_items[0][price_data][product_data][description]': `Item do mercado entre jogadores · vendedor ${r.seller_name} · entregue para ${p.name}`,
     'payment_intent_data[application_fee_amount]': String(fee), 'payment_intent_data[transfer_data][destination]': r.stripe_account,
   };

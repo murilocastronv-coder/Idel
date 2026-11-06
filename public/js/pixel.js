@@ -1,4 +1,4 @@
-// MU Idle Legends — arte pixel original gerada em código (sem assets externos)
+// MuonlineClaude — arte pixel original gerada em código (sem assets externos)
 'use strict';
 (function () {
   const OUTLINE = '#120c08';
