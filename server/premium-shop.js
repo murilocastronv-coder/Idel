@@ -15,7 +15,19 @@ const FENRIR_OPTS = [
   { id:'damage_reduction', value:3 },
   { id:'max_hp', value:60 },
 ];
-const STAT_RESET = { id:'stat-reset', name:'Reset de atributos', price:500, qty:1, tone:'#e8b84a', type:'reset' };
+// Códigos promocionais: cada código vale só para o produto indicado. "promo 2026", "PROMO-2026" etc. viram PROMO2026.
+const PROMO_CODES = { PROMO2026: { product: FENRIR.id, pct: 40 } };
+const normCode = (code) => String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 32);
+// devolve { code, pct, price } com o preço já descontado, ou lança erro com mensagem para o jogador
+function applyPromo(productId, code, basePrice) {
+  const k = normCode(code);
+  if (!k) return null;
+  const P = PROMO_CODES[k];
+  if (!P) { const e = new Error('Código promocional inválido.'); e.status = 400; throw e; }
+  if (P.product !== productId) { const e = new Error(`O código ${k} vale só para o ${FENRIR.name.split(' +')[0]}.`); e.status = 400; throw e; }
+  return { code: k, pct: P.pct, price: Math.max(100, Math.round(basePrice * (100 - P.pct) / 100)) };
+}
+const STAT_RESET ={ id:'stat-reset', name:'Reset de atributos', price:500, qty:1, tone:'#e8b84a', type:'reset' };
 // Pacotes fixos de Box Kundun Promocional: conteúdo semi-full, sem itens ancestrais/full.
 const BOX_PROMOS = [
   { id:'kundun-promo-10', name:'10 Boxes Kundun · Semi-full', price:5000, qty:10, tone:'#ef4350', type:'box' },
@@ -102,7 +114,15 @@ async function saveConfig(input) {
   config = next;
   return publicCatalog(true);
 }
-async function checkout({account, productId, baseUrl, back, charId}) {
+function promoQuote(productId, code) {
+  const product = findProduct(productId);
+  if (!product) { const e = new Error('Produto indisponível.'); e.status = 404; throw e; }
+  const c = config[productId] || {}, base = Number.isInteger(c.price) ? c.price : product.price;
+  const p = applyPromo(product.id, code, base);
+  if (!p) { const e = new Error('Digite um código promocional.'); e.status = 400; throw e; }
+  return { product: product.id, code: p.code, pct: p.pct, oldPrice: base, price: p.price };
+}
+async function checkout({account, productId, baseUrl, back, charId, promo}) {
   if (!KEY() || !process.env.STRIPE_WEBHOOK_SECRET) { const e = new Error('Pagamentos indisponíveis no momento.'); e.status=503; throw e; }
   const product=findProduct(productId), isSet=product && product.type==='set', c=config[productId]||{};
   if (!product || (isSet && c.enabled===false)) { const e=new Error('Produto indisponível.'); e.status=404; throw e; }
@@ -117,14 +137,16 @@ async function checkout({account, productId, baseUrl, back, charId}) {
     const keys = ['str','agi','vit','ene'].concat(owned.rows[0].class === 'dark_lord' ? ['cmd'] : []);
     if (!keys.some((key) => Number(owned.rows[0][key] || 0) > Number(base[key] || 0))) { const e=new Error('Não há pontos distribuídos para resetar.'); e.status=400; throw e; }
   }
-  const amount=isSet && Number.isInteger(c.price)?c.price:product.price;
+  const fullPrice=(isSet || product.type==='mount') && Number.isInteger(c.price)?c.price:product.price;
+  const promoApplied=applyPromo(product.id, promo, fullPrice);
+  const amount=promoApplied?promoApplied.price:fullPrice;
   const safeBack=typeof back==='string'&&/^\/[\w\-./?=&%]*$/.test(back)?back:'/game.html';
   const sep=safeBack.includes('?')?'&':'?';
   const f=new URLSearchParams();
   f.set('mode','payment'); f.set('success_url',`${baseUrl}${safeBack}${sep}store=ok`); f.set('cancel_url',`${baseUrl}${safeBack}${sep}store=cancelado`);
   f.set('client_reference_id',String(account.id)); if(account.email) f.set('customer_email',account.email);
   f.set('locale','pt-BR'); f.set('line_items[0][quantity]','1'); f.set('line_items[0][price_data][currency]',CURRENCY);
-  f.set('line_items[0][price_data][unit_amount]',String(amount)); f.set('line_items[0][price_data][product_data][name]',product.name);
+  f.set('line_items[0][price_data][unit_amount]',String(amount)); f.set('line_items[0][price_data][product_data][name]',product.name + (promoApplied ? ` · ${promoApplied.code} (-${promoApplied.pct}%)` : ''));
   f.set('line_items[0][price_data][product_data][description]', product.type==='reset'
     ? 'MU Idle Legends · um reset de atributos para o personagem escolhido'
     : product.type==='mount'
@@ -140,6 +162,7 @@ async function checkout({account, productId, baseUrl, back, charId}) {
   for(const pre of ['metadata','payment_intent_data[metadata]']) {
     f.set(`${pre}[game]`,'muidle-premium'); f.set(`${pre}[acc]`,String(account.id)); f.set(`${pre}[product]`,product.id); f.set(`${pre}[amt]`,String(amount));
     if (buyerCharId) f.set(`${pre}[char]`, String(buyerCharId));
+    if (promoApplied) f.set(`${pre}[promo]`, promoApplied.code);
   }
   const r=await fetch((process.env.STRIPE_API||'https://api.stripe.com')+'/v1/checkout/sessions',{method:'POST',
     headers:{Authorization:`Bearer ${KEY()}`,'Content-Type':'application/x-www-form-urlencoded','Idempotency-Key':crypto.randomUUID()},body:f});
@@ -242,4 +265,4 @@ function startAutoDelivery(world) {
   setTimeout(() => deliverPending().catch(() => {}), 5000);
   setInterval(() => deliverPending().catch(() => {}), 3 * 60 * 1000).unref();
 }
-module.exports={init,publicCatalog,saveConfig,checkout,webhook,pending,itemList,BOX_PROMOS,startAutoDelivery,deliverPending};
+module.exports={init,publicCatalog,saveConfig,checkout,promoQuote,webhook,pending,itemList,BOX_PROMOS,startAutoDelivery,deliverPending};

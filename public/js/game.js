@@ -2871,7 +2871,8 @@
           const attrsHtml = p.type === 'mount' ? '<details class="premium-stats" open><summary>Atributos fixos (iguais em toda compra)</summary><ul>' + Object.entries(p.attributes || {}).map(([label, value]) => '<li><span>' + esc(label) + '</span><b>' + esc(value) + '</b></li>').join('') + '</ul><small>Semi Full: 3 opções Excellent fixas. Equipe no espaço Montaria da Bolsa.</small></details>' : p.type === 'set' ? '<details class="premium-stats"><summary>Ver os 6 atributos antes de comprar</summary><ul>' + Object.entries(p.attributes || {}).map(([label, value]) => '<li><span>' + esc(label) + '</span><b>' + esc(value) + '</b></li>').join('') + '</ul><small>Excellent semi-full: cada peça recebe 2–4 opções aleatórias, definidas no resgate.</small></details>' : '';
           return '<article class="premium-card" style="--set-tone:' + esc(p.tone) + '">' +
             '<canvas width="72" height="72" data-premium-icon="' + esc(p.id) + '"></canvas><div><b>' + esc(p.name) + '</b>' +
-            '<small>' + detail + '</small>' + attrsHtml + '<span>' + brl.format(p.price / 100) + '</span>' +
+            '<small>' + detail + '</small>' + attrsHtml + '<span data-premium-price="' + esc(p.id) + '">' + brl.format(p.price / 100) + '</span>' +
+            (p.type === 'mount' ? '<div class="premium-promo"><input type="text" maxlength="20" placeholder="Código promocional" aria-label="Código promocional" data-promo-input="' + esc(p.id) + '" autocomplete="off"><button class="btn small" type="button" data-promo-apply="' + esc(p.id) + '">Aplicar</button><small class="premium-promo-msg" data-promo-msg="' + esc(p.id) + '"></small></div>' : '') +
             '<button class="btn small btn-gold" type="button" data-premium-buy="' + esc(p.id) + '"' + (!p.enabled || !data.enabled || (p.type === 'reset' && !(RSI.info && !RSI.info.free)) ? ' disabled' : '') + '>' + (p.type === 'reset' && RSI.info && RSI.info.free ? 'Use o reset grátis no Herói' : data.enabled ? (p.type === 'reset' ? 'Comprar reset · R$ 5,00' : isBox ? 'Comprar caixas' : p.type === 'mount' ? 'Comprar Fenrir' : 'Comprar conjunto') : 'Pagamento indisponível') + '</button>' + (p.type === 'set' ? '<button class="btn small premium-preview-trigger" type="button" data-premium-preview="' + esc(p.id) + '">Ver no personagem</button>' : '') + '</div></article>';
         }).join('') + '</div></section>';
       Array.from(holder.querySelectorAll('[data-premium-icon]')).forEach((canvas, i) => {
@@ -2919,10 +2920,30 @@
         Sprites.ready.then(draw).catch(() => { ctx.fillStyle = '#eee'; ctx.fillText('Prévia indisponível', 55, 140); });
         dialog.addEventListener('close', () => { cancelAnimationFrame(raf); dialog.remove(); }, { once: true });
       }; });
+      // código promocional (só o Fenrir aceita): o servidor valida e devolve o preço com desconto
+      const promoOk = {};
+      $$('[data-promo-apply]', holder).forEach(btn => {
+        const id = btn.dataset.promoApply, input = holder.querySelector('[data-promo-input="' + id + '"]'), msg = holder.querySelector('[data-promo-msg="' + id + '"]'), priceEl = holder.querySelector('[data-premium-price="' + id + '"]');
+        const product = catalog.find(p => p.id === id);
+        input.oninput = () => { if (promoOk[id]) { delete promoOk[id]; priceEl.innerHTML = brl.format(product.price / 100); msg.textContent = ''; msg.className = 'premium-promo-msg'; } };
+        input.onkeydown = (e) => { if (e.key === 'Enter') btn.click(); };
+        btn.onclick = async () => {
+          btn.disabled = true;
+          try {
+            const res = await fetch('/api/premium-store/promo', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-Requested-With':'mui'}, body:JSON.stringify({product:id, code:input.value}) });
+            const j = await res.json().catch(()=>({}));
+            if (!res.ok || !j.ok) throw new Error(j.error || 'Código promocional inválido.');
+            promoOk[id] = j.code;
+            priceEl.innerHTML = '<s class="muted">' + brl.format(j.oldPrice / 100) + '</s> ' + brl.format(j.price / 100);
+            msg.textContent = 'Código ' + j.code + ' aplicado: -' + j.pct + '%'; msg.className = 'premium-promo-msg ok';
+          } catch (e) { delete promoOk[id]; priceEl.innerHTML = brl.format(product.price / 100); msg.textContent = e.message; msg.className = 'premium-promo-msg bad'; }
+          btn.disabled = false;
+        };
+      });
       $$('[data-premium-buy]', holder).forEach(btn => { btn.onclick = async () => {
         btn.disabled = true;
         try {
-          const res = await fetch('/api/premium-store/checkout', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-Requested-With':'mui'}, body:JSON.stringify({product:btn.dataset.premiumBuy, charId, back:'/game.html?c=' + encodeURIComponent(charId)}) });
+          const res = await fetch('/api/premium-store/checkout', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-Requested-With':'mui'}, body:JSON.stringify({product:btn.dataset.premiumBuy, charId, promo:promoOk[btn.dataset.premiumBuy] || undefined, back:'/game.html?c=' + encodeURIComponent(charId)}) });
           const j = await res.json().catch(()=>({}));
           if (!res.ok || !j.url) throw new Error(j.error || 'Não foi possível iniciar a compra.');
           location.href = j.url;
