@@ -2397,6 +2397,7 @@
           if (!i.equipped) continue;
           if (i.slot === 'weapon') { o.w = i.base; o.wr = i.rarity; o.wp = i.plus || 0; if (i.excellent) o.we = 1; }
           else if (i.slot === 'wings') { o.wings = i.base; o.wingRarity = i.rarity; o.wingPlus = i.plus || 0; }
+          else if (i.slot === 'pet') o.pet = i.base;   // montaria / pet (igual ao servidor): sem isso a montaria sumia a cada atualização
           else if (['helm', 'armor', 'pants', 'gloves', 'boots'].includes(i.slot)) {
             if (i.set && Sprites.ARMOR.includes(i.slot)) o[i.slot] = i.set;
             plus += i.plus || 0; if (i.excellent) exc++; if (i.set) sets[i.set] = (sets[i.set] || 0) + 1;
