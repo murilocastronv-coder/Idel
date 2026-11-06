@@ -8,7 +8,7 @@ const EXCELLENT = require('./excellent');
 const SET = require('./settings');
 const EQUIP = require('./equip');
 
-const BOXES = ['kundun_bronze', 'kundun_prata', 'kundun_ouro', 'kundun_promo'];
+const BOXES = ['kundun_1', 'kundun_2', 'kundun_3', 'kundun_4', 'kundun_5', 'kundun_6', 'kundun_7'];
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'ancestral'];
 const KINDS = ['zen', 'pot', 'item', 'material', 'chaosweapon', 'wing1', 'wing2', 'cape'];
 const HIGH = ['legendary', 'ancestral'];
@@ -17,7 +17,7 @@ const HIGH = ['legendary', 'ancestral'];
 const DEFAULTS = {
   // Comum/Raro = equipamento sem opções excelentes; Excelente = Épico com opções excelentes; Lendário = com opções excelentes.
   // Pesos somam 100 em cada caixa (peso = % de chance). Ancestral só na Ouro.
-  kundun_bronze: [
+  kundun_1: [
     { kind: 'zen', w: 30.95, min: 5000, max: 25000 },
     { kind: 'item', w: 30, rarity: 'common', plusMin: 0, plusMax: 1, reqMin: 1, reqMax: 40, low: true, exc: false },
     { kind: 'item', w: 16, rarity: 'rare', plusMin: 0, plusMax: 2, reqMin: 1, reqMax: 40, low: true, exc: false },
@@ -28,7 +28,7 @@ const DEFAULTS = {
     { kind: 'material', w: 4, item: 'jewel_of_soul', min: 1, max: 1 },
     { kind: 'material', w: 2, item: 'jewel_of_creation', min: 1, max: 1 },
   ],
-  kundun_prata: [
+  kundun_2: [
     { kind: 'zen', w: 26, min: 50000, max: 150000 },
     { kind: 'item', w: 14, rarity: 'common', plusMin: 0, plusMax: 2, reqMin: 30, reqMax: 80, exc: false },
     { kind: 'item', w: 24, rarity: 'rare', plusMin: 1, plusMax: 3, reqMin: 30, reqMax: 80, exc: false },
@@ -39,7 +39,7 @@ const DEFAULTS = {
     { kind: 'material', w: 4, item: 'jewel_of_creation', min: 1, max: 1 },
   ],
   // Ouro: as únicas taxas especiais do jogo — Ancestral 0,50% e Lendário 1,50% (só nesta caixa)
-  kundun_ouro: [
+  kundun_3: [
     { kind: 'zen', w: 7, min: 60000, max: 150000 }, // Zen bem menor e mais raro (antes 21% · 300k-800k)
     { kind: 'item', w: 24, rarity: 'rare', plusMin: 2, plusMax: 4, reqMin: 60, reqMax: 120, exc: false },
     { kind: 'item', w: 30, rarity: 'epic', plusMin: 2, plusMax: 5, reqMin: 60, reqMax: 120, exc: true },
@@ -51,11 +51,41 @@ const DEFAULTS = {
     { kind: 'material', w: 6, item: 'jewel_of_creation', min: 1, max: 2 },
   ],
   // Caixa semi-full de loja: só raros/épicos e adicionais moderados; sem drops full.
-  kundun_promo: [
+  kundun_4: [
     { kind: 'item', w: 58, rarity: 'rare', plusMin: 3, plusMax: 5 },
     { kind: 'item', w: 32, rarity: 'epic', plusMin: 4, plusMax: 5 },
     { kind: 'material', w: 7, item: 'jewel_of_chaos', min: 1, max: 3 },
     { kind: 'zen', w: 3, min: 25000, max: 100000 },
+  ],
+  // +5 a +7: loja de cash, cada uma melhor que a anterior (pesos = % de chance)
+  kundun_5: [
+    { kind: 'zen', w: 5, min: 80000, max: 200000 },
+    { kind: 'item', w: 26, rarity: 'rare', plusMin: 3, plusMax: 5, reqMin: 100, reqMax: 250, exc: false },
+    { kind: 'item', w: 40, rarity: 'epic', plusMin: 3, plusMax: 5, reqMin: 100, reqMax: 250, exc: true },
+    { kind: 'item', w: 4, rarity: 'legendary', plusMin: 3, plusMax: 5, reqMin: 100, reqMax: 250, exc: true },
+    { kind: 'material', w: 9, item: 'jewel_of_chaos', min: 2, max: 4 },
+    { kind: 'material', w: 7, item: 'jewel_of_bless', min: 2, max: 4 },
+    { kind: 'material', w: 6, item: 'jewel_of_soul', min: 2, max: 3 },
+    { kind: 'material', w: 3, item: 'jewel_of_creation', min: 1, max: 2 },
+  ],
+  kundun_6: [
+    { kind: 'item', w: 18, rarity: 'rare', plusMin: 4, plusMax: 5, reqMin: 150, reqMax: 400, exc: false },
+    { kind: 'item', w: 48, rarity: 'epic', plusMin: 4, plusMax: 5, reqMin: 150, reqMax: 400, exc: true },
+    { kind: 'item', w: 8, rarity: 'legendary', plusMin: 4, plusMax: 5, reqMin: 150, reqMax: 400, exc: true },
+    { kind: 'item', w: 1, rarity: 'ancestral', plusMin: 4, plusMax: 5, reqMin: 150, reqMax: 400, exc: true },
+    { kind: 'material', w: 9, item: 'jewel_of_chaos', min: 3, max: 5 },
+    { kind: 'material', w: 7, item: 'jewel_of_bless', min: 3, max: 5 },
+    { kind: 'material', w: 6, item: 'jewel_of_soul', min: 2, max: 4 },
+    { kind: 'material', w: 3, item: 'jewel_of_creation', min: 1, max: 3 },
+  ],
+  kundun_7: [
+    { kind: 'item', w: 47, rarity: 'epic', plusMin: 5, plusMax: 5, reqMin: 200, reqMax: 600, exc: true },
+    { kind: 'item', w: 14, rarity: 'legendary', plusMin: 5, plusMax: 5, reqMin: 200, reqMax: 600, exc: true },
+    { kind: 'item', w: 3, rarity: 'ancestral', plusMin: 5, plusMax: 5, reqMin: 200, reqMax: 600, exc: true },
+    { kind: 'material', w: 12, item: 'jewel_of_chaos', min: 4, max: 6 },
+    { kind: 'material', w: 10, item: 'jewel_of_bless', min: 4, max: 6 },
+    { kind: 'material', w: 9, item: 'jewel_of_soul', min: 3, max: 5 },
+    { kind: 'material', w: 5, item: 'jewel_of_creation', min: 2, max: 3 },
   ],
 };
 
@@ -68,7 +98,7 @@ function capOuroZen(list) {
   if (!Array.isArray(list)) return list;
   return list.map((e) => (e && e.kind === 'zen' ? { ...e, w: Math.min(e.w, OURO_ZEN_CAP.w), min: Math.min(e.min, OURO_ZEN_CAP.min), max: Math.min(e.max, OURO_ZEN_CAP.max) } : e));
 }
-function cfg() { const c = { ...DEFAULTS, ...(SET.get('kundun', DEFAULTS) || {}) }; c.kundun_ouro = capOuroZen(c.kundun_ouro); return c; }
+function cfg() { const c = { ...DEFAULTS, ...(SET.get('kundun', DEFAULTS) || {}) }; c.kundun_3 = capOuroZen(c.kundun_3); return c; }
 async function init(helpers) { H = helpers; await SET.load('kundun', DEFAULTS); }
 
 const randi = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
@@ -90,8 +120,11 @@ function equipFor(level, kinds) {
 // Box Prata e Ouro: todo equipamento sai com 2 a 4 atributos (opções excelentes) sem repetir.
 // [quantidade, peso %]; a Ouro tem distribuição mais difícil que a Prata. A Bronze não usa este sistema.
 const ATTR_DIST = {
-  kundun_prata: [[2, 65], [3, 28], [4, 7]],
-  kundun_ouro: [[2, 76], [3, 20.5], [4, 3.5]],
+  kundun_2: [[2, 65], [3, 28], [4, 7]],
+  kundun_3: [[2, 76], [3, 20.5], [4, 3.5]],
+  kundun_5: [[2, 70], [3, 24], [4, 6]],
+  kundun_6: [[2, 60], [3, 30], [4, 10]],
+  kundun_7: [[2, 45], [3, 38], [4, 17]],
 };
 const ATTR_TIER = { 2: 'Especial', 3: 'Superior', 4: 'Lendária especial' };
 function attrCount(box) {
@@ -265,8 +298,8 @@ function sanitize(input) {
       }
       if (e.kind === 'item' || e.kind === 'chaosweapon') {
         if (!RARITY_ORDER.includes(e.rarity)) throw new Error(`${lbl}: raridade inválida.`);
-        if (box === 'kundun_promo' && !['rare', 'epic'].includes(e.rarity)) throw new Error(`${lbl}: a caixa promocional aceita apenas itens raros ou épicos.`);
-        if (!['kundun_promo', 'kundun_ouro'].includes(box) && e.rarity === 'ancestral') throw new Error(`${lbl}: só a Box Kundun Ouro entrega itens Ancestrais.`);
+        if (box === 'kundun_4' && !['rare', 'epic'].includes(e.rarity)) throw new Error(`${lbl}: a Box Kundun +4 aceita apenas itens raros ou épicos.`);
+        if (!['kundun_3', 'kundun_6', 'kundun_7'].includes(box) && e.rarity === 'ancestral') throw new Error(`${lbl}: só as Box Kundun +3, +6 e +7 entregam itens Ancestrais.`);
         o.rarity = e.rarity; o.plusMin = n(e.plusMin || 0, 0, DROP_PLUS_MAX, '+ mínimo (máximo 5)'); o.plusMax = n(e.plusMax || 0, o.plusMin, DROP_PLUS_MAX, '+ máximo (máximo 5)');
         if (e.kind === 'item' && (e.reqMin || e.reqMax)) { o.reqMin = n(e.reqMin || 1, 1, G.LIMITS.maxLevel, 'nível mínimo'); o.reqMax = n(e.reqMax || o.reqMin, o.reqMin, G.LIMITS.maxLevel, 'nível máximo'); }
         if (e.kind === 'item' && typeof e.exc === 'boolean') o.exc = e.exc;
@@ -279,7 +312,7 @@ function sanitize(input) {
     const low = clean.filter((e) => (e.kind === 'item' || e.kind === 'chaosweapon') && ['common', 'uncommon', 'rare'].includes(e.rarity)).reduce((a, e) => a + e.w, 0);
     const total = clean.reduce((a, e) => a + e.w, 0);
     if (high && (low ? high >= low : high >= total * 0.2)) throw new Error(`${name}: a chance de itens lendários e ancestrais precisa ser menor que a de itens comuns, incomuns e raros.`);
-    if (box === 'kundun_ouro') {
+    if (box === 'kundun_3') {
       const sum = (r) => clean.filter((e) => e.kind !== 'material' && e.rarity === r).reduce((a, e) => a + e.w, 0);
       if (sum('legendary') / total > 0.015 + 1e-9) throw new Error(`${name}: a chance de equipamento Lendário não pode passar de 1,50%.`);
       if (sum('ancestral') / total > 0.005 + 1e-9) throw new Error(`${name}: a chance de equipamento Ancestral não pode passar de 0,50%.`);

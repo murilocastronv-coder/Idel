@@ -21,9 +21,9 @@ const DEFAULTS = {
   minShare: 10,             // % do dano para participar da recompensa
   thresholds: { prata: 30, ouro: 90 },   // nível do monstro original (elites sobem uma categoria)
   tiers: {
-    bronze: { hp: 3, dmg: 1.5, def: 1.5, exp: 3, zen: 3, box: 'kundun_bronze', scale: 1.15 },
-    prata: { hp: 5, dmg: 2, def: 2, exp: 5, zen: 5, box: 'kundun_prata', scale: 1.25 },
-    ouro: { hp: 8, dmg: 2.5, def: 3, exp: 8, zen: 8, box: 'kundun_ouro', scale: 1.35 },
+    bronze: { hp: 3, dmg: 1.5, def: 1.5, exp: 3, zen: 3, box: 'kundun_1', scale: 1.15 },
+    prata: { hp: 5, dmg: 2, def: 2, exp: 5, zen: 5, box: 'kundun_2', scale: 1.25 },
+    ouro: { hp: 8, dmg: 2.5, def: 3, exp: 8, zen: 8, box: 'kundun_3', scale: 1.35 },
   },
   announceKills: ['prata', 'ouro'],
   mapDefaults: { count: 6, maxAlive: 3, intervalSec: 20 },
@@ -360,7 +360,7 @@ function sanitize(i) {
   for (const t of TIERS) {
     const x = (i.tiers || {})[t] || c.tiers[t];
     out.tiers[t] = { hp: n(x.hp, 1, 100, `${t}: vida`), dmg: n(x.dmg, 1, 50, `${t}: dano`), def: n(x.def, 1, 50, `${t}: defesa`), exp: n(x.exp, 1, 100, `${t}: EXP`), zen: n(x.zen, 1, 100, `${t}: Zen`),
-      box: ['kundun_bronze', 'kundun_prata', 'kundun_ouro'].includes(x.box) ? x.box : c.tiers[t].box, scale: n(x.scale, 1, 2, `${t}: tamanho`) };
+      box: ['kundun_1', 'kundun_2', 'kundun_3'].includes(x.box) ? x.box : c.tiers[t].box, scale: n(x.scale, 1, 2, `${t}: tamanho`) };
   }
   for (const [mid, m] of Object.entries(i.maps || {})) {
     if (!G.WORLD[mid] || G.WORLD[mid].safe) continue;

@@ -691,14 +691,21 @@ const EQUIP_SLOTS = ['helm', 'armor', 'pants', 'gloves', 'boots', 'weapon', 'shi
 
 // ---------- Invasão Dourada: caixas abertas na bolsa ----------
 Object.assign(ITEM_BASES, {
-  kundun_bronze: { name: 'Box Kundun Bronze', slot: 'box', icon: 'box', ic: '#d08a4a', req: 1, stack: 99, rarity: 'uncommon', value: 2000, special: true, tier: 1,
-    desc: 'Caixa da Invasão Dourada. Pode ter Zen, poções, equipamentos comuns e incomuns, joias e uma pequena chance de equipamento raro.' },
-  kundun_prata: { name: 'Box Kundun Prata', slot: 'box', icon: 'box', ic: '#d8e2f0', req: 1, stack: 99, rarity: 'rare', value: 9000, special: true, tier: 2,
-    desc: 'Caixa da Invasão Dourada. Mais Zen, equipamentos raros com adicionais, joias, materiais de criação e chance de equipamento épico.' },
-  kundun_ouro: { name: 'Box Kundun Ouro', slot: 'box', icon: 'box', ic: '#ffc83a', req: 1, stack: 99, rarity: 'epic', value: 40000, special: true, tier: 3,
-    desc: 'Caixa da Invasão Dourada. Equipamentos épicos, lendários e ancestrais, asas e capas, joias raras e materiais poderosos.' },
-  kundun_promo: { name: 'Box Kundun Promocional', slot: 'box', icon: 'box', ic: '#ef4350', req: 1, stack: 99, rarity: 'epic', value: 5000, special: true, tier: 2,
-    desc: 'Caixa promocional com equipamentos raros e épicos semi-full, melhorias limitadas até +5 e materiais. Não contém itens lendários nem ancestrais.' },
+  // Box Kundun +1 a +7 (arte desenhada à mão). +1 a +3 caem grátis (Invasão Dourada e eventos); +4 a +7 vêm da loja de cash.
+  kundun_1: { name: 'Box Kundun +1', slot: 'box', icon: 'box', ic: '#6a8ab8', req: 1, stack: 99, rarity: 'uncommon', value: 2000, special: true, tier: 1,
+    desc: 'Cai na Invasão Dourada e nos eventos. Zen, equipamentos comuns e raros, joias e uma pequena chance de equipamento épico.' },
+  kundun_2: { name: 'Box Kundun +2', slot: 'box', icon: 'box', ic: '#3ab06a', req: 1, stack: 99, rarity: 'rare', value: 9000, special: true, tier: 2,
+    desc: 'Cai na Invasão Dourada e nos eventos. Mais Zen, equipamentos raros com 2 a 4 atributos, joias e chance de equipamento épico.' },
+  kundun_3: { name: 'Box Kundun +3', slot: 'box', icon: 'box', ic: '#7ad0ff', req: 1, stack: 99, rarity: 'epic', value: 40000, special: true, tier: 3,
+    desc: 'Cai na Invasão Dourada e nos eventos. Equipamentos épicos, lendários (1,5%) e ancestrais (0,5%), joias raras e materiais.' },
+  kundun_4: { name: 'Box Kundun +4', slot: 'box', icon: 'box', ic: '#e0473a', req: 1, stack: 99, rarity: 'epic', value: 5000, special: true, tier: 2,
+    desc: 'Loja de cash. Equipamentos raros e épicos semi-full com melhoria +3 a +5 e materiais. Sem lendários ou ancestrais.' },
+  kundun_5: { name: 'Box Kundun +5', slot: 'box', icon: 'box', ic: '#ffc83a', req: 1, stack: 99, rarity: 'epic', value: 60000, special: true, tier: 3,
+    desc: 'Loja de cash. Equipamentos épicos com 2 a 4 atributos, chance de lendário (4%), joias raras e materiais.' },
+  kundun_6: { name: 'Box Kundun +6', slot: 'box', icon: 'box', ic: '#a04aff', req: 1, stack: 99, rarity: 'legendary', value: 90000, special: true, tier: 3,
+    desc: 'Loja de cash. Equipamentos épicos e lendários (8%), chance de ancestral (1%), joias raras e materiais.' },
+  kundun_7: { name: 'Box Kundun +7', slot: 'box', icon: 'box', ic: '#fff0c0', req: 1, stack: 99, rarity: 'legendary', value: 140000, special: true, tier: 3,
+    desc: 'Loja de cash. A melhor caixa: lendários (14%), ancestrais (3%), épicos com até 4 atributos e muitas joias.' },
 });
 
 // asa de nível 1 -> asa de nível 2 (o Magic Gladiator transforma Satan/Heaven em Darkness)

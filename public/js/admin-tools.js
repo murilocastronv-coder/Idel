@@ -363,7 +363,7 @@
           <p class="muted small">A chance de cada prêmio é o peso dele ÷ soma dos pesos da caixa. Lendários e ancestrais precisam ser mais raros que comuns, incomuns e raros. Equipamentos saem perto do nível de quem abre.</p>
           ${V.boxIds.map((b) => `<div class="adt-box" data-box="${b}"><h4>${esc(V.boxNames[b])}</h4><div class="adt-entries">${V.boxes[b].map(entry).join('')}</div><button class="btn small" type="button" data-add-entry>+ prêmio</button></div>`).join('')}
           <button class="btn btn-gold" type="button" id="adt-box-save">Salvar caixas</button>
-          <div class="adm-row">${sel('simBox', V.boxIds.map((b) => [b, V.boxNames[b]]), 'kundun_ouro', 'id="adt-sim-box"')}<label>aberturas ${num('n', 5000, 'id="adt-sim-n" min="1" max="100000"')}</label>
+          <div class="adm-row">${sel('simBox', V.boxIds.map((b) => [b, V.boxNames[b]]), 'kundun_3', 'id="adt-sim-box"')}<label>aberturas ${num('n', 5000, 'id="adt-sim-n" min="1" max="100000"')}</label>
             <label>nível ${num('lv', 100, 'id="adt-sim-lv" min="1"')}</label><button class="btn small" type="button" id="adt-box-sim">Simular</button></div>
           <div id="adt-box-out"></div>
         </fieldset>

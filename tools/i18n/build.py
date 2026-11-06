@@ -4,6 +4,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 sys.path.insert(0, HERE)
 from en import EN
+try:
+    from en_extra import EN_EXTRA  # textos novos (mapas, monstros, loja, mercado, guildas...)
+    EN.update(EN_EXTRA)
+except ImportError:
+    pass
 
 def renum(s):
     it = iter(range(100))

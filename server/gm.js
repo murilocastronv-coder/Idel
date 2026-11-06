@@ -108,7 +108,7 @@ const CMDS = {
   removerxp: { usage: '/removerxp QUANTIDADE', cat: 'Experiência', desc: 'Remove EXP do nível atual (não desce de nível). Ex.: /removerxp 1000' },
   mover: { usage: '/mover MAPA  ·  /mover player JOGADOR', cat: 'Teletransporte', desc: 'Leva você ao mapa (na sua sala) ou traz o jogador online para perto de você. Ex.: /mover Noria · /mover player Jogador123' },
   reviver: { usage: '/reviver boss NOME [SALA|todas]', cat: 'Bosses', desc: 'Faz o Boss morto nascer agora no lugar original (na sua sala, numa sala ou em todas). Ex.: /reviver boss Kundun' },
-  evento: { usage: '/evento xp MULT DURAÇÃO · /evento drop ID_BOX DURAÇÃO · /evento status · /evento parar [xp|drop]', cat: 'Eventos', desc: 'Ex.: /evento xp 2x 30m · /evento drop kundun_bronze 5m' },
+  evento: { usage: '/evento xp MULT DURAÇÃO · /evento drop ID_BOX DURAÇÃO · /evento status · /evento parar [xp|drop]', cat: 'Eventos', desc: 'Ex.: /evento xp 2x 30m · /evento drop kundun_1 5m' },
   chatgm: { usage: '/chatgm MENSAGEM', cat: 'Comunicação', desc: `Aviso grande e vermelho na tela de todos (até ${CHAT_MAX} letras).` },
   online: { usage: '/online', cat: 'Consultas', desc: 'Quantos jogadores estão conectados.' },
   info: { usage: '/info JOGADOR', cat: 'Consultas', desc: 'Classe, nível, reset, mapa, online, guilda, Zen e EXP.' },

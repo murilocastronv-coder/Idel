@@ -14,7 +14,7 @@ const hourly = (min) => Array.from({ length: 24 }, (_, h) => `${String(h).padSta
 const KINDS = ['castle', 'devil', 'blood'];
 const R = (kind, qty, extra = {}) => ({ kind, qty, ...extra });
 function castleRewards(i) {
-  const box = i < 2 ? 'kundun_bronze' : i < 4 ? 'kundun_prata' : 'kundun_ouro';
+  const box = i < 2 ? 'kundun_1' : i < 4 ? 'kundun_2' : 'kundun_3';
   return {
     winner: [R('zen', 400000 * (i + 1)), R('item', 1 + Math.floor(i / 2), { base: 'jewel_of_chaos' }), R('item', 1, { base: box }), R('gear', 1, { rarity: i < 3 ? 'rare' : 'epic' })],
     second: [R('zen', 150000 * (i + 1)), R('item', 1, { base: 'jewel_of_chaos' })],
@@ -23,10 +23,10 @@ function castleRewards(i) {
   };
 }
 function devilRewards(i) {
-  const box = i < 2 ? 'kundun_bronze' : i < 5 ? 'kundun_prata' : 'kundun_ouro';
+  const box = i < 2 ? 'kundun_1' : i < 5 ? 'kundun_2' : 'kundun_3';
   return {
     winner: [R('zen', 300000 * (i + 1)), R('item', 1, { base: box }), R('item', 1, { base: 'jewel_of_chaos' })],
-    second: [R('zen', 150000 * (i + 1)), R('item', 1, { base: 'kundun_bronze' })],
+    second: [R('zen', 150000 * (i + 1)), R('item', 1, { base: 'kundun_1' })],
     third: [R('zen', 80000 * (i + 1))],
     participant: [R('zen', 20000 * (i + 1))],
   };
@@ -35,7 +35,7 @@ function devilRewards(i) {
 const BLOOD_MID = [45, 105, 155, 205, 255, 305, 365];
 const lvExp = (L) => Math.floor(100 * Math.pow(L, 2.1) + 200);
 function bloodRewards(i) {
-  const box = i < 2 ? 'kundun_bronze' : i < 5 ? 'kundun_prata' : 'kundun_ouro', E = lvExp(BLOOD_MID[i]);
+  const box = i < 2 ? 'kundun_1' : i < 5 ? 'kundun_2' : 'kundun_3', E = lvExp(BLOOD_MID[i]);
   return {
     winner: [R('exp', Math.round(E * 0.3)), R('zen', 300000 * (i + 1)), R('item', 1, { base: 'jewel_of_bless' }), R('item', 1, { base: box })],
     second: [R('exp', Math.round(E * 0.15)), R('zen', 150000 * (i + 1))],

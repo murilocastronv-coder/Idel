@@ -30,9 +30,14 @@ function applyPromo(productId, code, basePrice) {
 const STAT_RESET ={ id:'stat-reset', name:'Reset de atributos', price:500, qty:1, tone:'#e8b84a', type:'reset' };
 // Pacotes fixos de Box Kundun Promocional: conteúdo semi-full, sem itens ancestrais/full.
 const BOX_PROMOS = [
-  { id:'kundun-promo-10', name:'10 Boxes Kundun · Semi-full', price:5000, qty:10, tone:'#ef4350', type:'box' },
-  { id:'kundun-promo-20', name:'20 Boxes Kundun · Semi-full', price:10000, qty:20, tone:'#c83845', type:'box' },
-  { id:'kundun-promo-30', name:'30 Boxes Kundun · Semi-full', price:15000, qty:30, tone:'#a82b3a', type:'box' },
+  // Box Kundun +4 (antiga Promocional): mesmos produtos e preços de antes, para pedidos antigos continuarem valendo
+  { id:'kundun-promo-10', name:'10 Box Kundun +4 · Semi-full', price:5000, qty:10, tone:'#e0473a', type:'box', box:'kundun_4' },
+  { id:'kundun-promo-20', name:'20 Box Kundun +4 · Semi-full', price:10000, qty:20, tone:'#c83845', type:'box', box:'kundun_4' },
+  { id:'kundun-promo-30', name:'30 Box Kundun +4 · Semi-full', price:15000, qty:30, tone:'#a82b3a', type:'box', box:'kundun_4' },
+  // Box Kundun +5, +6 e +7: só na loja de cash
+  { id:'kundun-5-10', name:'10 Box Kundun +5 · Épicos e lendários', price:7000, qty:10, tone:'#ffc83a', type:'box', box:'kundun_5' },
+  { id:'kundun-6-10', name:'10 Box Kundun +6 · Lendários e ancestrais', price:10000, qty:10, tone:'#a04aff', type:'box', box:'kundun_6' },
+  { id:'kundun-7-10', name:'10 Box Kundun +7 · A melhor caixa', price:15000, qty:10, tone:'#fff0c0', type:'box', box:'kundun_7' },
 ];
 let config = {};
 function findProduct(id) {
@@ -197,7 +202,7 @@ async function pending(accountId) {
 }
 function itemList(productId) {
   const promo=BOX_PROMOS.find((p)=>p.id===productId);
-  if (promo) return Array.from({length:promo.qty},()=>({base:'kundun_promo',rarity:'epic',plus:0}));
+  if (promo) return Array.from({length:promo.qty},()=>({base:promo.box||'kundun_4',rarity:(G.ITEM_BASES[promo.box]||{}).rarity||'epic',plus:0}));
   if (productId === FENRIR.id) return [{ base:FENRIR.base, rarity:'legendary', plus:FENRIR.plus, options:fenrirOptions() }];
   const p=G.PREMIUM_SET_PACKS.find(x=>x.id===productId); if(!p) throw new Error('Produto inválido.');
   const suffix=['helm','armor','pants','gloves','boots','wings','pendant','ring1','ring2','sword','bow','shield'];

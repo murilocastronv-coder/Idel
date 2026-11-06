@@ -3095,7 +3095,7 @@
         const product = catalog[i];
         const pc = canvas.getContext('2d');
         const piece = product && product.type === 'mount' ? { base: 'fenrir_gold' } : product && product.type === 'set' ? { base: product.id + '_armor' }
-          : product && product.type === 'box' ? { base: 'kundun_promo', icon: 'box' } : product && product.type === 'reset' ? { base: 'reset_status', icon: 'scroll' } : null;
+          : product && product.type === 'box' ? { base: product.box || 'kundun_4', icon: 'box' } : product && product.type === 'reset' ? { base: 'reset_status', icon: 'scroll' } : null;
         if (!(piece && PA.drawItem(pc, piece, 0, 0, 72)))
           PA.drawIcon(pc, product && product.type === 'box' ? 'box' : ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, product ? product.tone : '#d82f3f');
       });
