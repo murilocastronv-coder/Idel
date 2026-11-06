@@ -3013,7 +3013,7 @@
       const catalog = Array.isArray(data.catalog) ? data.catalog : [];
       const orders = Array.isArray(data.orders) ? data.orders : [];
       if (!catalog.length) throw new Error('A loja não retornou produtos. Atualize a página ou tente novamente.');
-      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/special-christmas-pixel-art.svg" alt="Set natalino em pixel art 2D" loading="lazy"><div><h3>Conjuntos semi-full</h3><b>Especial Christmas</b><p class="muted small">Armadura natalina, asas, pingente, dois anéis, espada, arco e escudo.</p></div></div><p class="muted small">30 conjuntos semi-full e pacotes promocionais de Box Kundun com itens raros e épicos, sem atributos full. Os atributos dos conjuntos aumentam junto com o preço; até o tier inicial supera os equipamentos base de monstros e bosses. Confira os seis atributos antes de comprar. O primeiro reset de status é grátis; cada reset adicional custa R$ 5,00.</p>' +
+      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/premium-sets.png?v=1" alt="Conjuntos premium em pixel art 2D" loading="lazy" style="image-rendering:pixelated"><div><h3>Conjuntos semi-full</h3><b>Conjuntos Premium</b><p class="muted small">Guardião de Aço, Sentinela Esmeralda, Soberano Solar, Arauto Astral e Soberano Carmesim: elmo, armadura, calça, luvas, botas, asas, pingente, dois anéis, espada, arco e escudo.</p></div></div><p class="muted small">30 conjuntos semi-full e pacotes promocionais de Box Kundun com itens raros e épicos, sem atributos full. Os atributos dos conjuntos aumentam junto com o preço; até o tier inicial supera os equipamentos base de monstros e bosses. Confira os seis atributos antes de comprar. O primeiro reset de status é grátis; cada reset adicional custa R$ 5,00.</p>' +
         (orders.length ? '<div class="premium-orders"><b>Pedidos prontos para resgatar</b>' + orders.map(o => '<div class="row"><span>' + esc(o.product) + ' · ' + brl.format(o.amount_cents / 100) + '</span><button class="btn small btn-gold" type="button" data-premium-claim="' + o.id + '">Resgatar neste personagem</button></div>').join('') + '</div>' : '') +
         '<div class="premium-grid">' + catalog.map(p => {
           const isBox = p.type === 'box';
@@ -3032,7 +3032,7 @@
       Array.from(holder.querySelectorAll('[data-premium-icon]')).forEach((canvas, i) => {
         const product = catalog[i];
         const pc = canvas.getContext('2d');
-        const piece = product && product.type === 'mount' ? { base: 'fenrir_gold' } : product && product.type === 'set' ? { base: product.id + '_' + ['armor','wings','sword','helm','shield'][i % 5] }
+        const piece = product && product.type === 'mount' ? { base: 'fenrir_gold' } : product && product.type === 'set' ? { base: product.id + '_armor' }
           : product && product.type === 'box' ? { base: 'kundun_promo', icon: 'box' } : product && product.type === 'reset' ? { base: 'reset_status', icon: 'scroll' } : null;
         if (!(piece && PA.drawItem(pc, piece, 0, 0, 72)))
           PA.drawIcon(pc, product && product.type === 'box' ? 'box' : ['wings','armor','sword','bow','shield'][i % 5], 0, 0, 6, product ? product.tone : '#d82f3f');

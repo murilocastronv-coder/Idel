@@ -617,6 +617,8 @@ const WING_EVOLVE = { wings_satan: 'wings_dragon', wings_heaven: 'wings_soul', w
  ];
  for (let packIndex = 0; packIndex < PREMIUM_SET_PACKS.length; packIndex++) {
    const pack = PREMIUM_SET_PACKS[packIndex];
+   // nomes dos conjuntos desenhados à mão (um por cor do pacote) + número da série
+   pack.name = ['Soberano Carmesim', 'Guardião de Aço', 'Sentinela Esmeralda', 'Soberano Solar', 'Arauto Astral'][packIndex % 5] + ' ' + ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'][Math.floor(packIndex / 5)];
    const tier = packIndex + 1;
    pack.tier = tier;
    pack.plus = 11; // todos os conjuntos semi-full da loja vêm +11 (máximo)
