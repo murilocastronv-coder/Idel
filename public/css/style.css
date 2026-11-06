@@ -405,3 +405,26 @@ details[open] > summary { margin-bottom: 14px; }
 
 /* botão "Jogar 3D" na escolha de personagem */
 .play-3d { background: linear-gradient(180deg, #7a5ad8, #4a2a98) !important; color: #fff !important; border-color: #b49af0 !important; }
+
+/* roadmap */
+.rm-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: -8px 0 20px; }
+.rm-tag { font: 600 14px var(--display); padding: 4px 10px; border: 2px solid var(--edge); background: var(--night-2); }
+.rm-done { color: #8fdc6f; } .rm-test { color: #ffd36b; } .rm-next { color: #8fc8ff; }
+.rm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+.rm-card { padding: 16px 18px; }
+.rm-card h3 { margin: 0 0 10px; font: 700 19px var(--title); color: var(--gold); }
+.rm-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.rm-card li { position: relative; padding-left: 24px; line-height: 1.35; color: var(--bone); }
+.rm-card li::before { position: absolute; left: 0; top: 0; font-weight: 800; }
+.rm-card li.done::before { content: '✓'; color: #8fdc6f; }
+.rm-card li.test::before { content: '◐'; color: #ffd36b; }
+.rm-card li.next::before { content: '◇'; color: #8fc8ff; }
+.rm-card li.test, .rm-card li.next { color: var(--bone-dim); }
+@media (max-width: 380px) { .rm-grid { grid-template-columns: 1fr; } }
+/* no celular o menu vira uma faixa rolável embaixo do topo (antes ficava escondido) */
+@media (max-width: 900px) {
+  .topbar { flex-wrap: wrap; row-gap: 6px; }
+  .nav { display: flex; order: 3; width: 100%; margin: 0; gap: 16px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav a { font-size: 15px; white-space: nowrap; }
+}
