@@ -16,7 +16,7 @@ const HIGH = ['legendary', 'ancestral'];
 // w = peso (a chance é w ÷ soma dos pesos da caixa)
 const DEFAULTS = {
   // Comum/Raro = equipamento sem opções excelentes; Excelente = Épico com opções excelentes; Lendário = com opções excelentes.
-  // Pesos somam 100 em cada caixa (peso = % de chance). Sem itens Ancestrais.
+  // Pesos somam 100 em cada caixa (peso = % de chance). Ancestral só na Ouro.
   kundun_bronze: [
     { kind: 'zen', w: 30.95, min: 5000, max: 25000 },
     { kind: 'item', w: 30, rarity: 'common', plusMin: 0, plusMax: 1, reqMin: 1, reqMax: 40, low: true, exc: false },
@@ -38,11 +38,13 @@ const DEFAULTS = {
     { kind: 'material', w: 6, item: 'jewel_of_soul', min: 1, max: 2 },
     { kind: 'material', w: 4, item: 'jewel_of_creation', min: 1, max: 1 },
   ],
+  // Ouro: as únicas taxas especiais do jogo — Ancestral 0,50% e Lendário 1,50% (só nesta caixa)
   kundun_ouro: [
-    { kind: 'zen', w: 22, min: 300000, max: 800000 },
+    { kind: 'zen', w: 21, min: 300000, max: 800000 },
     { kind: 'item', w: 10, rarity: 'rare', plusMin: 2, plusMax: 4, reqMin: 60, reqMax: 120, exc: false },
     { kind: 'item', w: 30, rarity: 'epic', plusMin: 2, plusMax: 5, reqMin: 60, reqMax: 120, exc: true },
-    { kind: 'item', w: 1, rarity: 'legendary', plusMin: 3, plusMax: 5, reqMin: 60, reqMax: 120, exc: true }, // exatamente 1%
+    { kind: 'item', w: 1.5, rarity: 'legendary', plusMin: 3, plusMax: 5, reqMin: 60, reqMax: 120, exc: true }, // exatamente 1,50%
+    { kind: 'item', w: 0.5, rarity: 'ancestral', plusMin: 3, plusMax: 5, reqMin: 60, reqMax: 120, exc: true }, // exatamente 0,50%
     { kind: 'material', w: 12, item: 'jewel_of_chaos', min: 2, max: 4 },
     { kind: 'material', w: 10, item: 'jewel_of_bless', min: 2, max: 3 },
     { kind: 'material', w: 9, item: 'jewel_of_soul', min: 2, max: 3 },
@@ -151,7 +153,8 @@ function describe(r) {
   const b = G.ITEM_BASES[r.base];
   if (r.kind === 'material') return `${r.qty}× ${b.name}`;
   const tags = [];
-  if (r.kind === 'item' && r.rarity === 'legendary') tags.push('Lendário');
+  if (r.kind === 'item' && r.rarity === 'ancestral') tags.push('Ancestral');
+  else if (r.kind === 'item' && r.rarity === 'legendary') tags.push('Lendário');
   else if (r.kind === 'item' && r.exc && r.rarity === 'epic') tags.push('Excelente');
   if (r.attrs) tags.push(`${r.attrs} atributos · ${ATTR_TIER[r.attrs]}`);
   return `${b.name}${r.plus ? ' +' + r.plus : ''}${tags.length ? ` (${tags.join(' · ')})` : ''}`;
@@ -257,7 +260,7 @@ function sanitize(input) {
       if (e.kind === 'item' || e.kind === 'chaosweapon') {
         if (!RARITY_ORDER.includes(e.rarity)) throw new Error(`${lbl}: raridade inválida.`);
         if (box === 'kundun_promo' && !['rare', 'epic'].includes(e.rarity)) throw new Error(`${lbl}: a caixa promocional aceita apenas itens raros ou épicos.`);
-        if (box !== 'kundun_promo' && e.rarity === 'ancestral') throw new Error(`${lbl}: as caixas Kundun não entregam itens Ancestrais.`);
+        if (!['kundun_promo', 'kundun_ouro'].includes(box) && e.rarity === 'ancestral') throw new Error(`${lbl}: só a Box Kundun Ouro entrega itens Ancestrais.`);
         o.rarity = e.rarity; o.plusMin = n(e.plusMin || 0, 0, DROP_PLUS_MAX, '+ mínimo (máximo 5)'); o.plusMax = n(e.plusMax || 0, o.plusMin, DROP_PLUS_MAX, '+ máximo (máximo 5)');
         if (e.kind === 'item' && (e.reqMin || e.reqMax)) { o.reqMin = n(e.reqMin || 1, 1, G.LIMITS.maxLevel, 'nível mínimo'); o.reqMax = n(e.reqMax || o.reqMin, o.reqMin, G.LIMITS.maxLevel, 'nível máximo'); }
         if (e.kind === 'item' && typeof e.exc === 'boolean') o.exc = e.exc;
@@ -270,7 +273,11 @@ function sanitize(input) {
     const low = clean.filter((e) => (e.kind === 'item' || e.kind === 'chaosweapon') && ['common', 'uncommon', 'rare'].includes(e.rarity)).reduce((a, e) => a + e.w, 0);
     const total = clean.reduce((a, e) => a + e.w, 0);
     if (high && (low ? high >= low : high >= total * 0.2)) throw new Error(`${name}: a chance de itens lendários e ancestrais precisa ser menor que a de itens comuns, incomuns e raros.`);
-    if (box === 'kundun_ouro') { const leg = clean.filter((e) => e.kind !== 'material' && e.rarity === 'legendary').reduce((a, e) => a + e.w, 0); if (leg / total > 0.01 + 1e-9) throw new Error(`${name}: a chance de equipamento Lendário não pode passar de 1%.`); }
+    if (box === 'kundun_ouro') {
+      const sum = (r) => clean.filter((e) => e.kind !== 'material' && e.rarity === r).reduce((a, e) => a + e.w, 0);
+      if (sum('legendary') / total > 0.015 + 1e-9) throw new Error(`${name}: a chance de equipamento Lendário não pode passar de 1,50%.`);
+      if (sum('ancestral') / total > 0.005 + 1e-9) throw new Error(`${name}: a chance de equipamento Ancestral não pode passar de 0,50%.`);
+    }
     out[box] = clean;
   }
   return out;
