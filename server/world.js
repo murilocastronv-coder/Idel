@@ -8,6 +8,7 @@ const VIP = require('./vip');
 const ADMIN = require('./admin');
 const CHAOS = require('./chaos');
 const ENTRIES = require('./entries');
+const AGI = require('./agility');
 const FENRIR = require('./fenrircraft');
 const DROPS = require('./drops');
 const CMDS = require('./commands');
@@ -329,7 +330,7 @@ class Player {
   recalc() {
     const s = this.stats, c = this.cls, lv = this.level;
     const eq = this.equipped();
-    let wdmg = [1, 2], def = 0, hpBonus = 0, wingDmg = 0, absorb = 0, damagePct = 0, reducePct = 0, reflectPct = 0, critChance = 0, critDamage = 0, attackSpeed = 0, hpOnKill = 0, mpOnKill = 0, defenseSuccess = 0, jewelLuck = 0;
+    let wdmg = [1, 2], def = 0, hpBonus = 0, wingDmg = 0, absorb = 0, damagePct = 0, reducePct = 0, reflectPct = 0, critChance = 0, critDamage = 0, attackSpeed = 0, itemAgi = 0, hpOnKill = 0, mpOnKill = 0, defenseSuccess = 0, jewelLuck = 0;
     const setCount = {};
     for (const it of eq) {
       const st = itemStats(it);
@@ -338,7 +339,7 @@ class Player {
       hpBonus += st.hp || 0;
       wingDmg += st.wdmg || 0; absorb += st.absorb || 0;
       damagePct += st.damagePct || 0; reducePct += st.reduction || 0; reflectPct += st.reflect || 0;
-      critChance += st.critChance || 0; critDamage += st.critDamage || 0; attackSpeed += st.attackSpeed || 0;
+      critChance += st.critChance || 0; critDamage += st.critDamage || 0; attackSpeed += st.attackSpeed || 0; itemAgi += st.agi || 0;
       hpOnKill += st.hpOnKill || 0; mpOnKill += st.mpOnKill || 0;
       defenseSuccess += st.defenseSuccess || 0; jewelLuck += st.jewelLuck || 0;
       const b = G.ITEM_BASES[it.base];
@@ -361,12 +362,16 @@ class Player {
     this.jewelLuck = Math.min(25, jewelLuck);
     this.dmgMin = Math.max(1, Math.round((base[0] + wdmg[0]) * dmgMul));
     this.dmgMax = Math.max(this.dmgMin + 1, Math.round((base[1] + wdmg[1]) * dmgMul));
-    this.def = Math.round((s.agi / 4 + def) * (fullSet ? 1.1 : 1));
+    // agilidade total = pontos distribuídos + agilidade dos itens equipados (cada item conta uma vez)
+    const agiTotal = Math.max(0, (s.agi || 0) + itemAgi);
+    this.agiTotal = agiTotal;
+    this.def = Math.round((AGI.defense(agiTotal, c) + def) * (fullSet ? 1.1 : 1));
     this.fullSet = fullSet;
     this.maxHp = Math.round(80 + s.vit * 5 + lv * 6 + hpBonus);
     this.maxMp = Math.round(30 + s.ene * 2 + lv * 2);
-    this.atkMs = Math.max(350, 1100 - s.agi * 3 - attackSpeed);
-    this.crit = Math.min(0.5, 0.05 + s.agi / 2000 + critChance / 100);
+    // fórmulas progressivas (server/agility.js), sem trava de 50%; os mesmos valores valem no PvE, PvP e na tela
+    this.atkMs = AGI.atkMs(agiTotal, c, attackSpeed);
+    this.crit = AGI.crit(agiTotal, c, critChance);
     this.critDmg = 1.5 + critDamage / 100;
     this.hpOnKill = Math.min(25, hpOnKill);
     this.mpOnKill = Math.min(25, mpOnKill);
@@ -393,7 +398,7 @@ class Player {
       evo: this.evo, className: this.className(), evolutions: G.EVOLUTIONS[this.cls], classQuest: this.classQuest,
       type: 'char', id: this.id, name: this.name, cls: this.cls, ap: this.ap, level: this.level, resets: this.resets,
       stats: this.stats, free: this.free, zen: this.zen, pots: this.pots, settings: this.settings,
-      dmg: [this.dmgMin, this.dmgMax], def: this.def, maxHp: this.maxHp, maxMp: this.maxMp, atkMs: this.atkMs,
+      dmg: [this.dmgMin, this.dmgMax], def: this.def, maxHp: this.maxHp, maxMp: this.maxMp, atkMs: this.atkMs, agiTotal: this.agiTotal,
       crit: this.crit, power: this.power, fullSet: this.fullSet, kills: this.kills, deaths: this.deaths,
       items: this.items.map(publicItem), invMax: G.INVENTORY_SIZE,
       skills: this.skills().map((s) => ({ id: s.id, name: s.name, mana: s.mana, cd: s.cd, fx: s.fx, buff: s.buff || null, heal: !!s.heal, aoe: !!s.aoe, on: this.skillOn(s.id) })),
@@ -451,6 +456,7 @@ class World {
   async init() {
     const helpers = { publicItem, bagUsed, itemValue, rollRarity, rollPlus };
     await EXCELLENT.init(helpers);
+    await AGI.init();
     await CHAOS.init(helpers);
     ENTRIES.init(helpers);
     FENRIR.init(helpers);
@@ -1486,7 +1492,9 @@ class World {
     p.mp -= sk.mana;
     if (sk.cd) p.cds[sk.id] = now + sk.cd;
     if (sk.id !== 'basic') this.quest(p, 'skill', 1);
-    p.nextAtk = now + p.atkMs;
+    // atacando sem parar, o próximo golpe conta a partir do golpe anterior (não do tick de 100 ms):
+    // assim o intervalo real é exatamente o mostrado na tela, sem arredondar para o tick seguinte
+    p.nextAtk = p.nextAtk && now - p.nextAtk < TICK_MS ? p.nextAtk + p.atkMs : now + p.atkMs;
     p.flip = target.x < p.x;
     const crit = Math.random() < p.crit;
     if (sk.aoe) {

@@ -126,6 +126,43 @@
       } catch (e) { msg(box, e.message || 'JSON inválido.', true); }
     };
   }
+  // ---------------- Agilidade: crítico, velocidade de ataque e defesa ----------------
+  async function agility(box) {
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    let V;
+    try { V = await X.api('GET', '/api/admin/agility'); } catch (e) { box.innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+    const CLS = { dark_knight: 'BK', dark_wizard: 'DW', fairy_elf: 'Elfa', magic_gladiator: 'MG', dark_lord: 'DL', summoner: 'Summoner' };
+    const F = [
+      ['crit', 'base', 'Crítico base (%)'], ['crit', 'perPoint', 'Crítico por ponto até o joelho (%)'], ['crit', 'knee', 'Joelho do crítico (agilidade)'],
+      ['crit', 'extra', 'Crítico extra depois do joelho (%)'], ['crit', 'curve', 'Suavidade do crítico (maior = cresce mais devagar)'], ['crit', 'cap', 'Crítico máximo de segurança (%)'],
+      ['speed', 'baseMs', 'Intervalo de ataque base (ms)'], ['speed', 'perPoint', 'ms a menos por ponto até o joelho'], ['speed', 'knee', 'Joelho da velocidade (agilidade)'],
+      ['speed', 'minMs', 'Intervalo mínimo técnico (ms)'], ['speed', 'curve', 'Suavidade da velocidade'],
+      ['defense', 'divisor', 'Agilidade por 1 de defesa até o joelho'], ['defense', 'knee', 'Joelho da defesa (agilidade)'], ['defense', 'divisorAfter', 'Agilidade por 1 de defesa depois do joelho'],
+    ];
+    const draw = () => {
+      const C = V.config;
+      box.innerHTML = `<p class="adt-msg" role="status"></p>
+        <p class="adt-sub">Agilidade total = pontos distribuídos + agilidade dos itens equipados. Até o joelho vale a fórmula antiga; depois dele o valor continua subindo, cada vez mais devagar, até o limite de segurança. Sem trava de 50%. Os valores entram no combate real (PvE e PvP) e na tela do Herói.</p>
+        <div class="adm-row" style="flex-wrap:wrap">${F.map(([g, k, l]) => `<label style="min-width:220px">${esc(l)} <input type="number" step="any" data-ag="${g}.${k}" value="${esc(C[g][k])}"></label>`).join('')}</div>
+        <b>Multiplicador da agilidade por classe (1 = padrão)</b>
+        <table class="adm-table"><tr><th>Classe</th><th>Crítico</th><th>Velocidade</th><th>Defesa</th></tr>
+        ${Object.entries(CLS).map(([c, n]) => `<tr><td>${n}</td>${['crit', 'speed', 'defense'].map((k) => `<td><input type="number" step="0.05" min="0.1" max="5" data-agc="${c}.${k}" value="${esc(C.classes[c][k])}" style="width:70px"></td>`).join('')}</tr>`).join('')}</table>
+        <button class="btn btn-gold" type="button" id="ag-save">Salvar e aplicar</button> <button class="btn small" type="button" id="ag-reset">Voltar ao padrão</button>
+        <b style="display:block;margin-top:10px">Conferência (sem itens): crítico · intervalo de ataque · defesa da agilidade</b>
+        <div style="overflow-x:auto"><table class="adm-table"><tr><th>Agilidade</th>${Object.values(CLS).map((n) => `<th>${n}</th>`).join('')}</tr>
+        ${V.preview.fairy_elf.map((row, i) => `<tr><td>${row.agi}</td>${Object.keys(CLS).map((c) => { const r = V.preview[c][i]; return `<td>${r.crit}% · ${r.atkMs}ms · ${r.def}</td>`; }).join('')}</tr>`).join('')}</table></div>`;
+      const collect = () => {
+        const o = { crit: {}, speed: {}, defense: {}, classes: {} };
+        $$('[data-ag]', box).forEach((i) => { const [g, k] = i.dataset.ag.split('.'); o[g][k] = Number(i.value); });
+        $$('[data-agc]', box).forEach((i) => { const [c, k] = i.dataset.agc.split('.'); (o.classes[c] = o.classes[c] || {})[k] = Number(i.value); });
+        return o;
+      };
+      const send = async (config) => { try { V = await X.api('POST', '/api/admin/agility', { config }); draw(); msg(box, V.message); } catch (e) { msg(box, e.message, true); } };
+      $('#ag-save', box).onclick = () => send(collect());
+      $('#ag-reset', box).onclick = () => send(V.defaults);
+    };
+    draw();
+  }
   function histChaos(rows, N) {
     if (!rows.length) return '<li class="muted">Nenhuma combinação ainda.</li>';
     return rows.map((h) => `<li>${dt(h.created_at)} · <b>${esc(h.char_name)}</b> · ${esc(h.recipe)} · ${esc(N[h.inputs.main.base] || h.inputs.main.base)}${h.inputs.main.plus ? ' +' + h.inputs.main.plus : ''} · ${h.chance}% ·
@@ -720,10 +757,11 @@
       <details class="adm-sec adt-sec" data-sec="arena"><summary><h3>Eventos: Chaos Castle, Devil Square e Blood Castle</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="upgrade"><summary><h3>Aprimoramento +0 a +15 e Ferreiro</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="chaos"><summary><h3>Chaos Machine (asas e capas)</h3></summary><div class="adt-body"></div></details>
+      <details class="adm-sec adt-sec" data-sec="agility"><summary><h3>Agilidade: crítico, velocidade de ataque e defesa</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="excellent"><summary><h3>Opções Excellent semi-full</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="drops"><summary><h3>Drops de materiais e eventos</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="rules"><summary><h3>Comandos, reset e histórico ADM</h3></summary><div class="adt-body"></div></details>`;
-    const fn = { market, invasion, arena, upgrade, equip, vault, chaos, excellent, drops, rules };
+    const fn = { market, invasion, arena, upgrade, equip, vault, chaos, agility, excellent, drops, rules };
     $$('.adt-sec', el).forEach((d) => { d.addEventListener('toggle', () => { if (d.open && !d.dataset.loaded) { d.dataset.loaded = 1; fn[d.dataset.sec]($('.adt-body', d)); } }); });
   }
 

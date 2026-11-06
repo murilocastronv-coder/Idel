@@ -30,6 +30,7 @@ const EQUIP = require('./equip');
 const VAULT = require('./vault');
 const CLS = require('./classes');
 const EXCELLENT = require('./excellent');
+const AGI = require('./agility');
 
 const PORT = Number(process.env.PORT || 3000);
 const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
@@ -418,6 +419,17 @@ route('POST', '/api/admin/excellent', bad(async (req) => {
   const config = await EXCELLENT.save(body.config || {});
   CMDS.log({ accountId: acc.id, name: acc.username, role: 'superadmin' }, 'panel:excellent', null, {}, null, config, 'ok', 'Opções Excellent atualizadas', null);
   return { ok: true, message: 'Opções Excellent salvas.', ...EXCELLENT.adminView() };
+}));
+// ---- Agilidade: crítico, velocidade de ataque e defesa (Super ADM) ----
+route('GET', '/api/admin/agility', async (req) => { await requireAdmin(req); return AGI.adminView(); });
+route('POST', '/api/admin/agility', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 32 * 1024);
+  const config = await AGI.save(body.config || {});
+  // recalcula na hora quem está online: tela e combate usam os mesmos números novos
+  if (world) for (const p of world.players.values()) { try { p.recalc(); p.send(p.charState()); } catch (_) { /* jogador saindo */ } }
+  CMDS.log({ accountId: acc.id, name: acc.username, role: 'superadmin' }, 'panel:agility', null, {}, null, config, 'ok', 'Fórmulas de agilidade salvas', null);
+  return { ok: true, message: 'Fórmulas de agilidade salvas e aplicadas a quem está online.', ...AGI.adminView() };
 }));
 route('GET', '/api/admin/drops', async (req) => {
   await requireAdmin(req);

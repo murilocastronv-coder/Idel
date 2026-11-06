@@ -2795,7 +2795,7 @@
       <div class="derived">
         <div><span>Dano</span><br>${c.dmg[0]}–${c.dmg[1]}</div><div><span>Defesa</span><br>${c.def}</div>
         <div><span>Vida</span><br>${fmt.format(c.maxHp)}</div><div><span>Mana</span><br>${fmt.format(c.maxMp)}</div>
-        <div><span>Ataque a cada</span><br>${(c.atkMs / 1000).toFixed(2)}s</div><div><span>Crítico</span><br>${Math.round(c.crit * 100)}%</div>
+        <div><span>Ataque a cada</span><br>${(c.atkMs / 1000).toFixed(2)}s</div><div><span>Crítico</span><br>${(Math.round(c.crit * 1000) / 10).toLocaleString('pt-BR')}%</div>${c.agiTotal != null && c.agiTotal !== (c.stats && c.stats.agi) ? `<div><span>Agilidade total</span><br>${fmt.format(c.agiTotal)}</div>` : ''}
         <div><span>Poder de combate</span><br>${fmt.format(c.power)}</div><div><span>Monstros derrotados</span><br>${fmt.format(c.kills)}</div>
         ${c.absorb ? `<div><span>Absorção (asa/capa)</span><br>${c.absorb}%</div>` : ''}${c.masterResets ? `<div><span>Master Reset</span><br>${c.masterResets}</div>` : ''}
       </div>
