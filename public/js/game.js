@@ -192,6 +192,7 @@
   const BURST = { meteor: 'burst_fire', fire: 'burst_fire', whirl: 'burst_energy', lightning: 'burst_lightning', spirit: 'burst_spirit', arrow3: 'burst_arrow', dark: 'burst_dark' };
   const MON_H = { slime: 26, goblin: 46, goblin_elite: 46, spider: 30, skeleton: 52, skeleton_king: 62 };
   const HERO_H = 56;
+  const HERO_HIP = 0.4; // altura do quadril no desenho do herói (fração da altura)
   const monSprite = (m) => m.sprite + (m.tint === 'elite' ? '_elite' : '');
 
   // efeitos extras de um golpe: círculo mágico, raio, meteoro, arco de espada, faíscas e luz no impacto
@@ -767,7 +768,7 @@
   function load3D() {
     const files = ['vendor/three/three.min.js', 'vendor/three/GLTFLoader.js', 'vendor/three/SkeletonUtils.js', 'vendor/three/RoomEnvironment.js',
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
-      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=4', 'world3d-actors.js?v=8', 'world3d-fx.js?v=1'];
+      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=4', 'world3d-actors.js?v=9', 'world3d-fx.js?v=1'];
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();
@@ -1776,21 +1777,34 @@
         }
         const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : undefined;
         if (act === 'run') drawRunPuff(x, y, now, e.phase, heroFlip, '#c9b98f');
-        // montaria (Fenrir Dourado): anda ao lado, um pouco atrás do herói, sem ficar em cima dele nem de nada
-        const mounted = false;
-        const lift = 0;
-        if (eq && eq.pet && window.Fenrir && Fenrir.variantOf(eq.pet) && !e.dead) {
-          const mp = sc * 1.35, side = heroFlip ? 1 : -1;
-          const fx = x + side * 36 * sc, fy = y + 3 * sc;
-          shadowAt(fx, fy, 9 * zoom);
-          Fenrir.draw(ctx, fx, fy, mp, heroFlip, act === 'run' || act === 'walk' || (e.speed || 0) > 10, now + (e.phase || 0), Fenrir.variantOf(eq.pet));
+        // montaria (Fenrir Dourado/Vermelho): o Fenrir anda embaixo e o herói vai sentado nas costas,
+        // com os mesmos movimentos (parado, andando, atacando, usando poder) da cintura para cima
+        const mountV = eq && eq.pet && window.Fenrir && !e.dead ? Fenrir.variantOf(eq.pet) : null;
+        const mounted = !!mountV;
+        let lift = 0, seatY = 0, mountMoving = false, mp = 0, fdir = heroFlip ? -1 : 1;
+        if (mounted) {
+          mp = sc * 2;
+          mountMoving = act === 'run' || act === 'walk' || (e.speed || 0) > 10;
+          const fBob = mountMoving && Math.floor((now + (e.phase || 0)) / 110) % 2 === 0 ? -mp : 0;
+          shadowAt(x, y, 20 * zoom);
+          Fenrir.draw(ctx, x + fdir * 2 * mp, y, mp, heroFlip, mountMoving, now + (e.phase || 0), mountV);
+          seatY = y + fBob - Fenrir.SEAT(mp) + mp;          // linha das costas
+          lift = y - seatY - HERO_H * sc * HERO_HIP;        // quadril do herói em cima das costas
         } else if (eq && eq.pet && window.Fenrir && Fenrir.isPet(eq.pet) && !e.dead) {
           // Imp / Fadinha: voa ao lado do ombro, sem ficar em cima do personagem
           const side = heroFlip ? 1 : -1;
           Fenrir.drawPet(ctx, eq.pet, x + side * 27 * sc, y, sc * 2.2, now + (e.phase || 0), HERO_H * sc * 0.55);
         }
+        if (mounted) {
+          // só a parte de cima do herói aparece: as pernas ficam do outro lado do corpo do Fenrir
+          ctx.save(); ctx.beginPath(); ctx.rect(x - 200 * sc, seatY - 400 * sc, 400 * sc, 400 * sc + 2 * sc); ctx.clip();
+        }
         const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, act, now, x + recoil, y - lift, HERO_H * sc, dpr));
         if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - lift - (mounted ? 0 : runBob) - idleBob, sc, heroFlip, { once, equip: eq });
+        if (mounted) {
+          ctx.restore();
+          drawRiderLeg(x + recoil, seatY, sc, fdir, mountMoving ? Math.sin((now + (e.phase || 0)) / 110 * Math.PI) : 0);
+        }
         if (e.dead) continue;
         const top = (pxDrawn && e.pxTop != null ? Math.min(y - lift - HERO_H * sc - 4 * dpr, e.pxTop - 6 * dpr) : y - lift - HERO_H * sc - 4 * dpr);
         hpBar(x, top, 16 * zoom, e.hpShow / e.maxHp, isMe ? '#6aa84f' : (e.flags & 1) ? '#ff5a4a' : '#4aa3ff');
@@ -1802,6 +1816,20 @@
         label(`${pk ? '[PK] ' : ''}${pvpOn ? '⚔ ' : ''}${vipT === 2 ? '◆ ' : vipT === 1 ? '★ ' : ''}${info.name} ${info.level}`, x, top - 4 * dpr, pk ? '#ff6a5a' : inDuel ? '#ffb02e' : enemy ? '#ff9a6a' : vipT === 2 ? '#7fe3ff' : vipT === 1 || isMe ? '#ffd36b' : '#bfe0ff', 11);
       }
     }
+  }
+  // perna do lado de cá do cavaleiro: coxa para a frente e canela descendo pelo flanco do Fenrir, com bota
+  function drawRiderLeg(x, seatY, sc, dir, swing) {
+    const k = sc, hx = x - dir * 1 * k, hy = seatY - 1 * k;
+    const kx = hx + dir * 7 * k, ky = hy + 2 * k;
+    const fx = kx + dir * (1 + swing) * k, fy = ky + 9 * k;
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#120c08'; ctx.lineWidth = 6.2 * k;
+    ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(kx, ky); ctx.lineTo(fx, fy); ctx.stroke();
+    ctx.strokeStyle = '#4a3a2c'; ctx.lineWidth = 4.2 * k;
+    ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(kx, ky); ctx.lineTo(fx, fy); ctx.stroke();
+    ctx.fillStyle = '#120c08'; ctx.fillRect(Math.round(fx - 3 * k + dir * 1 * k), Math.round(fy - 1 * k), Math.round(6.5 * k), Math.round(3.6 * k));
+    ctx.fillStyle = '#6a4a2a'; ctx.fillRect(Math.round(fx - 2.2 * k + dir * 1 * k), Math.round(fy - 0.3 * k), Math.round(5 * k), Math.round(2.2 * k));
+    ctx.restore();
   }
   function hpBar(cx, y, w, frac, color) {
     const h = 3 * dpr;

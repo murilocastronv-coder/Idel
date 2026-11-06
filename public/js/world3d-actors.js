@@ -154,6 +154,9 @@
     });
   }
   // Fenrir Dourado (montaria): lobo dourado feito de formas simples, cabeça para +z
+  // tamanho do Fenrir montado e quanto o herói sobe para o quadril ficar nas costas dele
+  const MOUNT_K = 1.25, MOUNT_SEAT = 0.2;
+  const SIT = { thigh: -1.35, spread: 0.45, knee: 1.5, foot: -0.2 };
   function fenrirModel(red) {
     const g = new THREE.Group();
     const gold = red ? new MSM({ color: 0xc82a20, metalness: 0.35, roughness: 0.45, emissive: 0x4a0604, emissiveIntensity: 0.4 }) : new MSM({ color: 0xe8b84a, metalness: 0.75, roughness: 0.32, emissive: 0x5a3a08, emissiveIntensity: 0.35 });
@@ -302,9 +305,11 @@
         else for (const sd of [-1, 1]) { const horn = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.08, 6), new MSM({ color: 0x2a0806 })); horn.position.set(sd * 0.06, 0.13, 0); pg.add(horn); }
         pg.position.set(0.55, 1.45, -0.1); this.root.add(pg); this.petFly = { pg, wings };
       }
-      // montaria: o Fenrir anda ao lado do herói (sem ficar em cima de nada)
+      // montaria: o herói vai sentado nas costas do Fenrir (pernas dobradas, uma de cada lado)
       if (eq && (eq.pet === 'fenrir_gold' || eq.pet === 'fenrir_red')) {
-        const wolf = fenrirModel(eq.pet === 'fenrir_red'); wolf.position.set(0.85, 0, -0.35); wolf.scale.setScalar(0.85); this.root.add(wolf); this.fenrir = wolf;
+        const wolf = fenrirModel(eq.pet === 'fenrir_red'); wolf.scale.setScalar(MOUNT_K); wolf.position.z = 0.12; this.root.add(wolf); this.fenrir = wolf;
+        this.mountLift = MOUNT_SEAT; model.position.y += MOUNT_SEAT; model.userData.y0 = model.position.y; if (this.wings) { this.wings.position.y += MOUNT_SEAT; this.wings.userData.y0 = this.wings.position.y; }
+        if (this.petFly) this.petFly.base = 1.45 + MOUNT_SEAT;
       }
       this.style = def.style; this.atkClips = def.atk; this.lenda = true;
       this.mixer = new THREE.AnimationMixer(model);
@@ -409,12 +414,23 @@
             this.oneUntil = t + 0.32;
           } else if (!(this.oneUntil > t)) {
             const m = sp / K;
-            if (sp > 65) this.play(this.lenda ? this.style + '_run' : 'run', 0.22, false, this.lenda ? Math.max(0.6, Math.min(1.8, m / 3.6)) : Math.max(0.6, Math.min(1.8, m / 3.2)));
+            if (this.fenrir) this.play(this.lenda ? this.style + '_idle' : 'idle', 0.28);
+            else if (sp > 65) this.play(this.lenda ? this.style + '_run' : 'run', 0.22, false, this.lenda ? Math.max(0.6, Math.min(1.8, m / 3.6)) : Math.max(0.6, Math.min(1.8, m / 3.2)));
             else if (sp > 10) this.play(this.lenda ? this.style + '_walk' : 'walk', 0.22, false, this.lenda ? Math.max(0.6, Math.min(2, m / 1.2)) : Math.max(0.6, Math.min(2, m / 1.3)));
             else this.play(this.lenda ? this.style + '_idle' : 'idle', 0.28);
           }
         }
         this.mixer.update(dt);
+        // sentado no Fenrir: coxas para a frente e abertas, joelhos dobrados (o resto do corpo segue a animação)
+        if (this.fenrir && this.bones && d.act !== 'death') {
+          const B = this.bones;
+          for (const [sd, k] of [['Left', 1], ['Right', -1]]) {
+            const up = B[sd + 'UpLeg'], lo = B[sd + 'Leg'], ft = B[sd + 'Foot'];
+            if (up) up.rotation.set(SIT.thigh, 0, k * SIT.spread);
+            if (lo) lo.rotation.set(SIT.knee, 0, 0);
+            if (ft) ft.rotation.set(SIT.foot, 0, 0);
+          }
+        }
       }
       // modelos feitos aqui
       if (this.proc === 'slime') {
@@ -431,13 +447,14 @@
         if (d.act === 'death') { this.model.rotation.z = Math.min(Math.PI, this.model.rotation.z + dt * 6); }
       } else if (this.proc === 'chest') { /* parado */ }
       if (this.fx) this.fx.update(dt, t, d);
-      if (this.petFly) { const P = this.petFly; P.pg.position.y = 1.45 + Math.sin(t * 2.4) * 0.06; for (const { w, sd } of P.wings) w.rotation.y = sd * (0.4 + Math.sin(t * 16) * 0.5); }
+      if (this.petFly) { const P = this.petFly; P.pg.position.y = (P.base || 1.45) + Math.sin(t * 2.4) * 0.06; for (const { w, sd } of P.wings) w.rotation.y = sd * (0.4 + Math.sin(t * 16) * 0.5); }
       // patas e cauda do Fenrir
       if (this.fenrir) {
         const moving = sp > 10, ph = t * (sp > 65 ? 16 : 11), u = this.fenrir.userData;
         u.legs.forEach((L, i) => { L.rotation.x = moving ? Math.sin(ph + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI / 2 : 0)) * 0.6 : 0; });
         u.tail.rotation.y = Math.sin(t * (moving ? 10 : 3)) * 0.35;
         u.head.position.y = 0.92 + (moving ? Math.abs(Math.sin(ph)) * 0.04 : Math.sin(t * 2) * 0.015);
+        if (this.mountLift != null) { const bob = moving ? Math.abs(Math.sin(ph)) * 0.05 : 0; this.model.position.y = this.model.userData.y0 + bob; if (this.wings) this.wings.position.y = this.wings.userData.y0 + bob; }
       }
       // asas abrindo e fechando
       if (this.wings) {
