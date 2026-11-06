@@ -77,6 +77,16 @@ const MAPS = [
   { id: 'acheron', name: 'Acheron', type: 'Abismo de fogo · nível 600–800 · Boss: Senhor de Acheron', level: 600, playable: true },
   { id: 'debenter', name: 'Debenter', type: 'Cidadela de pedra', level: 680 },
   { id: 'nars', name: 'Nars', type: 'Geleiras eternas', level: 750 },
+  { id: 'pantano_sombrio', name: 'Pântano Sombrio', type: 'Pântano de árvores mortas · nível 200–250', level: 200, playable: true },
+  { id: 'desfiladeiro_brasa', name: 'Desfiladeiro de Brasa', type: 'Cânion de lava · nível 250–300', level: 250, playable: true },
+  { id: 'ruinas_celestes', name: 'Ruínas Celestes', type: 'Templos flutuantes · nível 350–400', level: 350, playable: true },
+  { id: 'mar_cristal', name: 'Mar de Cristal', type: 'Planície de cristais · nível 400–450 · Boss: Rainha de Cristal', level: 400, playable: true },
+  { id: 'deserto_escarlate', name: 'Deserto Escarlate', type: 'Dunas vermelhas · nível 500–550', level: 500, playable: true },
+  { id: 'bastiao_gelido', name: 'Bastião Gélido', type: 'Fortaleza congelada · nível 550–600', level: 550, playable: true },
+  { id: 'torre_eclipse', name: 'Torre do Eclipse', type: 'Torre sem sol · nível 650–700', level: 650, playable: true },
+  { id: 'floresta_petrificada', name: 'Floresta Petrificada', type: 'Bosque de pedra · nível 700–750', level: 700, playable: true },
+  { id: 'abismo_carmesim', name: 'Abismo Carmesim', type: 'Fenda de sangue · nível 750–800', level: 750, playable: true },
+  { id: 'trono_vazio', name: 'Trono do Vazio', type: 'Fim do mundo · nível 800+ · Boss: Imperador do Vazio', level: 800, playable: true },
 ];
 
 const RARITIES = [
@@ -172,6 +182,49 @@ const MONSTERS = {
   abyss_hound: { name: 'Cão do Abismo', sprite: 'hound', tint: '#ff2a6a', level: 680, hp: 73900, dmg: 1615, def: 680, exp: 26350, zen: [3300, 6600], speed: 78, range: 22, atkMs: 1000, aggro: 210, drop: 0.15, size: 1 },
   abyss_titan: { name: 'Titã do Abismo', sprite: 'giant', tint: '#6a0a14', scale: 1.6, level: 760, hp: 361300, dmg: 2575, def: 1010, exp: 147700, zen: [12000, 20000], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.7, elite: true },
   acheron_lord: { name: 'Senhor de Acheron', sprite: 'archlich', tint: '#ff2a1a', scale: 1.3, level: 800, hp: 4900000, dmg: 3825, def: 1200, exp: 6400000, zen: [250000, 450000], speed: 36, range: 40, atkMs: 1800, aggro: 220, drop: 1, size: 2.8, boss: true, respawnMs: 90 * 60 * 1000 },
+  // ---- Mapas novos: um a cada 50 níveis (200 a 800), mesma curva dos monstros 300–600 ----
+  // Pântano Sombrio (200+)
+  swamp_lurker: { name: 'Espreitador do Pântano', sprite: 'forest_monster', tint: '#3a5a2a', level: 200, hp: 19200, dmg: 450, def: 200, exp: 6520, zen: [1000, 2000], speed: 52, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  swamp_hound: { name: 'Cão do Pântano', sprite: 'hound', tint: '#5a7a3a', level: 225, hp: 21769, dmg: 508, def: 225, exp: 7408, zen: [1125, 2250], speed: 74, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  swamp_ancient: { name: 'Ent Ancião', sprite: 'forest_monster', tint: '#2a4a1a', scale: 1.5, level: 245, hp: 101366, dmg: 886, def: 326, exp: 39839, zen: [4900, 8575], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Desfiladeiro de Brasa (250+)
+  ember_fiend: { name: 'Diabrete de Brasa', sprite: 'demon', tint: '#ff8a3a', level: 250, hp: 24375, dmg: 566, def: 250, exp: 8312, zen: [1250, 2500], speed: 60, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  flame_bull: { name: 'Touro Flamejante', sprite: 'bull_fighter', tint: '#ff6a2a', level: 275, hp: 27019, dmg: 624, def: 275, exp: 9233, zen: [1375, 2750], speed: 62, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  magma_colossus: { name: 'Colosso de Magma', sprite: 'giant', tint: '#ff4a1a', scale: 1.5, level: 295, hp: 123933, dmg: 1073, def: 392, exp: 48908, zen: [5900, 10325], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Ruínas Celestes (350+)
+  sky_archer: { name: 'Arqueiro Celeste', sprite: 'hunter', tint: '#ffe08a', level: 350, hp: 35175, dmg: 801, def: 350, exp: 12092, zen: [1750, 3500], speed: 64, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  cloud_yeti: { name: 'Yeti das Nuvens', sprite: 'yeti', tint: '#e0f0ff', level: 375, hp: 37969, dmg: 860, def: 375, exp: 13078, zen: [1875, 3750], speed: 58, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  sky_titan: { name: 'Titã Celeste', sprite: 'ice_titan', tint: '#ffe8a0', scale: 1.5, level: 395, hp: 170981, dmg: 1453, def: 525, exp: 68004, zen: [7900, 13825], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Mar de Cristal (400+)
+  quartz_elemental: { name: 'Elemental de Quartzo', sprite: 'ice_monster', tint: '#b06aff', level: 400, hp: 40800, dmg: 920, def: 400, exp: 14080, zen: [2000, 4000], speed: 56, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  prism_assassin: { name: 'Assassino Prismático', sprite: 'assassin', tint: '#7affff', level: 425, hp: 43669, dmg: 980, def: 425, exp: 15098, zen: [2125, 4250], speed: 76, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  amethyst_golem: { name: 'Golem de Ametista', sprite: 'elite_yeti', tint: '#c06bff', scale: 1.5, level: 445, hp: 195461, dmg: 1646, def: 592, exp: 78029, zen: [8900, 15575], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  crystal_queen: { name: 'Rainha de Cristal', sprite: 'archlich', tint: '#9a6aff', scale: 1.3, level: 460, hp: 3819840, dmg: 2769, def: 736, exp: 4799732, zen: [138000, 253000], speed: 36, range: 40, atkMs: 1800, aggro: 220, drop: 1, size: 2.8, boss: true, respawnMs: 90 * 60 * 1000 },
+  // Deserto Escarlate (500+)
+  dune_minotaur: { name: 'Minotauro das Dunas', sprite: 'agon', tint: '#d8a84a', level: 500, hp: 52500, dmg: 1162, def: 500, exp: 18250, zen: [2500, 5000], speed: 58, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  scarlet_hunter: { name: 'Caçador Escarlate', sprite: 'hunter', tint: '#ff3a3a', level: 525, hp: 55519, dmg: 1224, def: 525, exp: 19333, zen: [2625, 5250], speed: 66, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  sand_lord: { name: 'Senhor das Areias', sprite: 'minotaur_lord', tint: '#e8c070', scale: 1.5, level: 545, hp: 246333, dmg: 2037, def: 725, exp: 99035, zen: [10900, 19075], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Bastião Gélido (550+)
+  glacial_goblin: { name: 'Goblin Glacial', sprite: 'goblin', tint: '#9ad0ff', level: 550, hp: 58575, dmg: 1286, def: 550, exp: 20432, zen: [2750, 5500], speed: 64, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  winter_lich: { name: 'Lich do Inverno', sprite: 'lich', tint: '#bfe8ff', level: 575, hp: 61669, dmg: 1348, def: 575, exp: 21548, zen: [2875, 5750], speed: 54, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  glacial_titan: { name: 'Titã Glacial', sprite: 'ice_titan', scale: 1.5, level: 595, hp: 272726, dmg: 2236, def: 791, exp: 110016, zen: [11900, 20825], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Torre do Eclipse (650+)
+  eclipse_skeleton: { name: 'Esqueleto do Eclipse', sprite: 'skeleton', tint: '#5a3aff', level: 650, hp: 71175, dmg: 1536, def: 650, exp: 24993, zen: [3250, 6500], speed: 58, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  shadow_archlich: { name: 'Arquilich Sombrio', sprite: 'archlich', tint: '#6a4aff', level: 675, hp: 74419, dmg: 1599, def: 675, exp: 26173, zen: [3375, 6750], speed: 52, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  eclipse_guardian: { name: 'Guardião do Eclipse', sprite: 'giant', tint: '#3a2a6a', scale: 1.5, level: 695, hp: 327423, dmg: 2640, def: 924, exp: 132934, zen: [13900, 24325], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Floresta Petrificada (700+)
+  stone_beast: { name: 'Fera de Pedra', sprite: 'forest_monster', tint: '#8a8a8a', level: 700, hp: 77700, dmg: 1662, def: 700, exp: 27370, zen: [3500, 7000], speed: 54, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  stone_hound: { name: 'Cão de Pedra', sprite: 'hound', tint: '#9a9a9a', level: 725, hp: 81019, dmg: 1726, def: 725, exp: 28583, zen: [3625, 7250], speed: 74, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  stone_giant: { name: 'Gigante de Pedra', sprite: 'elite_yeti', tint: '#7a7a7a', scale: 1.5, level: 745, hp: 355728, dmg: 2844, def: 991, exp: 144870, zen: [14900, 26075], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Abismo Carmesim (750+)
+  crimson_demon: { name: 'Demônio Carmesim', sprite: 'demon', tint: '#b0102a', level: 750, hp: 84375, dmg: 1791, def: 750, exp: 29812, zen: [3750, 7500], speed: 60, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  infernal_bull: { name: 'Touro Infernal', sprite: 'bull_fighter', tint: '#7a0a0a', level: 775, hp: 87769, dmg: 1855, def: 775, exp: 31058, zen: [3875, 7750], speed: 64, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  crimson_titan: { name: 'Titã Carmesim', sprite: 'minotaur_lord', tint: '#ff2a3a', scale: 1.5, level: 795, hp: 384671, dmg: 3051, def: 1057, exp: 157125, zen: [15900, 27825], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Trono do Vazio (800+)
+  void_wraith: { name: 'Espectro do Vazio', sprite: 'assassin', tint: '#3a1a5a', level: 800, hp: 91200, dmg: 1920, def: 800, exp: 32320, zen: [4000, 8000], speed: 72, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  void_lich: { name: 'Lich do Vazio', sprite: 'lich', tint: '#5a2aff', level: 820, hp: 93972, dmg: 1972, def: 820, exp: 33341, zen: [4100, 8200], speed: 54, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  void_colossus: { name: 'Colosso do Vazio', sprite: 'ice_titan', tint: '#2a0a4a', scale: 1.5, level: 840, hp: 411264, dmg: 3239, def: 1117, exp: 168427, zen: [16800, 29400], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  void_emperor: { name: 'Imperador do Vazio', sprite: 'skeleton_king', tint: '#8a3aff', scale: 1.3, level: 850, hp: 7854000, dmg: 5332, def: 1360, exp: 10118825, zen: [255000, 467500], speed: 36, range: 40, atkMs: 1800, aggro: 220, drop: 1, size: 2.8, boss: true, respawnMs: 90 * 60 * 1000 },
   skeleton_king: { name: 'Rei Esqueleto', sprite: 'skeleton_king', level: 35, hp: 22000, dmg: 95, def: 30, exp: 26000, zen: [5000, 10000], speed: 38, range: 34, atkMs: 1800, aggro: 170, drop: 1, size: 2.2, boss: true, respawnMs: 90 * 60 * 1000 },
 };
 
@@ -231,6 +284,27 @@ const WORLD = {
     groups: [{ type: 'glacial_skeleton', count: 11 }, { type: 'ice_spider', count: 9 }, { type: 'frost_giant', count: 2 }] },
   acheron: { name: 'Acheron', theme: 'abyss', w: 1500, h: 950, minLevel: 600, spawn: [120, 475],
     groups: [{ type: 'abyss_demon', count: 11 }, { type: 'abyss_hound', count: 9 }, { type: 'abyss_titan', count: 3 }], boss: { type: 'acheron_lord', x: 1250, y: 475 } },
+  // Mapas novos: um a cada 50 níveis até o 800 (mesma experiência do servidor Hard)
+  pantano_sombrio: { name: 'Pântano Sombrio', theme: 'darkforest', w: 1400, h: 900, minLevel: 200, spawn: [120, 450],
+    groups: [{ type: 'swamp_lurker', count: 11 }, { type: 'swamp_hound', count: 9 }, { type: 'swamp_ancient', count: 3 }] },
+  desfiladeiro_brasa: { name: 'Desfiladeiro de Brasa', theme: 'lava', w: 1400, h: 900, minLevel: 250, spawn: [120, 450],
+    groups: [{ type: 'ember_fiend', count: 11 }, { type: 'flame_bull', count: 9 }, { type: 'magma_colossus', count: 3 }] },
+  ruinas_celestes: { name: 'Ruínas Celestes', theme: 'sky', w: 1400, h: 900, minLevel: 350, spawn: [120, 450],
+    groups: [{ type: 'sky_archer', count: 11 }, { type: 'cloud_yeti', count: 9 }, { type: 'sky_titan', count: 3 }] },
+  mar_cristal: { name: 'Mar de Cristal', theme: 'crystal', w: 1400, h: 900, minLevel: 400, spawn: [120, 450],
+    groups: [{ type: 'quartz_elemental', count: 11 }, { type: 'prism_assassin', count: 9 }, { type: 'amethyst_golem', count: 3 }], boss: { type: 'crystal_queen', x: 1150, y: 450 } },
+  deserto_escarlate: { name: 'Deserto Escarlate', theme: 'desert', w: 1400, h: 900, minLevel: 500, spawn: [120, 450],
+    groups: [{ type: 'dune_minotaur', count: 11 }, { type: 'scarlet_hunter', count: 9 }, { type: 'sand_lord', count: 3 }] },
+  bastiao_gelido: { name: 'Bastião Gélido', theme: 'glacier', w: 1400, h: 900, minLevel: 550, spawn: [120, 450],
+    groups: [{ type: 'glacial_goblin', count: 11 }, { type: 'winter_lich', count: 9 }, { type: 'glacial_titan', count: 3 }] },
+  torre_eclipse: { name: 'Torre do Eclipse', theme: 'tower', w: 1400, h: 900, minLevel: 650, spawn: [120, 450],
+    groups: [{ type: 'eclipse_skeleton', count: 11 }, { type: 'shadow_archlich', count: 9 }, { type: 'eclipse_guardian', count: 3 }] },
+  floresta_petrificada: { name: 'Floresta Petrificada', theme: 'cave', w: 1400, h: 900, minLevel: 700, spawn: [120, 450],
+    groups: [{ type: 'stone_beast', count: 11 }, { type: 'stone_hound', count: 9 }, { type: 'stone_giant', count: 3 }] },
+  abismo_carmesim: { name: 'Abismo Carmesim', theme: 'abyss', w: 1400, h: 900, minLevel: 750, spawn: [120, 450],
+    groups: [{ type: 'crimson_demon', count: 11 }, { type: 'infernal_bull', count: 9 }, { type: 'crimson_titan', count: 3 }] },
+  trono_vazio: { name: 'Trono do Vazio', theme: 'void', w: 1400, h: 900, minLevel: 800, spawn: [120, 450],
+    groups: [{ type: 'void_wraith', count: 11 }, { type: 'void_lich', count: 9 }, { type: 'void_colossus', count: 3 }], boss: { type: 'void_emperor', x: 1150, y: 450 } },
 };
 
 // Habilidades: ataque básico + 4 poderes por classe (níveis 1, 5, 15 e 30).

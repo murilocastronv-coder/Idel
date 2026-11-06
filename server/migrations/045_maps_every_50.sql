@@ -1,0 +1,2 @@
+INSERT INTO news (kind, title, body) VALUES
+ ('update', 'Dez mapas novos: um a cada 50 níveis até o 800', 'Abriram Pântano Sombrio (200), Desfiladeiro de Brasa (250), Ruínas Celestes (350), Mar de Cristal (400, boss Rainha de Cristal), Deserto Escarlate (500), Bastião Gélido (550), Torre do Eclipse (650), Floresta Petrificada (700), Abismo Carmesim (750) e Trono do Vazio (800, boss Imperador do Vazio), com monstros e chefes de elite novos na mesma curva de experiência do servidor Hard.');
