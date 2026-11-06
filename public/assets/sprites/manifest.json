@@ -1,5 +1,5 @@
 {
- "version": 13,
+ "version": 14,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",
@@ -78,7 +78,14 @@
    "top": 72,
    "hip": 32,
    "leg": "#680a35",
-   "boot": "#680a35"
+   "boot": "#680a35",
+   "looks": {
+    "steel": "heroes/dark_knight_steel.png",
+    "emerald": "heroes/dark_knight_emerald.png",
+    "solar": "heroes/dark_knight_solar.png",
+    "astral": "heroes/dark_knight_astral.png",
+    "crimson": "heroes/dark_knight_crimson.png"
+   }
   },
   "dark_wizard": {
    "sheet": "heroes/dark_wizard.png",
@@ -157,7 +164,14 @@
    "top": 70,
    "hip": 32,
    "leg": "#2c3b59",
-   "boot": "#241a27"
+   "boot": "#241a27",
+   "looks": {
+    "steel": "heroes/dark_wizard_steel.png",
+    "emerald": "heroes/dark_wizard_emerald.png",
+    "solar": "heroes/dark_wizard_solar.png",
+    "astral": "heroes/dark_wizard_astral.png",
+    "crimson": "heroes/dark_wizard_crimson.png"
+   }
   },
   "fairy_elf": {
    "sheet": "heroes/fairy_elf.png",
@@ -236,7 +250,14 @@
    "top": 68,
    "hip": 31,
    "leg": "#282338",
-   "boot": "#25142a"
+   "boot": "#25142a",
+   "looks": {
+    "steel": "heroes/fairy_elf_steel.png",
+    "emerald": "heroes/fairy_elf_emerald.png",
+    "solar": "heroes/fairy_elf_solar.png",
+    "astral": "heroes/fairy_elf_astral.png",
+    "crimson": "heroes/fairy_elf_crimson.png"
+   }
   },
   "magic_gladiator": {
    "sheet": "heroes/magic_gladiator.png",
@@ -315,7 +336,14 @@
    "top": 72,
    "hip": 32,
    "leg": "#291238",
-   "boot": "#110a1d"
+   "boot": "#110a1d",
+   "looks": {
+    "steel": "heroes/magic_gladiator_steel.png",
+    "emerald": "heroes/magic_gladiator_emerald.png",
+    "solar": "heroes/magic_gladiator_solar.png",
+    "astral": "heroes/magic_gladiator_astral.png",
+    "crimson": "heroes/magic_gladiator_crimson.png"
+   }
   },
   "dark_lord": {
    "sheet": "heroes/dark_lord.png",
@@ -394,7 +422,14 @@
    "top": 71,
    "hip": 32,
    "leg": "#641436",
-   "boot": "#151324"
+   "boot": "#151324",
+   "looks": {
+    "steel": "heroes/dark_lord_steel.png",
+    "emerald": "heroes/dark_lord_emerald.png",
+    "solar": "heroes/dark_lord_solar.png",
+    "astral": "heroes/dark_lord_astral.png",
+    "crimson": "heroes/dark_lord_crimson.png"
+   }
   },
   "summoner": {
    "sheet": "heroes/summoner.png",
@@ -473,7 +508,14 @@
    "top": 70,
    "hip": 32,
    "leg": "#2c3b59",
-   "boot": "#241a27"
+   "boot": "#241a27",
+   "looks": {
+    "steel": "heroes/summoner_steel.png",
+    "emerald": "heroes/summoner_emerald.png",
+    "solar": "heroes/summoner_solar.png",
+    "astral": "heroes/summoner_astral.png",
+    "crimson": "heroes/summoner_crimson.png"
+   }
   }
  },
  "monsters": {

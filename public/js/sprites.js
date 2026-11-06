@@ -175,6 +175,7 @@
       const W = m.weapons.classes[cls]; if (W && W.sheet) out.push(W.sheet);
     }
     const WG = m.wings;
+    if (meta.full) { const lp = lookPath(meta, eq); if (lp) out.push(lp); }
     if (meta.full && eq.wings && newWingPath(eq.wings)) out.push(newWingPath(eq.wings));
     else if (WG && eq.wings) {
       const key = WG.sheets[eq.wings] ? eq.wings : WING_VARIANT[eq.wings] || 'wings_dragon';
@@ -197,6 +198,15 @@
     for (const path of Object.values(m.equip.classes[cls])) { await lazyEntry(path).p; }
   }
   const ARMOR = ['helm', 'armor', 'gloves', 'boots'];
+  // herói de arte completa: o conjunto equipado aparece como a versão tingida do herói (manifest heroes[cls].looks)
+  const SET_LOOK = { fest0: 'crimson', fest1: 'steel', fest2: 'emerald', fest3: 'solar', fest4: 'astral',
+    leather: 'steel', bronze: 'steel', scale: 'emerald', dragon: 'emerald', storm: 'solar', phoenix: 'solar', abyss: 'astral' };
+  const lookPath = (meta, eq) => {
+    if (!meta || !meta.looks || !eq) return null;
+    const set = eq.armor || eq.helm || eq.pants || eq.gloves || eq.boots;
+    const look = set && SET_LOOK[set];
+    return look ? meta.looks[look] || null : null;
+  };
   // eq: { w: base da arma, wg: cor do brilho da arma, helm/armor/gloves/boots: conjunto }
   function heroEquip(ctx, cls, ap, action, t, x, y, scale, flip, opts = {}, eq = {}) {
     eq = normEq(eq) || {};
@@ -204,7 +214,8 @@
     const meta = S.manifest.heroes[cls];
     if (!meta || (!meta.layers && !meta.full)) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts);
     const full = !!meta.full;
-    const back = full ? sheet('heroes', cls, ap, opts.white) : recolored('L:' + meta.layers.back, img(meta.layers.back), meta, true, ap, opts.white);
+    const lp = full && lookPath(meta, eq), lookIm = lp && img(lp);
+    const back = full ? (lookIm ? recolored('L:' + lp, lookIm, meta, true, ap, opts.white) : sheet('heroes', cls, ap, opts.white)) : recolored('L:' + meta.layers.back, img(meta.layers.back), meta, true, ap, opts.white);
     const front = full ? back : recolored('L:' + meta.layers.front, img(meta.layers.front), meta, true, ap, opts.white);
     if (!back || !front) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts); // ainda carregando
     const E = S.manifest.equip, W = S.manifest.weapons.classes[cls];
