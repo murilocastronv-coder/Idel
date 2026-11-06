@@ -88,10 +88,10 @@ function eliteK(T, def) {
 function killExp(p, T, def, pk) {
   return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * levelFactor((T.level || 1) - p.level) * eliteK(T, def) * mapExp(def) * XP()));
 }
-// bônus de EXP por mapa (servidor continua Hard): progressivo, cada mapa de caça dá um pouco mais que o anterior (+5% por mapa)
-// Vulcanus +5% · Dungeon +10% · Dungeon 2 +15% · Atlans +20% · Lost Tower +25% · Dungeon 3 +30% · Tarkan +35% · Icarus +40% · Aida +45% · Kalima +50% · Crywolf +55%
-// Os 3 últimos mapas (nível 300+) dão um pouco mais que todos os outros: Kanturu Ruins +80% · Raklion +90% · Acheron +100%
-const MAP_STEP = 0.05, TOP_START = 0.8, TOP_STEP = 0.1, TOP_LEVEL = 300;
+// bônus de EXP por mapa (servidor continua Hard): progressivo, cada mapa de caça dá um pouco mais que o anterior (+3% por mapa)
+// Vulcanus +3% · Dungeon +6% · Dungeon 2 +9% · Atlans +12% · Lost Tower +15% · Dungeon 3 +18% · Tarkan +21% · Icarus +24% · Aida +27% · Kalima +30% · Crywolf +33%
+// Os 3 últimos mapas (nível 300+) dão um pouco mais que todos os outros: Kanturu Ruins +40% · Raklion +45% · Acheron +50%
+const MAP_STEP = 0.03, TOP_START = 0.4, TOP_STEP = 0.05, TOP_LEVEL = 300;
 let MAP_BONUS = null;
 function mapExp(def) {
   if (!def || def.safe || def.arena || !def.minLevel || def.minLevel <= 1) return 1;
