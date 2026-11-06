@@ -37,6 +37,31 @@ def saddle_y(im):
     return ys[len(ys) // 10] if ys else 0
 
 
+LIFT_L = [0, 3, 6, 3, 0, 0, 0, 0]   # pernas da esquerda
+LIFT_R = [0, 0, 0, 0, 0, 3, 6, 3]   # pernas da direita
+BOB = [0, 1, 2, 1, 0, 1, 2, 1]       # corpo sobe e desce a cada passada
+
+
+def step(frames):
+    """De frente/de costas as pernas quase não se mexem no desenho original: levanta as pernas de cada
+    lado alternadamente e balança o corpo (a sela acompanha, então o herói montado balança junto)."""
+    out = []
+    for i, c in enumerate(frames):
+        k = i % len(LIFT_L)
+        bb = c.getbbox()
+        top, bot = bb[1], bb[3]
+        hip = bot - round((bot - top) * 0.3)
+        n = Image.new('RGBA', c.size)
+        for (x0, x1), lift in (((0, PIVOT[0]), LIFT_L[k]), ((PIVOT[0], c.size[0]), LIFT_R[k])):
+            n.alpha_composite(c.crop((x0, hip, x1, c.size[1])), (x0, hip - lift))
+        body = c.crop((0, 0, c.size[0], hip))
+        m = Image.new('RGBA', c.size)
+        m.alpha_composite(n, (0, 0))
+        m.alpha_composite(body, (0, BOB[k]))
+        out.append(m)
+    return out
+
+
 def saddle_x(im):
     px = im.load()
     xs = sorted(x for y in range(im.size[1]) for x in range(im.size[0]) if px[x, y][3] > 200 and
@@ -61,6 +86,8 @@ def main(src, name='bull'):
                 c = Image.new('RGBA', (FW, FH))
                 c.alpha_composite(im, (PIVOT[0] - im.size[0] // 2, PIVOT[1] - bottom))
                 frames.append(c)
+            if suf and act in ('walk', 'run'):
+                frames = step(frames)
             base = saddle_y(frames[0])
             if act == 'idle':
                 seat[{'': 'side', '_front': 'front', '_back': 'back'}[suf]] = [saddle_x(frames[0]) - PIVOT[0], PIVOT[1] - base - (0 if suf == '' else 6)]  # de frente/costas o topo medido é o encosto da sela
