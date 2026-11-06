@@ -68,7 +68,9 @@ function autoFarmMapId(p) {
 
 // Hard XP: curva pesada (nível 2 = 300 EXP, nível 10 ≈ 12.800, nível 25 ≈ 86.500)
 function expToNext(level) { return Math.floor(100 * Math.pow(level, 2.1) + 200); }
-const XP = () => G.GAME_MODE.expRate;
+// EXP_TRIM: corte geral de 20% na EXP de monstros e bosses em todos os mapas (servidor continua Hard)
+const EXP_TRIM = 0.8;
+const XP = () => G.GAME_MODE.expRate * EXP_TRIM;
 // ---------- EXP por monstro (Hard, equilibrado) ----------
 // Matar um monstro do seu nível dá 0,5% da EXP do nível (Free), 0,7% (VIP Ouro) ou 0,8% (VIP Diamante).
 // A EXP de cada monstro é proporcional à vida dele comparada a um monstro comum do seu nível (bicho fraco dá pouco, elite dá mais).
