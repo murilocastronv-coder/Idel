@@ -2952,10 +2952,10 @@
       const val = (x) => RK.by === 'pvp' ? `${x.pvp_kills} · ${x.duel_wins} duelos` : RK.by === 'bosses' ? x.bosses_killed : x.resets;
       const medal = ['🥇', '🥈', '🥉'];
       tb.innerHTML = ranking.length ? ranking.map((x, i) => `<tr class="${S.char && x.name === S.char.name ? 'me' : ''}">
-        <td>${medal[i] || i + 1}</td><td>${esc(x.name)}</td><td>${esc((S.data.classes[x.class] || {}).name || x.class)}</td><td>${x.level}</td><td>${val(x)}</td></tr>`).join('')
-        : '<tr><td colspan="5" class="muted">Nenhum herói ainda.</td></tr>';
+        <td>${medal[i] || i + 1}</td><td>${esc(x.name)}</td><td>${esc((S.data.classes[x.class] || {}).name || x.class)}</td><td>${val(x)}</td></tr>`).join('')
+        : '<tr><td colspan="4" class="muted">Nenhum herói ainda.</td></tr>';
     } catch (e) {
-      if (seq === RK.seq) tb.innerHTML = '<tr><td colspan="5" class="muted">Não foi possível carregar o ranking.</td></tr>';
+      if (seq === RK.seq) tb.innerHTML = '<tr><td colspan="4" class="muted">Não foi possível carregar o ranking.</td></tr>';
     }
   }
   $$('#rank-tabs [data-by]').forEach((t) => { t.onclick = () => { RK.by = t.dataset.by; $('#g-rank-body').innerHTML = ''; renderRank(); }; });
