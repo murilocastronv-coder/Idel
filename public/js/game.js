@@ -767,7 +767,7 @@
   function load3D() {
     const files = ['vendor/three/three.min.js', 'vendor/three/GLTFLoader.js', 'vendor/three/SkeletonUtils.js', 'vendor/three/RoomEnvironment.js',
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
-      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=4', 'world3d-actors.js?v=7', 'world3d-fx.js?v=1'];
+      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=4', 'world3d-actors.js?v=8', 'world3d-fx.js?v=1'];
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();
@@ -1784,6 +1784,10 @@
           const fx = x + side * 36 * sc, fy = y + 3 * sc;
           shadowAt(fx, fy, 9 * zoom);
           Fenrir.draw(ctx, fx, fy, mp, heroFlip, act === 'run' || act === 'walk' || (e.speed || 0) > 10, now + (e.phase || 0), Fenrir.variantOf(eq.pet));
+        } else if (eq && eq.pet && window.Fenrir && Fenrir.isPet(eq.pet) && !e.dead) {
+          // Imp / Fadinha: voa ao lado do ombro, sem ficar em cima do personagem
+          const side = heroFlip ? 1 : -1;
+          Fenrir.drawPet(ctx, eq.pet, x + side * 27 * sc, y, sc * 2.2, now + (e.phase || 0), HERO_H * sc * 0.55);
         }
         const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, act, now, x + recoil, y - lift, HERO_H * sc, dpr));
         if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - lift - (mounted ? 0 : runBob) - idleBob, sc, heroFlip, { once, equip: eq });

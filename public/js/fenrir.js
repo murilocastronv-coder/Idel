@@ -78,7 +78,48 @@
     ctx.drawImage(img, Math.round(x + p), Math.round(y + (size - H * p) / 2), Math.round(W * p), Math.round(H * p));
     ctx.restore();
   }
+  // ---- pets que voam ao lado do personagem: Imp e Fadinha (Guardian Angel) ----
+  const PETS = {
+    pet_imp: { pal: { K: '#2a0806', R: '#d8362a', Y: '#ffd36b', W: '#5a2a6a' }, glow: '255,70,40', rows: [
+      '..K......K..', '.KRK....KRK.', '.KRRKKKKRRK.', '..KRRRRRRK..', '..KRYRRYRK..', '..KRRRRRRK..',
+      'WWKKRRRRKKWW', 'WWWKRRRRKWWW', '.WWKRRRRKWW.', '...KRKKRK...', '...KK..KK...', '............'] },
+    pet_angel: { pal: { K: '#6a7a9a', S: '#ffe0c8', B: '#3a6aff', W: '#ffffff', Y: '#ffe08a' }, glow: '200,230,255', rows: [
+      '...YYYYYY...', '............', '....KSSK....', '...KSSSSK...', '...KSBSBK...', 'WW..KSSK..WW',
+      'WWWKWWWWKWWW', '.WWKWWWWKWW.', '...KWWWWK...', '...KWWWWK...', '....KWWK....', '............'] },
+  };
+  const petCache = new Map();
+  function petImg(kind, flap) {
+    const k = kind + flap; if (petCache.has(k)) return petCache.get(k);
+    const P = PETS[kind], c = document.createElement('canvas'); c.width = 12; c.height = 12; const g = c.getContext('2d');
+    P.rows.forEach((row, y) => { for (let x = 0; x < 12; x++) { let ch = row[x]; if (ch === '.' ) continue; if (flap && ch === 'W' && (y === 5 || y === 6) && (x < 2 || x > 9)) continue; g.fillStyle = P.pal[ch]; g.fillRect(x, y, 1, 1); } });
+    petCache.set(k, c); return c;
+  }
+  // (x, y) = chão ao lado do personagem; o pet flutua na altura do ombro
+  function drawPet(ctx, kind, x, y, p, now, height) {
+    const P = PETS[kind]; if (!P) return;
+    const flap = Math.floor(now / 140) % 2, bob = Math.sin(now / 320) * 3 * p;
+    const cy = y - height + bob, size = 12 * p;
+    ctx.save(); ctx.imageSmoothingEnabled = false;
+    ctx.globalAlpha = 0.25 + 0.15 * Math.sin(now / 200);
+    const gr = ctx.createRadialGradient(x, cy, 1, x, cy, size);
+    gr.addColorStop(0, `rgba(${P.glow},.9)`); gr.addColorStop(1, `rgba(${P.glow},0)`);
+    ctx.fillStyle = gr; ctx.fillRect(x - size, cy - size, size * 2, size * 2);
+    ctx.globalAlpha = 1;
+    ctx.drawImage(petImg(kind, flap), Math.round(x - size / 2), Math.round(cy - size / 2), Math.round(size), Math.round(size));
+    ctx.restore();
+    // sombra pequena no chão
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(x, y, 4 * p, 1.5 * p, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  function petIcon(ctx, kind, x, y, size) {
+    const P = PETS[kind]; if (!P) return false;
+    ctx.save(); ctx.imageSmoothingEnabled = false;
+    const g = ctx.createRadialGradient(x + size / 2, y + size / 2, 2, x + size / 2, y + size / 2, size / 2);
+    g.addColorStop(0, `rgba(${P.glow},.4)`); g.addColorStop(1, `rgba(${P.glow},0)`);
+    ctx.fillStyle = g; ctx.fillRect(x, y, size, size);
+    ctx.drawImage(petImg(kind, 0), Math.round(x + size * 0.1), Math.round(y + size * 0.1), Math.round(size * 0.8), Math.round(size * 0.8));
+    ctx.restore(); return true;
+  }
   // variante pela base do item: fenrir_gold → dourado, fenrir_red → vermelho
   const variantOf = (base) => (base === 'fenrir_red' ? 'red' : base === 'fenrir_gold' ? 'gold' : null);
-  window.Fenrir = { draw, icon, variantOf, SEAT: (p) => SEAT_ROWS * p, W, H };
+  window.Fenrir = { draw, icon, variantOf, drawPet, petIcon, isPet: (b) => !!PETS[b], SEAT: (p) => SEAT_ROWS * p, W, H };
 }());

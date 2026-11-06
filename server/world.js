@@ -168,7 +168,8 @@ function itemStats(it) {
   const out = {};
   if (b.dmg) out.dmg = [Math.round(b.dmg[0] * m), Math.round(b.dmg[1] * m)];
   if (b.def) out.def = Math.round(b.def * m);
-  if (b.hp) out.hp = Math.round(b.hp * m);
+  if (b.hp) out.hp = b.noUpgradeMult ? b.hp : Math.round(b.hp * m);
+  if (b.effects) for (const [k, v] of Object.entries(b.effects)) out[k] = (out[k] || 0) + v; // efeitos fixos (pets: Imp, Fadinha)
   for (const [k, v] of Object.entries(EXCELLENT.effects(it.excellent_options))) out[k] = (out[k] || 0) + v;
   return out;
 }

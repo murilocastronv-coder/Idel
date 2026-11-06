@@ -356,6 +356,7 @@
   /** Desenha o ícone detalhado do item (por base, ou genérico pelo tipo de ícone) num quadrado de `size` px.
    *  Retorna false se o atlas ainda não carregou ou não há ícone (quem chama usa o ícone simples). */
   function drawItem(ctx, item, x, y, size) {
+    if (item && window.Fenrir && window.Fenrir.isPet && window.Fenrir.isPet(item.base)) return window.Fenrir.petIcon(ctx, item.base, x, y, size);
     if (item && window.Fenrir && window.Fenrir.variantOf(item.base)) { window.Fenrir.icon(ctx, x, y, size, window.Fenrir.variantOf(item.base)); return true; }
     const A = itemAtlas;
     if (!A.idx || !A.img.naturalWidth || !item) return false;

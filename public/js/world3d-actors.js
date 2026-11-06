@@ -290,6 +290,18 @@
           this.wings = wings;
         }
       }
+      // pets que voam ao lado: Imp (demoninho vermelho) e Fadinha (anjo branco com auréola)
+      if (eq && (eq.pet === 'pet_imp' || eq.pet === 'pet_angel')) {
+        const angel = eq.pet === 'pet_angel', pg = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), new MSM({ color: angel ? 0xffffff : 0xd8362a, emissive: angel ? 0xbfe8ff : 0x5a0a04, emissiveIntensity: angel ? 1.2 : 0.6, roughness: 0.5 }));
+        pg.add(body);
+        const wm = new MSM({ color: angel ? 0xffffff : 0x5a2a6a, emissive: angel ? 0x9ad8ff : 0x200a2a, emissiveIntensity: angel ? 0.8 : 0.3, side: THREE.DoubleSide, transparent: true, opacity: angel ? 0.85 : 1 });
+        const wings = [];
+        for (const sd of [-1, 1]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.14), wm); w.position.set(sd * 0.15, 0.04, -0.04); w.rotation.y = sd * 0.4; pg.add(w); wings.push({ w, sd }); }
+        if (angel) { const halo = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.012, 6, 20), new MSM({ color: 0xffe08a, emissive: 0xffd36b, emissiveIntensity: 1.5 })); halo.rotation.x = Math.PI / 2; halo.position.y = 0.18; pg.add(halo); }
+        else for (const sd of [-1, 1]) { const horn = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.08, 6), new MSM({ color: 0x2a0806 })); horn.position.set(sd * 0.06, 0.13, 0); pg.add(horn); }
+        pg.position.set(0.55, 1.45, -0.1); this.root.add(pg); this.petFly = { pg, wings };
+      }
       // montaria: o Fenrir anda ao lado do herói (sem ficar em cima de nada)
       if (eq && (eq.pet === 'fenrir_gold' || eq.pet === 'fenrir_red')) {
         const wolf = fenrirModel(eq.pet === 'fenrir_red'); wolf.position.set(0.85, 0, -0.35); wolf.scale.setScalar(0.85); this.root.add(wolf); this.fenrir = wolf;
@@ -419,6 +431,7 @@
         if (d.act === 'death') { this.model.rotation.z = Math.min(Math.PI, this.model.rotation.z + dt * 6); }
       } else if (this.proc === 'chest') { /* parado */ }
       if (this.fx) this.fx.update(dt, t, d);
+      if (this.petFly) { const P = this.petFly; P.pg.position.y = 1.45 + Math.sin(t * 2.4) * 0.06; for (const { w, sd } of P.wings) w.rotation.y = sd * (0.4 + Math.sin(t * 16) * 0.5); }
       // patas e cauda do Fenrir
       if (this.fenrir) {
         const moving = sp > 10, ph = t * (sp > 65 ? 16 : 11), u = this.fenrir.userData;

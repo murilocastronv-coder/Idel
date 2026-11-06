@@ -487,6 +487,12 @@ const ITEM_BASES = {
   // Montaria (slot 'pet'): Fenrir Dourado, só no Shopping Cash. Defesa e vida (+11), 3 opções fixas semi-full e +30% de velocidade de movimento.
   fenrir_gold: { name: 'Fenrir Dourado', slot: 'pet', cat: 'pet', icon: 'fenrir', ic: '#ffd36b', req: 1, def: 30, hp: 300, speed: 0.3, rarity: 'legendary', value: 80000, special: true, seasonal: true,
     desc: 'Montaria lendária de pelagem dourada. +30% de velocidade de movimento enquanto equipada.' },
+  // Pets clássicos do MU (espaço de montaria/pet): só caem do chefe do Acheron (Senhor de Acheron)
+  // Imp: +30% de dano (original do MU). Fadinha (Guardian Angel): 20% de redução do dano recebido e +50 de vida (original do MU).
+  pet_imp: { name: 'Imp', slot: 'pet', cat: 'pet', icon: 'pet_imp', ic: '#ff4a3a', req: 28, effects: { damagePct: 30 }, rarity: 'epic', value: 30000, special: true, seasonal: true, noExcellent: true,
+    desc: 'Pequeno demônio que acompanha o personagem. Aumenta o dano em 30%.' },
+  pet_angel: { name: 'Fadinha (Guardian Angel)', slot: 'pet', cat: 'pet', icon: 'pet_angel', ic: '#bfe8ff', req: 1, hp: 50, effects: { reduction: 20 }, rarity: 'epic', value: 30000, special: true, seasonal: true, noExcellent: true, noUpgradeMult: true,
+    desc: 'Anjo guardião que acompanha o personagem. Reduz em 20% o dano recebido e dá +50 de vida.' },
   // Fenrir Vermelho (montaria de mobilidade): fabricado na Chaos Machine em 3 etapas. Só +10% de velocidade, nenhum outro atributo.
   fenrir_red: { name: 'Fenrir Vermelho', slot: 'pet', cat: 'pet', icon: 'fenrir', ic: '#ff4a3a', req: 1, speed: 0.1, rarity: 'legendary', value: 50000, special: true, seasonal: true, noExcellent: true,
     desc: 'Montaria especial de pelagem vermelha. Único atributo: +10% de velocidade de movimento enquanto equipada.' },

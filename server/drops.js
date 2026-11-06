@@ -219,7 +219,9 @@ async function deliver(world, p, d, ctx) {
     return;
   }
   for (let i = 0; i < d.qty; i++) {
-    const it = { base: d.item, rarity: H.rollRarity(ctx.tier === 'boss' ? 'boss' : 'normal'), plus: H.rollPlus(ctx.tier === 'boss' ? 'boss' : 'normal') };
+    const B = G.ITEM_BASES[d.item];
+    // pets/montarias caem sempre iguais (raridade fixa, sem +)
+    const it = B.slot === 'pet' ? { base: d.item, rarity: B.rarity || 'epic', plus: 0 } : { base: d.item, rarity: H.rollRarity(ctx.tier === 'boss' ? 'boss' : 'normal'), plus: H.rollPlus(ctx.tier === 'boss' ? 'boss' : 'normal') };
     if (ground) { spawnGround(map, p, { ...it, qty: 1, source: ctx.source, tier: ctx.tier }, ctx.x, ctx.y); log(p, d.item, 1, 'ground', lctx); continue; }
     const row = await world.giveItemRow(p, it, { src: ctx.source, silent: ctx.offline, x: ctx.x != null ? Math.round(ctx.x) : null, y: ctx.y != null ? Math.round(ctx.y) : null });
     if (row) log(p, d.item, 1, 'drop', lctx);
