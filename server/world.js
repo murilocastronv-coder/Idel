@@ -88,11 +88,18 @@ function eliteK(T, def) {
 function killExp(p, T, def, pk) {
   return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * levelFactor((T.level || 1) - p.level) * eliteK(T, def) * mapExp(def) * XP()));
 }
-// bônus de EXP por mapa (servidor continua Hard): quanto mais alto o mapa, mais EXP; a última cidade (Crywolf) é a que mais dá
-// Vulcanus +7% · Dungeon +17% · Dungeon 2 +23% · Atlans +30% · Lost Tower +37% · Dungeon 3 +43% · Tarkan +50% · Icarus +60% · Aida +73% · Kalima +87% · Crywolf +100%
+// bônus de EXP por mapa (servidor continua Hard): progressivo, cada mapa de caça dá um pouco mais que o anterior (+5% por mapa)
+// Vulcanus +5% · Dungeon +10% · Dungeon 2 +15% · Atlans +20% · Lost Tower +25% · Dungeon 3 +30% · Tarkan +35% · Icarus +40% · Aida +45% · Kalima +50% · Crywolf +55%
+const MAP_STEP = 0.05;
+let MAP_RANK = null;
 function mapExp(def) {
   if (!def || def.safe || def.arena || !def.minLevel || def.minLevel <= 1) return 1;
-  return 1 + Math.round(Math.min(150, def.minLevel) / 1.5) / 100;
+  if (!MAP_RANK) {
+    MAP_RANK = new Map(Object.values(G.WORLD).filter((d) => d.groups && d.groups.length && !d.safe && !d.arena && d.minLevel > 1)
+      .sort((a, b) => a.minLevel - b.minLevel).map((d, i) => [d, i + 1]));
+  }
+  const r = MAP_RANK.get(def);
+  return 1 + (r ? r * MAP_STEP : Math.min(150, def.minLevel) / 3 / 100);
 }
 // chefes continuam com o bônus antigo do mapa (não aumentou): até +50%
 function bossMapExp(def) {
