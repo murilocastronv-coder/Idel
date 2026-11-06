@@ -24,8 +24,8 @@
     const r = await fetch(BASE + 'manifest.json?v=' + Date.now().toString(36).slice(0, 5), { cache: 'no-cache' });
     S.manifest = await r.json();
     const all = [];
-    for (const group of ['heroes', 'monsters', 'effects']) {
-      for (const [name, m] of Object.entries(S.manifest[group])) {
+    for (const group of ['heroes', 'monsters', 'effects', 'mounts']) {
+      for (const [name, m] of Object.entries(S.manifest[group] || {})) {
         all.push(loadImg(BASE + m.sheet + '?v=' + S.manifest.version).then((im) => { S.imgs[group + ':' + name] = im; }));
       }
     }
@@ -355,7 +355,24 @@
     hero: (ctx, cls, ap, action, t, x, y, scale, flip, opts) => (opts && opts.equip ? heroEquip(ctx, cls, ap, action, t, x, y, scale, flip, opts, opts.equip) : draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts)),
     ARMOR,
     monster: (ctx, name, action, t, x, y, scale, flip, opts) => draw(ctx, 'monsters', name, null, action, t, x, y, scale, flip, { ...opts, useScale: true }),
-    meta: (group, name) => S.manifest && S.manifest[group][name],
+    meta: (group, name) => S.manifest && S.manifest[group] && S.manifest[group][name],
+    // montaria desenhada à mão: desenha e devolve o quanto a sela subiu/desceu neste quadro (seatBob)
+    mount: (ctx, name, action, t, x, y, scale, flip, opts = {}) => {
+      const meta = S.manifest && S.manifest.mounts && S.manifest.mounts[name];
+      if (!meta || !draw(ctx, 'mounts', name, null, action, t, x, y, scale, flip, opts)) return null;
+      const a = meta.actions[action] ? action : 'idle', f = frameOf(meta, a, t, false)[1];
+      return { bob: ((meta.seatBob || {})[a] || [])[f] || 0, seat: meta.seat };
+    },
+    // ícone da montaria (bolsa e loja): quadro parado de lado, centralizado no quadrado
+    mountIcon: (ctx, name, x, y, size, tint) => {
+      const meta = S.manifest && S.manifest.mounts && S.manifest.mounts[name];
+      const im = meta && (tint ? tinted('mounts', name, tint) : S.imgs['mounts:' + name]);
+      if (!im) return false;
+      ctx.save(); ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(im, 0, 0, meta.fw, meta.fh, Math.round(x), Math.round(y), Math.round(size), Math.round(size));
+      ctx.restore();
+      return true;
+    },
     frames: (group, name, action) => { const m = S.manifest && S.manifest[group][name]; return m ? (m.actions[action] || m.actions.idle) : null; },
   };
 })();

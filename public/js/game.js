@@ -1849,14 +1849,27 @@
         const mountV = eq && eq.pet && window.Fenrir && !e.dead ? Fenrir.variantOf(eq.pet) : null;
         const mounted = !!mountV;
         let lift = 0, seatY = 0, mountMoving = false, mp = 0, fdir = heroFlip ? -1 : 1;
+        // montaria nova (touro desenhado à mão): de lado, de frente e de costas, com a sela subindo e descendo
+        const BULL = mounted && window.Sprites && Sprites.meta('mounts', 'bull');
+        const view = /_front$/.test(act) ? 'front' : /_back$/.test(act) ? 'back' : 'side';
+        let riderX = x + recoil;
         if (mounted) {
           mp = sc * 2;
-          mountMoving = act === 'run' || act === 'walk' || (e.speed || 0) > 10;
-          const fBob = mountMoving && Math.floor((now + (e.phase || 0)) / 110) % 2 === 0 ? -mp : 0;
-          shadowAt(x, y, 20 * zoom);
-          Fenrir.draw(ctx, x + fdir * 2 * mp, y, mp, heroFlip, mountMoving, now + (e.phase || 0), mountV);
-          seatY = y + fBob - Fenrir.SEAT(mp) + mp;          // linha das costas
-          lift = y - seatY - dim.hip * sc;                 // quadril do herói em cima das costas
+          mountMoving = /^(run|walk)/.test(act) || (e.speed || 0) > 10;
+          if (BULL) {
+            const mAct = (mountMoving ? (/^run/.test(act) || (e.speed || 0) > 65 ? 'run' : 'walk') : 'idle') + (view === 'side' ? '' : '_' + view);
+            shadowAt(x, y, 22 * zoom);
+            const mi = Sprites.mount(ctx, 'bull', mAct, now + (e.phase || 0), x, y, sc, heroFlip, mountV === 'red' ? { tint: '#b02a20' } : {});
+            const st = BULL.seat[view];
+            riderX = x + recoil + (view === 'side' ? st[0] * sc * fdir : 0);
+            seatY = y - (st[1] - (mi ? mi.bob : 0)) * sc;   // altura da sela neste quadro
+          } else {
+            const fBob = mountMoving && Math.floor((now + (e.phase || 0)) / 110) % 2 === 0 ? -mp : 0;
+            shadowAt(x, y, 20 * zoom);
+            Fenrir.draw(ctx, x + fdir * 2 * mp, y, mp, heroFlip, mountMoving, now + (e.phase || 0), mountV);
+            seatY = y + fBob - Fenrir.SEAT(mp) + mp;          // linha das costas
+          }
+          lift = y - seatY - dim.hip * sc;                 // quadril do herói em cima da sela
         } else if (eq && eq.pet && window.Fenrir && Fenrir.isPet(eq.pet) && !e.dead) {
           // Imp / Fadinha: voa ao lado do ombro, sem ficar em cima do personagem
           const side = heroFlip ? 1 : -1;
@@ -1867,12 +1880,12 @@
           ctx.save(); ctx.beginPath(); ctx.rect(x - 200 * sc, seatY - 400 * sc, 400 * sc, 400 * sc + 2 * sc); ctx.clip();
         }
         // montado: quem anda é o Fenrir; o cavaleiro fica sentado (pose parada) e só ataca/usa poder normalmente
-        const riderAct = mounted && /^(run|walk)/.test(act) ? 'idle' : act;
-        const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, riderAct, now, x + recoil, y - lift, HERO_H * sc, dpr));
-        if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, riderAct, t, x + recoil, y - lift - (mounted ? 0 : runBob) - (mounted ? 0 : idleBob), sc, heroFlip, { once, equip: eq });
+        const riderAct = mounted ? act.replace(/^(run|walk)/, 'idle') : act;  // montado: sentado, olhando para o mesmo lado
+        const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, riderAct, now, riderX, y - lift, HERO_H * sc, dpr));
+        if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, riderAct, t, riderX, y - lift - (mounted ? 0 : runBob) - (mounted ? 0 : idleBob), sc, heroFlip, { once, equip: eq });
         if (mounted) {
           ctx.restore();
-          drawRiderLeg(x + recoil, seatY, sc, fdir, mountMoving ? Math.sin((now + (e.phase || 0)) / 110 * Math.PI) : 0, dim.leg, dim.boot);
+          if (view === 'side') drawRiderLeg(riderX, seatY, sc, fdir, mountMoving ? Math.sin((now + (e.phase || 0)) / 110 * Math.PI) : 0, dim.leg, dim.boot);
         }
         if (e.dead) continue;
         const top = (pxDrawn && e.pxTop != null ? Math.min(y - lift - dim.h * sc - 4 * dpr, e.pxTop - 6 * dpr) : y - lift - (mounted ? 0 : runBob) - dim.h * sc - 6 * dpr);

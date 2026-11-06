@@ -1,5 +1,5 @@
 {
- "version": 14,
+ "version": 15,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",
@@ -2042,6 +2042,215 @@
   "over": {
    "cape_lord": "equip/wings_cape_lord_over.png",
    "cape_emperor": "equip/wings_cape_emperor_over.png"
+  }
+ },
+ "mounts": {
+  "bull": {
+   "sheet": "mounts/bull.png",
+   "fw": 128,
+   "fh": 128,
+   "pivot": [
+    64,
+    120
+   ],
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 8,
+     "fps": 7
+    },
+    "walk": {
+     "row": 1,
+     "frames": 8,
+     "fps": 11
+    },
+    "run": {
+     "row": 2,
+     "frames": 8,
+     "fps": 15
+    },
+    "jump": {
+     "row": 3,
+     "frames": 8,
+     "fps": 12
+    },
+    "idle_front": {
+     "row": 4,
+     "frames": 8,
+     "fps": 7
+    },
+    "walk_front": {
+     "row": 5,
+     "frames": 8,
+     "fps": 11
+    },
+    "run_front": {
+     "row": 6,
+     "frames": 8,
+     "fps": 15
+    },
+    "jump_front": {
+     "row": 7,
+     "frames": 8,
+     "fps": 12
+    },
+    "idle_back": {
+     "row": 8,
+     "frames": 8,
+     "fps": 7
+    },
+    "walk_back": {
+     "row": 9,
+     "frames": 8,
+     "fps": 11
+    },
+    "run_back": {
+     "row": 10,
+     "frames": 8,
+     "fps": 15
+    },
+    "jump_back": {
+     "row": 11,
+     "frames": 8,
+     "fps": 12
+    }
+   },
+   "seatBob": {
+    "idle": [
+     0,
+     0,
+     0,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1
+    ],
+    "walk": [
+     0,
+     0,
+     -2,
+     -1,
+     -1,
+     0,
+     -1,
+     -2
+    ],
+    "run": [
+     0,
+     0,
+     0,
+     1,
+     2,
+     2,
+     1,
+     0
+    ],
+    "jump": [
+     0,
+     0,
+     0,
+     3,
+     3,
+     2,
+     0,
+     -1
+    ],
+    "idle_front": [
+     0,
+     -1,
+     0,
+     0,
+     1,
+     0,
+     0,
+     0
+    ],
+    "walk_front": [
+     0,
+     1,
+     1,
+     0,
+     -1,
+     0,
+     0,
+     1
+    ],
+    "run_front": [
+     0,
+     0,
+     -1,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "jump_front": [
+     0,
+     -2,
+     -4,
+     -5,
+     -5,
+     -2,
+     -1,
+     0
+    ],
+    "idle_back": [
+     0,
+     2,
+     0,
+     1,
+     0,
+     0,
+     3,
+     4
+    ],
+    "walk_back": [
+     0,
+     -2,
+     0,
+     2,
+     1,
+     -1,
+     -2,
+     1
+    ],
+    "run_back": [
+     0,
+     -1,
+     -2,
+     0,
+     0,
+     -1,
+     -1,
+     -2
+    ],
+    "jump_back": [
+     0,
+     -2,
+     -1,
+     -2,
+     -2,
+     -1,
+     1,
+     1
+    ]
+   },
+   "seat": {
+    "side": [
+     -10,
+     69
+    ],
+    "front": [
+     1,
+     71
+    ],
+    "back": [
+     -2,
+     69
+    ]
+   }
   }
  }
 }
