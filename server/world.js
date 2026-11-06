@@ -95,8 +95,7 @@ function refHp(level) {
 }
 const HP_K_MIN = 0.02, HP_K_MAX = 6;
 const hpK = (T, level) => Math.min(HP_K_MAX, Math.max(HP_K_MIN, (T.hp || 1) / refHp(level)));
-// Sem EXP para quem já passou do mapa: em cada mapa de caça, quem tem nível acima do limite não ganha EXP dos monstros.
-// Limite = nível mínimo do próximo mapa + 10 (o último mapa não tem limite). Ex.: Dungeon (25) → limite 45 (Dungeon 2 é 35+).
+// Limite de referência por mapa (nível mínimo do próximo mapa + 10). Não zera mais a EXP: veja overCap.
 const EXP_CAP_MARGIN = 10;
 let MAP_CAP = null;
 // área segura: círculo no ponto de entrada de cada mapa de caça; monstros não atacam nem perseguem quem está dentro
@@ -117,7 +116,9 @@ function mapExpCap(def) {
   }
   return MAP_CAP.has(def) ? MAP_CAP.get(def) : Infinity;
 }
-const overCap = (p, def) => p.level > mapExpCap(def);
+// EXP em todos os mapas: o corte por nível do mapa foi desligado. Monstros fracos já dão menos EXP pela regra
+// de vida do monstro x nível do herói (hpK), mas nunca zero. mapExpCap continua só como referência.
+const overCap = () => false;
 function killExp(p, T, def, pk) {
   if (overCap(p, def)) return 0;
   // GM.xpMult(): evento temporário de EXP do GM (1 quando não há evento)
