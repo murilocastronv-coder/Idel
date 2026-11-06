@@ -1346,6 +1346,8 @@
   const christmasSprite = new Image();
   christmasSprite.src = '/assets/special-christmas-pixel-art.svg';
   christmasSprite.onload = () => { iconCache.clear(); if (typeof renderBag === 'function' && S.panel === 'bag') renderBag(); };
+  // ícones que usam desenhos dos sprites (montaria nova) são refeitos quando os sprites terminam de carregar
+  Sprites.ready.then(() => { iconCache.clear(); if (S.panel) try { renderPanel(S.panel); } catch (_) {} });
   PA.itemsReady.then((ok) => { if (!ok) return; iconCache.clear(); if (S.panel) try { renderPanel(S.panel); } catch (_) {} });
   const christmasCrops = {
     helm:[5,5,66,66], armor:[72,5,66,67], pants:[138,5,65,68], gloves:[205,17,53,49], boots:[263,5,57,67],
