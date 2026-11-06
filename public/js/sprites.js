@@ -154,11 +154,14 @@
     eq = normEq(eq);
     const out = [];
     const m = S.manifest; if (!m || !m.equip) return out;
-    const meta = m.heroes[cls]; if (!meta || !meta.layers) return out;
-    out.push(meta.layers.back, meta.layers.front);
+    const meta = m.heroes[cls]; if (!meta || (!meta.layers && !meta.full)) return out;
     eq = eq || {};
-    for (const k of ARMOR) { const set = eq[k]; const path = set && m.equip.classes[cls] && m.equip.classes[cls][set]; if (path) out.push(path); }
-    const W = m.weapons.classes[cls]; if (W && W.sheet) out.push(W.sheet);
+    // herói com arte completa (meta.full): armadura e arma já fazem parte do desenho, só asas/capas por cima
+    if (!meta.full) {
+      out.push(meta.layers.back, meta.layers.front);
+      for (const k of ARMOR) { const set = eq[k]; const path = set && m.equip.classes[cls] && m.equip.classes[cls][set]; if (path) out.push(path); }
+      const W = m.weapons.classes[cls]; if (W && W.sheet) out.push(W.sheet);
+    }
     const WG = m.wings;
     if (WG && eq.wings) {
       const key = WG.sheets[eq.wings] ? eq.wings : WING_VARIANT[eq.wings] || 'wings_dragon';
@@ -186,9 +189,10 @@
     eq = normEq(eq) || {};
     if (!S.manifest || !S.manifest.equip) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts);
     const meta = S.manifest.heroes[cls];
-    if (!meta || !meta.layers) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts);
-    const back = recolored('L:' + meta.layers.back, img(meta.layers.back), meta, true, ap, opts.white);
-    const front = recolored('L:' + meta.layers.front, img(meta.layers.front), meta, true, ap, opts.white);
+    if (!meta || (!meta.layers && !meta.full)) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts);
+    const full = !!meta.full;
+    const back = full ? sheet('heroes', cls, ap, opts.white) : recolored('L:' + meta.layers.back, img(meta.layers.back), meta, true, ap, opts.white);
+    const front = full ? back : recolored('L:' + meta.layers.front, img(meta.layers.front), meta, true, ap, opts.white);
     if (!back || !front) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts); // ainda carregando
     const E = S.manifest.equip, W = S.manifest.weapons.classes[cls];
     const [row, f] = frameOf(meta, action, t, opts.once);
@@ -241,6 +245,13 @@
     };
     if (wk && WG && !fromBack) drawWing();
     blit(back, 0);
+    if (full) {
+      if (wk && WG && fromBack) drawWing();
+      const over = WG && wk && WG.over && (WG.over[wk] || WG.over[wingKey]);
+      if (wk && over && !fromBack) wing(over, null);
+      ctx.restore();
+      return true;
+    }
     piece('boots'); piece('armor_mid'); piece('gloves_mid');
     if (wk && WG && fromBack) drawWing();
     const wingOver = WG && wk && WG.over && (WG.over[wk] || WG.over[wingKey]);

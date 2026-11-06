@@ -1,24 +1,24 @@
 {
- "version": 9,
+ "version": 10,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",
    "fw": 96,
    "fh": 96,
    "pivot": [
-    40,
+    48,
     90
    ],
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk": {
      "row": 1,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "attack": {
      "row": 2,
@@ -33,70 +33,67 @@
     },
     "death": {
      "row": 4,
-     "frames": 8,
-     "fps": 12
+     "frames": 6,
+     "fps": 10
     },
     "idle_front": {
      "row": 5,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk_front": {
      "row": 6,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "walk_back": {
      "row": 7,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "idle_back": {
      "row": 8,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "run": {
      "row": 1,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     },
     "run_front": {
      "row": 6,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     },
     "run_back": {
      "row": 7,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     }
    },
    "hairKeys": null,
    "defaultHair": null,
-   "layers": {
-    "back": "equip/dark_knight_back.png",
-    "front": "equip/dark_knight_front.png"
-   }
+   "full": true
   },
   "dark_wizard": {
    "sheet": "heroes/dark_wizard.png",
    "fw": 96,
    "fh": 96,
    "pivot": [
-    40,
+    48,
     90
    ],
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk": {
      "row": 1,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "attack": {
      "row": 2,
@@ -111,70 +108,67 @@
     },
     "death": {
      "row": 4,
-     "frames": 8,
-     "fps": 12
+     "frames": 6,
+     "fps": 10
     },
     "idle_front": {
      "row": 5,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk_front": {
      "row": 6,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "walk_back": {
      "row": 7,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "idle_back": {
      "row": 8,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "run": {
      "row": 1,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     },
     "run_front": {
      "row": 6,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     },
     "run_back": {
      "row": 7,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     }
    },
    "hairKeys": null,
    "defaultHair": null,
-   "layers": {
-    "back": "equip/dark_wizard_back.png",
-    "front": "equip/dark_wizard_front.png"
-   }
+   "full": true
   },
   "fairy_elf": {
    "sheet": "heroes/fairy_elf.png",
    "fw": 96,
    "fh": 96,
    "pivot": [
-    40,
+    48,
     90
    ],
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk": {
      "row": 1,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "attack": {
      "row": 2,
@@ -189,96 +183,67 @@
     },
     "death": {
      "row": 4,
-     "frames": 8,
-     "fps": 12
+     "frames": 6,
+     "fps": 10
     },
     "idle_front": {
      "row": 5,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk_front": {
      "row": 6,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "walk_back": {
      "row": 7,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "idle_back": {
      "row": 8,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "run": {
      "row": 1,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     },
     "run_front": {
      "row": 6,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     },
     "run_back": {
      "row": 7,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     }
    },
-   "hairKeys": [
-    [
-     247,
-     226,
-     154
-    ],
-    [
-     242,
-     211,
-     107
-    ],
-    [
-     141,
-     121,
-     77
-    ],
-    [
-     201,
-     175,
-     95
-    ],
-    [
-     244,
-     217,
-     125
-    ]
-   ],
-   "defaultHair": "#f2d36b",
-   "layers": {
-    "back": "equip/fairy_elf_back.png",
-    "front": "equip/fairy_elf_front.png"
-   }
+   "hairKeys": null,
+   "defaultHair": null,
+   "full": true
   },
   "magic_gladiator": {
    "sheet": "heroes/magic_gladiator.png",
    "fw": 96,
    "fh": 96,
    "pivot": [
-    40,
+    48,
     90
    ],
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk": {
      "row": 1,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "attack": {
      "row": 2,
@@ -293,70 +258,67 @@
     },
     "death": {
      "row": 4,
-     "frames": 8,
-     "fps": 12
+     "frames": 7,
+     "fps": 10
     },
     "idle_front": {
      "row": 5,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk_front": {
      "row": 6,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "walk_back": {
      "row": 7,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "idle_back": {
      "row": 8,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "run": {
      "row": 1,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     },
     "run_front": {
      "row": 6,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     },
     "run_back": {
      "row": 7,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     }
    },
    "hairKeys": null,
    "defaultHair": null,
-   "layers": {
-    "back": "equip/magic_gladiator_back.png",
-    "front": "equip/magic_gladiator_front.png"
-   }
+   "full": true
   },
   "dark_lord": {
    "sheet": "heroes/dark_lord.png",
    "fw": 96,
    "fh": 96,
    "pivot": [
-    40,
+    48,
     90
    ],
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk": {
      "row": 1,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "attack": {
      "row": 2,
@@ -371,70 +333,67 @@
     },
     "death": {
      "row": 4,
-     "frames": 8,
-     "fps": 12
+     "frames": 6,
+     "fps": 10
     },
     "idle_front": {
      "row": 5,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk_front": {
      "row": 6,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "walk_back": {
      "row": 7,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "idle_back": {
      "row": 8,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "run": {
      "row": 1,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     },
     "run_front": {
      "row": 6,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     },
     "run_back": {
      "row": 7,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     }
    },
    "hairKeys": null,
    "defaultHair": null,
-   "layers": {
-    "back": "equip/dark_lord_back.png",
-    "front": "equip/dark_lord_front.png"
-   }
+   "full": true
   },
   "summoner": {
    "sheet": "heroes/summoner.png",
    "fw": 96,
    "fh": 96,
    "pivot": [
-    40,
+    48,
     90
    ],
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk": {
      "row": 1,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "attack": {
      "row": 2,
@@ -449,77 +408,48 @@
     },
     "death": {
      "row": 4,
-     "frames": 8,
-     "fps": 12
+     "frames": 6,
+     "fps": 10
     },
     "idle_front": {
      "row": 5,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk_front": {
      "row": 6,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "walk_back": {
      "row": 7,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "idle_back": {
      "row": 8,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "run": {
      "row": 1,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     },
     "run_front": {
      "row": 6,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     },
     "run_back": {
      "row": 7,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     }
    },
-   "hairKeys": [
-    [
-     255,
-     161,
-     201
-    ],
-    [
-     255,
-     106,
-     184
-    ],
-    [
-     148,
-     63,
-     119
-    ],
-    [
-     212,
-     88,
-     158
-    ],
-    [
-     255,
-     128,
-     190
-    ]
-   ],
-   "defaultHair": "#ff6ab8",
-   "layers": {
-    "back": "equip/summoner_back.png",
-    "front": "equip/summoner_front.png"
-   }
+   "hairKeys": null,
+   "defaultHair": null,
+   "full": true
   }
  },
  "monsters": {
