@@ -118,6 +118,7 @@
       case 'entryInfo': CH.entry = m; if (S.panel === 'chaos' && CH.tab.startsWith('entry_') && !CH.busy) renderChaos(); return;
       case 'chaosResult': return chaosResult(m);
       case 'cmdres': return cmdResult(m);
+      case 'gmmsg': return showGmMsg(m);
       case 'log': return feed(m.text, m.kind === 'warn' ? 'warn' : m.kind === 'quest' ? 'quest' : m.kind === 'pvp' ? 'pvp' : '');
       case 'quests': S.quests = m; $('#quest-badge').hidden = !m.claimable; if (S.panel === 'quests') renderQuests(); return;
       case 'offline': return showOffline(m);
@@ -3318,6 +3319,15 @@
     return li;
   }
   // resposta dos comandos de administração (só quem enviou recebe)
+  // aviso do Game Master: grande, vermelho, no alto da tela, por alguns segundos (não bloqueia toques)
+  function showGmMsg(m) {
+    let box = $('#gm-msg');
+    if (!box) { box = document.createElement('div'); box.id = 'gm-msg'; box.setAttribute('role', 'alert'); document.body.appendChild(box); }
+    box.innerHTML = `<small>⚔ AVISO DO GAME MASTER${m.by ? ' · ' + esc(m.by) : ''}</small><b>${esc(m.text)}</b>`;
+    box.classList.remove('show'); void box.offsetWidth; box.classList.add('show');
+    clearTimeout(box._t); box._t = setTimeout(() => box.classList.remove('show'), 8000);
+    if (typeof chatSys === 'function') chatSys(`[GM ${m.by || ''}] ${m.text}`, 'cmdres err');
+  }
   function cmdResult(m) {
     m.lines.forEach((l, i) => chatSys(l, m.ok ? (i ? 'cmdres' : 'cmdres ok') : 'cmdres err'));
     if (m.confirm) {

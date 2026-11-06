@@ -739,3 +739,11 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 #joy.on .joy-base { opacity: 1; transform: scale(1); }
 #joy.on .joy-knob { opacity: .92; }
 @media (max-width: 420px) { #joy .joy-base { left: -54px; top: -54px; width: 108px; height: 108px; } }
+/* aviso do Game Master (/chatgm) */
+#gm-msg { position: fixed; left: 50%; top: 30%; transform: translate(-50%, -10px); z-index: 90; pointer-events: none; text-align: center;
+  width: min(92vw, 680px); padding: 12px 16px; border-radius: 10px; background: rgba(30,4,4,.72); border: 2px solid rgba(255,70,60,.85);
+  box-shadow: 0 0 24px rgba(255,40,30,.45); opacity: 0; transition: opacity .3s, transform .3s; }
+#gm-msg.show { opacity: 1; transform: translate(-50%, 0); }
+#gm-msg small { display: block; font: 800 13px/1.2 "Exo 2", system-ui, sans-serif; letter-spacing: .12em; color: #ffb4a8; margin-bottom: 6px; }
+#gm-msg b { display: block; font: 900 clamp(20px, 5.4vw, 34px)/1.15 "Exo 2", system-ui, sans-serif; color: #ff3a2e; text-transform: uppercase;
+  text-shadow: 0 2px 0 #2a0000, 0 0 12px rgba(255,60,40,.7); word-break: break-word; }

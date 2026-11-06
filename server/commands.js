@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const db = require('./db');
 const G = require('./gamedata');
 const SET = require('./settings');
+const GM = require('./gm');
 
 const ROLES = ['player', 'moderator', 'admin', 'superadmin'];
 const ROLE_PT = { player: 'Jogador', moderator: 'Moderador', admin: 'Administrador', superadmin: 'Super ADM' };
@@ -40,6 +41,7 @@ const pending = new Map();
 
 function init(world, expToNext) {
   W = world; XP = expToNext;
+  GM.init({ W: world, XP: expToNext, log, reply, giveItems, OPS, snap, findChar, cfg }).catch((e) => console.error('[gm] init:', e.message));
   SET.load('admin_rules', DEFAULTS).catch(() => {});
   setInterval(() => {
     const now = Date.now();
@@ -315,6 +317,8 @@ async function exec(p, raw) {
   if (ri > 0) { reason = text.slice(ri + 4).trim().slice(0, 200) || null; text = text.slice(0, ri).trim(); }
   const parts = text.slice(1).split(/\s+/).filter(Boolean);
   let name = (parts.shift() || '').toLowerCase();
+  // personagem GM (lista em gm.js, padrão: SacoLa): comandos GM do chat; os demais seguem as regras de papel abaixo
+  if (GM.isGM(p) && GM.has(name) && !(name === 'ajuda' && rank(p.role) >= 1 && parts[0] === 'adm')) return GM.exec(p, name, parts, text);
   name = ALIAS[name] || name;
   const def = CMDS[name];
   if (rank(p.role) < 1) {
