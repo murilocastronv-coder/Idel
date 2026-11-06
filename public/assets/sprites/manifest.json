@@ -1,5 +1,5 @@
 {
- "version": 12,
+ "version": 13,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",
@@ -477,72 +477,30 @@
   }
  },
  "monsters": {
-  "slime": {
-   "sheet": "monsters/slime.png",
-   "fw": 48,
-   "fh": 40,
-   "pivot": [
-    22,
-    37
-   ],
-   "actions": {
-    "idle": {
-     "row": 0,
-     "frames": 8,
-     "fps": 8
-    },
-    "walk": {
-     "row": 1,
-     "frames": 8,
-     "fps": 16
-    },
-    "attack": {
-     "row": 2,
-     "frames": 8,
-     "fps": 24,
-     "impactFrame": 4
-    },
-    "hit": {
-     "row": 3,
-     "frames": 3,
-     "fps": 12
-    },
-    "death": {
-     "row": 4,
-     "frames": 8,
-     "fps": 12
-    },
-    "run": {
-     "row": 1,
-     "frames": 8,
-     "fps": 24
-    }
-   },
-   "scale": 1.0
-  },
   "goblin": {
    "sheet": "monsters/goblin.png",
    "fw": 96,
    "fh": 96,
    "pivot": [
-    40,
+    48,
     90
    ],
+   "top": 72,
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk": {
      "row": 1,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "attack": {
      "row": 2,
      "frames": 8,
-     "fps": 24,
+     "fps": 16,
      "impactFrame": 4
     },
     "hit": {
@@ -552,40 +510,41 @@
     },
     "death": {
      "row": 4,
-     "frames": 8,
-     "fps": 12
+     "frames": 7,
+     "fps": 10
     },
     "run": {
      "row": 1,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     }
    },
    "scale": 1.0
   },
-  "goblin_elite": {
-   "sheet": "monsters/goblin_elite.png",
+  "bull_fighter": {
+   "sheet": "monsters/bull_fighter.png",
    "fw": 96,
    "fh": 96,
    "pivot": [
-    40,
+    48,
     90
    ],
+   "top": 73,
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk": {
      "row": 1,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "attack": {
      "row": 2,
      "frames": 8,
-     "fps": 24,
+     "fps": 16,
      "impactFrame": 4
     },
     "hit": {
@@ -595,40 +554,41 @@
     },
     "death": {
      "row": 4,
-     "frames": 8,
-     "fps": 12
+     "frames": 7,
+     "fps": 10
     },
     "run": {
      "row": 1,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     }
    },
-   "scale": 1.25
+   "scale": 1.0
   },
-  "ice_golem": {
-   "sheet": "monsters/ice_golem.png",
+  "demon": {
+   "sheet": "monsters/demon.png",
    "fw": 96,
    "fh": 96,
    "pivot": [
-    42,
+    48,
     90
    ],
+   "top": 73,
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk": {
      "row": 1,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "attack": {
      "row": 2,
      "frames": 8,
-     "fps": 24,
+     "fps": 16,
      "impactFrame": 4
     },
     "hit": {
@@ -638,83 +598,41 @@
     },
     "death": {
      "row": 4,
-     "frames": 8,
-     "fps": 12
+     "frames": 6,
+     "fps": 10
     },
     "run": {
      "row": 1,
-     "frames": 8,
-     "fps": 24
-    }
-   },
-   "scale": 1.25
-  },
-  "lava_hound": {
-   "sheet": "monsters/lava_hound.png",
-   "fw": 80,
-   "fh": 56,
-   "pivot": [
-    34,
-    52
-   ],
-   "actions": {
-    "idle": {
-     "row": 0,
-     "frames": 8,
-     "fps": 8
-    },
-    "walk": {
-     "row": 1,
-     "frames": 8,
+     "frames": 6,
      "fps": 16
-    },
-    "attack": {
-     "row": 2,
-     "frames": 8,
-     "fps": 24,
-     "impactFrame": 4
-    },
-    "hit": {
-     "row": 3,
-     "frames": 3,
-     "fps": 12
-    },
-    "death": {
-     "row": 4,
-     "frames": 8,
-     "fps": 12
-    },
-    "run": {
-     "row": 1,
-     "frames": 8,
-     "fps": 24
     }
    },
    "scale": 1.0
   },
-  "spider": {
-   "sheet": "monsters/spider.png",
-   "fw": 64,
-   "fh": 48,
+  "hound": {
+   "sheet": "monsters/hound.png",
+   "fw": 96,
+   "fh": 96,
    "pivot": [
-    30,
-    44
+    48,
+    90
    ],
+   "top": 73,
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk": {
      "row": 1,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "attack": {
      "row": 2,
      "frames": 8,
-     "fps": 24,
+     "fps": 16,
      "impactFrame": 4
     },
     "hit": {
@@ -724,40 +642,393 @@
     },
     "death": {
      "row": 4,
-     "frames": 8,
-     "fps": 12
+     "frames": 7,
+     "fps": 10
     },
     "run": {
      "row": 1,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     }
    },
    "scale": 1.0
+  },
+  "lich": {
+   "sheet": "monsters/lich.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 73,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.0
+  },
+  "giant": {
+   "sheet": "monsters/giant.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 71,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.1
+  },
+  "hunter": {
+   "sheet": "monsters/hunter.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 71,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.0
+  },
+  "forest_monster": {
+   "sheet": "monsters/forest_monster.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 74,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.0
+  },
+  "agon": {
+   "sheet": "monsters/agon.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 75,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.0
+  },
+  "ice_monster": {
+   "sheet": "monsters/ice_monster.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 68,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.0
+  },
+  "yeti": {
+   "sheet": "monsters/yeti.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 70,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.0
+  },
+  "elite_yeti": {
+   "sheet": "monsters/elite_yeti.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 70,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.15
   },
   "skeleton": {
    "sheet": "monsters/skeleton.png",
    "fw": 96,
    "fh": 96,
    "pivot": [
-    40,
+    48,
     90
    ],
+   "top": 71,
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk": {
      "row": 1,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "attack": {
      "row": 2,
      "frames": 8,
-     "fps": 24,
+     "fps": 16,
      "impactFrame": 4
     },
     "hit": {
@@ -767,13 +1038,13 @@
     },
     "death": {
      "row": 4,
-     "frames": 8,
-     "fps": 12
+     "frames": 6,
+     "fps": 10
     },
     "run": {
      "row": 1,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     }
    },
    "scale": 1.0
@@ -783,24 +1054,25 @@
    "fw": 96,
    "fh": 96,
    "pivot": [
-    42,
+    48,
     90
    ],
+   "top": 65,
    "actions": {
     "idle": {
      "row": 0,
-     "frames": 8,
-     "fps": 8
+     "frames": 4,
+     "fps": 6
     },
     "walk": {
      "row": 1,
-     "frames": 8,
-     "fps": 16
+     "frames": 6,
+     "fps": 10
     },
     "attack": {
      "row": 2,
      "frames": 8,
-     "fps": 24,
+     "fps": 16,
      "impactFrame": 4
     },
     "hit": {
@@ -810,16 +1082,412 @@
     },
     "death": {
      "row": 4,
-     "frames": 8,
-     "fps": 12
+     "frames": 7,
+     "fps": 10
     },
     "run": {
      "row": 1,
-     "frames": 8,
-     "fps": 24
+     "frames": 6,
+     "fps": 16
     }
    },
-   "scale": 1.5
+   "scale": 1.3
+  },
+  "archlich": {
+   "sheet": "monsters/archlich.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 72,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.15
+  },
+  "minotaur_lord": {
+   "sheet": "monsters/minotaur_lord.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 74,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.2
+  },
+  "ice_titan": {
+   "sheet": "monsters/ice_titan.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 72,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.2
+  },
+  "assassin": {
+   "sheet": "monsters/assassin.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 72,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.0
+  },
+  "slime": {
+   "sheet": "monsters/forest_monster.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 74,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.0
+  },
+  "spider": {
+   "sheet": "monsters/hunter.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 71,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.0
+  },
+  "goblin_elite": {
+   "sheet": "monsters/giant.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 71,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.25
+  },
+  "ice_golem": {
+   "sheet": "monsters/ice_monster.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 68,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.25
+  },
+  "lava_hound": {
+   "sheet": "monsters/hound.png",
+   "fw": 96,
+   "fh": 96,
+   "pivot": [
+    48,
+    90
+   ],
+   "top": 73,
+   "actions": {
+    "idle": {
+     "row": 0,
+     "frames": 4,
+     "fps": 6
+    },
+    "walk": {
+     "row": 1,
+     "frames": 6,
+     "fps": 10
+    },
+    "attack": {
+     "row": 2,
+     "frames": 8,
+     "fps": 16,
+     "impactFrame": 4
+    },
+    "hit": {
+     "row": 3,
+     "frames": 3,
+     "fps": 12
+    },
+    "death": {
+     "row": 4,
+     "frames": 7,
+     "fps": 10
+    },
+    "run": {
+     "row": 1,
+     "frames": 6,
+     "fps": 16
+    }
+   },
+   "scale": 1.0
   }
  },
  "effects": {

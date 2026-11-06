@@ -196,6 +196,8 @@
     spirit: 'impact_spirit', lightning: 'impact_lightning', meteor: 'impact_fire', claw: 'impact_blood', boss: 'impact_dark', slash: 'impact_energy', whirl: 'impact_energy' };
   const BURST = { meteor: 'burst_fire', fire: 'burst_fire', whirl: 'burst_energy', lightning: 'burst_lightning', spirit: 'burst_spirit', arrow3: 'burst_arrow', dark: 'burst_dark' };
   const MON_H = { slime: 26, goblin: 46, goblin_elite: 46, spider: 30, skeleton: 52, skeleton_king: 62 };
+  // altura real do desenho (manifest.top), em pixels de sprite; os números acima ficam só de reserva
+  const monH = (n) => { const m = window.Sprites && Sprites.meta('monsters', n); return (m && m.top) || MON_H[n] || 40; };
   const HERO_H = 56;
   const HERO_HIP = 0.4; // altura do quadril no desenho do herói (fração da altura)
   // medidas reais de cada herói (manifest): altura até o topo da cabeça, quadril para a montaria e cores da perna
@@ -225,7 +227,12 @@
   function hexRgb(h) { const n = parseInt(String(h).slice(1, 7), 16); return Number.isFinite(n) ? `${n >> 16 & 255},${n >> 8 & 255},${n & 255}` : '255,255,255'; }
   // morte de monstro: estilhaços com a cor da criatura + almas subindo; boss ganha explosão própria
   const DEATH_COL = { slime: ['#6ad84a', '#bfff8a', '#2a8a2a'], goblin: ['#8ab84a', '#c8a86a', '#5a3a1c'], goblin_elite: ['#ff6a3a', '#ffd36b'], spider: ['#6a4a8a', '#c8a0ff', '#2a1a3a'],
-    skeleton: ['#e8e0c8', '#b8b098', '#ffffff'], skeleton_king: ['#e8e0c8', '#ff3030', '#c06bff'], ice_golem: ['#bff4ff', '#7ad8ff', '#ffffff'], lava_hound: ['#ff6a1a', '#ffd36b', '#3a1a10'] };
+    skeleton: ['#e8e0c8', '#b8b098', '#ffffff'], skeleton_king: ['#e8e0c8', '#ff3030', '#c06bff'], ice_golem: ['#bff4ff', '#7ad8ff', '#ffffff'], lava_hound: ['#ff6a1a', '#ffd36b', '#3a1a10'],
+    forest_monster: ['#6a8a3a', '#a8c86a', '#5a3a1c'], bull_fighter: ['#8a5a3a', '#c8a07a', '#3a2a1a'], demon: ['#ff6a1a', '#ffd36b', '#3a1a10'],
+    hound: ['#8a5a3a', '#c88a5a', '#3a2a1a'], lich: ['#8a6aff', '#c8b0ff', '#3a2a5a'], giant: ['#b8945a', '#e8c88a', '#5a3a1c'],
+    hunter: ['#c84a3a', '#e8a07a', '#5a2a1a'], agon: ['#6a7a6a', '#a8b8a8', '#3a3a3a'], ice_monster: ['#bff4ff', '#7ad8ff', '#ffffff'],
+    yeti: ['#ffffff', '#d8e8f0', '#a8c0d0'], elite_yeti: ['#ffffff', '#bfe8ff', '#7ad8ff'], archlich: ['#b06aff', '#ffd36b', '#3a2a5a'],
+    minotaur_lord: ['#8a5a3a', '#ffd36b', '#3a2a1a'], ice_titan: ['#bff4ff', '#7ad8ff', '#ffffff'], assassin: ['#6a4a8a', '#c8a0ff', '#2a1a3a'] };
   function deathVfx(t, now) {
     if (!t.sprite) return;
     if (t.boss) { bossDeath(t, now); return; }
@@ -1719,7 +1726,7 @@
         const name = monSprite(e);
         const meta = Sprites.meta('monsters', name);
         const ms = meta ? meta.scale : 1;
-        const h = (MON_H[name] || 40) * ms * sc * (e.scale || 1);
+        const h = monH(name) * ms * sc * (e.scale || 1);
         const w = Math.max(10 * zoom, h * 0.45);
         if (e.boss && !e.dead) {
           // aura do boss (vermelha quando enfurecido)
@@ -1857,7 +1864,7 @@
   }
   // centro do corpo, em coordenadas do mundo
   function center(e) {
-    if (e.sprite) { const n = monSprite(e); const meta = Sprites.meta('monsters', n); return [e.rx, e.ry - (MON_H[n] || 40) * (meta ? meta.scale : 1) / 4]; }
+    if (e.sprite) { const n = monSprite(e); const meta = Sprites.meta('monsters', n); return [e.rx, e.ry - monH(n) * (meta ? meta.scale : 1) / 4]; }
     return [e.rx, e.ry - HERO_H / 4];
   }
   function drawFx(now) {
