@@ -347,7 +347,7 @@
   }
 
   // ---- Ícones detalhados 48x48 (atlas gerado por tools/sprites/icons.py) ----
-  const ITEMS_V = 3;
+  const ITEMS_V = 4;
   const itemAtlas = { img: new Image(), idx: null, size: 48, cols: 24 };
   const itemsReady = Promise.all([
     fetch('/assets/icons/items.json?v=' + ITEMS_V).then((r) => r.json()).then((j) => { itemAtlas.idx = j.index; itemAtlas.size = j.size; itemAtlas.cols = j.cols; }),

@@ -14,10 +14,15 @@ HERE = os.path.dirname(__file__)
 ICONS = os.path.join(HERE, '..', '..', 'public', 'assets', 'icons')
 WINGS = os.path.join(HERE, '..', '..', 'public', 'assets', 'sprites', 'wings_new')
 # mesmo mapa de public/js/sprites.js (NEW_WINGS e FEST_WINGS)
-NEW_WINGS = {'wings_satan': 'satan', 'wings_dragon': 'dragon', 'wings_dragon_l1': 'satan', 'wings_curse': 'curse', 'wings_despair': 'despair',
-             'wings_heaven': 'heaven', 'wings_elf': 'heaven', 'wings_life': 'heaven', 'wings_soul': 'heaven', 'wings_spirit': 'heaven',
-             'wings_spirit_l1': 'heaven', 'wings_darkness': 'darkness', '@wings': 'heaven'}
-FEST = ['dragon', 'despair', 'curse', 'heaven', 'darkness']  # vermelho, azul, verde, dourado, roxo
+NEW_WINGS = {'wings_satan': 'demoniaca_2', 'wings_dragon': 'draconica_4', 'wings_heaven': 'angelical_2', 'wings_soul': 'angelical_4',
+             'wings_elf': 'elemental_1', 'wings_spirit': 'dourada', 'wings_life': 'elemental_2', 'wings_curse': 'sombria_2',
+             'wings_despair': 'sombria_4', 'wings_darkness': 'draconica_5', 'wings_dragon_l1': 'draconica_1',
+             'wings_spirit_l1': 'angelical_1', '@wings': 'angelical_3'}
+FEST_FAMILY = ['demoniaca', 'cristalina', 'elemental', 'angelical', 'sombria']  # vermelho, azul, verde, dourado, roxo
+
+
+def fest(n):
+    return f'{FEST_FAMILY[(n - 1) % 5]}_{min(5, (n - 1) // 5 + 1)}'
 
 
 def fit(im, size):
@@ -33,11 +38,11 @@ def main():
     meta = json.load(open(os.path.join(ICONS, 'items.json')))
     atlas = Image.open(os.path.join(ICONS, 'items.png')).convert('RGBA')
     size, cols = meta['size'], meta['cols']
-    art = {n: fit(Image.open(os.path.join(WINGS, n + '.png')).convert('RGBA'), size) for n in set(NEW_WINGS.values()) | set(FEST)}
+    art = {os.path.basename(f)[:-4]: fit(Image.open(os.path.join(WINGS, f)).convert('RGBA'), size) for f in os.listdir(WINGS) if f.endswith('.png')}
     done = 0
     for base, i in meta['index'].items():
         if base.startswith('festive_') and base.endswith('_wings'):
-            name = FEST[(int(base.split('_')[1]) - 1) % 5]
+            name = fest(int(base.split('_')[1]))
         elif base in NEW_WINGS:
             name = NEW_WINGS[base]
         else:

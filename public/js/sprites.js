@@ -140,17 +140,25 @@
   const WING_VARIANT = { wings_life: 'wings_elf', wings_dragon_l1: 'wings_satan', wings_spirit_l1: 'wings_heaven' };
   // conjuntos de Natal (loja premium): cada tom tem a sua camada no herói; asas e armas usam as mais parecidas
   const FEST_WINGS = ['wings_dragon', 'wings_despair', 'wings_curse', 'wings_heaven', 'wings_darkness'];
-  // asas desenhadas à mão (uma imagem de frente, as duas asas): qual desenho cada asa do jogo usa
-  const NEW_WINGS = { wings_satan: 'satan', wings_dragon: 'dragon', wings_dragon_l1: 'satan', wings_curse: 'curse', wings_despair: 'despair',
-    wings_heaven: 'heaven', wings_elf: 'heaven', wings_life: 'heaven', wings_soul: 'heaven', wings_spirit: 'heaven', wings_spirit_l1: 'heaven', wings_darkness: 'darkness' };
-  const newWingPath = (k) => NEW_WINGS[k] ? 'wings_new/' + NEW_WINGS[k] + '.png' : null;
+  // asas desenhadas à mão (uma imagem de frente, as duas asas): famílias com níveis 1 a 5
+  const NEW_WINGS = { wings_satan: 'demoniaca_2', wings_dragon: 'draconica_4', wings_heaven: 'angelical_2', wings_soul: 'angelical_4',
+    wings_elf: 'elemental_1', wings_spirit: 'dourada', wings_life: 'elemental_2', wings_curse: 'sombria_2', wings_despair: 'sombria_4',
+    wings_darkness: 'draconica_5', wings_dragon_l1: 'draconica_1', wings_spirit_l1: 'angelical_1' };
+  // loja de cash: família pela cor do pacote (vermelho, azul, verde, dourado, roxo) e nível pela série (I a V; VI usa o 5)
+  const FEST_FAMILY = ['demoniaca', 'cristalina', 'elemental', 'angelical', 'sombria'];
+  const newWingPath = (k) => {
+    if (!k || /^cape_/.test(k)) return null;
+    const fm = /^festive_(\d+)_wings$/.exec(k);
+    const name = fm ? FEST_FAMILY[(Number(fm[1]) - 1) % 5] + '_' + Math.min(5, Math.floor((Number(fm[1]) - 1) / 5) + 1) : NEW_WINGS[k] || 'angelical_3';
+    return 'wings_new/' + name + '.png';
+  };
   const FEST_WEAPON = { sword: 'phoenix_sword', bow: 'phoenix_bow', shield: null };
   function normEq(eq) {
     if (!eq) return eq;
     let out = null;
     const set = (k, v) => { if (!out) out = { ...eq }; out[k] = v; };
     for (const k of ['helm', 'armor', 'gloves', 'boots']) { const m = /^festive_(\d+)$/.exec(eq[k] || ''); if (m) set(k, 'fest' + ((Number(m[1]) - 1) % 5)); }
-    const wm = /^festive_(\d+)_wings$/.exec(eq.wings || ''); if (wm) set('wings', FEST_WINGS[(Number(wm[1]) - 1) % 5]);
+    // asas dos pacotes premium mantêm o nome: newWingPath escolhe o desenho pelo número do pacote
     const am = /^festive_\d+_(sword|bow)$/.exec(eq.w || ''); if (am) set('w', FEST_WEAPON[am[1]]);
     return out || eq;
   }
@@ -248,7 +256,7 @@
       if (!im) return false;
       const side = !/_(front|back)$/.test(action);
       const flap = Math.sin((Number(t) || 0) / 300);
-      const base = 88 / 62 * scale, w = im.width * base * (side ? 0.62 : 1) * (1 + flap * 0.05), h = im.height * base * (1 - flap * 0.02);
+      const base = 1.4 * scale, w = im.width * base * (side ? 0.62 : 1) * (1 + flap * 0.05), h = im.height * base * (1 - flap * 0.02);
       const top = (meta.top || 72) * scale, cy = -top * 0.66 - Math.round(flap * scale);
       const cx = side ? -7 * scale : 0;
       ctx.save();
