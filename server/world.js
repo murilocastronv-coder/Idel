@@ -1474,7 +1474,8 @@ class World {
   damageMonster(p, m, mult, crit, now) {
     const bd = p.buffs.dmg && p.buffs.dmg.until > now ? p.buffs.dmg.mult : 1;
     const raw = rand(p.dmgMin, p.dmgMax) * mult * bd * (crit ? (p.critDmg || 1.5) : 1);
-    const d = Math.max(1, Math.round(raw - m.T.def / 2));
+    // todo golpe tira pelo menos 25% do dano do herói: monstros de defesa alta não ficam "imortais" (dano 1)
+    const d = Math.max(1, Math.round(raw * 0.25), Math.round(raw - m.T.def / 2));
     m.hp -= d;
     m.flip = p.x > m.x;
     if (!m.target || m.target.dead || m.target.map !== p.map) m.target = p;
@@ -1830,6 +1831,7 @@ class World {
         let d = dist(p, m);
         if (m.target === p) d -= 200; // prioriza quem está atacando
         if (m.T.boss && p.level < m.T.level - 5) d += 2000; // evita o boss quando fraco
+        if (m.T.elite && m.target !== p) d += 150; // prefere os monstros comuns; o elite só quando está bem mais perto ou atacando
         if (d < bd) { bd = d; best = m; }
       }
       p.target = best;
