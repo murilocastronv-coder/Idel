@@ -36,7 +36,9 @@ const ENTRY_MAT_BOOST = 1.25;
 const isEntryMat = (k) => k === 'jewel_of_chaos' || /^(devil_eye|devil_key|scroll_of_archangel|blood_bone)(_\d+)?$/.test(String(k));
 const matBoost = (k) => (isEntryMat(k) ? ENTRY_MAT_BOOST : 1);
 // chance final (%) de uma regra para um jogador
-const ruleChance = (r, vipTier, cm = 1) => (isJewel(r.item) ? jewelRate(vipTier) : isRare(r.item) ? Math.min(RARE_CAP, r.chance) : Math.min(100, r.chance * cm)) * matBoost(r.item);
+// materiais do Fenrir: chance fixa da tabela (Acheron 0,50% · Blood Castle 0,55%), sem bônus de evento nem de VIP
+const FENRIR_MATS = new Set(['splinter_of_armor', 'bless_of_guardian', 'claw_of_beast']);
+const ruleChance = (r, vipTier, cm = 1) => FENRIR_MATS.has(r.item) ? Math.min(100, r.chance) : (isJewel(r.item) ? jewelRate(vipTier) : isRare(r.item) ? Math.min(RARE_CAP, r.chance) : Math.min(100, r.chance * cm)) * matBoost(r.item);
 const vipTierOf = (p) => { try { return (p && p.vip && p.vip().tier) || 0; } catch { return 0; } };
 
 let rules = [];
@@ -399,5 +401,5 @@ function adminView() {
   };
 }
 
-module.exports = { RARE_CAP, JEWEL_RATE, ENTRY_MAT_BOOST, isEntryMat, ruleChance, isJewel, isRare, init, cfg, onKill, offline, deliver, spawnGround, removeGround, publicGround, expire, ownedNear, pickup, fits,
+module.exports = { FENRIR_MATS, RARE_CAP, JEWEL_RATE, ENTRY_MAT_BOOST, isEntryMat, ruleChance, isJewel, isRare, init, cfg, onKill, offline, deliver, spawnGround, removeGround, publicGround, expire, ownedNear, pickup, fits,
   sources, saveRule, deleteRule, saveConfig, saveEvent, stopEvent, history, simulate, adminView, reload, tierOf };

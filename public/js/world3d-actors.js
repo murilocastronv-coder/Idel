@@ -154,12 +154,12 @@
     });
   }
   // Fenrir Dourado (montaria): lobo dourado feito de formas simples, cabeça para +z
-  function fenrirModel() {
+  function fenrirModel(red) {
     const g = new THREE.Group();
-    const gold = new MSM({ color: 0xe8b84a, metalness: 0.75, roughness: 0.32, emissive: 0x5a3a08, emissiveIntensity: 0.35 });
-    const dark = new MSM({ color: 0xa8761a, metalness: 0.6, roughness: 0.4 });
-    const light = new MSM({ color: 0xffe08a, metalness: 0.5, roughness: 0.35, emissive: 0x8a6a1a, emissiveIntensity: 0.4 });
-    const eye = new MSM({ color: 0xff3a1a, emissive: 0xff3a1a, emissiveIntensity: 2 });
+    const gold = red ? new MSM({ color: 0xc82a20, metalness: 0.35, roughness: 0.45, emissive: 0x4a0604, emissiveIntensity: 0.4 }) : new MSM({ color: 0xe8b84a, metalness: 0.75, roughness: 0.32, emissive: 0x5a3a08, emissiveIntensity: 0.35 });
+    const dark = new MSM({ color: red ? 0x7a1410 : 0xa8761a, metalness: red ? 0.3 : 0.6, roughness: 0.45 });
+    const light = red ? new MSM({ color: 0xff6a4a, metalness: 0.3, roughness: 0.4, emissive: 0x8a1a10, emissiveIntensity: 0.45 }) : new MSM({ color: 0xffe08a, metalness: 0.5, roughness: 0.35, emissive: 0x8a6a1a, emissiveIntensity: 0.4 });
+    const eye = red ? new MSM({ color: 0xffd36b, emissive: 0xffd36b, emissiveIntensity: 2 }) : new MSM({ color: 0xff3a1a, emissive: 0xff3a1a, emissiveIntensity: 2 });
     const box = (w, h, d, m, x, y, z, rx = 0) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.rotation.x = rx; o.castShadow = true; g.add(o); return o; };
     box(0.5, 0.42, 1.05, gold, 0, 0.62, 0);                  // corpo
     box(0.56, 0.5, 0.42, light, 0, 0.7, 0.36);               // peito e juba
@@ -291,8 +291,8 @@
         }
       }
       // montaria: o Fenrir anda ao lado do herói (sem ficar em cima de nada)
-      if (eq && eq.pet === 'fenrir_gold') {
-        const wolf = fenrirModel(); wolf.position.set(0.85, 0, -0.35); wolf.scale.setScalar(0.85); this.root.add(wolf); this.fenrir = wolf;
+      if (eq && (eq.pet === 'fenrir_gold' || eq.pet === 'fenrir_red')) {
+        const wolf = fenrirModel(eq.pet === 'fenrir_red'); wolf.position.set(0.85, 0, -0.35); wolf.scale.setScalar(0.85); this.root.add(wolf); this.fenrir = wolf;
       }
       this.style = def.style; this.atkClips = def.atk; this.lenda = true;
       this.mixer = new THREE.AnimationMixer(model);

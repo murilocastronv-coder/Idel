@@ -717,3 +717,6 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .gld-war-s b { font-size: 24px; color: #fff; }
 .gld-foot { margin-top: 6px; text-align: right; }
 @media (max-width: 520px) { .gld-tabs button { flex: 1 1 30%; font-size: 12px; padding: 6px 2px; } }
+.fen-step { margin: 8px 0; padding: 6px 8px; border: 1px solid var(--edge); background: rgba(0, 0, 0, .2); }
+.fen-step h4 { margin: 0 0 4px; font: 600 14px var(--display); color: #ffb08a; }
+.fen-step h4 small { color: var(--bone-dim); font: 400 12px var(--body, inherit); margin-left: 6px; }

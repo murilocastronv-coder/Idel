@@ -110,6 +110,7 @@
       case 'evolved': goldFlash(`${m.className}!`); if (window.Sfx) Sfx.levelUp(); return;
       case 'gdel': S.gitems.delete(m.gid); return;
       case 'chaosInfo': CH.info = m; if (S.panel === 'chaos') renderChaos(); return;
+      case 'fenrirInfo': CH.fenrir = m; if (S.panel === 'chaos' && CH.tab === 'fenrir' && !CH.busy) renderChaos(); return;
       case 'entryInfo': CH.entry = m; if (S.panel === 'chaos' && CH.tab.startsWith('entry_') && !CH.busy) renderChaos(); return;
       case 'chaosResult': return chaosResult(m);
       case 'cmdres': return cmdResult(m);
@@ -766,7 +767,7 @@
   function load3D() {
     const files = ['vendor/three/three.min.js', 'vendor/three/GLTFLoader.js', 'vendor/three/SkeletonUtils.js', 'vendor/three/RoomEnvironment.js',
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
-      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=4', 'world3d-actors.js?v=6', 'world3d-fx.js?v=1'];
+      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=4', 'world3d-actors.js?v=7', 'world3d-fx.js?v=1'];
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();
@@ -1778,11 +1779,11 @@
         // montaria (Fenrir Dourado): anda ao lado, um pouco atrás do herói, sem ficar em cima dele nem de nada
         const mounted = false;
         const lift = 0;
-        if (eq && eq.pet === 'fenrir_gold' && window.Fenrir && !e.dead) {
+        if (eq && eq.pet && window.Fenrir && Fenrir.variantOf(eq.pet) && !e.dead) {
           const mp = sc * 1.35, side = heroFlip ? 1 : -1;
           const fx = x + side * 36 * sc, fy = y + 3 * sc;
           shadowAt(fx, fy, 9 * zoom);
-          Fenrir.draw(ctx, fx, fy, mp, heroFlip, act === 'run' || act === 'walk' || (e.speed || 0) > 10, now + (e.phase || 0));
+          Fenrir.draw(ctx, fx, fy, mp, heroFlip, act === 'run' || act === 'walk' || (e.speed || 0) > 10, now + (e.phase || 0), Fenrir.variantOf(eq.pet));
         }
         const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, act, now, x + recoil, y - lift, HERO_H * sc, dpr));
         if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - lift - (mounted ? 0 : runBob) - idleBob, sc, heroFlip, { once, equip: eq });
@@ -2186,7 +2187,7 @@
       })() };
     S.players.set(S.youId || c.id, meP);
     renderSkills();
-    if (S.panel === 'chaos') { clearTimeout(CH.t); CH.t = setTimeout(() => { send({ type: 'chaosInfo' }); send({ type: 'entryInfo' }); }, 250); }
+    if (S.panel === 'chaos') { clearTimeout(CH.t); CH.t = setTimeout(() => { send({ type: 'chaosInfo' }); send({ type: 'entryInfo' }); send({ type: 'fenrirInfo' }); }, 250); }
     if (S.panel && S.panel !== 'rank' && S.panel !== 'chaos') renderPanel(S.panel);
     if (TR.s) renderTrade();
   }
@@ -2264,7 +2265,7 @@
     else if (name === 'config') renderConfig();
     else if (name === 'quests') renderQuests();
     else if (name === 'rank') renderRank();
-    else if (name === 'chaos') { if (S.map && S.map.map === 'noria' && !CH.entryPicked) { CH.tab = 'entry_blood'; CH.entryPicked = true; } renderChaos(); send({ type: 'chaosInfo' }); send({ type: 'entryInfo' }); }
+    else if (name === 'chaos') { if (S.map && S.map.map === 'noria' && !CH.entryPicked) { CH.tab = 'entry_blood'; CH.entryPicked = true; } renderChaos(); send({ type: 'chaosInfo' }); send({ type: 'entryInfo' }); send({ type: 'fenrirInfo' }); }
     else if (name === 'vault') renderVault();
     else if (name === 'market') { MK.msg = null; mkLoad(MK.tab); send({ type: 'market', action: 'wallet' }); renderMarket(); }
     else if (name === 'arena') renderArena();
@@ -4054,7 +4055,7 @@
 
   // ================= Chaos Machine =================
   const CH = { info: null, entry: null, tab: 'wing1', sel: {}, lvl: { blood: 1, devil: 1 }, busy: false, t: 0 };
-  const ENTRY_TABS = [['entry_blood', 'Criar Entrada Blood Castle'], ['entry_devil', 'Criar Entrada Devil Square']];
+  const ENTRY_TABS = [['entry_blood', 'Criar Entrada Blood Castle'], ['entry_devil', 'Criar Entrada Devil Square'], ['fenrir', 'Criar Fenrir Vermelho']];
   const FAIL_TXT = { lose_all: 'Se falhar: perde o item principal, os materiais e o Zen.', keep_main: 'Se falhar: o item principal volta para a bolsa; perde os materiais e o Zen.', keep_items: 'Se falhar: só o Zen é cobrado; os itens voltam.' };
   function chaosIcon(it, size = 40) {
     const c = document.createElement('canvas'); c.width = 48; c.height = 48; c.style.width = c.style.height = size + 'px';
@@ -4067,8 +4068,9 @@
     if (!I) { body.innerHTML = '<p class="muted">Ligando a Chaos Machine…</p>'; return; }
     const tabs = $('#chaos-tabs');
     const sub = $('#chaos-title small'); if (sub) sub.textContent = S.map && S.map.map === 'noria' ? 'Chaos Goblin · Noria' : 'Chaos Goblin · Lorencia';
-    tabs.innerHTML = [...I.recipes.map((r) => [r.id, r.name]), ...ENTRY_TABS].map(([id, nm]) => `<button type="button" role="tab" data-r="${id}" class="${CH.tab === id ? 'on' : ''}${id.startsWith('entry_') ? ' entry' : ''}" aria-selected="${CH.tab === id}">${esc(nm)}</button>`).join('');
+    tabs.innerHTML = [...I.recipes.map((r) => [r.id, r.name]), ...ENTRY_TABS].map(([id, nm]) => `<button type="button" role="tab" data-r="${id}" class="${CH.tab === id ? 'on' : ''}${id.startsWith('entry_') || id === 'fenrir' ? ' entry' : ''}" aria-selected="${CH.tab === id}">${esc(nm)}</button>`).join('');
     $$('button', tabs).forEach((b) => { b.onclick = () => { CH.tab = b.dataset.r; renderChaos(); }; });
+    if (CH.tab === 'fenrir') return renderFenrir();
     if (CH.tab.startsWith('entry_')) return renderEntry(CH.tab.slice(6));
     const r = I.recipes.find((x) => x.id === CH.tab) || I.recipes[0];
     const okCands = r.candidates.filter((c) => c.ok);
@@ -4180,6 +4182,26 @@
       $('#chaos-machine').classList.add('spin');
       send({ type: 'entryCraft', kind, level: n });
     };
+  }
+  // Fenrir Vermelho: 3 etapas na Chaos Machine (materiais do Acheron e do Blood Castle)
+  function renderFenrir() {
+    const body = $('#chaos-body');
+    const F = CH.fenrir;
+    if (!F) { body.innerHTML = '<p class="muted">Ligando a Chaos Machine…</p>'; send({ type: 'fenrirInfo' }); return; }
+    body.innerHTML = `
+      <div class="entry-card r-legendary"><div class="entry-img" id="fen-img"></div>
+        <div><b>Fenrir Vermelho</b><small>Montaria especial · único atributo: <span style="color:#8affa0">+10% de velocidade</span></small>
+        <p class="muted small">Sem bônus de ataque, defesa, dano ou vida. Materiais: ${esc(F.sources)}.</p></div></div>
+      ${F.steps.map((s) => `<div class="fen-step"><h4>Etapa ${s.n} · ${esc(s.title)} <small>${s.chance}% de chance · ${fmt.format(s.zen)} Zen</small></h4>
+        <table class="entry-tbl"><thead><tr><th>Material</th><th>Precisa</th><th>Possui</th><th>Falta</th></tr></thead><tbody>
+        ${s.mats.map((m) => `<tr><td>${esc(m.name)}</td><td>${m.need}</td><td>${m.have}</td><td class="${m.missing ? 'bad' : 'ok'}">${m.missing || '✓'}</td></tr>`).join('')}
+        <tr><td>Zen</td><td>${fmt.format(s.zen)}</td><td>${fmt.format(F.zen)}</td><td class="${F.zen >= s.zen ? 'ok' : 'bad'}">${F.zen >= s.zen ? '✓' : fmt.format(s.zen - F.zen)}</td></tr></tbody></table>
+        <button class="btn ${s.ready ? 'btn-gold' : ''} small" type="button" data-fen="${s.n}" ${!s.ready || !F.atChaos || CH.busy || F.bagFree < 1 ? 'disabled' : ''}>Combinar etapa ${s.n} → ${esc(s.result.name)}</button></div>`).join('')}
+      ${!F.atChaos ? '<p class="chaos-warn">Fique perto de um Chaos Goblin (Lorencia ou Noria) para combinar.</p>' : ''}
+      <p class="muted small">Na falha, os materiais e o Zen da etapa são consumidos.</p>
+      <div class="chaos-machine" id="chaos-machine" style="display:none"></div>`;
+    const ic = $('#fen-img'); const c = document.createElement('canvas'); c.width = c.height = 56; PA.drawItem(c.getContext('2d'), { base: 'fenrir_red' }, 0, 0, 56); ic.appendChild(c);
+    $$('[data-fen]', body).forEach((b) => { b.onclick = () => { if (CH.busy) return; CH.busy = true; b.disabled = true; $('#chaos-machine').style.display = ''; $('#chaos-machine').classList.add('spin'); send({ type: 'fenrirCraft', step: Number(b.dataset.fen) }); }; });
   }
   function chaosResult(m) {
     const show = () => {

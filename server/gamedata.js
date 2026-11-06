@@ -487,6 +487,15 @@ const ITEM_BASES = {
   // Montaria (slot 'pet'): Fenrir Dourado, só no Shopping Cash. Defesa e vida (+11), 3 opções fixas semi-full e +30% de velocidade de movimento.
   fenrir_gold: { name: 'Fenrir Dourado', slot: 'pet', cat: 'pet', icon: 'fenrir', ic: '#ffd36b', req: 1, def: 30, hp: 300, speed: 0.3, rarity: 'legendary', value: 80000, special: true, seasonal: true,
     desc: 'Montaria lendária de pelagem dourada. +30% de velocidade de movimento enquanto equipada.' },
+  // Fenrir Vermelho (montaria de mobilidade): fabricado na Chaos Machine em 3 etapas. Só +10% de velocidade, nenhum outro atributo.
+  fenrir_red: { name: 'Fenrir Vermelho', slot: 'pet', cat: 'pet', icon: 'fenrir', ic: '#ff4a3a', req: 1, speed: 0.1, rarity: 'legendary', value: 50000, special: true, seasonal: true, noExcellent: true,
+    desc: 'Montaria especial de pelagem vermelha. Único atributo: +10% de velocidade de movimento enquanto equipada.' },
+  // materiais do Fenrir: caem só no Acheron (mapa até o nível 800, 0,50%) e no Blood Castle (0,55%)
+  splinter_of_armor: { name: 'Splinter of Armor', slot: 'material', icon: 'jewel', ic: '#a8a8b8', req: 1, stack: 999, rarity: 'rare', value: 200, special: true, desc: 'Lasca de armadura. Material do Fenrir (etapa 1).' },
+  bless_of_guardian: { name: 'Bless of Guardian', slot: 'material', icon: 'jewel', ic: '#7ad0ff', req: 1, stack: 999, rarity: 'rare', value: 300, special: true, desc: 'Bênção do guardião. Material do Fenrir (etapa 1).' },
+  claw_of_beast: { name: 'Claw of Beast', slot: 'material', icon: 'jewel', ic: '#ff9a3a', req: 1, stack: 999, rarity: 'epic', value: 600, special: true, desc: 'Garra de fera. Material do Fenrir (etapa 2).' },
+  fragment_of_horn: { name: 'Fragment of Horn', slot: 'material', icon: 'jewel', ic: '#e8c890', req: 1, stack: 999, rarity: 'epic', value: 1500, special: true, desc: 'Fragmento de chifre. Resultado da etapa 1 do Fenrir.' },
+  broken_horn: { name: 'Broken Horn', slot: 'material', icon: 'jewel', ic: '#ff6a5a', req: 1, stack: 999, rarity: 'legendary', value: 6000, special: true, desc: 'Chifre quebrado. Resultado da etapa 2 do Fenrir.' },
   // asas de nível 2
   wings_dragon: { name: 'Wings of Dragon', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#ff5a2a', req: 120, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true },
   wings_soul: { name: 'Wings of Soul', slot: 'wings', cat: 'wings', tier: 2, icon: 'wings', ic: '#5ac8ff', req: 120, def: 26, wdmg: 32, absorb: 25, rarity: 'legendary', value: 600000, special: true },

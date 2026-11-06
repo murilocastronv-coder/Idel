@@ -462,6 +462,7 @@ function onDeath(p, by) {
 const EVENT_EXP = { devil: 0.5, blood: 0.5 };
 const expK = (kind) => EVENT_EXP[kind] || 1;
 const scaleRw = (kind, rw) => Object.fromEntries(Object.entries(rw || {}).map(([tag, list]) => [tag, (list || []).map((r) => (r.kind === 'exp' ? { ...r, qty: Math.max(1, Math.round(r.qty * expK(kind))) } : r))]));
+const FENRIR_BC_PCT = 0.55; // %
 function onMonsterKill(world, mo, map, killer) {
   const m = killer.arena;
   const part = m && m.parts.get(killer.charId);
@@ -469,6 +470,12 @@ function onMonsterKill(world, mo, map, killer) {
   if (m && m.kind === 'blood' && m.bc && !m.ended) bloodProgress(m, mo, part);
   world.grantShare(killer, mo, 1, m ? expK(m.kind) : 1);
   map.emit({ k: 'die', t: mo.id });
+  // Blood Castle: materiais do Fenrir Vermelho, 0,55% cada por monstro do evento (chance fixa)
+  if (m && m.kind === 'blood' && killer.isPlayer) {
+    const DROPS = require('./drops');
+    const got = [...DROPS.FENRIR_MATS].filter(() => Math.random() * 100 < FENRIR_BC_PCT);
+    if (got.length) killer.run(async () => { for (const item of got) await DROPS.deliver(world, killer, { item, qty: 1, rule: { delivery: 'bag' } }, { source: 'Blood Castle', mapId: map.id, tier: 'normal', x: mo.x, y: mo.y }); });
+  }
   // remove o corpo depois de um tempo
   setTimeout(() => { const i = map.monsters.indexOf(mo); if (i >= 0) { map.monsters.splice(i, 1); for (const o of map.players.values()) o.send({ type: 'mdel', id: mo.id }); } }, 1500).unref();
 }

@@ -8,6 +8,7 @@ const VIP = require('./vip');
 const ADMIN = require('./admin');
 const CHAOS = require('./chaos');
 const ENTRIES = require('./entries');
+const FENRIR = require('./fenrircraft');
 const DROPS = require('./drops');
 const CMDS = require('./commands');
 const INV = require('./invasion');
@@ -451,6 +452,7 @@ class World {
     await EXCELLENT.init(helpers);
     await CHAOS.init(helpers);
     ENTRIES.init(helpers);
+    FENRIR.init(helpers);
     await DROPS.init(helpers);
     CMDS.init(this, expToNext);
     this.commands = CMDS;
@@ -787,6 +789,8 @@ class World {
       case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS, ...[1, 2, 3, 4, 5, 6, 7].flatMap((n) => ['devil_eye_' + n, 'devil_key_' + n, 'scroll_of_archangel_' + n, 'blood_bone_' + n])])));
       case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
       case 'entryInfo': return p.send(ENTRIES.info(p));
+      case 'fenrirInfo': return p.send(FENRIR.info(p));
+      case 'fenrirCraft': return p.run(() => FENRIR.craft(this, p, Number(msg.step)));
       case 'entryCraft': return p.run(() => ENTRIES.craft(this, p, String(msg.kind), Number(msg.level)));
       case 'openBox': return p.run(() => KUNDUN.open(this, p, String(msg.id || '')));
       case 'trade':
@@ -1104,7 +1108,7 @@ class World {
   // item comum de drop especial (arma do Caos): vai para a bolsa se houver lugar. Devolve a linha ou null.
   async giveItemRow(p, it, opts = {}) {
     if (bagUsed(p) >= G.INVENTORY_SIZE) return null;
-    const excellent = Array.isArray(it.options) ? it.options : opts.excellent === true ? EXCELLENT.roll(it.base) : [];
+    const excellent = (G.ITEM_BASES[it.base] || {}).noExcellent ? [] : Array.isArray(it.options) ? it.options : opts.excellent === true ? EXCELLENT.roll(it.base) : [];
     const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus, excellent_options) VALUES ($1,$2,$3,$4,$5)
       RETURNING id, base, rarity, plus, equipped, qty, excellent_options`, [p.charId, it.base, it.rarity, it.plus || 0, JSON.stringify(excellent)]);
     p.items.push(rows[0]);
