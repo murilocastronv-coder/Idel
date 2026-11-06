@@ -1,5 +1,5 @@
 {
- "version": 10,
+ "version": 11,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",

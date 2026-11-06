@@ -76,6 +76,39 @@ def fall(im, n=6):
     return out
 
 
+LIFT_A = [2, 4, 2, 0, 0, 0]   # perna esquerda
+LIFT_B = [0, 0, 0, 2, 4, 2]   # perna direita
+BOB = [0, 1, 0, 0, 1, 0]      # corpo balança junto com o passo
+
+
+def step(cells):
+    """Andar de frente/costas: na arte original as pernas quase não aparecem se mexendo.
+    Levanta uma perna de cada vez (metade de baixo do corpo) e balança o corpo."""
+    out = []
+    for i, c in enumerate(cells):
+        k = i % len(LIFT_A)
+        bb = c.getbbox()
+        if not bb:
+            out.append(c)
+            continue
+        top, bot = bb[1], bb[3]
+        hip = bot - round((bot - top) * 0.27)
+        body = c.crop((0, 0, FW, hip))
+        n = Image.new('RGBA', (FW, FH))
+        for (x0, x1), lift in (((0, PIVOT[0]), LIFT_A[k]), ((PIVOT[0], FW), LIFT_B[k])):
+            leg = c.crop((x0, hip, x1, FH))
+            n.alpha_composite(leg, (x0, hip - lift))
+        n.alpha_composite(body, (0, 0))
+        b = BOB[k]
+        if b:
+            m = Image.new('RGBA', (FW, FH))
+            m.alpha_composite(n.crop((0, 0, FW, hip)), (0, b))
+            m.alpha_composite(n.crop((0, hip, FW, FH)), (0, hip))
+            n = m
+        out.append(n)
+    return out
+
+
 def avoid_skin_keys(im, keys):
     """O jogo troca as cores exatas de skinKeys (tom de pele). A arte nova não usa esse sistema,
     então mexe 1 ponto nessas cores para nada ser recolorido sem querer."""
@@ -104,7 +137,7 @@ def build(src):
         die = [cell(f) for f in death] if death else fall(idle_s[0])
         rows = [
             [cell(f) for f in idle_s], [cell(f) for f in walk_s], [cell(f) for f in atk_s], hit, die,
-            [cell(f) for f in idle_f], [cell(f) for f in walk_f], [cell(f) for f in walk_b], [cell(f) for f in idle_b],
+            [cell(f) for f in idle_f], step([cell(f) for f in walk_f]), step([cell(f) for f in walk_b]), [cell(f) for f in idle_b],
         ]
         cols = max(len(r) for r in rows)
         sheet = Image.new('RGBA', (FW * cols, FH * len(rows)))
