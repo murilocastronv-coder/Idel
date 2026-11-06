@@ -139,7 +139,11 @@
   // todas as folhas que um herói equipado precisa (corpo em camadas, conjuntos, arma e asa/capa)
   const WING_VARIANT = { wings_life: 'wings_elf', wings_dragon_l1: 'wings_satan', wings_spirit_l1: 'wings_heaven' };
   // conjuntos de Natal (loja premium): cada tom tem a sua camada no herói; asas e armas usam as mais parecidas
-  const FEST_WINGS = ['wings_dragon', 'wings_soul', 'wings_elf', 'wings_spirit', 'wings_darkness'];
+  const FEST_WINGS = ['wings_dragon', 'wings_despair', 'wings_curse', 'wings_heaven', 'wings_darkness'];
+  // asas desenhadas à mão (uma imagem de frente, as duas asas): qual desenho cada asa do jogo usa
+  const NEW_WINGS = { wings_satan: 'satan', wings_dragon: 'dragon', wings_dragon_l1: 'satan', wings_curse: 'curse', wings_despair: 'despair',
+    wings_heaven: 'heaven', wings_elf: 'heaven', wings_life: 'heaven', wings_soul: 'heaven', wings_spirit: 'heaven', wings_spirit_l1: 'heaven', wings_darkness: 'darkness' };
+  const newWingPath = (k) => NEW_WINGS[k] ? 'wings_new/' + NEW_WINGS[k] + '.png' : null;
   const FEST_WEAPON = { sword: 'phoenix_sword', bow: 'phoenix_bow', shield: null };
   function normEq(eq) {
     if (!eq) return eq;
@@ -163,7 +167,8 @@
       const W = m.weapons.classes[cls]; if (W && W.sheet) out.push(W.sheet);
     }
     const WG = m.wings;
-    if (WG && eq.wings) {
+    if (meta.full && eq.wings && newWingPath(eq.wings)) out.push(newWingPath(eq.wings));
+    else if (WG && eq.wings) {
       const key = WG.sheets[eq.wings] ? eq.wings : WING_VARIANT[eq.wings] || 'wings_dragon';
       if (WG.sheets[key]) out.push(WG.sheets[key]);
       const over = WG.over && (WG.over[eq.wings] || WG.over[key]); if (over) out.push(over);
@@ -237,7 +242,24 @@
     const rarityGlow = { uncommon: '#5fdc78', rare: '#5aaaff', epic: '#be64ff', legendary: '#ffd36b' };
     // de costas a asa/capa fica por cima do corpo; nas outras vistas, atrás
     const fromBack = /_back$/.test(action);
+    // asa nova: atrás do corpo de frente/de lado (de lado fica estreita, em perspectiva), por cima de costas; bate devagar
+    const newWing = (path, glow) => {
+      const im = opts.white ? recolored('L:' + path, img(path), meta, false, null, true) : img(path);
+      if (!im) return false;
+      const side = !/_(front|back)$/.test(action);
+      const flap = Math.sin((Number(t) || 0) / 300);
+      const base = 88 / 62 * scale, w = im.width * base * (side ? 0.62 : 1) * (1 + flap * 0.05), h = im.height * base * (1 - flap * 0.02);
+      const top = (meta.top || 72) * scale, cy = -top * 0.66 - Math.round(flap * scale);
+      const cx = side ? -7 * scale : 0;
+      ctx.save();
+      if (glow && !opts.white) { ctx.shadowColor = glow; ctx.shadowBlur = 8 * scale; }
+      ctx.drawImage(im, Math.round(cx - w / 2), Math.round(cy - h / 2), Math.round(w), Math.round(h));
+      ctx.restore();
+      return true;
+    };
     const drawWing = () => {
+      const np = full && newWingPath(wk);
+      if (np) { if (newWing(np, (WG && WG.glow && WG.glow[wk]) || rarityGlow[eq.wingRarity] || null)) return; }
       const filter = variant && variant[1] ? `hue-rotate(${variant[1]}deg) saturate(1.25)` : 'none';
       ctx.save(); ctx.filter = filter;
       wing(wingPath, (WG.glow && WG.glow[wingKey]) || rarityGlow[eq.wingRarity] || null);
