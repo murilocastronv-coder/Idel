@@ -2895,10 +2895,10 @@
   $('#btn-autoequip').onclick = () => send({ type: 'autoequip' });
 
   // ranking dentro do jogo
-  const RK = { by: 'level', seq: 0 };
+  const RK = { by: 'resets', seq: 0 };
   async function renderRank() {
     $$('#rank-tabs [data-by]').forEach((t) => { const on = t.dataset.by === RK.by; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); });
-    const last = { level: 'Resets', resets: 'Resets', bosses: 'Bosses', pvp: 'PvP' }[RK.by];
+    const last = { resets: 'Resets', bosses: 'Bosses', pvp: 'PvP' }[RK.by];
     $('#g-rank-last').textContent = last;
     const tb = $('#g-rank-body');
     if (!tb.children.length) tb.innerHTML = '<tr><td colspan="5" class="muted">Carregando…</td></tr>';

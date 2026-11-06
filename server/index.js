@@ -645,7 +645,6 @@ route('GET', '/api/news', async () => {
 
 route('GET', '/api/ranking', async (req, url) => {
   const orders = {
-    level: 'level DESC, exp DESC, resets DESC',
     resets: 'master_resets DESC, resets DESC, level DESC, exp DESC',
     power: 'combat_power DESC, level DESC',
     bosses: 'bosses_killed DESC, level DESC',

@@ -293,6 +293,19 @@
       return true;
     };
     const drawWing = () => {
+      // herói de arte completa: o Lorde já vem com capa no desenho; a capa equipada não usa mais a folha antiga
+      // (ficava torta no corpo novo). A capa Emperor ganha só um brilho atrás do herói.
+      if (full && /^cape_/.test(wk)) {
+        const glow = WG && WG.glow && WG.glow[wk];
+        if (glow && !opts.white) {
+          const top = (meta.top || 72) * scale, cy = -top * 0.55, r = top * 0.62;
+          const pulse = 0.75 + 0.25 * Math.sin((Number(t) || 0) / 400);
+          const g = ctx.createRadialGradient(0, cy, 0, 0, cy, r);
+          g.addColorStop(0, glow + '66'); g.addColorStop(1, glow + '00');
+          ctx.save(); ctx.globalAlpha *= pulse; ctx.fillStyle = g; ctx.fillRect(-r, cy - r, r * 2, r * 2); ctx.restore();
+        }
+        return;
+      }
       const np = full && newWingPath(wk);
       if (np) { if (newWing(np, (WG && WG.glow && WG.glow[wk]) || rarityGlow[eq.wingRarity] || null)) return; }
       const filter = variant && variant[1] ? `hue-rotate(${variant[1]}deg) saturate(1.25)` : 'none';
@@ -304,8 +317,6 @@
     blit(back, 0);
     if (full) {
       if (wk && WG && fromBack) drawWing();
-      const over = WG && wk && WG.over && (WG.over[wk] || WG.over[wingKey]);
-      if (wk && over && !fromBack) wing(over, null);
       ctx.restore();
       return true;
     }
