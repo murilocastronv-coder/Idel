@@ -59,8 +59,12 @@
   // ================= mensagens =================
   function onMsg(m) {
     switch (m.type) {
-      case 'hello': case 'pong': case 'stats': return;
-      case 'enter': onEnter(m); marketNotice(); return;
+      case 'hello':
+        // depois de um deploy o servidor volta com outra versão: recarrega para todo mundo usar o jogo novo
+        if (m.build) { if (!S.build) S.build = m.build; else if (m.build !== S.build) { feed('Nova versão do jogo no ar: atualizando…', 'info'); setTimeout(() => location.reload(), 1500); } }
+        return;
+      case 'pong': case 'stats': return;
+      case 'enter': if (typeof joyStop === 'function') joyStop(); onEnter(m); marketNotice(); return;
       case 's': return onSnap(m);
       case 'char': S.char = m; renderChar(); if (S.panel === 'market' && MK.tab === 'sell') renderMarket(); return;
       case 'pj': S.players.set(m.id, { ...(S.players.get(m.id) || { x: 0, y: 0, rx: null }), info: m }); if (m.eq) Sprites.preloadEquip(m.cls, m.eq); return;
@@ -1799,8 +1803,10 @@
           // só a parte de cima do herói aparece: as pernas ficam do outro lado do corpo do Fenrir
           ctx.save(); ctx.beginPath(); ctx.rect(x - 200 * sc, seatY - 400 * sc, 400 * sc, 400 * sc + 2 * sc); ctx.clip();
         }
-        const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, act, now, x + recoil, y - lift, HERO_H * sc, dpr));
-        if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - lift - (mounted ? 0 : runBob) - idleBob, sc, heroFlip, { once, equip: eq });
+        // montado: quem anda é o Fenrir; o cavaleiro fica sentado (pose parada) e só ataca/usa poder normalmente
+        const riderAct = mounted && /^(run|walk)/.test(act) ? 'idle' : act;
+        const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, riderAct, now, x + recoil, y - lift, HERO_H * sc, dpr));
+        if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, riderAct, t, x + recoil, y - lift - (mounted ? 0 : runBob) - (mounted ? 0 : idleBob), sc, heroFlip, { once, equip: eq });
         if (mounted) {
           ctx.restore();
           drawRiderLeg(x + recoil, seatY, sc, fdir, mountMoving ? Math.sin((now + (e.phase || 0)) / 110 * Math.PI) : 0);
@@ -2039,13 +2045,11 @@
     if (pl) openPlayerCard(pl, { x: ev.clientX, y: ev.clientY });
   });
   // ================= toque / clique no mapa =================
-  cv.addEventListener('pointerdown', (ev) => {
-    ev.preventDefault(); // sem destaque/seleção do navegador ao tocar no mapa
-    if (ev.button === 2) return; // botão direito: só abre o menu do jogador (contextmenu)
-    if (!S.map || !S.me || S.me.dead) return;
-    if (S.panel && window.innerWidth < 700) closePanel();
+  // toque em algo do mapa (item, NPC, jogador, monstro): age na hora e devolve null.
+  // Toque no chão vazio: devolve o ponto, que vira "andar até aqui" (toque) ou joystick (arrastar)
+  function tapWorld(ev) {
     let wx = camX + ev.clientX * dpr / zoom, wy = camY + ev.clientY * dpr / zoom;
-    if (is3d) { const p = W3().pick(ev.clientX, ev.clientY); if (!p) return; wx = p[0]; wy = p[1]; }
+    if (is3d) { const p = W3().pick(ev.clientX, ev.clientY); if (!p) return { wx: null, wy: null }; wx = p[0]; wy = p[1]; }
     // itens no chão
     if (S.gitems && S.gitems.size) {
       let best = null, bd = 16;
@@ -2053,19 +2057,19 @@
       if (best) {
         if (best.owner === S.youId) send({ type: 'pickup', gid: best.gid });
         else feed(`Este item é de ${best.ownerName}.`, 'warn');
-        return;
+        return null;
       }
     }
     // NPCs (loja e Chaos Goblin)
     for (const n of S.map.npcs || []) {
       if (Math.hypot(n.x - wx, n.y - 10 - wy) < 16) {
-        if (n.kind === 'sevina' || n.kind === 'marlon') { CQ.npc = n.kind; openPanel('cquest'); return; }
-        if (n.kind === 'guild') { GLD.tab = GLD.data && GLD.data.guild ? GLD.tab : 'info'; openPanel('gld'); return; }
-        if (n.kind === 'vault') { if (S.panel !== 'vault') openPanel('vault'); return; }
-        if (n.kind === 'smith') { if (S.panel !== 'smith') openPanel('smith'); return; }
-        if (n.kind === 'teleport') { openPanel('maps'); return; }
-        if (n.kind === 'castle_guard' || n.kind === 'charon' || n.kind === 'archangel') { AR.kind = n.kind === 'charon' ? 'devil' : n.kind === 'archangel' ? 'blood' : 'castle'; if (S.panel === 'arena') renderPanel('arena'); else openPanel('arena'); send({ type: 'arena', action: 'info', kind: AR.kind }); return; }
-        openPanel(n.kind === 'chaos' ? 'chaos' : 'shop'); return;
+        if (n.kind === 'sevina' || n.kind === 'marlon') { CQ.npc = n.kind; openPanel('cquest'); return null; }
+        if (n.kind === 'guild') { GLD.tab = GLD.data && GLD.data.guild ? GLD.tab : 'info'; openPanel('gld'); return null; }
+        if (n.kind === 'vault') { if (S.panel !== 'vault') openPanel('vault'); return null; }
+        if (n.kind === 'smith') { if (S.panel !== 'smith') openPanel('smith'); return null; }
+        if (n.kind === 'teleport') { openPanel('maps'); return null; }
+        if (n.kind === 'castle_guard' || n.kind === 'charon' || n.kind === 'archangel') { AR.kind = n.kind === 'charon' ? 'devil' : n.kind === 'archangel' ? 'blood' : 'castle'; if (S.panel === 'arena') renderPanel('arena'); else openPanel('arena'); send({ type: 'arena', action: 'info', kind: AR.kind }); return null; }
+        openPanel(n.kind === 'chaos' ? 'chaos' : 'shop'); return null;
       }
     }
     // tocar num jogador abre o cartão (atacar / duelo)
@@ -2078,8 +2082,8 @@
     if (pl) {
       // inimigo: ataca na hora; outros: abre o cartão (duelo)
       const pid = [...S.players.entries()].find(([, v]) => v === pl)[0]; pl.id = pid;
-      if (hostileTo(pl)) { send({ type: 'target', id: pid }); S.clickMark = { x: pl.rx, y: pl.ry, t0: performance.now() }; armLongPress(ev, pl); return; }
-      openPlayerCard(pl, { x: ev.clientX, y: ev.clientY }); return;
+      if (hostileTo(pl)) { send({ type: 'target', id: pid }); S.clickMark = { x: pl.rx, y: pl.ry, t0: performance.now() }; armLongPress(ev, pl); return null; }
+      openPlayerCard(pl, { x: ev.clientX, y: ev.clientY }); return null;
     }
     let best = null, bd = 18;
     S.monsters.forEach((m) => {
@@ -2088,9 +2092,69 @@
       const d = Math.hypot(cx - wx, cy - wy) - (m.size - 1) * 8;
       if (d < bd) { bd = d; best = m; }
     });
-    if (best) { send({ type: 'target', id: best.id }); S.clickMark = { x: best.rx, y: best.ry, t0: performance.now() }; return; }
-    send({ type: 'move', x: Math.round(wx), y: Math.round(wy) });
-    S.clickMark = { x: wx, y: wy, t0: performance.now() };
+    if (best) { send({ type: 'target', id: best.id }); S.clickMark = { x: best.rx, y: best.ry, t0: performance.now() }; return null; }
+    return { wx, wy };
+  }
+  // ================= joystick dinâmico =================
+  // Aparece onde o dedo tocou no chão e arrastou; some ao soltar. Um dedo só; toques em botões/janelas não chegam aqui.
+  const JOY = { id: null, active: false, x0: 0, y0: 0, ground: null, sent: '', last: 0, keep: 0, el: null, R: 56, DEAD: 8, START: 12 };
+  function joyEl() {
+    if (JOY.el) return JOY.el;
+    const el = document.createElement('div'); el.id = 'joy'; el.hidden = true; el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<div class="joy-base"><i class="joy-dir"></i></div><div class="joy-knob"></div>';
+    document.body.appendChild(el); JOY.el = el; return el;
+  }
+  function joySend(dx, dy, k, force) {
+    const key = k ? `${dx},${dy},${k.toFixed(2)}` : '0';
+    const t = performance.now();
+    if (!force && key === JOY.sent && t - JOY.last < 240) return;
+    if (!force && key !== '0' && t - JOY.last < 70) return;
+    JOY.sent = key; JOY.last = t;
+    send(k ? { type: 'joy', dx, dy, k: Math.round(k * 100) / 100 } : { type: 'joy', k: 0 });
+  }
+  function joyMove(ev) {
+    if (ev.pointerId !== JOY.id) return;
+    const ddx = ev.clientX - JOY.x0, ddy = ev.clientY - JOY.y0, d = Math.hypot(ddx, ddy);
+    if (!JOY.active) {
+      if (d < JOY.START) return;
+      JOY.active = true; JOY.ground = null;
+      const el = joyEl(); el.style.left = JOY.x0 + 'px'; el.style.top = JOY.y0 + 'px'; el.hidden = false; el.classList.remove('on');
+      requestAnimationFrame(() => el.classList.add('on'));
+      clearInterval(JOY.keep); JOY.keep = setInterval(() => { if (JOY.active && JOY.sent && JOY.sent !== '0') { const [a, b, c] = JOY.sent.split(','); joySend(+a, +b, +c, true); } }, 250);
+    }
+    const el = JOY.el, kd = Math.min(d, JOY.R);
+    el.querySelector('.joy-knob').style.transform = d ? `translate(${ddx / d * kd}px, ${ddy / d * kd}px)` : '';
+    if (d < JOY.DEAD) { el.classList.remove('dir'); joySend(0, 0, 0); return; }
+    // 8 direções (cima, baixo, lados e diagonais); a distância do arraste dá a intensidade
+    const oct = Math.round(Math.atan2(ddy, ddx) / (Math.PI / 4));
+    const ang = oct * Math.PI / 4, dx = Math.round(Math.cos(ang) * 1000) / 1000, dy = Math.round(Math.sin(ang) * 1000) / 1000;
+    const k = Math.max(0.3, Math.min(1, (d - JOY.DEAD) / (JOY.R - JOY.DEAD)));
+    el.classList.add('dir'); el.querySelector('.joy-dir').style.transform = `rotate(${ang}rad)`;
+    joySend(dx, dy, k);
+  }
+  function joyEnd(ev, cancel) {
+    if (ev && ev.pointerId !== JOY.id) return;
+    const wasActive = JOY.active, g = JOY.ground;
+    JOY.id = null; JOY.active = false; JOY.ground = null; clearInterval(JOY.keep);
+    if (JOY.el) { JOY.el.hidden = true; JOY.el.classList.remove('on', 'dir'); }
+    window.removeEventListener('pointermove', joyMove); window.removeEventListener('pointerup', joyUp); window.removeEventListener('pointercancel', joyCancel);
+    if (wasActive) joySend(0, 0, 0, true);
+    else if (g && !cancel && g.wx != null) { send({ type: 'move', x: Math.round(g.wx), y: Math.round(g.wy) }); S.clickMark = { x: g.wx, y: g.wy, t0: performance.now() }; }
+  }
+  const joyUp = (ev) => joyEnd(ev, false), joyCancel = (ev) => joyEnd(ev, true);
+  function joyStop() { if (JOY.id != null) joyEnd({ pointerId: JOY.id }, true); }
+  window.addEventListener('blur', joyStop);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) joyStop(); });
+  cv.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault(); // sem destaque/seleção do navegador ao tocar no mapa
+    if (ev.button === 2) return; // botão direito: só abre o menu do jogador (contextmenu)
+    if (JOY.id != null) return; // só um dedo controla o movimento
+    if (!S.map || !S.me || S.me.dead) return;
+    if (S.panel && window.innerWidth < 700) closePanel();
+    const g = tapWorld(ev);
+    if (!g) return;
+    JOY.id = ev.pointerId; JOY.active = false; JOY.x0 = ev.clientX; JOY.y0 = ev.clientY; JOY.ground = g; JOY.sent = '';
+    window.addEventListener('pointermove', joyMove); window.addEventListener('pointerup', joyUp); window.addEventListener('pointercancel', joyCancel);
   });
 
   // ================= HUD =================

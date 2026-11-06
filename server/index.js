@@ -31,6 +31,8 @@ const VAULT = require('./vault');
 const CLS = require('./classes');
 const EXCELLENT = require('./excellent');
 const AGI = require('./agility');
+// versão no ar: muda a cada deploy; o jogo aberto recarrega sozinho quando ela muda
+const BUILD_ID = String(process.env.RENDER_GIT_COMMIT || Date.now()).slice(0, 12);
 
 const PORT = Number(process.env.PORT || 3000);
 const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
@@ -1052,7 +1054,7 @@ ws = new WSServer(server, {
   },
 });
 ws.on('connection', (client) => {
-  client.send({ type: 'hello', username: client.meta.username, ...liveStats() });
+  client.send({ type: 'hello', username: client.meta.username, build: BUILD_ID, ...liveStats() });
   // limite de mensagens por conexão (anti-abuso)
   client.rate = { n: 0, reset: Date.now() + 1000 };
   client.on('message', (msg) => {

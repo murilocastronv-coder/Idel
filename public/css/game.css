@@ -720,3 +720,22 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .fen-step { margin: 8px 0; padding: 6px 8px; border: 1px solid var(--edge); background: rgba(0, 0, 0, .2); }
 .fen-step h4 { margin: 0 0 4px; font: 600 14px var(--display); color: #ffb08a; }
 .fen-step h4 small { color: var(--bone-dim); font: 400 12px var(--body, inherit); margin-left: 6px; }
+/* joystick dinâmico: só aparece onde o dedo tocou e arrastou; some ao soltar */
+#joy { position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 6; pointer-events: none; }
+#joy[hidden] { display: none; }
+#joy .joy-base { position: absolute; left: -62px; top: -62px; width: 124px; height: 124px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(20,16,10,.18) 0 52%, rgba(20,16,10,.34) 70%, rgba(20,16,10,.08) 100%);
+  border: 2px solid rgba(232,184,74,.55); box-shadow: 0 0 0 4px rgba(20,14,6,.28), inset 0 0 14px rgba(232,184,74,.22), 0 0 16px rgba(232,184,74,.18);
+  opacity: 0; transform: scale(.7); transition: opacity .12s ease-out, transform .12s ease-out; }
+#joy .joy-base::before { content: ''; position: absolute; inset: 14px; border-radius: 50%; border: 1px dashed rgba(255,224,138,.28); }
+#joy .joy-dir { position: absolute; left: 50%; top: 50%; width: 62px; height: 0; transform-origin: 0 0; opacity: 0; transition: opacity .1s; }
+#joy .joy-dir::after { content: ''; position: absolute; right: -2px; top: -9px; border-left: 14px solid rgba(255,214,107,.95); border-top: 9px solid transparent; border-bottom: 9px solid transparent;
+  filter: drop-shadow(0 0 4px rgba(255,190,60,.9)); }
+#joy.dir .joy-dir { opacity: 1; }
+#joy .joy-knob { position: absolute; left: -25px; top: -25px; width: 50px; height: 50px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, rgba(255,240,190,.75), rgba(214,160,52,.55) 45%, rgba(110,70,16,.6) 100%);
+  border: 2px solid rgba(255,224,138,.8); box-shadow: 0 2px 8px rgba(0,0,0,.45), 0 0 10px rgba(255,200,80,.35);
+  opacity: 0; transition: opacity .12s ease-out; will-change: transform; }
+#joy.on .joy-base { opacity: 1; transform: scale(1); }
+#joy.on .joy-knob { opacity: .92; }
+@media (max-width: 420px) { #joy .joy-base { left: -54px; top: -54px; width: 108px; height: 108px; } }

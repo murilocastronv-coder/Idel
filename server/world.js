@@ -317,7 +317,7 @@ class Player {
     this.x = 0; this.y = 0; this.flip = false;
     this.cds = {};
     this.nextAtk = 0; this.nextPot = 0;
-    this.target = null; this.moveTo = null;
+    this.target = null; this.moveTo = null; this.joy = null;
     this.dead = false; this.respawnAt = 0; this.returnAt = 0;
     this.queue = Promise.resolve();
     this.dirty = false;
@@ -686,7 +686,7 @@ class World {
     const [sx, sy] = pos || m.def.spawn;
     p.x = clamp(sx + (pos ? 0 : rand(-20, 20)), 20, m.def.w - 20);
     p.y = clamp(sy + (pos ? 0 : rand(-20, 20)), 20, m.def.h - 20);
-    p.target = null; p.moveTo = null;
+    p.target = null; p.moveTo = null; p.joy = null;
     if (!m.def.safe && !m.def.arena) p.lastFarm = mapId;
     m.players.set(p.id, p);
     p.send({
@@ -724,6 +724,15 @@ class World {
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
         p.moveTo = { x: clamp(x, 10, p.map.def.w - 10), y: clamp(y, 10, p.map.def.h - 10) };
         p.target = null;
+        return;
+      }
+      // joystick dinâmico: direção (dx, dy) e intensidade k (0 a 1); k = 0 para na hora
+      case 'joy': {
+        const k = Number(msg.k), dx = Number(msg.dx), dy = Number(msg.dy);
+        if (p.dead || !(k > 0) || !Number.isFinite(dx) || !Number.isFinite(dy) || !(Math.hypot(dx, dy) > 0)) { if (p.joy) { p.joy = null; p.moveTo = null; } return; }
+        const len = Math.hypot(dx, dy);
+        p.joy = { dx: dx / len, dy: dy / len, k: Math.min(1, Math.max(0.2, k)), at: Date.now() };
+        p.moveTo = null; p.target = null; p.pickTarget = null;
         return;
       }
       case 'target': {
@@ -1630,7 +1639,7 @@ class World {
     p.hp = 0; p.dead = true; p.deaths++;
     TRADE.drop(p, `A troca foi cancelada: ${p.name} foi derrotado.`);
     p.respawnAt = now + RESPAWN_MS;
-    p.target = null; p.moveTo = null;
+    p.target = null; p.moveTo = null; p.joy = null;
     p.map.emit({ k: 'pdie', t: p.id });
     // eliminado de um evento: não perde EXP
     if (p.map.def.arena) { p.buffs = {}; ARENA.onDeath(p, by); p.dirty = true; return; }
@@ -1785,6 +1794,16 @@ class World {
       else if (p.auto && !p.moveTo && !(p.target && p.target.isPlayer) && !(map.def.safe && !p.duel && !trainingCombat)) {
         const far = DROPS.ownedNear(p, map, 320);
         if (far && !(p.target && p.target.target === p && dist(p, p.target) < 60)) { this.stepToward(p, far, PLAYER_SPEED * moveK(p) * dt); return; }
+      }
+    }
+    // joystick: anda na direção enquanto o dedo estiver na tela (sem sinal por 700 ms, para sozinho)
+    if (p.joy) {
+      if (p.dead || now - p.joy.at > 700) p.joy = null;
+      else {
+        const st = PLAYER_SPEED * moveK(p) * p.joy.k * dt, mg = p.map.def.margin || 10;
+        p.x = clamp(p.x + p.joy.dx * st, mg, p.map.def.w - mg); p.y = clamp(p.y + p.joy.dy * st, mg, p.map.def.h - mg);
+        if (Math.abs(p.joy.dx) > 0.05) p.flip = p.joy.dx < 0;
+        return;
       }
     }
     // movimento manual tem prioridade
