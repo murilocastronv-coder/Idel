@@ -99,6 +99,12 @@ const hpK = (T, level) => Math.min(HP_K_MAX, Math.max(HP_K_MIN, (T.hp || 1) / re
 // Limite = nível mínimo do próximo mapa + 10 (o último mapa não tem limite). Ex.: Dungeon (25) → limite 45 (Dungeon 2 é 35+).
 const EXP_CAP_MARGIN = 10;
 let MAP_CAP = null;
+// área segura: círculo no ponto de entrada de cada mapa de caça; monstros não atacam nem perseguem quem está dentro
+const SAFE_R = 75;
+function inSafeZone(def, p) {
+  if (!def || def.safe || def.arena || def.pvp || !def.spawn || !p) return false;
+  return Math.hypot(p.x - def.spawn[0], p.y - def.spawn[1]) < SAFE_R;
+}
 function mapExpCap(def) {
   if (!def || def.safe || def.arena || !def.groups || !def.groups.length || !(def.minLevel > 1)) return Infinity;
   if (!MAP_CAP) {
@@ -695,6 +701,7 @@ class World {
       type: 'enter', map: mapId, room: m.room, rooms: ROOMS, name: m.def.name, theme: m.def.theme, w: m.def.w, h: m.def.h, safe: !!m.def.safe,
       training: m.def.training || null,
       arena: m.def.arena || null, pvp: !!m.def.pvp, margin: m.def.margin || 0,
+      safeZone: !m.def.safe && !m.def.arena && !m.def.pvp && m.def.spawn ? { x: m.def.spawn[0], y: m.def.spawn[1], r: SAFE_R } : null,
       npcs: (m.def.npcs || []).filter((n) => VAULT.npcVisible(mapId, n) && UPG.npcVisible(mapId, n)),
       ground: m.ground ? [...m.ground.values()].map((g) => DROPS.publicGround(g)) : [],
       monsters: m.monsters.map((mo) => INV.monInfo(mo)),
@@ -1691,13 +1698,14 @@ class World {
   }
 
   tickMonster(m, map, now, dt) {
+    const safeAt = (pl) => inSafeZone(map.def, pl);
     if (m.dead) { if (now >= m.respawnAt) this.respawnMonster(map, m); return; }
     if (m.T.structure) return; // portão/estátua de evento: parado, sem ataque e sem regeneração
     let t = m.target;
-    if (t && (t.dead || t.map !== map || !map.players.has(t.id) || (m.trainingArea && !insideRect(t, m.trainingArea)))) t = m.target = null;
+    if (t && (t.dead || t.map !== map || !map.players.has(t.id) || safeAt(t) || (m.trainingArea && !insideRect(t, m.trainingArea)))) t = m.target = null;
     if (!t && m.T.aggro) {
       let best = null, bd = m.T.aggro;
-      for (const p of map.players.values()) { if (p.dead || (m.trainingArea && !insideRect(p, m.trainingArea))) continue; const d = dist(m, p); if (d < bd) { bd = d; best = p; } }
+      for (const p of map.players.values()) { if (p.dead || safeAt(p) || (m.trainingArea && !insideRect(p, m.trainingArea))) continue; const d = dist(m, p); if (d < bd) { bd = d; best = p; } }
       if (best) t = m.target = best;
     }
     const step = m.T.speed * dt * (m.enraged ? 1.25 : 1);

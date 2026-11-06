@@ -157,6 +157,12 @@
     if (window.Sfx) Sfx.ambient(m.theme);
     const built = buildGround(m);
     S.ground = built.canvas; S.props = built.props; S.lights = built.lights; S.waters = built.waters || []; S.emit = built.emit || []; S.vfx = []; S.dlights = [];
+    groundArt(m, () => {
+      if (S.map !== m) return;
+      const b2 = buildGround(m);
+      S.ground = b2.canvas; S.props = b2.props; S.lights = b2.lights; S.waters = b2.waters || []; S.emit = b2.emit || [];
+      if (is3d) { try { W3().enterMap(m, b2); } catch (e) { console.error('[3d]', e); } }
+    });
     if (is3d) { try { W3().enterMap(m, built); W3().preload([...new Set(m.monsters.map((mo) => mo.type))], [...new Set(m.players.map((p) => p.cls))]); } catch (e) { console.error('[3d]', e); } }
     if (m.room) { S.room = m.room; S.rooms = m.rooms || 4; }
     $('#map-name').textContent = m.name + (m.safe ? ' · zona segura' : (wInfo && wInfo.pvp ? ' · PvP' : '')) + (m.room ? ` · Sala ${m.room}` : '');
@@ -369,6 +375,20 @@
     portal_09: [64, 63], portal_10: [57, 60], portal_11: [62, 61], portal_12: [56, 61], portal_13: [48, 63], portal_14: [58, 62], portal_15: [57, 62], portal_16: [61, 61] };
   const OBJ_IMG = {}, OBJ_CANVAS = new Map();
   const objImg = (n) => OBJ_IMG[n] || (OBJ_IMG[n] = Object.assign(new Image(), { src: '/assets/objects/' + n + '.png?v=1' }));
+  // chão desenhado à mão (public/assets/maps/ground/<chave>.png): cobre o chão do tema; objetos, luzes e monstros continuam
+  const GROUND_ART = new Set(['lorencia', 'noria', 'devias', 'dungeon', 'dungeon_2', 'dungeon_3', 'lost_tower', 'lost_tower_2', 'lost_tower_3', 'lost_tower_4',
+    'lost_tower_5', 'lost_tower_6', 'lost_tower_7', 'atlans', 'tarkan', 'icarus', 'exile', 'arena_blood', 'arena_stadium']);
+  const GROUND_IMG = {};
+  const groundKey = (m) => (m.arena ? (m.arena === 'blood' ? 'arena_blood' : 'arena_stadium') : m.map);
+  function groundArt(m, onLoad) {
+    const k = groundKey(m);
+    if (!GROUND_ART.has(k)) return null;
+    let im = GROUND_IMG[k];
+    if (!im) { im = GROUND_IMG[k] = new Image(); im.src = '/assets/maps/ground/' + k + '.png?v=1'; }
+    if (im.complete && im.naturalWidth) return im;
+    if (onLoad) im.addEventListener('load', onLoad, { once: true });
+    return null;
+  }
   // Monta o chão (pintado uma vez) + objetos altos separados (balançam e entram na ordem de profundidade) + luzes
   function buildGround(m) {
     const W = m.w * GS, H = m.h * GS;
@@ -802,8 +822,28 @@
       else if (m.theme === 'town') portal(m.w + 440, m.h - 260, design, 1.5);
       else portal(W * 0.5, H * 0.16, design);
     }
+    // chão desenhado à mão por cima do chão do tema (cobrindo o mapa todo, sem distorcer)
+    const art = groundArt(m);
+    let W2 = waters, E2 = emit;
+    if (art) {
+      const k = Math.max(W / art.naturalWidth, H / art.naturalHeight), dw = art.naturalWidth * k, dh = art.naturalHeight * k;
+      base.imageSmoothingEnabled = false;
+      base.drawImage(art, Math.round((W - dw) / 2), Math.round((H - dh) / 2), Math.round(dw), Math.round(dh));
+      g = base;
+      for (const pr of props) shadow(pr.x * GS + 3, pr.y * GS + 2, Math.min(pr.w * 0.3, 22));   // sombras dos objetos de volta
+      W2 = []; E2 = emit.filter((e) => e.kind !== 'spray');                                       // água pintada do tema sumiu junto
+    }
+    // área segura (ponto de entrada dos mapas de caça): círculo de runas no chão
+    if (m.safeZone) {
+      g = base;
+      const sx = m.safeZone.x * GS, sy = m.safeZone.y * GS, sr = m.safeZone.r * GS;
+      g.save(); g.globalAlpha = 0.16; g.fillStyle = '#7ad8ff'; g.beginPath(); g.ellipse(sx, sy, sr, sr * 0.62, 0, 0, Math.PI * 2); g.fill(); g.restore();
+      for (let a = 0; a < Math.PI * 2; a += Math.PI / 48) { px(sx + Math.cos(a) * sr, sy + Math.sin(a) * sr * 0.62, 3, 3, '#bff0ff'); }
+      for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) { const x = sx + Math.cos(a) * sr * 0.82, y = sy + Math.sin(a) * sr * 0.82 * 0.62; px(x - 2, y - 2, 5, 5, '#7ad8ff'); px(x - 1, y - 1, 3, 3, '#ffffff'); }
+      light(sx, sy, sr * 1.3, '120,210,255', 0.08);
+    }
     props.sort((a, b) => a.y - b.y);
-    return { canvas: c, props, lights, waters, emit, rocks, structs };
+    return { canvas: c, props, lights, waters: W2, emit: E2, rocks, structs };
   }
 
   // ================= desenho =================

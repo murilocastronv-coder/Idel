@@ -87,6 +87,13 @@ const MAPS = [
   { id: 'floresta_petrificada', name: 'Floresta Petrificada', type: 'Bosque de pedra · nível 700–750', level: 700, playable: true },
   { id: 'abismo_carmesim', name: 'Abismo Carmesim', type: 'Fenda de sangue · nível 750–800', level: 750, playable: true },
   { id: 'trono_vazio', name: 'Trono do Vazio', type: 'Fim do mundo · nível 800+ · Boss: Imperador do Vazio', level: 800, playable: true },
+  { id: 'lost_tower_2', name: 'Lost Tower 2', type: 'Torre amaldiçoada · 2º andar · nível 850–875', level: 850, playable: true },
+  { id: 'lost_tower_3', name: 'Lost Tower 3', type: 'Torre amaldiçoada · 3º andar · nível 875–900', level: 875, playable: true },
+  { id: 'lost_tower_4', name: 'Lost Tower 4', type: 'Torre amaldiçoada · 4º andar · nível 900–925', level: 900, playable: true },
+  { id: 'lost_tower_5', name: 'Lost Tower 5', type: 'Torre amaldiçoada · 5º andar · nível 925–950', level: 925, playable: true },
+  { id: 'lost_tower_6', name: 'Lost Tower 6', type: 'Torre amaldiçoada · 6º andar · nível 950–975', level: 950, playable: true },
+  { id: 'lost_tower_7', name: 'Lost Tower 7', type: 'Torre amaldiçoada · topo · nível 975–1000 · Boss: Senhor da Torre', level: 975, playable: true },
+  { id: 'exile', name: 'Exile', type: 'Terra do exílio · nível 1000 · nível 1000 · Boss: Rei do Exílio', level: 1000, playable: true },
 ];
 
 const RARITIES = [
@@ -225,6 +232,37 @@ const MONSTERS = {
   void_lich: { name: 'Lich do Vazio', sprite: 'lich', tint: '#5a2aff', level: 820, hp: 93972, dmg: 1972, def: 820, exp: 33341, zen: [4100, 8200], speed: 54, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
   void_colossus: { name: 'Colosso do Vazio', sprite: 'ice_titan', tint: '#2a0a4a', scale: 1.5, level: 840, hp: 411264, dmg: 3239, def: 1117, exp: 168427, zen: [16800, 29400], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
   void_emperor: { name: 'Imperador do Vazio', sprite: 'skeleton_king', tint: '#8a3aff', scale: 1.3, level: 850, hp: 7854000, dmg: 5332, def: 1360, exp: 10118825, zen: [255000, 467500], speed: 36, range: 40, atkMs: 1800, aggro: 220, drop: 1, size: 2.8, boss: true, respawnMs: 90 * 60 * 1000 },
+  // ---- Lost Tower 2 a 7 e Exile (850 a 1000), mesma curva dos monstros 300–800 ----
+  // Lost Tower 2 (850+)
+  tower2_knight: { name: 'Cavaleiro da Torre', sprite: 'skeleton', tint: '#9a6aff', level: 850, hp: 98175, dmg: 2051, def: 850, exp: 34892, zen: [4250, 8500], speed: 58, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  tower2_lich: { name: 'Feiticeiro da Torre', sprite: 'lich', tint: '#7a4aff', level: 865, hp: 100297, dmg: 2090, def: 865, exp: 35677, zen: [4325, 8650], speed: 54, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  tower2_giant: { name: 'Carcereiro da Torre', sprite: 'giant', tint: '#5a3a8a', scale: 1.5, level: 880, hp: 435336, dmg: 3407, def: 1170, exp: 178689, zen: [17600, 30800], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Lost Tower 3 (875+)
+  tower3_assassin: { name: 'Sombra da Torre', sprite: 'assassin', tint: '#8a5aff', level: 875, hp: 101719, dmg: 2116, def: 875, exp: 36203, zen: [4375, 8750], speed: 76, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  tower3_hound: { name: 'Cão da Torre', sprite: 'hound', tint: '#6a4aaa', level: 890, hp: 103863, dmg: 2156, def: 890, exp: 36997, zen: [4450, 8900], speed: 74, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  tower3_minotaur: { name: 'Minotauro da Torre', sprite: 'minotaur_lord', tint: '#7a5ac0', scale: 1.5, level: 905, hp: 450588, dmg: 3513, def: 1204, exp: 185207, zen: [18100, 31675], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Lost Tower 4 (900+)
+  tower4_demon: { name: 'Demônio da Torre', sprite: 'demon', tint: '#b05aff', level: 900, hp: 105300, dmg: 2183, def: 900, exp: 37530, zen: [4500, 9000], speed: 60, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  tower4_goblin: { name: 'Goblin da Torre', sprite: 'goblin', tint: '#8a6aff', level: 915, hp: 107467, dmg: 2222, def: 915, exp: 38334, zen: [4575, 9150], speed: 64, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  tower4_titan: { name: 'Titã da Torre', sprite: 'ice_titan', tint: '#6a3aff', scale: 1.5, level: 930, hp: 466000, dmg: 3620, def: 1237, exp: 191804, zen: [18600, 32550], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Lost Tower 5 (925+)
+  tower5_bull: { name: 'Touro da Torre', sprite: 'bull_fighter', tint: '#7a3aaa', level: 925, hp: 108919, dmg: 2249, def: 925, exp: 38873, zen: [4625, 9250], speed: 62, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  tower5_beast: { name: 'Fera da Torre', sprite: 'forest_monster', tint: '#6a4a9a', level: 940, hp: 111108, dmg: 2289, def: 940, exp: 39687, zen: [4700, 9400], speed: 54, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  tower5_yeti: { name: 'Yeti da Torre', sprite: 'elite_yeti', tint: '#9a7aff', scale: 1.5, level: 955, hp: 481571, dmg: 3726, def: 1270, exp: 198481, zen: [19100, 33425], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Lost Tower 6 (950+)
+  tower6_hunter: { name: 'Caçador da Torre', sprite: 'hunter', tint: '#a04aff', level: 950, hp: 112575, dmg: 2316, def: 950, exp: 40232, zen: [4750, 9500], speed: 66, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  tower6_agon: { name: 'Agon da Torre', sprite: 'agon', tint: '#7a5aaa', level: 965, hp: 114787, dmg: 2356, def: 965, exp: 41056, zen: [4825, 9650], speed: 58, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  tower6_archlich: { name: 'Arquilich da Torre', sprite: 'archlich', tint: '#c06bff', scale: 1.5, level: 980, hp: 497301, dmg: 3834, def: 1303, exp: 205237, zen: [19600, 34300], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  // Lost Tower 7 (975+)
+  tower7_wraith: { name: 'Espectro da Torre', sprite: 'assassin', tint: '#5a2a9a', level: 975, hp: 116269, dmg: 2383, def: 975, exp: 41608, zen: [4875, 9750], speed: 76, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  tower7_lich: { name: 'Lich Ancião', sprite: 'lich', tint: '#c08aff', level: 990, hp: 118503, dmg: 2423, def: 990, exp: 42441, zen: [4950, 9900], speed: 54, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  tower7_colossus: { name: 'Colosso da Torre', sprite: 'giant', tint: '#4a1a7a', scale: 1.5, level: 995, hp: 506816, dmg: 3898, def: 1323, exp: 209330, zen: [19900, 34825], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  tower_lord: { name: 'Senhor da Torre', sprite: 'skeleton_king', tint: '#b06aff', scale: 1.3, level: 1000, hp: 9600000, dmg: 6370, def: 1600, exp: 12470000, zen: [300000, 550000], speed: 36, range: 40, atkMs: 1800, aggro: 220, drop: 1, size: 2.8, boss: true, respawnMs: 90 * 60 * 1000 },
+  // Exile (1000+)
+  exile_demon: { name: 'Demônio do Exílio', sprite: 'demon', tint: '#3a0a2a', level: 1000, hp: 120000, dmg: 2450, def: 1000, exp: 43000, zen: [5000, 10000], speed: 62, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  exile_knight: { name: 'Cavaleiro Exilado', sprite: 'skeleton', tint: '#5a1a3a', level: 1010, hp: 121503, dmg: 2477, def: 1010, exp: 43561, zen: [5050, 10100], speed: 58, range: 22, atkMs: 1150, aggro: 200, drop: 0.15, size: 1 },
+  exile_titan: { name: 'Titã do Exílio', sprite: 'minotaur_lord', tint: '#2a0a1a', scale: 1.5, level: 1030, hp: 529240, dmg: 4050, def: 1370, exp: 218989, zen: [20600, 36050], speed: 28, range: 36, atkMs: 1900, aggro: 200, drop: 0.5, size: 1.6, elite: true },
+  exile_king: { name: 'Rei do Exílio', sprite: 'archlich', tint: '#ff2a6a', scale: 1.3, level: 1050, hp: 10206000, dmg: 6723, def: 1680, exp: 13291425, zen: [315000, 577500], speed: 36, range: 40, atkMs: 1800, aggro: 220, drop: 1, size: 2.8, boss: true, respawnMs: 90 * 60 * 1000 },
   skeleton_king: { name: 'Rei Esqueleto', sprite: 'skeleton_king', level: 35, hp: 22000, dmg: 95, def: 30, exp: 26000, zen: [5000, 10000], speed: 38, range: 34, atkMs: 1800, aggro: 170, drop: 1, size: 2.2, boss: true, respawnMs: 90 * 60 * 1000 },
 };
 
@@ -305,6 +343,21 @@ const WORLD = {
     groups: [{ type: 'crimson_demon', count: 11 }, { type: 'infernal_bull', count: 9 }, { type: 'crimson_titan', count: 3 }] },
   trono_vazio: { name: 'Trono do Vazio', theme: 'void', w: 1400, h: 900, minLevel: 800, spawn: [120, 450],
     groups: [{ type: 'void_wraith', count: 11 }, { type: 'void_lich', count: 9 }, { type: 'void_colossus', count: 3 }], boss: { type: 'void_emperor', x: 1150, y: 450 } },
+  // Lost Tower 2 a 7 e Exile: um mapa a cada 25 níveis do 850 ao 1000 (servidor Hard)
+  lost_tower_2: { name: 'Lost Tower 2', theme: 'tower', w: 1400, h: 900, minLevel: 850, spawn: [120, 450],
+    groups: [{ type: 'tower2_knight', count: 11 }, { type: 'tower2_lich', count: 9 }, { type: 'tower2_giant', count: 3 }] },
+  lost_tower_3: { name: 'Lost Tower 3', theme: 'tower', w: 1400, h: 900, minLevel: 875, spawn: [120, 450],
+    groups: [{ type: 'tower3_assassin', count: 11 }, { type: 'tower3_hound', count: 9 }, { type: 'tower3_minotaur', count: 3 }] },
+  lost_tower_4: { name: 'Lost Tower 4', theme: 'tower', w: 1400, h: 900, minLevel: 900, spawn: [120, 450],
+    groups: [{ type: 'tower4_demon', count: 11 }, { type: 'tower4_goblin', count: 9 }, { type: 'tower4_titan', count: 3 }] },
+  lost_tower_5: { name: 'Lost Tower 5', theme: 'tower', w: 1400, h: 900, minLevel: 925, spawn: [120, 450],
+    groups: [{ type: 'tower5_bull', count: 11 }, { type: 'tower5_beast', count: 9 }, { type: 'tower5_yeti', count: 3 }] },
+  lost_tower_6: { name: 'Lost Tower 6', theme: 'tower', w: 1400, h: 900, minLevel: 950, spawn: [120, 450],
+    groups: [{ type: 'tower6_hunter', count: 11 }, { type: 'tower6_agon', count: 9 }, { type: 'tower6_archlich', count: 3 }] },
+  lost_tower_7: { name: 'Lost Tower 7', theme: 'tower', w: 1400, h: 900, minLevel: 975, spawn: [120, 450],
+    groups: [{ type: 'tower7_wraith', count: 11 }, { type: 'tower7_lich', count: 9 }, { type: 'tower7_colossus', count: 3 }], boss: { type: 'tower_lord', x: 1150, y: 450 } },
+  exile: { name: 'Exile', theme: 'void', w: 1400, h: 900, minLevel: 1000, spawn: [120, 450],
+    groups: [{ type: 'exile_demon', count: 11 }, { type: 'exile_knight', count: 9 }, { type: 'exile_titan', count: 3 }], boss: { type: 'exile_king', x: 1150, y: 450 } },
 };
 
 // Habilidades: ataque básico + 4 poderes por classe (níveis 1, 5, 15 e 30).
