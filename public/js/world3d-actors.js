@@ -290,10 +290,9 @@
           this.wings = wings;
         }
       }
-      // montaria: o herói fica sentado nas costas do Fenrir
+      // montaria: o Fenrir anda ao lado do herói (sem ficar em cima de nada)
       if (eq && eq.pet === 'fenrir_gold') {
-        const wolf = fenrirModel(); this.root.add(wolf); this.fenrir = wolf;
-        model.position.y += 0.55; if (this.wings) this.wings.position.y += 0.55;
+        const wolf = fenrirModel(); wolf.position.set(0.85, 0, -0.35); wolf.scale.setScalar(0.85); this.root.add(wolf); this.fenrir = wolf;
       }
       this.style = def.style; this.atkClips = def.atk; this.lenda = true;
       this.mixer = new THREE.AnimationMixer(model);

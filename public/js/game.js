@@ -766,7 +766,7 @@
   function load3D() {
     const files = ['vendor/three/three.min.js', 'vendor/three/GLTFLoader.js', 'vendor/three/SkeletonUtils.js', 'vendor/three/RoomEnvironment.js',
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
-      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=4', 'world3d-actors.js?v=5', 'world3d-fx.js?v=1'];
+      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=4', 'world3d-actors.js?v=6', 'world3d-fx.js?v=1'];
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();
@@ -1775,13 +1775,14 @@
         }
         const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : undefined;
         if (act === 'run') drawRunPuff(x, y, now, e.phase, heroFlip, '#c9b98f');
-        // montaria (Fenrir Dourado): desenhada embaixo; o herói sobe e fica sentado nas costas
-        const mounted = !!(eq && eq.pet === 'fenrir_gold' && window.Fenrir && !e.dead);
-        let lift = 0;
-        if (mounted) {
-          const mp = sc * 2.1;
-          Fenrir.draw(ctx, x, y, mp, heroFlip, act === 'run' || act === 'walk' || (e.speed || 0) > 10, now + (e.phase || 0));
-          lift = Fenrir.SEAT(mp) - 9 * sc;
+        // montaria (Fenrir Dourado): anda ao lado, um pouco atrás do herói, sem ficar em cima dele nem de nada
+        const mounted = false;
+        const lift = 0;
+        if (eq && eq.pet === 'fenrir_gold' && window.Fenrir && !e.dead) {
+          const mp = sc * 1.35, side = heroFlip ? 1 : -1;
+          const fx = x + side * 36 * sc, fy = y + 3 * sc;
+          shadowAt(fx, fy, 9 * zoom);
+          Fenrir.draw(ctx, fx, fy, mp, heroFlip, act === 'run' || act === 'walk' || (e.speed || 0) > 10, now + (e.phase || 0));
         }
         const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, act, now, x + recoil, y - lift, HERO_H * sc, dpr));
         if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, act, t, x + recoil, y - lift - (mounted ? 0 : runBob) - idleBob, sc, heroFlip, { once, equip: eq });
@@ -2156,6 +2157,7 @@
     const L = S.char.level, next = Math.floor(100 * Math.pow(L, 2.1) + 200);
     const vip = [0.5, 0.7, 0.8][(S.char.vip && S.char.vip.tier) || 0] || 0.5;
     const w = S.data && S.map && S.data.world.find((x) => x.id === S.map.map);
+    if (w && w.expCap && L > w.expCap) return '0 (nível acima do limite deste mapa)';
     const er = S.data.expRef || { min: 0.02, max: 6 };
     const hk = Math.min(er.max || 6, Math.max(er.min || 0.02, (t.maxHp || 1) / refHp(L)));
     const pct = t.boss ? 15 * (1 + ((S.char.vip && S.char.vip.tier) || 0)) * (1 + ((w && w.bossExpBonus) || 0) / 100) : vip * hk * (1 + ((w && w.expBonus) || 0) / 100);

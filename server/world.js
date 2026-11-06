@@ -92,7 +92,25 @@ function refHp(level) {
 }
 const HP_K_MIN = 0.02, HP_K_MAX = 6;
 const hpK = (T, level) => Math.min(HP_K_MAX, Math.max(HP_K_MIN, (T.hp || 1) / refHp(level)));
+// Sem EXP para quem já passou do mapa: em cada mapa de caça, quem tem nível acima do limite não ganha EXP dos monstros.
+// Limite = nível mínimo do próximo mapa + 10 (o último mapa não tem limite). Ex.: Dungeon (25) → limite 45 (Dungeon 2 é 35+).
+const EXP_CAP_MARGIN = 10;
+let MAP_CAP = null;
+function mapExpCap(def) {
+  if (!def || def.safe || def.arena || !def.groups || !def.groups.length || !(def.minLevel > 1)) return Infinity;
+  if (!MAP_CAP) {
+    MAP_CAP = new Map();
+    const list = Object.values(G.WORLD).filter((d) => d.groups && d.groups.length && !d.safe && !d.arena && d.minLevel > 1);
+    for (const d of list) {
+      const next = list.filter((x) => x.minLevel > d.minLevel).sort((a, b) => a.minLevel - b.minLevel)[0];
+      MAP_CAP.set(d, next ? next.minLevel + EXP_CAP_MARGIN : Infinity);
+    }
+  }
+  return MAP_CAP.has(def) ? MAP_CAP.get(def) : Infinity;
+}
+const overCap = (p, def) => p.level > mapExpCap(def);
 function killExp(p, T, def, pk) {
+  if (overCap(p, def)) return 0;
   return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * hpK(T, p.level) * mapExp(def) * XP()));
 }
 // bônus de EXP por mapa (servidor continua Hard): progressivo, cada mapa de caça dá um pouco mais que o anterior (+3% por mapa)
@@ -1495,7 +1513,12 @@ class World {
     const pk = p.perks();
     const trainingGap = m.T.training ? p.level - m.T.level : 0;
     const trainingExpFactor = trainingGap <= 2 ? 1 : trainingGap <= 8 ? 0.7 : trainingGap <= 15 ? 0.35 : 0.15;
-    const exp = Math.max(1, Math.round(killExp(p, m.T, map && map.def, pk) * trainingExpFactor)), zen = Math.round(monsterZen(m.T) * pk.zen);
+    const capped = overCap(p, map && map.def);
+    if (capped && (!p.capNoteAt || Date.now() - p.capNoteAt > 60000)) {
+      p.capNoteAt = Date.now();
+      p.send({ type: 'log', kind: 'warn', text: `Seu nível passou do limite deste mapa (até o nível ${mapExpCap(map.def)}): aqui os monstros não dão EXP. Vá para um mapa do seu nível.` });
+    }
+    const exp = capped ? 0 : Math.max(1, Math.round(killExp(p, m.T, map && map.def, pk) * trainingExpFactor)), zen = Math.round(monsterZen(m.T) * pk.zen);
     p.exp += exp; p.kills++; p.zen += zen;
     const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100);
     if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
@@ -1554,7 +1577,7 @@ class World {
       distributed += baseZen;
       const pk = p.perks();
       const zen = Math.round(baseZen * pk.zen);
-      const exp = Math.round(expToNext(p.level) * BOSS_PCT * bossMapExp(map && map.def) * pk.exp * XP() * Math.max(0.1, share));
+      const exp = overCap(p, map && map.def) ? 0 : Math.round(expToNext(p.level) * BOSS_PCT * bossMapExp(map && map.def) * pk.exp * XP() * Math.max(0.1, share));
       p.exp += exp; p.zen += zen; p.bossesKilled++;
       const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
       if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
@@ -1865,4 +1888,4 @@ class World {
   }
 }
 
-module.exports = { mapExp, bossMapExp, World, expToNext, gearVisual, refHp, EXP_REF, HP_K_MIN, HP_K_MAX };
+module.exports = { mapExp, mapExpCap, bossMapExp, World, expToNext, gearVisual, refHp, EXP_REF, HP_K_MIN, HP_K_MAX };
