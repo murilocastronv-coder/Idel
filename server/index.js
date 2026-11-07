@@ -12,6 +12,7 @@ try {
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 const db = require('./db');
 const sec = require('./security');
 const mail = require('./mail');
@@ -892,6 +893,7 @@ const MIME = {
   '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
   '.webmanifest': 'application/manifest+json', '.apk': 'application/vnd.android.package-archive', '.woff': 'font/woff', '.woff2': 'font/woff2', '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.txt': 'text/plain; charset=utf-8', '.glb': 'model/gltf-binary',
 };
+const GZ_CACHE = new Map(); // arquivo → cópia gzip (refeita quando o arquivo muda)
 function serveStatic(req, res, pathname) {
   let rel;
   try { rel = decodeURIComponent(pathname); } catch (_) { rel = '/'; }
@@ -933,6 +935,17 @@ function serveStatic(req, res, pathname) {
           return fs.createReadStream(gz).pipe(res);
         }
       } catch (_) { /* sem cópia comprimida */ }
+    }
+    // textos (scripts, estilos, páginas, JSON, SVG) sem cópia .gz: comprime na hora e guarda na memória até o arquivo mudar
+    if (/^\.(js|css|json|svg|html|txt)$/.test(ext) && st.size > 1024 && st.size < 8 * 1024 * 1024 && /\bgzip\b/.test(req.headers['accept-encoding'] || '') && !req.headers.range) {
+      let hit = GZ_CACHE.get(file);
+      if (!hit || hit.mtime !== st.mtimeMs || hit.size !== st.size) {
+        try { hit = { mtime: st.mtimeMs, size: st.size, buf: zlib.gzipSync(fs.readFileSync(file), { level: 9 }) }; GZ_CACHE.set(file, hit); } catch (_) { hit = null; }
+      }
+      if (hit) {
+        res.writeHead(200, { 'Content-Type': type, 'Content-Encoding': 'gzip', 'Content-Length': hit.buf.length, 'Cache-Control': 'no-cache', ETag: etag, Vary: 'Accept-Encoding' });
+        return res.end(req.method === 'HEAD' ? undefined : hit.buf);
+      }
     }
     res.writeHead(200, {
       'Content-Type': type,

@@ -2833,6 +2833,16 @@
       $('[data-act]', box).onclick = () => { if (!confirm(`Vender ${it.name} ×${it.qty}?`)) return; S.selItem = null; S.jewelSel = null; send({ type: 'sell', id: it.id }); };
       return;
     }
+    // pergaminho Reset Status: usa direto da bolsa (devolve todos os pontos distribuídos)
+    if (it.base === 'reset_status') {
+      box.innerHTML = `<h3 style="color:${ACCENT(it)}">${esc(it.name)} ×${fmt.format(it.qty)}</h3>
+        <p>Devolve todos os pontos distribuídos em Força, Agilidade, Vitalidade e Energia${S.char.cls === 'dark_lord' ? ' e Comando' : ''} para você colocar onde quiser. 1 uso por pergaminho.</p>
+        <div class="row"><button class="btn small btn-gold" type="button" data-rs-use>Usar pergaminho</button>
+          <button class="btn small btn-ghost" type="button" data-act="sell">Vender ${it.qty > 1 ? 'todas ' : ''}por ${fmt.format(it.value)} Zen</button></div>`;
+      $('[data-rs-use]', box).onclick = () => { send({ type: 'resetStatus' }); confirmResetStatus(); };
+      $('[data-act]', box).onclick = () => { if (!confirm(`Vender ${it.name} ×${it.qty}?`)) return; S.selItem = null; send({ type: 'sell', id: it.id }); };
+      return;
+    }
     if (it.slot === 'material') {
       box.innerHTML = `<h3 style="color:${ACCENT(it)}">${esc(it.name)} ×${fmt.format(it.qty)}</h3>
         <p style="color:${RAR[it.rarity]}">Material · empilha até ${fmt.format(it.stack)}</p>
@@ -2927,9 +2937,17 @@
   function resetStatusBtn() {
     const i = RSI.info;
     if (!i) return '<button class="btn small rs-btn" type="button" disabled>RESET STATUS…</button>';
-    const label = i.free ? 'RESET STATUS – GRATUITO' : 'RESET STATUS – R$ 5,00';
-    return `<button class="btn small rs-btn ${i.free ? 'btn-gold' : ''}" type="button" id="rs-btn" ${RSI.busy || !i.free ? 'disabled' : ''}>${label}</button>
-      <small class="muted">${i.free ? 'Seu primeiro reset é grátis.' : 'Cada reset adicional custa R$ 5,00 na Loja.'}</small>`;
+    // grátis (1ª vez) ou usando 1 pergaminho Reset Status da bolsa; sem nenhum dos dois, aponta para a Loja
+    const can = i.free || i.items > 0;
+    const label = i.free ? 'RESET STATUS – GRATUITO' : i.items > 0 ? `RESET STATUS – USAR PERGAMINHO (${fmt.format(i.items)})` : 'RESET STATUS – R$ 5,00';
+    return `<button class="btn small rs-btn ${can ? 'btn-gold' : ''}" type="button" id="rs-btn" ${RSI.busy || !can || !i.points ? 'disabled' : ''}>${label}</button>
+      <small class="muted">${!i.points ? 'Nenhum ponto distribuído para resetar.' : i.free ? 'Seu primeiro reset é grátis.' : i.items > 0 ? 'Gasta 1 pergaminho Reset Status e devolve todos os pontos distribuídos.' : 'Compre o pergaminho Reset Status na Loja para resetar de novo.'}</small>`;
+  }
+  function confirmResetStatus() {
+    const i = RSI.info || {};
+    tradeDialog(`<h3>RESETAR ATRIBUTOS?</h3><p>Deseja realmente resetar todos os pontos distribuídos do seu personagem?</p>
+      <p class="muted">Todos os pontos investidos serão devolvidos para você distribuir onde quiser${i.points ? ` (${fmt.format(i.points)} pontos)` : ''}. ${i.free ? 'Este reset é grátis.' : 'Vai gastar 1 pergaminho Reset Status.'} A distribuição automática é desligada.</p>`,
+      [{ label: 'CONFIRMAR', cls: 'btn-gold', fn: () => { RSI.busy = true; if (S.panel === 'hero') renderHero(); send({ type: 'resetStatus', action: 'use' }); } }, { label: 'CANCELAR' }]);
   }
   function renderHero() {
     const c = S.char, me = S.me || {};
@@ -2959,9 +2977,7 @@
     $$('#hero-body [data-stat]').forEach((b) => { b.onclick = () => send({ type: 'stat', stat: b.dataset.stat, n: Number(b.dataset.n) }); });
     $('#auto-stats').onchange = (e) => send({ type: 'settings', settings: { autoStats: e.target.checked } });
     const rb = $('#rs-btn');
-    if (rb) rb.onclick = () => tradeDialog(`<h3>RESETAR ATRIBUTOS?</h3><p>Deseja realmente resetar todos os pontos distribuídos do seu personagem?</p>
-      <p class="muted">Todos os pontos investidos serão devolvidos para você distribuir novamente${RSI.info && RSI.info.points ? ` (${fmt.format(RSI.info.points)} pontos)` : ''}. ${RSI.info && RSI.info.free ? 'Este reset é grátis.' : 'Cada reset depois do primeiro custa R$ 5,00 na Loja.'}</p>`,
-      [{ label: 'CONFIRMAR', cls: 'btn-gold', fn: () => { RSI.busy = true; renderHero(); send({ type: 'resetStatus', action: 'use' }); } }, { label: 'CANCELAR' }]);
+    if (rb) rb.onclick = confirmResetStatus;
     void me;
   }
 
@@ -4778,7 +4794,9 @@
   (async function init() {
     centerMsg('Entrando no mundo…');
     // já busca o herói (com o equipamento) para carregar as folhas dos itens antes de entrar: nada de herói "pelado" por um instante
-    const meP = fetch('/api/me', { credentials: 'same-origin' }).then((r) => r.json()).catch(() => null);
+    const meP = window.__meP || fetch('/api/me', { credentials: 'same-origin' }).then((r) => r.json()).catch(() => null);
+    // as peças equipadas começam a baixar assim que o herói chega, ao mesmo tempo que os outros desenhos
+    const preP = meP.then((me) => { const c = me && me.characters ? me.characters.find((x) => String(x.id) === String(charId)) : null; return c ? Sprites.preloadEquip(c.class, c.eq, 5000) : null; }).catch(() => null);
     let myChar = null;
     try {
       const r = await fetch('/api/gamedata', { credentials: 'same-origin' });
@@ -4787,7 +4805,7 @@
       const me = await meP;
       myChar = me && me.characters ? me.characters.find((x) => String(x.id) === String(charId)) : null;
     } catch (_) { centerMsg('Não foi possível carregar o jogo. Verifique a internet.', true); return; }
-    const pre = myChar ? Sprites.preloadEquip(myChar.class, myChar.eq, 5000) : Promise.resolve();
+    const pre = preP;
     if (GFX === '3d') { centerMsg('Carregando o gráfico 3D…'); await load3D(); if (is3d && myChar) await Promise.race([W3().preload([], [myChar.class]), new Promise((r) => setTimeout(r, 8000))]); centerMsg(null); }
     await pickRoom();
     await pre;

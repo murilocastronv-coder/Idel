@@ -20,9 +20,23 @@
     return new Promise((ok, fail) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => fail(new Error('sprite ' + src)); im.src = src; });
   }
 
-  const ready = (async () => {
+  // o manifesto chega primeiro: com ele já dá para começar a baixar as peças equipadas (sem esperar todos os desenhos)
+  const manifestReady = (async () => {
     const r = await fetch(BASE + 'manifest.json?v=' + Date.now().toString(36).slice(0, 5), { cache: 'no-cache' });
     S.manifest = await r.json();
+    return S.manifest;
+  })();
+  // na página do jogo (game.html?c=ID): pede o herói já agora e começa a baixar as peças equipadas dele,
+  // antes mesmo do game.js terminar de chegar (o game.js reaproveita o mesmo pedido em window.__meP)
+  try {
+    const qc = new URLSearchParams(location.search).get('c');
+    if (qc && /game\.html$/.test(location.pathname)) {
+      window.__meP = fetch('/api/me', { credentials: 'same-origin' }).then((r) => r.json()).catch(() => null);
+      window.__meP.then((me) => { const c = me && me.characters ? me.characters.find((x) => String(x.id) === String(qc)) : null; if (c) preloadEquip(c.class, c.eq, 5000); }).catch(() => {});
+    }
+  } catch (_) { /* sem URL */ }
+  const ready = (async () => {
+    await manifestReady;
     const all = [];
     for (const group of ['heroes', 'monsters', 'effects']) {
       for (const [name, m] of Object.entries(S.manifest[group])) {
@@ -169,7 +183,7 @@
   }
   // carrega antes de mostrar: resolve quando todas as folhas estiverem prontas (ou depois de ms, para nunca travar)
   async function preloadEquip(cls, eq, ms = 4000) {
-    await ready;
+    await manifestReady; // baixa as peças junto com os outros desenhos, não depois deles
     const ps = equipPaths(cls, eq).map((p) => lazyEntry(p).p);
     await Promise.race([Promise.all(ps), new Promise((r) => setTimeout(r, ms))]);
   }
@@ -283,7 +297,7 @@
   function hasHair(cls) { return !!(S.manifest && S.manifest.heroes[cls] && S.manifest.heroes[cls].hairKeys); }
 
   window.Sprites = {
-    ready, HAIR, SKIN, defaultHairIndex, hasHair, drawEffect, preloadEquip, equipReady, preloadClass,
+    ready, manifestReady, HAIR, SKIN, defaultHairIndex, hasHair, drawEffect, preloadEquip, equipReady, preloadClass,
     hero: (ctx, cls, ap, action, t, x, y, scale, flip, opts) => (opts && opts.equip ? heroEquip(ctx, cls, ap, action, t, x, y, scale, flip, opts, opts.equip) : draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts)),
     ARMOR,
     monster: (ctx, name, action, t, x, y, scale, flip, opts) => draw(ctx, 'monsters', name, null, action, t, x, y, scale, flip, { ...opts, useScale: true }),

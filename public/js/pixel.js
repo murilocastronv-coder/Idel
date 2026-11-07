@@ -351,7 +351,13 @@
   const itemAtlas = { img: new Image(), idx: null, size: 48, cols: 24 };
   const itemsReady = Promise.all([
     fetch('/assets/icons/items.json?v=' + ITEMS_V).then((r) => r.json()).then((j) => { itemAtlas.idx = j.index; itemAtlas.size = j.size; itemAtlas.cols = j.cols; }),
-    new Promise((res, rej) => { itemAtlas.img.onload = res; itemAtlas.img.onerror = rej; itemAtlas.img.src = '/assets/icons/items.png?v=' + ITEMS_V; }),
+    // WebP sem perda (mesmos pixels, ~6× menor); se não existir para esta versão, usa o PNG original
+    new Promise((res, rej) => {
+      let tried = false;
+      itemAtlas.img.onload = res;
+      itemAtlas.img.onerror = () => { if (tried) return rej(); tried = true; itemAtlas.img.src = '/assets/icons/items.png?v=' + ITEMS_V; };
+      itemAtlas.img.src = '/assets/icons/items-v' + ITEMS_V + '.webp';
+    }),
   ]).then(() => true).catch(() => false);
   /** Desenha o ícone detalhado do item (por base, ou genérico pelo tipo de ícone) num quadrado de `size` px.
    *  Retorna false se o atlas ainda não carregou ou não há ícone (quem chama usa o ícone simples). */

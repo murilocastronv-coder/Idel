@@ -647,6 +647,8 @@
   (async function init() {
     renderAuthArea();
     connectWs();
+    // já começa a baixar as peças equipadas dos heróis da conta (a lista de heróis aparece com os itens, sem atraso)
+    if (Sprites.preloadEquip) api('GET', '/api/me').then((me) => { (me && me.characters || []).forEach((c) => { if (c.eq) Sprites.preloadEquip(c.class, c.eq, 8000); }); }).catch(() => {});
     try {
       state.data = await api('GET', '/api/gamedata');
     } catch (e) {

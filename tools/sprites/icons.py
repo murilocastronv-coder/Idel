@@ -7,6 +7,7 @@ Uso: python3 tools/sprites/icons.py
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 import zlib
@@ -936,6 +937,9 @@ def main():
     index['@potion_hp'] = index['@potion_hp']
     os.makedirs(OUT, exist_ok=True)
     atlas.save(os.path.join(OUT, 'items.png'), optimize=True)
+    # cópia WebP sem perda para o jogo (bem menor). O nome leva a versão: troque ITEMS_V em public/js/pixel.js e o nome junto
+    ver = int(re.search(r'ITEMS_V = (\d+)', open(os.path.join(ROOT, 'public', 'js', 'pixel.js'), encoding='utf8').read()).group(1))
+    atlas.save(os.path.join(OUT, f'items-v{ver}.webp'), lossless=True, method=6)
     with open(os.path.join(OUT, 'items.json'), 'w') as f:
         json.dump({'size': S, 'cols': COLS, 'index': index}, f, separators=(',', ':'))
     print('ok:', len(order), 'ícones,', atlas.size)
