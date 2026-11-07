@@ -347,7 +347,7 @@
   }
 
   // ---- Ícones detalhados 48x48 (atlas gerado por tools/sprites/icons.py) ----
-  const ITEMS_V = 6;
+  const ITEMS_V = 7;
   const itemAtlas = { img: new Image(), idx: null, size: 48, cols: 24 };
   const itemsReady = Promise.all([
     fetch('/assets/icons/items.json?v=' + ITEMS_V).then((r) => r.json()).then((j) => { itemAtlas.idx = j.index; itemAtlas.size = j.size; itemAtlas.cols = j.cols; }),
@@ -355,6 +355,18 @@
   ]).then(() => true).catch(() => false);
   /** Desenha o ícone detalhado do item (por base, ou genérico pelo tipo de ícone) num quadrado de `size` px.
    *  Retorna false se o atlas ainda não carregou ou não há ícone (quem chama usa o ícone simples). */
+  // arma de cada pacote da loja de cash (I a XXX): fica mais forte conforme o número do pacote; os últimos usam a arma de gelo
+  const SET_WEAPONS = {
+    fairy_elf: ['wpn_bow_hunting', 'wpn_bow_reinforced', 'wpn_bow_tiger', 'wpn_bow_elven', 'wpn_bow_nature', 'wpn_bow_battle', 'wpn_bow_silver', 'wpn_bow_wind', 'ice_fairy_elf_weapon'],
+    dark_knight: ['wpn_sword_ice', 'wpn_sword_fire', 'wpn_spear_gold', 'wpn_axe_gold', 'wpn_greatsword_solar', 'ice_dark_knight_weapon'],
+    magic_gladiator: ['wpn_sword_fire', 'wpn_sword_ice', 'wpn_spear_gold', 'wpn_greatsword_solar', 'wpn_axe_gold', 'ice_magic_gladiator_weapon'],
+    dark_wizard: ['wpn_staff_orb', 'ice_dark_wizard_weapon'], summoner: ['wpn_staff_orb', 'ice_summoner_weapon'],
+    dark_lord: ['wpn_scepter_violet', 'ice_dark_lord_weapon'],
+  };
+  function setWeapon(cls, n) {
+    const list = SET_WEAPONS[cls] || SET_WEAPONS.dark_knight;
+    return list[Math.min(list.length - 1, Math.floor((Math.max(1, n) - 1) * list.length / 30))];
+  }
   function drawItem(ctx, item, x, y, size) {
     if (item && window.Fenrir && window.Fenrir.isPet && window.Fenrir.isPet(item.base)) return window.Fenrir.petIcon(ctx, item.base, x, y, size);
     if (item && window.Fenrir && window.Fenrir.variantOf(item.base)) { window.Fenrir.icon(ctx, x, y, size, window.Fenrir.variantOf(item.base)); return true; }
@@ -362,11 +374,11 @@
     if (!A.idx || !A.img.naturalWidth || !item) return false;
     // conjunto premium (loja de cash) = conjunto Dragão de Gelo: cada classe vê as próprias peças
     let i;
-    const fm = /^festive_\d+_(helm|armor|pants|gloves|boots|sword|bow|pendant|ring1|ring2)$/.exec(item.base || '');
+    const fm = /^festive_(\d+)_(helm|armor|pants|gloves|boots|sword|bow|pendant|ring1|ring2)$/.exec(item.base || '');
     if (fm) {
-      const cls = window.MUI_CLS || 'dark_knight', part = fm[1];
+      const cls = window.MUI_CLS || 'dark_knight', n = Number(fm[1]), part = fm[2];
       const key = part === 'pendant' || part === 'ring1' || part === 'ring2' ? 'ice_' + part
-        : part === 'bow' ? 'ice_fairy_elf_weapon' : part === 'sword' ? 'ice_' + cls + '_weapon' : 'ice_' + cls + '_' + part;
+        : part === 'bow' ? setWeapon('fairy_elf', n) : part === 'sword' ? setWeapon(cls, n) : 'ice_' + cls + '_' + part;
       i = A.idx[key];
     }
     if (i === undefined) i = A.idx[item.base];
