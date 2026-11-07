@@ -71,14 +71,11 @@
   }
   function icon(ctx, x, y, size, v = 'gold') {
     const img = frame(1, v), p = size / (W + 2), glow = (PALS[v] || PALS.gold).glow;
-    // montaria nova desenhada à mão (touro): usa o desenho dela quando já carregou
-    const art = window.Sprites && Sprites.mountIcon;
     ctx.save(); ctx.imageSmoothingEnabled = false;
     const g = ctx.createRadialGradient(x + size / 2, y + size / 2, 2, x + size / 2, y + size / 2, size / 2);
     g.addColorStop(0, `rgba(${glow},.35)`); g.addColorStop(1, `rgba(${glow},0)`);
     ctx.fillStyle = g; ctx.fillRect(x, y, size, size);
-    if (!(art && Sprites.mountIcon(ctx, 'bull', x, y, size, v === 'red' ? '#b02a20' : null)))
-      ctx.drawImage(img, Math.round(x + p), Math.round(y + (size - H * p) / 2), Math.round(W * p), Math.round(H * p));
+    ctx.drawImage(img, Math.round(x + p), Math.round(y + (size - H * p) / 2), Math.round(W * p), Math.round(H * p));
     ctx.restore();
   }
   // ---- pets que voam ao lado do personagem: Imp e Fadinha (Guardian Angel) ----

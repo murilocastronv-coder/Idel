@@ -1,4 +1,4 @@
-// MuonlineClaude — arte pixel original gerada em código (sem assets externos)
+// MU Idle Legends — arte pixel original gerada em código (sem assets externos)
 'use strict';
 (function () {
   const OUTLINE = '#120c08';
@@ -355,44 +355,12 @@
   ]).then(() => true).catch(() => false);
   /** Desenha o ícone detalhado do item (por base, ou genérico pelo tipo de ícone) num quadrado de `size` px.
    *  Retorna false se o atlas ainda não carregou ou não há ícone (quem chama usa o ícone simples). */
-  // arma de cada pacote da loja de cash (I a XXX): fica mais forte conforme o número do pacote; os últimos usam a arma de gelo
-  const SET_WEAPONS = {
-    fairy_elf: ['wpn_bow_hunting', 'wpn_bow_reinforced', 'wpn_bow_tiger', 'wpn_bow_elven', 'wpn_bow_nature', 'wpn_bow_battle', 'wpn_bow_silver', 'wpn_bow_wind', 'ice_fairy_elf_weapon'],
-    dark_knight: ['wpn_sword_ice', 'wpn_sword_fire', 'wpn_spear_gold', 'wpn_axe_gold', 'wpn_greatsword_solar', 'ice_dark_knight_weapon'],
-    magic_gladiator: ['wpn_sword_fire', 'wpn_sword_ice', 'wpn_spear_gold', 'wpn_greatsword_solar', 'wpn_axe_gold', 'ice_magic_gladiator_weapon'],
-    dark_wizard: ['wpn_staff_orb', 'ice_dark_wizard_weapon'], summoner: ['wpn_staff_orb', 'ice_summoner_weapon'],
-    dark_lord: ['wpn_scepter_violet', 'ice_dark_lord_weapon'],
-  };
-  function setWeapon(cls, n) {
-    const list = SET_WEAPONS[cls] || SET_WEAPONS.dark_knight;
-    return list[Math.min(list.length - 1, Math.floor((Math.max(1, n) - 1) * list.length / 30))];
-  }
-  // arma da loja que aparece na mão do herói: chave do ícone e recorte no atlas
-  function setWeaponKey(base, cls) {
-    const m = /^festive_(\d+)_(sword|bow)$/.exec(base || '');
-    if (!m) return null;
-    return m[2] === 'bow' || cls === 'fairy_elf' ? setWeapon('fairy_elf', Number(m[1])) : setWeapon(cls, Number(m[1]));
-  }
-  function atlasCell(key) {
-    const A = itemAtlas, i = A.idx && A.idx[key];
-    if (i === undefined || i === null || !A.img.naturalWidth) return null;
-    return { img: A.img, sx: (i % A.cols) * A.size, sy: Math.floor(i / A.cols) * A.size, s: A.size };
-  }
   function drawItem(ctx, item, x, y, size) {
     if (item && window.Fenrir && window.Fenrir.isPet && window.Fenrir.isPet(item.base)) return window.Fenrir.petIcon(ctx, item.base, x, y, size);
     if (item && window.Fenrir && window.Fenrir.variantOf(item.base)) { window.Fenrir.icon(ctx, x, y, size, window.Fenrir.variantOf(item.base)); return true; }
     const A = itemAtlas;
     if (!A.idx || !A.img.naturalWidth || !item) return false;
-    // conjunto premium (loja de cash) = conjunto Dragão de Gelo: cada classe vê as próprias peças
-    let i;
-    const fm = /^festive_(\d+)_(helm|armor|pants|gloves|boots|sword|bow|pendant|ring1|ring2)$/.exec(item.base || '');
-    if (fm) {
-      const cls = window.MUI_CLS || 'dark_knight', n = Number(fm[1]), part = fm[2];
-      const key = part === 'pendant' || part === 'ring1' || part === 'ring2' ? 'ice_' + part
-        : part === 'bow' ? setWeapon('fairy_elf', n) : part === 'sword' ? setWeapon(cls, n) : 'ice_' + cls + '_' + part;
-      i = A.idx[key];
-    }
-    if (i === undefined) i = A.idx[item.base];
+    let i = A.idx[item.base];
     if (i === undefined) i = A.idx['@' + item.icon];
     if (i === undefined) return false;
     const s = A.size;
@@ -401,5 +369,5 @@
     return true;
   }
 
-  window.PixelArt = { drawItem, setWeaponKey, atlasCell, itemsReady, drawCharacter, drawMonster, monsterSize, drawIcon, drawLandscape, drawGrid, HAIR, SKIN, GRID_W, GRID_H };
+  window.PixelArt = { drawItem, itemsReady, drawCharacter, drawMonster, monsterSize, drawIcon, drawLandscape, drawGrid, HAIR, SKIN, GRID_W, GRID_H };
 })();

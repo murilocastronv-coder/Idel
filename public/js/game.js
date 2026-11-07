@@ -377,8 +377,7 @@
   const OBJ_IMG = {}, OBJ_CANVAS = new Map();
   const objImg = (n) => OBJ_IMG[n] || (OBJ_IMG[n] = Object.assign(new Image(), { src: '/assets/objects/' + n + '.png?v=1' }));
   // chão desenhado à mão (public/assets/maps/ground/<chave>.png): cobre o chão do tema; objetos, luzes e monstros continuam
-  const GROUND_ART = new Set(['lorencia', 'noria', 'devias', 'dungeon', 'dungeon_2', 'dungeon_3', 'lost_tower', 'lost_tower_2', 'lost_tower_3', 'lost_tower_4',
-    'lost_tower_5', 'lost_tower_6', 'lost_tower_7', 'atlans', 'tarkan', 'icarus', 'exile', 'arena_blood', 'arena_stadium']);
+  const GROUND_ART = new Set(); // chão desenhado à mão desligado: chão antigo do tema
   const GROUND_IMG = {};
   const groundKey = (m) => (m.arena ? (m.arena === 'blood' ? 'arena_blood' : 'arena_stadium') : m.map);
   function groundArt(m, onLoad) {
@@ -438,38 +437,7 @@
       disc(x - 3 * s, y - 34 * s, 10 * s, pal[2]); disc(x - 6 * s, y - 37 * s, 5 * s, pal[3]);
       for (let k = 0; k < 18 * s; k++) px(x + (r() - 0.5) * 28 * s, y - 30 * s + (r() - 0.5) * 26 * s, 2, 2, r() < 0.5 ? pal[3] : pal[0]);
     };
-    // objetos desenhados à mão (public/assets/objects): base no meio embaixo, carregam sozinhos
-    const objCanvas = (n, s, dark) => {
-      const key = n + ':' + s + ':' + (dark ? 1 : 0);
-      if (OBJ_CANVAS.has(key)) return OBJ_CANVAS.get(key);
-      const [w0, h0] = OBJ_SIZE[n], w = Math.max(1, Math.round(w0 * s)), h = Math.max(1, Math.round(h0 * s));
-      const oc = document.createElement('canvas'); oc.width = w; oc.height = h;
-      const im = objImg(n);
-      const paint = () => {
-        const og = oc.getContext('2d'); og.imageSmoothingEnabled = false; og.clearRect(0, 0, w, h); og.drawImage(im, 0, 0, w, h);
-        if (dark) { og.globalCompositeOperation = 'source-atop'; og.fillStyle = 'rgba(8,22,12,.38)'; og.fillRect(0, 0, w, h); og.globalCompositeOperation = 'source-over'; }
-      };
-      if (im.complete && im.naturalWidth) paint(); else im.addEventListener('load', paint, { once: true });
-      OBJ_CANVAS.set(key, oc);
-      return oc;
-    };
-    const objProp = (n, x, y, s = 1, sway = 0, extra = {}) => {
-      const oc = objCanvas(n, s, extra.dark);
-      shadow(x + 3, y + 2, Math.min(oc.width * 0.32, 26));
-      props.push({ img: oc, x: x / GS, y: y / GS, ax: oc.width / 2, ay: oc.height - 2, w: oc.width, h: oc.height, sway, ph: r() * 6.28, kind: PKIND, anim: extra.anim });
-      PKIND = null;
-    };
-    // objeto chato no chão (ponte): pintado no próprio chão quando a imagem chegar
-    const stamp = (n, x, y, s = 1) => {
-      const im = objImg(n), [w0, h0] = OBJ_SIZE[n], w = Math.round(w0 * s), h = Math.round(h0 * s);
-      const paint = () => { base.imageSmoothingEnabled = false; base.drawImage(im, Math.round(x - w / 2), Math.round(y - h / 2), w, h); };
-      if (im.complete && im.naturalWidth) paint(); else im.addEventListener('load', paint, { once: true });
-    };
-    const portal = (x, y, n, s = 1.4) => {
-      objProp(n, x, y, s, 0, { anim: 'portal' });
-      light(x, y - 30 * s, 130, '110,190,255', 0.2);
-    };
-    const tree = (x, y, s = 1, dark = false, pink = false) => (PKIND = { k: 'tree', s, dark, pink }) && !pink ? objProp('magic_tree', x, y, s * 0.8, 0.5, { dark }) : (PKIND = { k: 'tree', s, dark, pink }) && prop(x, y, Math.ceil(60 * s), Math.ceil(64 * s), Math.ceil(30 * s), Math.ceil(58 * s), (ax, ay) => treeArt(ax, ay, s, dark, pink), 1);
+    const tree = (x, y, s = 1, dark = false, pink = false) => (PKIND = { k: 'tree', s, dark, pink }) && prop(x, y, Math.ceil(60 * s), Math.ceil(64 * s), Math.ceil(30 * s), Math.ceil(58 * s), (ax, ay) => treeArt(ax, ay, s, dark, pink), 1);
     const rock = (x, y, s = 1) => { rocks.push({ x: x / GS, y: y / GS, s }); shadow(x + 2, y + 3, 11 * s); disc(x, y, 9 * s, '#4a4a54', 1); disc(x, y - 1, 8 * s, '#7a7a86'); disc(x - 3 * s, y - 3 * s, 4 * s, '#a8a8b4'); px(x + 2 * s, y + 2 * s, 4 * s, 1, '#4a4a54'); };
     const flower = (x, y, col) => { px(x, y + 2, 1, 3, '#2d6a2a'); px(x - 1, y, 3, 2, col); px(x, y - 1, 1, 4, col); px(x, y, 1, 1, '#fff6c8'); };
     const torch = (x, y) => {
@@ -546,11 +514,18 @@
       for (let i = 0; i < 6; i++) {
         const hx = (60 + i * 120) * GS, hy = 70 * GS;
         structs.push({ k: 'house', x: hx / GS, y: hy / GS, w: 140 / GS, h: 100 / GS });
-        const stone = i % 2 === 0;
-        objProp(stone ? 'stone_house' : 'elven_house', hx + 70, hy + 104, stone ? 1.45 : 1.3);
-        if (stone) emitter(hx + 70 + 25, hy + 104 - 150, 'smoke');
-        else light(hx + 70, hy + 60, 90, '120,255,190', 0.1);
-        for (const lx of [hx + 4, hx + 136]) { objProp('lamp_post', lx, hy + 110, 1); light(lx, hy + 110 - 54, 110, '255,200,110', 0.12); }
+        shadow(hx + 80, hy + 104, 90);
+        px(hx, hy, 140, 100, '#7a5a3a');
+        for (let k = 0; k < 100; k += 10) { px(hx, hy + k, 140, 9, k % 20 ? '#a07a52' : '#94704a'); px(hx, hy + k + 9, 140, 1, '#5a3a22'); }
+        px(hx - 12, hy - 40, 164, 44, '#5a1414');
+        for (let k = 0; k < 40; k += 8) for (let j = 0; j < 164; j += 14) px(hx - 12 + j + (k / 8 % 2) * 7, hy - 40 + k, 13, 7, k < 8 ? '#b83a2a' : '#8a2a2a');
+        px(hx - 12, hy + 2, 164, 4, '#3a0a0a');
+        px(hx + 56, hy + 50, 28, 50, '#3a2418'); px(hx + 58, hy + 52, 24, 48, '#5a3a22'); px(hx + 76, hy + 76, 3, 3, '#e8b84a');
+        for (const wx of [hx + 16, hx + 100]) { px(wx, hy + 26, 24, 22, '#3a2418'); px(wx + 2, hy + 28, 20, 18, '#ffd36b'); px(wx + 11, hy + 28, 2, 18, '#3a2418'); px(wx + 2, hy + 36, 20, 2, '#3a2418'); px(wx + 2, hy + 28, 8, 6, '#fff2a8'); light(wx + 12, hy + 38, 70, '255,210,120', 0.08); }
+        // chaminé com fumaça
+        px(hx + 108, hy - 58, 14, 22, '#4a3a34'); px(hx + 108, hy - 58, 14, 3, '#6a5a52'); px(hx + 110, hy - 52, 3, 16, '#5e4e46');
+        emitter(hx + 115, hy - 60, 'smoke');
+        torch(hx + 48, hy + 108); torch(hx + 92, hy + 108);
       }
       px(0, H - 80, W, 80, '#4a4a56');
       for (let x = 0; x < W; x += 20) for (let y = H - 80; y < H; y += 12) px(x + ((y / 12) % 2) * 10, y, 19, 11, r() < 0.5 ? '#6a6a78' : '#5a5a66');
@@ -569,9 +544,6 @@
       for (let i = 0; i < 120; i += 10) disc(sx - 57 + i, sy - 72, 5, i % 20 ? '#f0e6cc' : '#c8452c');
       px(sx - 62, sy - 24, 124, 16, '#6a4a2a'); px(sx - 62, sy - 24, 124, 4, '#9a7a52');
       for (let k = 0; k < 5; k++) { disc(sx - 40 + k * 20, sy - 30, 5, ['#d0302a', '#3a7aff', '#d0302a', '#3a7aff', '#e8b84a'][k]); px(sx - 41 + k * 20, sy - 33, 2, 2, '#ffffff'); }
-      objProp('barrels', sx - 96, sy + 4, 0.9); objProp('barrels', sx + 92, sy - 6, 0.8);
-      for (let i = 0; i < 4; i++) objProp('barrels', cx - 330 + i * 210, cy + 262, 0.75);
-      for (const by of [H * 0.3, H * 0.68]) stamp('bridge', W - 70 + Math.sin(by / 70) * 20, by, 1.2);
       for (let i = 0; i < 12; i++) tree(r() * W * 0.9, 400 + r() * (H - 560), 1);
     } else if (m.theme === 'noria') {
       for (let i = 0; i < 9; i++) {
@@ -588,7 +560,6 @@
       for (let i = 0; i < 260; i++) flower(r() * W, r() * H, ['#ff7ad9', '#c06bff', '#ffd36b', '#9ac8ff'][i % 4]);
       for (let i = 0; i < 50; i++) { const x = r() * W, y = r() * H; px(x - 1, y - 4, 3, 6, '#e8e0d0'); disc(x, y - 6, 5, '#3a7ad8'); disc(x - 1, y - 7, 3, '#7ab8ff'); px(x - 2, y - 8, 2, 2, '#ffffff'); }
       for (let i = 0; i < 70; i++) tree(r() * W, r() * H, 1, false, r() < 0.25);
-      for (let i = 0; i < 22; i++) { const x = r() * W, y = r() * H; objProp('mushrooms', x, y, 0.7); light(x, y - 14, 60, '200,130,255', 0.15); }
       for (let i = 0; i < 18; i++) crystal(r() * W, r() * H, ['#7a3ac0', '#f0d8ff'], '192,107,255');
       if (m.training && m.training.area) {
         const a = m.training.area, ax = a.x * GS, ay = a.y * GS, aw = a.w * GS, ah = a.h * GS;
@@ -631,9 +602,15 @@
         water(x, y, rad, 'ice');
       }
       for (let x = 0; x < W; x += 2) { const yc = H * 0.5 + Math.sin(x / 160) * 120; px(x, yc - 14, 2, 28, '#c8d4e4'); if (r() < 0.2) px(x, yc - 6 + r() * 12, 2, 2, '#a8b8cc'); }
-      const pine = (x, y, s) => { PKIND = { k: 'pine', s }; objProp('snow_pine', x, y, s * 0.95, 0.6); };
+      const pine = (x, y, s) => (PKIND = { k: 'pine', s }) && prop(x, y, Math.ceil(36 * s), Math.ceil(58 * s), Math.ceil(18 * s), Math.ceil(54 * s), (ax, ay) => {
+        px(ax - 2 * s, ay - 8 * s, 4 * s, 10 * s, '#4a2e18');
+        for (let k = 0; k < 4; k++) {
+          const ww = (16 - k * 3) * s, yy = ay - 8 * s - k * 9 * s;
+          for (let j = 0; j < 10 * s; j++) { const w2 = ww * (j / (10 * s)); px(ax - w2, yy - 10 * s + j, w2 * 2, 1, j < 3 * s ? '#ffffff' : (j % 3 ? '#1e4a3a' : '#2a5a48')); }
+        }
+        px(ax - 1, ay - 48 * s, 2, 4, '#ffffff');
+      }, 0.6);
       for (let i = 0; i < 18; i++) rock(r() * W, r() * H, 1);
-      for (let i = 0; i < 4; i++) objProp('ice_cave', r() * W, r() * H, 1.1);
       for (let i = 0; i < 60; i++) pine(r() * W, r() * H, r() < 0.3 ? 1.3 : 1);
       for (let i = 0; i < 22; i++) crystal(r() * W, r() * H);
       for (let i = 0; i < 400; i++) px(r() * W, r() * H, 1, 1, '#ffffff');
@@ -814,57 +791,6 @@
       }
       for (let i = 0; i < 24; i++) crystal(r() * W, r() * H, ['#5a1a8a', '#ff8ae8'], '220,90,255');
     }
-    // chafariz e muralhas com torre desenhados à mão: cidades (Lorencia, Noria, Devias) e cantos das arenas de evento
-    const fountain = (x, y, s) => {
-      objProp('fountain_stone', x, y, s);
-      light(x, y - 34 * s, 120, '140,210,255', 0.1);
-      emitter(x, y - 62 * s, 'spray'); emit[emit.length - 1].keep = true;   // jato de água (fica mesmo com o chão desenhado)
-    };
-    const wallSeg = (x, y, s = 1.3) => objProp('castle_wall', x, y, s);
-    const lamp2 = (x, y) => { objProp('lamp_post2', x, y, 1.1); light(x, y - 80, 110, '255,200,110', 0.12); };
-    if (m.map === 'lorencia') {
-      fountain(m.w, m.h + 34, 1.7);
-      // estátuas na praça, barco no rio, baú perto do Armazém e árvores redondas na borda
-      objProp('statue_goat', 560, 900, 1.6); objProp('statue_crane', 1040, 900, 1.6); objProp('statue_fox', 1250, 880, 1.6);
-      objProp('boat', W - 70 + Math.sin(760 / 70) * 20, 760, 0.9);
-      objProp('chest', 1190, 600, 2.2);
-      for (const [x, y] of [[300, 1000], [1300, 330], [420, 330], [180, 700]]) objProp('tree_round', x, y, 1.1, 0.4);
-      for (let x = 130; x < W - 160; x += 240) if (Math.abs(x - m.w) > 150) wallSeg(x, H - 6);          // muralha de baixo, com o portão no meio
-      for (let y = 420; y < H - 160; y += 250) wallSeg(64, y);                                            // lado esquerdo (à direita fica o rio)
-    } else if (m.map === 'noria') {
-      fountain(560 * GS, 430 * GS, 1.6);
-      objProp('statue_fox', 480 * GS, 470 * GS, 1.6); objProp('statue_crane', 640 * GS, 470 * GS, 1.6);
-      for (const x of [470, 650]) lamp2(x * GS, 400 * GS);
-      for (let i = 0; i < 10; i++) objProp('tree_round', r() * W, r() * H, 1, 0.4);
-    } else if (m.map === 'devias') {
-      fountain(380 * GS, 420 * GS, 1.6);
-      for (const x of [300, 460]) lamp2(x * GS, 400 * GS);
-      objProp('statue_goat', 380 * GS, 500 * GS, 1.6);
-      for (let x = 140; x < W - 120; x += 260) wallSeg(x, 150);                                            // muralha no alto da cidade
-    } else if (m.theme === 'castle' || m.theme === 'devilsq') {
-      const M = (m.margin || 46) * GS;
-      for (const [x, y] of [[M + 40, M + 80], [W - M - 40, M + 80], [M + 40, H - M + 10], [W - M - 40, H - M + 10]]) wallSeg(x, y, 1.2);   // torres nos cantos
-    }
-    // portal animado: atrás do Guardião do Portal quando ele está no mapa; na cidade, na borda da praça
-    if (m.theme !== 'castle' && m.theme !== 'devilsq' && !m.arena) {
-      let hsh = 0; for (const ch of String(m.map)) hsh = (hsh * 31 + ch.charCodeAt(0)) >>> 0;
-      const design = m.theme === 'town' ? 'portal_01' : 'portal_' + String(hsh % 16 + 1).padStart(2, '0');
-      const tp = (m.npcs || []).find((n) => n.kind === 'teleport');
-      if (tp) portal(tp.x * GS, tp.y * GS - 4, design, 1.5);
-      else if (m.theme === 'town') portal(m.w + 440, m.h - 260, design, 1.5);
-      else portal(W * 0.5, H * 0.16, design);
-    }
-    // chão desenhado à mão por cima do chão do tema (cobrindo o mapa todo, sem distorcer)
-    const art = groundArt(m);
-    let W2 = waters, E2 = emit;
-    if (art) {
-      const k = Math.max(W / art.naturalWidth, H / art.naturalHeight), dw = art.naturalWidth * k, dh = art.naturalHeight * k;
-      base.imageSmoothingEnabled = false;
-      base.drawImage(art, Math.round((W - dw) / 2), Math.round((H - dh) / 2), Math.round(dw), Math.round(dh));
-      g = base;
-      for (const pr of props) shadow(pr.x * GS + 3, pr.y * GS + 2, Math.min(pr.w * 0.3, 22));   // sombras dos objetos de volta
-      W2 = []; E2 = emit.filter((e) => e.kind !== 'spray' || e.keep);                                       // água pintada do tema sumiu junto
-    }
     // área segura (ponto de entrada dos mapas de caça): círculo de runas no chão
     if (m.safeZone) {
       g = base;
@@ -875,7 +801,7 @@
       light(sx, sy, sr * 1.3, '120,210,255', 0.08);
     }
     props.sort((a, b) => a.y - b.y);
-    return { canvas: c, props, lights, waters: W2, emit: E2, rocks, structs };
+    return { canvas: c, props, lights, waters, emit, rocks, structs };
   }
 
   // ================= desenho =================
@@ -3109,7 +3035,7 @@
       const catalog = Array.isArray(data.catalog) ? data.catalog : [];
       const orders = Array.isArray(data.orders) ? data.orders : [];
       if (!catalog.length) throw new Error('A loja não retornou produtos. Atualize a página ou tente novamente.');
-      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/premium-sets.png?v=2" alt="Conjuntos premium em pixel art 2D" loading="lazy" style="image-rendering:pixelated"><div><h3>Conjuntos semi-full</h3><b>Conjunto Dragão de Gelo</b><p class="muted small">Peças próprias de cada classe: elmo, armadura, calça, luvas, botas e arma (espadão, cajado, arco, espada rúnica ou cetro), mais asas, pingente de dragão e dois anéis de gelo.</p></div></div><p class="muted small">30 conjuntos semi-full e pacotes promocionais de Box Kundun com itens raros e épicos, sem atributos full. Os atributos dos conjuntos aumentam junto com o preço; até o tier inicial supera os equipamentos base de monstros e bosses. Confira os seis atributos antes de comprar. O primeiro reset de status é grátis; cada reset adicional custa R$ 5,00.</p>' +
+      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/special-christmas-pixel-art.svg" alt="Conjuntos premium em pixel art 2D" loading="lazy" style="image-rendering:pixelated"><div><h3>Conjuntos semi-full</h3><b>Conjunto Dragão de Gelo</b><p class="muted small">Peças próprias de cada classe: elmo, armadura, calça, luvas, botas e arma (espadão, cajado, arco, espada rúnica ou cetro), mais asas, pingente de dragão e dois anéis de gelo.</p></div></div><p class="muted small">30 conjuntos semi-full e pacotes promocionais de Box Kundun com itens raros e épicos, sem atributos full. Os atributos dos conjuntos aumentam junto com o preço; até o tier inicial supera os equipamentos base de monstros e bosses. Confira os seis atributos antes de comprar. O primeiro reset de status é grátis; cada reset adicional custa R$ 5,00.</p>' +
         (orders.length ? '<div class="premium-orders"><b>Pedidos prontos para resgatar</b>' + orders.map(o => '<div class="row"><span>' + esc(o.product) + ' · ' + brl.format(o.amount_cents / 100) + '</span><button class="btn small btn-gold" type="button" data-premium-claim="' + o.id + '">Resgatar neste personagem</button></div>').join('') + '</div>' : '') +
         '<div class="premium-grid">' + catalog.map(p => {
           const isBox = p.type === 'box';
