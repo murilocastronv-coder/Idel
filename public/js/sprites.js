@@ -199,7 +199,8 @@
   }
   const ARMOR = ['helm', 'armor', 'gloves', 'boots'];
   // herói de arte completa: o conjunto equipado aparece como a versão tingida do herói (manifest heroes[cls].looks)
-  const SET_LOOK = { fest0: 'crimson', fest1: 'steel', fest2: 'emerald', fest3: 'solar', fest4: 'astral',
+  // loja de cash: todos os pacotes são o conjunto Dragão de Gelo (herói azul-gelo)
+  const SET_LOOK = { fest0: 'ice', fest1: 'ice', fest2: 'ice', fest3: 'ice', fest4: 'ice',
     leather: 'steel', bronze: 'steel', scale: 'emerald', dragon: 'emerald', storm: 'solar', phoenix: 'solar', abyss: 'astral' };
   const lookPath = (meta, eq) => {
     if (!meta || !meta.looks || !eq) return null;

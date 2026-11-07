@@ -21,6 +21,7 @@ LOOKS = {
     'solar': (0.12, 0.80, 1.12),     # Soberano Solar (dourado)
     'astral': (0.76, 0.55, 1.05),    # Arauto Astral (violeta)
     'crimson': (0.99, 0.75, 1.0),    # Soberano Carmesim
+    'ice': (0.51, 0.55, 1.1),        # Dragão de Gelo (conjunto da loja de cash)
 }
 
 

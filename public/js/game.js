@@ -371,7 +371,7 @@
     glacier: { base: '#6a7e94', a: '#7a90a8', b: '#566a80', blade: '#a8c4dc' },
     abyss: { base: '#1e0c0c', a: '#2a1010', b: '#140808', blade: '#3a1414' },
   };
-  const OBJ_SIZE = { fountain_stone: [84, 75], castle_wall: [98, 115], mushrooms: [62, 55], elven_house: [120, 112], ice_cave: [115, 107], lamp_post: [24, 62], bridge: [94, 94], snow_pine: [65, 89], barrels: [55, 54], stone_house: [94, 107], magic_tree: [106, 118],
+  const OBJ_SIZE = { fountain_stone: [84, 75], castle_wall: [98, 115], tree_round: [95, 105], boat: [84, 141], lamp_post2: [20, 80], statue_goat: [26, 54], statue_crane: [28, 53], chest: [18, 18], statue_fox: [26, 54], mushrooms: [62, 55], elven_house: [120, 112], ice_cave: [115, 107], lamp_post: [24, 62], bridge: [94, 94], snow_pine: [65, 89], barrels: [55, 54], stone_house: [94, 107], magic_tree: [106, 118],
     portal_01: [62, 62], portal_02: [62, 60], portal_03: [60, 60], portal_04: [60, 61], portal_05: [62, 61], portal_06: [60, 62], portal_07: [60, 60], portal_08: [62, 61],
     portal_09: [64, 63], portal_10: [57, 60], portal_11: [62, 61], portal_12: [56, 61], portal_13: [48, 63], portal_14: [58, 62], portal_15: [57, 62], portal_16: [61, 61] };
   const OBJ_IMG = {}, OBJ_CANVAS = new Map();
@@ -821,14 +821,25 @@
       emitter(x, y - 62 * s, 'spray'); emit[emit.length - 1].keep = true;   // jato de água (fica mesmo com o chão desenhado)
     };
     const wallSeg = (x, y, s = 1.3) => objProp('castle_wall', x, y, s);
+    const lamp2 = (x, y) => { objProp('lamp_post2', x, y, 1.1); light(x, y - 80, 110, '255,200,110', 0.12); };
     if (m.map === 'lorencia') {
       fountain(m.w, m.h + 34, 1.7);
+      // estátuas na praça, barco no rio, baú perto do Armazém e árvores redondas na borda
+      objProp('statue_goat', 560, 900, 1.6); objProp('statue_crane', 1040, 900, 1.6); objProp('statue_fox', 1250, 880, 1.6);
+      objProp('boat', W - 70 + Math.sin(760 / 70) * 20, 760, 0.9);
+      objProp('chest', 1190, 600, 2.2);
+      for (const [x, y] of [[300, 1000], [1300, 330], [420, 330], [180, 700]]) objProp('tree_round', x, y, 1.1, 0.4);
       for (let x = 130; x < W - 160; x += 240) if (Math.abs(x - m.w) > 150) wallSeg(x, H - 6);          // muralha de baixo, com o portão no meio
       for (let y = 420; y < H - 160; y += 250) wallSeg(64, y);                                            // lado esquerdo (à direita fica o rio)
     } else if (m.map === 'noria') {
       fountain(560 * GS, 430 * GS, 1.6);
+      objProp('statue_fox', 480 * GS, 470 * GS, 1.6); objProp('statue_crane', 640 * GS, 470 * GS, 1.6);
+      for (const x of [470, 650]) lamp2(x * GS, 400 * GS);
+      for (let i = 0; i < 10; i++) objProp('tree_round', r() * W, r() * H, 1, 0.4);
     } else if (m.map === 'devias') {
       fountain(380 * GS, 420 * GS, 1.6);
+      for (const x of [300, 460]) lamp2(x * GS, 400 * GS);
+      objProp('statue_goat', 380 * GS, 500 * GS, 1.6);
       for (let x = 140; x < W - 120; x += 260) wallSeg(x, 150);                                            // muralha no alto da cidade
     } else if (m.theme === 'castle' || m.theme === 'devilsq') {
       const M = (m.margin || 46) * GS;
@@ -2407,6 +2418,7 @@
   }
   function renderChar() {
     const c = S.char;
+    if (window.MUI_CLS !== c.cls) { window.MUI_CLS = c.cls; iconCache.clear(); }   // ícones do conjunto premium dependem da classe
     $('#me-name').textContent = c.name;
     const meP = S.players.get(S.youId) || { rx: null };
     meP.info = { id: c.id, name: c.name, cls: c.cls, ap: c.ap, level: c.level, weaponRarity: (c.items.find((i) => i.equipped && i.slot === 'weapon') || {}).rarity, vip: c.vip ? c.vip.tier : 0,
@@ -3096,7 +3108,7 @@
       const catalog = Array.isArray(data.catalog) ? data.catalog : [];
       const orders = Array.isArray(data.orders) ? data.orders : [];
       if (!catalog.length) throw new Error('A loja não retornou produtos. Atualize a página ou tente novamente.');
-      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/premium-sets.png?v=1" alt="Conjuntos premium em pixel art 2D" loading="lazy" style="image-rendering:pixelated"><div><h3>Conjuntos semi-full</h3><b>Conjuntos Premium</b><p class="muted small">Guardião de Aço, Sentinela Esmeralda, Soberano Solar, Arauto Astral e Soberano Carmesim: elmo, armadura, calça, luvas, botas, asas, pingente, dois anéis, espada, arco e escudo.</p></div></div><p class="muted small">30 conjuntos semi-full e pacotes promocionais de Box Kundun com itens raros e épicos, sem atributos full. Os atributos dos conjuntos aumentam junto com o preço; até o tier inicial supera os equipamentos base de monstros e bosses. Confira os seis atributos antes de comprar. O primeiro reset de status é grátis; cada reset adicional custa R$ 5,00.</p>' +
+      holder.innerHTML = '<section class="premium-shop"><div class="premium-art-wrap"><img class="premium-art" src="/assets/premium-sets.png?v=2" alt="Conjuntos premium em pixel art 2D" loading="lazy" style="image-rendering:pixelated"><div><h3>Conjuntos semi-full</h3><b>Conjunto Dragão de Gelo</b><p class="muted small">Peças próprias de cada classe: elmo, armadura, calça, luvas, botas e arma (espadão, cajado, arco, espada rúnica ou cetro), mais asas, pingente de dragão e dois anéis de gelo.</p></div></div><p class="muted small">30 conjuntos semi-full e pacotes promocionais de Box Kundun com itens raros e épicos, sem atributos full. Os atributos dos conjuntos aumentam junto com o preço; até o tier inicial supera os equipamentos base de monstros e bosses. Confira os seis atributos antes de comprar. O primeiro reset de status é grátis; cada reset adicional custa R$ 5,00.</p>' +
         (orders.length ? '<div class="premium-orders"><b>Pedidos prontos para resgatar</b>' + orders.map(o => '<div class="row"><span>' + esc(o.product) + ' · ' + brl.format(o.amount_cents / 100) + '</span><button class="btn small btn-gold" type="button" data-premium-claim="' + o.id + '">Resgatar neste personagem</button></div>').join('') + '</div>' : '') +
         '<div class="premium-grid">' + catalog.map(p => {
           const isBox = p.type === 'box';

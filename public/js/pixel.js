@@ -347,7 +347,7 @@
   }
 
   // ---- Ícones detalhados 48x48 (atlas gerado por tools/sprites/icons.py) ----
-  const ITEMS_V = 5;
+  const ITEMS_V = 6;
   const itemAtlas = { img: new Image(), idx: null, size: 48, cols: 24 };
   const itemsReady = Promise.all([
     fetch('/assets/icons/items.json?v=' + ITEMS_V).then((r) => r.json()).then((j) => { itemAtlas.idx = j.index; itemAtlas.size = j.size; itemAtlas.cols = j.cols; }),
@@ -360,7 +360,16 @@
     if (item && window.Fenrir && window.Fenrir.variantOf(item.base)) { window.Fenrir.icon(ctx, x, y, size, window.Fenrir.variantOf(item.base)); return true; }
     const A = itemAtlas;
     if (!A.idx || !A.img.naturalWidth || !item) return false;
-    let i = A.idx[item.base];
+    // conjunto premium (loja de cash) = conjunto Dragão de Gelo: cada classe vê as próprias peças
+    let i;
+    const fm = /^festive_\d+_(helm|armor|pants|gloves|boots|sword|bow|pendant|ring1|ring2)$/.exec(item.base || '');
+    if (fm) {
+      const cls = window.MUI_CLS || 'dark_knight', part = fm[1];
+      const key = part === 'pendant' || part === 'ring1' || part === 'ring2' ? 'ice_' + part
+        : part === 'bow' ? 'ice_fairy_elf_weapon' : part === 'sword' ? 'ice_' + cls + '_weapon' : 'ice_' + cls + '_' + part;
+      i = A.idx[key];
+    }
+    if (i === undefined) i = A.idx[item.base];
     if (i === undefined) i = A.idx['@' + item.icon];
     if (i === undefined) return false;
     const s = A.size;

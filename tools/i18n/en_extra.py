@@ -1,5 +1,9 @@
 # Traduções em inglês dos textos novos (juntadas ao dicionário de en.py por build.py)
 EN_EXTRA = {
+    # conjunto Dragão de Gelo (loja de cash)
+    "Conjunto Dragão de Gelo": "Ice Dragon Set",
+    "Peças próprias de cada classe: elmo, armadura, calça, luvas, botas e arma (espadão, cajado, arco, espada rúnica ou cetro), mais asas, pingente de dragão e dois anéis de gelo.": "Pieces made for each class: helm, armor, pants, gloves, boots and weapon (greatsword, staff, bow, rune sword or scepter), plus wings, a dragon pendant and two ice rings.",
+    "Dragão de Gelo {0}": "Ice Dragon {0}", "Dragão de Gelo {0} — {1}": "Ice Dragon {0} — {1}",
     # painel do admin
     "0 (nível acima do limite deste mapa)": "0 (level above this map's limit)", "Arma do Caos (bosses)": "Chaos Weapon (bosses)",
     "Arma do Caos (comuns 25+)": "Chaos Weapon (common 25+)", "Arma do Caos (elites 25+)": "Chaos Weapon (elites 25+)",

@@ -1,5 +1,5 @@
 {
- "version": 16,
+ "version": 18,
  "heroes": {
   "dark_knight": {
    "sheet": "heroes/dark_knight.png",
@@ -84,7 +84,8 @@
     "emerald": "heroes/dark_knight_emerald.png",
     "solar": "heroes/dark_knight_solar.png",
     "astral": "heroes/dark_knight_astral.png",
-    "crimson": "heroes/dark_knight_crimson.png"
+    "crimson": "heroes/dark_knight_crimson.png",
+    "ice": "heroes/dark_knight_ice.png"
    }
   },
   "dark_wizard": {
@@ -170,7 +171,8 @@
     "emerald": "heroes/dark_wizard_emerald.png",
     "solar": "heroes/dark_wizard_solar.png",
     "astral": "heroes/dark_wizard_astral.png",
-    "crimson": "heroes/dark_wizard_crimson.png"
+    "crimson": "heroes/dark_wizard_crimson.png",
+    "ice": "heroes/dark_wizard_ice.png"
    }
   },
   "fairy_elf": {
@@ -256,7 +258,8 @@
     "emerald": "heroes/fairy_elf_emerald.png",
     "solar": "heroes/fairy_elf_solar.png",
     "astral": "heroes/fairy_elf_astral.png",
-    "crimson": "heroes/fairy_elf_crimson.png"
+    "crimson": "heroes/fairy_elf_crimson.png",
+    "ice": "heroes/fairy_elf_ice.png"
    }
   },
   "magic_gladiator": {
@@ -342,7 +345,8 @@
     "emerald": "heroes/magic_gladiator_emerald.png",
     "solar": "heroes/magic_gladiator_solar.png",
     "astral": "heroes/magic_gladiator_astral.png",
-    "crimson": "heroes/magic_gladiator_crimson.png"
+    "crimson": "heroes/magic_gladiator_crimson.png",
+    "ice": "heroes/magic_gladiator_ice.png"
    }
   },
   "dark_lord": {
@@ -428,7 +432,8 @@
     "emerald": "heroes/dark_lord_emerald.png",
     "solar": "heroes/dark_lord_solar.png",
     "astral": "heroes/dark_lord_astral.png",
-    "crimson": "heroes/dark_lord_crimson.png"
+    "crimson": "heroes/dark_lord_crimson.png",
+    "ice": "heroes/dark_lord_ice.png"
    }
   },
   "summoner": {
@@ -514,7 +519,8 @@
     "emerald": "heroes/summoner_emerald.png",
     "solar": "heroes/summoner_solar.png",
     "astral": "heroes/summoner_astral.png",
-    "crimson": "heroes/summoner_crimson.png"
+    "crimson": "heroes/summoner_crimson.png",
+    "ice": "heroes/summoner_ice.png"
    }
   }
  },
@@ -1535,12 +1541,12 @@
  "effects": {
   "proj_fire": {
    "sheet": "effects/proj_fire.png",
-   "fw": 24,
-   "fh": 24,
+   "fw": 32,
+   "fh": 32,
    "frames": 4,
    "pivot": [
-    12,
-    12
+    16,
+    16
    ]
   },
   "proj_ice": {
