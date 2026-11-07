@@ -442,6 +442,7 @@ route('POST', '/api/admin/worldboss', bad(async (req) => {
 }));
 // ---- EXP Extreme Hard: curva por nível, party, offline, números reais e jogadores por faixa (Super ADM) ----
 const EXH = require('./exphard');
+const REF = require('./referral');
 async function expBands() {
   // faixas de nível: quantos personagens, quantos com VIP e quantos estão parados há 7 dias ou mais (abandono)
   const { rows } = await db.query(`SELECT CASE WHEN c.level <= 200 THEN 1 WHEN c.level <= 400 THEN 2 WHEN c.level <= 600 THEN 3 WHEN c.level <= 800 THEN 4 WHEN c.level <= 950 THEN 5 ELSE 6 END AS band,
@@ -454,6 +455,11 @@ async function expBands() {
   const names = { 1: '1–200 Iniciante', 2: '201–400 Aventureiro', 3: '401–600 Guerreiro', 4: '601–800 Veterano', 5: '801–950 Elite', 6: '951–1000 Lendário' };
   return rows.map((r) => ({ ...r, name: names[r.band] }));
 }
+// ---- afiliados: link próprio e quantas pessoas entraram por ele ----
+route('GET', '/api/referral', async (req) => {
+  const acc = await requireAccount(req);
+  return { ok: true, ...(await REF.dashboard(acc, publicUrl(req))) };
+});
 route('GET', '/api/admin/exphard', async (req) => { await requireAdmin(req); return { ...EXH.adminView(), bands: await expBands() }; });
 route('POST', '/api/admin/exphard', bad(async (req) => {
   const acc = await requireAdmin(req);
@@ -751,6 +757,7 @@ route('POST', '/api/register', async (req, url, res) => {
   }
   await createSession(res, req, account.id, true);
   await audit(account.id, 'register', req);
+  try { await REF.onRegister(account, clientIp(req), body.ref || parseCookies(req).mui_ref); } catch (e) { console.error('[afiliado] cadastro:', e.message); }
   await refreshCounts(); pushStats();
   return { ok: true, username: account.username, recoveryCode: code };
 });
@@ -1033,6 +1040,8 @@ const server = http.createServer(async (req, res) => {
       }
       res.setHeader('Cache-Control', 'no-store');
     }
+    const refCode = url.searchParams.get('ref');
+    if (refCode && REF.CODE_RE.test(refCode)) res.setHeader('Set-Cookie', `mui_ref=${refCode}; Path=/; Max-Age=${30 * 86400}; SameSite=Lax${isHttps(req) ? '; Secure' : ''}`);
     return serveStatic(req, res, url.pathname);
   }
   if (req.method === 'POST' && url.pathname === '/api/stripe-webhook') {

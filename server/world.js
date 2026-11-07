@@ -10,6 +10,7 @@ const CHAOS = require('./chaos');
 const ENTRIES = require('./entries');
 const AGI = require('./agility');
 const EXH = require('./exphard');
+const REF = require('./referral');
 const GM = require('./gm');
 const RET = require('./retention');
 const JOURNEY = require('./journey');
@@ -500,6 +501,7 @@ class World {
     TRADE.init(this, helpers);
     MARKET.init(this, helpers);
     SOCIAL.init(this);
+    REF.init(this);
     await GUILD.init(this);
     await INV.init(this, helpers);
     this.invasion = INV;
@@ -669,6 +671,7 @@ class World {
     }
     if (client.player) await this.leave(client.player);
     await this.pointsFix(row);
+    await REF.deliverPending(row.account_id).catch((e) => console.error('[afiliado] entrega:', e.message));
 
     const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty, eq_slot, locked, excellent_options FROM items WHERE character_id = $1 AND vault_no IS NULL ORDER BY id', [row.id])).rows;
     if (Number(row.level) < 120) for (const it of items) if (it.equipped && G.ITEM_BASES[it.base] && G.ITEM_BASES[it.base].slot === 'wings') {
@@ -1220,6 +1223,7 @@ class World {
   levelUp(p, silent) {
     EXH.onLevel(p);
     p.level++;
+    REF.onLevel(p).catch((e) => console.error('[afiliado] nível:', e.message));
     p.free += G.POINTS_PER_LEVEL[p.cls];
     if (p.settings.autoStats) this.autoDistribute(p); else p.recalc();
     p.hp = p.maxHp; p.mp = p.maxMp;

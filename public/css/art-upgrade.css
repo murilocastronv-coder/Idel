@@ -69,6 +69,7 @@
 .chat-vip { display: inline-block; margin-right: 3px; font: 800 10px var(--display); letter-spacing: .35px; }
 .chat-vip.vip-1 { color: #ffd36b; text-shadow: 0 0 7px rgba(255, 190, 60, .5); }
 .chat-vip.vip-2 { color: #b9e7ff; text-shadow: 0 0 7px rgba(115, 202, 255, .55); }
+.chat-vip.vip-free { color: #9be27a; text-shadow: 0 0 7px rgba(130, 230, 110, .5); }
 
 .chat-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin: 0 0 8px; }
 .chat-tabs button { min-width: 0; flex: 1 1 auto; padding: 6px 8px; border: 1px solid var(--edge); background: rgba(8, 12, 25, .86); color: var(--bone-dim); font: 700 11px var(--display); }

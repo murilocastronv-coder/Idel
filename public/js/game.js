@@ -3497,7 +3497,7 @@
     if (notify) {
       const labels = { local: 'LOCAL', global: 'GLOBAL', private: 'PRIVADO', guild: 'GUILDA', party: 'PARTY', information: 'INFORMAÇÕES' };
       const colors = { local: '#f2ead8', global: '#f0c64e', private: '#e99bdf', guild: '#7ddc86', party: '#77b8ff', information: '#ff9c52' };
-      const name = l.from || 'Servidor';
+      const name = (l.vipTier === 2 ? '[VIP PLATINUM] ' : l.vipTier === 1 ? '[VIP GOLD] ' : l.vipFree ? '[VIP FREE] ' : '') + (l.from || 'Servidor');
       const message = l.en && window.I18N && I18N.lang === 'en' ? l.en : l.text;
       // chat escondido da tela: as mensagens continuam no painel Chat (e o privado segue avisando no botão)
       if (!chatOnScreen()) { /* sem balão na tela */ } else feed(`[${labels[channel]}] ${name}: ${message}`, 'chat-toast', colors[channel]);
@@ -3548,6 +3548,9 @@
         if (l.vipTier === 1 || l.vipTier === 2) {
           const tag = document.createElement('span'); tag.className = 'chat-vip vip-' + l.vipTier;
           tag.textContent = l.vipTier === 2 ? '[VIP PLATINUM] ' : '[VIP GOLD] '; li.appendChild(tag);
+        } else if (l.vipFree) {
+          // conta nova com o VIP Free de boas-vindas (3 dias)
+          const tag = document.createElement('span'); tag.className = 'chat-vip vip-free'; tag.textContent = '[VIP FREE] '; li.appendChild(tag);
         }
         const b = document.createElement('b'); b.textContent = l.from + ': '; li.appendChild(b); li.append(l.text);
       }

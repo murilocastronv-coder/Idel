@@ -167,25 +167,25 @@ async function chat(world,p,request) {
   if (channel==='private') {
     const target=onlineByName(targetName);
     if (!target || target.charId===p.charId) return send(p,'log',{kind:'warn',text:'Informe o nome de um jogador online para a mensagem privada.'});
-    const line={from:p.name,cls:p.cls,vipTier:p.vip().tier,text,t:now,channel:'private',to:target.name};
+    const line={from:p.name,cls:p.cls,vipTier:p.vip().tier,vipFree:!!p.vip().welcome,text,t:now,channel:'private',to:target.name};
     send(p,'chat',line); send(target,'chat',line); return;
   }
   if (channel==='guild') {
     const {rows}=await db.query('SELECT guild_id FROM guild_members WHERE character_id=$1',[p.charId]);
     if (!rows[0]) return send(p,'log',{kind:'warn',text:'Você não pertence a uma guilda.'});
     const members=(await db.query('SELECT character_id FROM guild_members WHERE guild_id=$1',[rows[0].guild_id])).rows;
-    const line={from:p.name,cls:p.cls,vipTier:p.vip().tier,text,t:now,channel:'guild'};
+    const line={from:p.name,cls:p.cls,vipTier:p.vip().tier,vipFree:!!p.vip().welcome,text,t:now,channel:'guild'};
     for (const m of members) send(W.players.get(String(m.character_id)),'chat',line);
     return;
   }
   if (channel==='party') {
     const party=activeParty(p.charId);
     if (!party) return send(p,'log',{kind:'warn',text:'Você não pertence a uma party.'});
-    const line={from:p.name,cls:p.cls,vipTier:p.vip().tier,text,t:now,channel:'party'};
+    const line={from:p.name,cls:p.cls,vipTier:p.vip().tier,vipFree:!!p.vip().welcome,text,t:now,channel:'party'};
     for (const id of party.members) send(W.players.get(id),'chat',line);
     return;
   }
-  const line={from:p.name,cls:p.cls,vipTier:p.vip().tier,text,t:now,channel};
+  const line={from:p.name,cls:p.cls,vipTier:p.vip().tier,vipFree:!!p.vip().welcome,text,t:now,channel};
   if (channel==='local') {
     if (!p.map) return;
     for (const o of p.map.players.values()) if (Math.hypot(p.x-o.x,p.y-o.y)<=240) send(o,'chat',line);
