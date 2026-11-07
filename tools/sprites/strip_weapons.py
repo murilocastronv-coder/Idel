@@ -57,8 +57,16 @@ WEAPONS = {
     },
 }
 # ataque e morte ficam com a arma do desenho (mexe demais para achar); o jogo não desenha a nova nelas
-# a elfa segura o arco na frente do corpo inteiro: o buraco que fica no corpo é tapado com a cor mais próxima
-INPAINT = {'fairy_elf'}
+# a elfa segura o arco na frente do corpo inteiro: apagar deixa buracos e o arco novo não fica na mão.
+# Em vez disso o arco do desenho vira uma camada própria (heroes/<classe>_bow.png) e o jogo pinta ela
+# com as cores do arco da loja: continua segurado certo em todos os quadros, inclusive no ataque.
+RECOLOR = {'fairy_elf'}
+INPAINT = set()
+
+
+def wood(px):
+    r, g, b = px[..., 0].astype(int), px[..., 1].astype(int), px[..., 2].astype(int)
+    return (px[..., 3] > 0) & (r > g + 25) & (r >= b + 5) & (g < r * 0.66) & (r < 210)
 VIEW_ROWS = {'side': [0, 1, 3], 'front': [5, 6], 'back': [7, 8]}
 WIDE_ROWS = set()
 
@@ -236,6 +244,26 @@ def main():
             row[f] = (row[f] or []) + sg
         for r in sorted(wseg, key=int):
             print(cls, r, ''.join('.' if x is None else str(len(x)) for x in wseg[r]))
+        if cls in RECOLOR:
+            layer = np.zeros_like(base)
+            for (r, f), m in masks.items():
+                cell = base[r * FW:(r + 1) * FW, f * FW:(f + 1) * FW]
+                sel = m & wood(cell)
+                layer[r * FW:(r + 1) * FW, f * FW:(f + 1) * FW][sel] = cell[sel]
+            # ataque: o arco fica na frente do corpo, longe do cabelo
+            for f in range(frames_of(meta, 2, cols)):
+                cell = base[2 * FW:3 * FW, f * FW:(f + 1) * FW]
+                sel = wood(cell)
+                sel[:, :57] = False
+                layer[2 * FW:3 * FW, f * FW:(f + 1) * FW][sel] = cell[sel]
+            Image.fromarray(layer).save(os.path.join(ROOT, 'heroes', cls + '_bow.png'), optimize=True)
+            meta['bowLayer'] = 'heroes/' + cls + '_bow.png'
+            for k in ('wseg', 'nw'):
+                meta.pop(k, None)
+            for fn in os.listdir(os.path.join(ROOT, 'heroes')):
+                if fn.startswith(cls) and fn.endswith('_nw.png'):
+                    os.remove(os.path.join(ROOT, 'heroes', fn))
+            continue
         meta['wseg'] = wseg
         meta['nw'] = True
         looks = [''] + ['_' + k for k in (meta.get('looks') or {})]

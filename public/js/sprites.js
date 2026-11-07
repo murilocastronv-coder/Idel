@@ -179,6 +179,7 @@
     if (meta.full) {
       const lp = lookPath(meta, eq); if (lp) out.push(lp);
       const np = shopWeapon(cls, rawW) && nwPath(meta, cls, lp); if (np) out.push(np);
+      if (meta.bowLayer && shopWeapon(cls, rawW)) out.push(meta.bowLayer);
     }
     if (meta.full && eq.wings && newWingPath(eq.wings)) out.push(newWingPath(eq.wings));
     else if (WG && eq.wings) {
@@ -228,8 +229,39 @@
   const shopWeapon = (cls, rawW) => (window.PixelArt && window.PixelArt.setWeaponKey ? window.PixelArt.setWeaponKey(rawW, cls) : null);
   // herói sem a arma do desenho (tools/sprites/strip_weapons.py): usado quando a arma da loja está equipada
   const nwPath = (meta, cls, lp) => (meta && meta.nw ? (lp ? lp.replace(/\.png$/, '_nw.png') : 'heroes/' + cls + '_nw.png') : null);
+  // arco da elfa: a camada do arco desenhado (meta.bowLayer) pintada com as cores do arco da loja
+  const bowCache = new Map();
+  function bowLayer(meta, key) {
+    const P = window.PixelArt, src = meta.bowLayer && img(meta.bowLayer), cell = key && P && P.atlasCell && P.atlasCell(key);
+    if (!src || !cell) return null;
+    const ck = meta.bowLayer + '|' + key;
+    if (bowCache.has(ck)) return bowCache.get(ck);
+    const lum = (r, g, b) => 0.3 * r + 0.59 * g + 0.11 * b;
+    // cores do ícone, da mais escura à mais clara (sem o contorno)
+    const ic = document.createElement('canvas'); ic.width = ic.height = cell.s;
+    const ix = ic.getContext('2d'); ix.drawImage(cell.img, cell.sx, cell.sy, cell.s, cell.s, 0, 0, cell.s, cell.s);
+    const id = ix.getImageData(0, 0, cell.s, cell.s).data, pal = [];
+    for (let i = 0; i < id.length; i += 4) if (id[i + 3] > 128 && lum(id[i], id[i + 1], id[i + 2]) > 35) pal.push([id[i], id[i + 1], id[i + 2]]);
+    if (pal.length < 4) { bowCache.set(ck, null); return null; }
+    pal.sort((a, b) => lum(...a) - lum(...b));
+    const ramp = [0.12, 0.3, 0.45, 0.6, 0.75, 0.9].map((q) => pal[Math.min(pal.length - 1, Math.floor(q * pal.length))]);
+    const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+    const cx = c.getContext('2d'); cx.drawImage(src, 0, 0);
+    const d = cx.getImageData(0, 0, c.width, c.height), px = d.data;
+    let lo = 255, hi = 0;
+    for (let i = 0; i < px.length; i += 4) if (px[i + 3]) { const l = lum(px[i], px[i + 1], px[i + 2]); if (l > 30) { lo = Math.min(lo, l); hi = Math.max(hi, l); } }
+    for (let i = 0; i < px.length; i += 4) {
+      if (!px[i + 3]) continue;
+      const l = lum(px[i], px[i + 1], px[i + 2]);
+      const col = l <= 30 ? ramp[0].map((v) => v * 0.45) : ramp[Math.min(ramp.length - 1, Math.floor((l - lo) / Math.max(1, hi - lo) * ramp.length))];
+      px[i] = col[0]; px[i + 1] = col[1]; px[i + 2] = col[2];
+    }
+    cx.putImageData(d, 0, 0);
+    bowCache.set(ck, c);
+    return c;
+  }
   function heldWeapon(ctx, cls, meta, rawW, row, f, scale, white, glow, behind) {
-    const P = window.PixelArt; if (!P || !P.atlasCell || white) return;
+    const P = window.PixelArt; if (!P || !P.atlasCell || white || meta.bowLayer) return;
     const key = shopWeapon(cls, rawW), cell = key && P.atlasCell(key);
     if (!cell) return;
     const view = row === 0 || row === 1 || row === 3 ? 'side' : row === 5 || row === 6 ? 'front' : row === 7 || row === 8 ? 'back' : null;
@@ -367,6 +399,7 @@
     if (full) heldWeapon(ctx, cls, meta, rawW, row, f, scale, opts.white, eq.wg, true);
     blit(back, 0);
     if (full) {
+      if (meta.bowLayer && !opts.white) { const bl = bowLayer(meta, shopWeapon(cls, rawW)); if (bl) blit(bl, 0); }
       heldWeapon(ctx, cls, meta, rawW, row, f, scale, opts.white, eq.wg, false);
       if (wk && WG && fromBack) drawWing();
       ctx.restore();
