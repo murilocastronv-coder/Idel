@@ -211,7 +211,7 @@
     const draw = () => {
       const C = V.config, P = V.projection, L = V.live;
       box.innerHTML = `<p class="adt-msg" role="status"></p>
-        <p class="adt-sub">EXP por abate = barra do nível × % do plano (Free 0,5% · Ouro 0,7% · Diamante 0,8%) × vida do monstro × bônus do mapa × <b>multiplicador da curva</b> ÷ (1 + resets × dificuldade por reset). A curva liga as âncoras abaixo sem degraus. Mudar aqui não altera nenhum personagem: vale para os próximos abates.</p>
+        <p class="adt-sub">EXP por abate = barra do nível × % do plano (Free 0,5% · Ouro 0,7% · Diamante 0,8%) × vida do monstro × bônus do mapa × <b>multiplicador da curva</b> ÷ (1 + resets × dificuldade por reset). A curva liga as âncoras abaixo sem degraus. Por cima dela entra o corte progressivo: 0% no nível 1 subindo até o valor escolhido no nível 1000. Mudar aqui não altera nenhum personagem: vale para os próximos abates.</p>
         <b>Curva (nível → multiplicador do EXP por abate)</b>
         <div style="overflow-x:auto"><table class="adm-table"><tr><th>Nível</th><th>Multiplicador</th><th></th></tr>
         ${C.curve.map(([l, v], i) => `<tr><td><input type="number" min="1" max="1000" data-xl="${i}" value="${l}" style="width:80px" ${l === 1 || l === 1000 ? 'readonly' : ''}></td><td><input type="number" step="any" min="0.001" data-xv="${i}" value="${v}" style="width:100px"></td><td>${l === 1 || l === 1000 ? '' : `<button class="btn small" type="button" data-xdel="${i}">Remover</button>`}</td></tr>`).join('')}
@@ -219,6 +219,7 @@
         <button class="btn small" type="button" id="xh-add">+ Âncora</button>
         <div class="adm-row" style="flex-wrap:wrap;margin-top:8px">
           <label>Dificuldade por reset <input type="number" step="0.01" min="0" max="1" id="xh-reset" value="${C.perReset}" style="width:80px"></label>
+          <label>Corte progressivo no nível 1000 (0,6 = −60%) <input type="number" step="0.05" min="0" max="0.95" id="xh-cut" value="${C.levelCut}" style="width:80px"></label>
           <label>Multiplicador do EXP offline <input type="number" step="0.05" min="0" max="2" id="xh-off" value="${C.offline}" style="width:80px"></label>
           ${[2, 3, 4, 5].map((n) => `<label>Party ${n} <input type="number" step="0.01" min="0" max="1" data-xp="${n}" value="${C.party[n]}" style="width:70px"></label>`).join('')}
         </div>
@@ -239,7 +240,7 @@
       const collect = () => {
         const curve = $$('[data-xl]', box).map((i) => [Number(i.value), Number($(`[data-xv="${i.dataset.xl}"]`, box).value)]);
         const party = {}; $$('[data-xp]', box).forEach((i) => { party[i.dataset.xp] = Number(i.value); });
-        return { curve, perReset: Number($('#xh-reset', box).value), offline: Number($('#xh-off', box).value), party };
+        return { curve, perReset: Number($('#xh-reset', box).value), levelCut: Number($('#xh-cut', box).value), offline: Number($('#xh-off', box).value), party };
       };
       const send = async (config) => { try { V = await X.api('POST', '/api/admin/exphard', { config }); draw(); msg(box, V.message); } catch (e) { msg(box, e.message, true); } };
       $('#xh-save', box).onclick = () => send(collect());

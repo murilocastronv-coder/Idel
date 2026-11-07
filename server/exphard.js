@@ -20,6 +20,7 @@ const DEFAULTS = {
   // [nível, multiplicador do EXP por abate]
   curve: [[1,10.338],[10,10.338],[20,11.387],[30,11.118],[40,11.259],[50,12.236],[75,14.006],[100,17.543],[150,18.033],[200,21.256],[250,22.564],[300,19.229],[350,17.885],[400,18.298],[450,16.38],[500,12.991],[550,12.507],[600,15.376],[650,14.229],[700,12.135],[750,7.752],[800,5.27],[850,4.227],[900,3.424],[950,2.717],[1000,2.47]],
   perReset: 0.05,          // cada reset deixa 5% mais difícil (igual ao sistema anterior)
+  levelCut: 0.6,           // corte progressivo: 0% no nível 1 subindo até este valor no nível 1000 (0,6 = −60%)
   offline: 1,              // multiplicador extra do EXP no farm offline (1 = igual ao online calculado)
   party: { 2: 0.10, 3: 0.12, 4: 0.15, 5: 0.20 },   // bônus por membros ativos e perto
   partyRange: 700,         // distância máxima (pixels do mapa) para contar como "perto"
@@ -43,9 +44,11 @@ function interp(points, L) {
 }
 const curveAt = (L) => interp(cfg().curve, Math.max(1, Math.min(1000, L)));
 // multiplicador de EXP do herói (nível + resets)
+// corte progressivo por nível: o EXP vai caindo cada vez mais conforme o herói sobe (0% no nível 1 → levelCut no 1000)
+const cutAt = (L, cut) => 1 - Math.min(0.95, Math.max(0, Number(cut) || 0)) * (Math.max(1, Math.min(1000, L)) - 1) / 999;
 function levelK(p) {
   const C = cfg();
-  return curveAt(p.level || 1) / (1 + (p.resets || 0) * (Number(C.perReset) || 0));
+  return curveAt(p.level || 1) * cutAt(p.level || 1, C.levelCut) / (1 + (p.resets || 0) * (Number(C.perReset) || 0));
 }
 
 // bônus de party: só membros da mesma party, no mesmo mapa e sala, perto e que mataram algo nos últimos segundos.
@@ -92,12 +95,12 @@ function liveStats() {
 }
 
 // horas estimadas até cada marco com a curva atual (Free solo, sem eventos/missões)
-function projection(curve) {
-  const C = curve || cfg().curve;
+function projection(curve, levelCut) {
+  const C = curve || cfg().curve, cut = levelCut === undefined ? cfg().levelCut : levelCut;
   let h = 0;
   const out = {};
   for (let L = 1; L < 1000; L++) {
-    h += interp(BASE_MIN, L) / interp(C, L) / 60;
+    h += interp(BASE_MIN, L) / (interp(C, L) * cutAt(L, cut)) / 60;
     if ([50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].includes(L + 1)) out[L + 1] = h;
   }
   out[1000] = h;
@@ -113,6 +116,7 @@ function clean(input) {
     out.curve = pts;
   }
   if (input.perReset !== undefined) { const v = Number(input.perReset); if (!(v >= 0 && v <= 1)) throw new Error('Dificuldade por reset: 0 a 1.'); out.perReset = v; }
+  if (input.levelCut !== undefined) { const v = Number(input.levelCut); if (!(v >= 0 && v <= 0.95)) throw new Error('Corte progressivo: 0 a 0,95.'); out.levelCut = v; }
   if (input.offline !== undefined) { const v = Number(input.offline); if (!(v >= 0 && v <= 2)) throw new Error('EXP offline: 0 a 2.'); out.offline = v; }
   if (input.party) {
     const pt = {};
@@ -124,7 +128,7 @@ function clean(input) {
 async function save(input) { const v = clean(input || {}); await SET.save(KEY, v); return v; }
 function adminView() {
   const c = cfg();
-  return { ok: true, config: c, defaults: DEFAULTS, target: TARGET, projection: projection(c.curve), live: liveStats() };
+  return { ok: true, config: c, defaults: DEFAULTS, target: TARGET, projection: projection(c.curve, c.levelCut), live: liveStats() };
 }
 
-module.exports = { init, cfg, levelK, curveAt, partyBonus, projection, save, adminView, interp, record, onLevel, liveStats, TARGET, BASE_MIN, DEFAULTS };
+module.exports = { init, cfg, levelK, curveAt, cutAt, partyBonus, projection, save, adminView, interp, record, onLevel, liveStats, TARGET, BASE_MIN, DEFAULTS };

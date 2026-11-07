@@ -18,7 +18,7 @@ t('curva contínua: de um nível para o outro o EXP por abate muda pouco (menos 
 });
 
 t('tempo total Free solo perto de 320 h (±10%) e marcos dentro de ±20%', () => {
-  const P = EXH.projection();
+  const P = EXH.projection(undefined, 0);   // calibração base (sem o corte progressivo por nível)
   assert(Math.abs(P[1000] - 320) / 320 < 0.1, `total ${P[1000]} h`);
   for (const [l, h] of EXH.TARGET.slice(2)) assert(Math.abs(P[l] - h) / h < 0.2, `nível ${l}: ${P[l]} h (meta ${h})`);
 });
@@ -57,6 +57,13 @@ t('monstro fraco de mapa baixo rende menos EXP por segundo que o mapa do nível'
   const low = Object.values(G.WORLD).find((d) => d.minLevel === 45), mine = Object.values(G.WORLD).find((d) => d.minLevel === 500);
   const rate = (def) => { const T = G.MONSTERS[def.groups[0].type]; const dps = ((p.dmgMin + p.dmgMax) / 2) * 1.25 / (p.atkMs / 1000); return W.killExp(p, T, def, pk) / (T.hp / dps + 2.5); };
   assert(rate(low) < rate(mine), `mapa baixo ${rate(low)} vs mapa do nível ${rate(mine)}`);
+});
+
+t('corte progressivo: 0% no nível 1, metade no 500, valor cheio no 1000', () => {
+  const c = EXH.cfg().levelCut;
+  assert.strictEqual(EXH.cutAt(1, c), 1);
+  assert(Math.abs(EXH.cutAt(1000, c) - (1 - c)) < 1e-9);
+  assert(Math.abs(EXH.cutAt(500.5, c) - (1 - c / 2)) < 1e-9);
 });
 
 t('nível máximo continua 1000', () => assert.strictEqual(G.LIMITS.maxLevel, 1000));
