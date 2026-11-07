@@ -298,6 +298,29 @@ async function statusLines(t, full) {
   return L;
 }
 
+// /reset de jogador: no nível 1000 volta ao nível 1 e ganha 4.000 pontos livres; os atributos já distribuídos ficam.
+const PLAYER_RESET = { level: 1000, points: 4000 };
+async function playerReset(p, parts) {
+  if (p.level < PLAYER_RESET.level) return reply(p, false, `O /reset libera no nível ${fmt(PLAYER_RESET.level)} (você está no ${fmt(p.level)}).`);
+  if ((parts[0] || '').toLowerCase() !== 'confirmar') {
+    return reply(p, true, [`Reset ${fmt((p.resets || 0) + 1)}: você volta ao nível 1 e ganha ${fmt(PLAYER_RESET.points)} pontos para distribuir. Os atributos que você já tem continuam.`,
+      'Cada reset deixa a EXP um pouco mais difícil. Para confirmar: /reset confirmar']);
+  }
+  let msg = '';
+  try {
+    await W.editChar(p.charId, async (c) => {
+      if (c.level < PLAYER_RESET.level) throw err(`O /reset libera no nível ${fmt(PLAYER_RESET.level)}.`);
+      c.resets = (c.resets || 0) + 1; c.level = 1; c.exp = 0;
+      c.free += PLAYER_RESET.points; c.bonusPoints = (c.bonusPoints || 0) + PLAYER_RESET.points;
+      msg = `Reset ${fmt(c.resets)} feito! Nível 1 e +${fmt(PLAYER_RESET.points)} pontos livres (${fmt(c.free)} para distribuir). Seus atributos foram mantidos.`;
+    });
+  } catch (e) { if (e.user) return reply(p, false, e.message); throw e; }
+  log(p, 'reset', { id: p.charId, name: p.name }, {}, null, null, 'ok', msg, null);
+  if (p.map && G.WORLD[p.map.id] && G.WORLD[p.map.id].minLevel > p.level) W.enterMap(p, 'lorencia');
+  if (W.system) W.system(`${p.name} fez o reset ${fmt(p.resets)} e voltou ao nível 1!`);
+  return reply(p, true, msg);
+}
+
 async function run(p, raw, nonce) {
   // fila por administrador e proteção contra repetição do mesmo envio
   if (nonce) {
@@ -320,6 +343,7 @@ async function exec(p, raw) {
   // personagem GM (lista em gm.js, padrão: SacoLa): comandos GM do chat; os demais seguem as regras de papel abaixo
   if (GM.isGM(p) && GM.has(name) && !(name === 'ajuda' && rank(p.role) >= 1 && parts[0] === 'adm')) return GM.exec(p, name, parts, text);
   name = ALIAS[name] || name;
+  if (name === 'reset') return playerReset(p, parts);   // qualquer jogador: /reset no nível 1000
   const def = CMDS[name];
   if (rank(p.role) < 1) {
     if (def) log(p, name, null, { text }, null, null, 'denied', 'Jogador sem permissão tentou um comando.', null);

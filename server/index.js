@@ -269,7 +269,7 @@ route('GET', '/api/gamedata', async () => ({
   classes: game.CLASSES, maps: game.MAPS, rarities: game.RARITIES, items: game.ITEMS, limits: game.LIMITS,
   world: Object.entries(game.WORLD).map(([id, w]) => ({ id, name: w.name, theme: w.theme, minLevel: w.minLevel, safe: !!w.safe, pvp: !!w.pvp, expBonus: Math.round((require('./world').mapExp(w) - 1) * 100), bossExpBonus: Math.round((require('./world').bossMapExp(w) - 1) * 100), expCap: Number.isFinite(require('./world').mapExpCap(w)) ? require('./world').mapExpCap(w) : null,
     monsters: [...w.groups.map((g) => game.MONSTERS[g.type].name), ...(w.boss ? [game.MONSTERS[w.boss.type].name + ' (boss)'] : [])] })),
-  expRef: { pts: require('./world').EXP_REF, min: require('./world').HP_K_MIN, max: require('./world').HP_K_MAX },
+  expRef: { pts: require('./world').EXP_REF, min: require('./world').HP_K_MIN, max: require('./world').HP_K_MAX, trim: require('./world').EXP_TRIM, prog: require('./world').EXP_PROG },
   shop: game.SHOP, sets: game.SETS, classRules: CLS.publicRules(),
   vip: { plans: VIP.publicPlans(), days: VIP.DAYS, currency: VIP.CURRENCY, enabled: VIP.enabled() },
   premiumSets: STORE.publicCatalog(),

@@ -72,6 +72,10 @@ function expToNext(level) { return Math.floor(100 * Math.pow(level, 2.1) + 200);
 // 0,8 (−20%) e depois mais −25% em cima disso → 0,6 (−40% no total)
 const EXP_TRIM = 0.6;
 const XP = () => G.GAME_MODE.expRate * EXP_TRIM;
+// Hard progressivo: quanto maior o nível, menos EXP por monstro; cada reset deixa um pouco mais difícil.
+// Nível 1 = 100% · nível 300 = 67% · nível 600 = 50% · nível 1000 = 38%; cada reset tira mais 5% (1 ÷ (1 + 0,05 × resets)).
+const EXP_PROG = { perLevel: 1 / 600, perReset: 0.05 };
+const progK = (p) => 1 / ((1 + (p.level || 1) * EXP_PROG.perLevel) * (1 + (p.resets || 0) * EXP_PROG.perReset));
 // ---------- EXP por monstro (Hard, equilibrado) ----------
 // Matar um monstro do seu nível dá 0,5% da EXP do nível (Free), 0,7% (VIP Ouro) ou 0,8% (VIP Diamante).
 // A EXP de cada monstro é proporcional à vida dele comparada a um monstro comum do seu nível (bicho fraco dá pouco, elite dá mais).
@@ -125,7 +129,7 @@ const overCap = () => false;
 function killExp(p, T, def, pk) {
   if (overCap(p, def)) return 0;
   // GM.xpMult(): evento temporário de EXP do GM (1 quando não há evento)
-  return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * hpK(T, p.level) * mapExp(def) * XP() * GM.xpMult()));
+  return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * hpK(T, p.level) * mapExp(def) * XP() * progK(p) * GM.xpMult()));
 }
 // bônus de EXP por mapa (servidor continua Hard): progressivo, cada mapa de caça dá um pouco mais que o anterior (+3% por mapa)
 // Vulcanus +3% · Dungeon +6% · Dungeon 2 +9% · Atlans +12% · Lost Tower +15% · Dungeon 3 +18% · Tarkan +21% · Icarus +24% · Aida +27% · Kalima +30% · Crywolf +33%
@@ -1614,7 +1618,7 @@ class World {
       distributed += baseZen;
       const pk = p.perks();
       const zen = Math.round(baseZen * pk.zen);
-      const exp = overCap(p, map && map.def) ? 0 : Math.round(expToNext(p.level) * BOSS_PCT * bossMapExp(map && map.def) * pk.exp * XP() * GM.xpMult() * Math.max(0.1, share));
+      const exp = overCap(p, map && map.def) ? 0 : Math.round(expToNext(p.level) * BOSS_PCT * bossMapExp(map && map.def) * pk.exp * XP() * progK(p) * GM.xpMult() * Math.max(0.1, share));
       p.exp += exp; p.zen += zen; p.bossesKilled++;
       const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
       if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
@@ -1937,4 +1941,4 @@ class World {
   }
 }
 
-module.exports = { mapExp, mapExpCap, bossMapExp, World, expToNext, gearVisual, refHp, EXP_REF, HP_K_MIN, HP_K_MAX };
+module.exports = { mapExp, mapExpCap, bossMapExp, World, expToNext, gearVisual, refHp, EXP_REF, HP_K_MIN, HP_K_MAX, EXP_TRIM, EXP_PROG };

@@ -2410,10 +2410,10 @@
     const L = S.char.level, next = Math.floor(100 * Math.pow(L, 2.1) + 200);
     const vip = [0.5, 0.7, 0.8][(S.char.vip && S.char.vip.tier) || 0] || 0.5;
     const w = S.data && S.map && S.data.world.find((x) => x.id === S.map.map);
-    if (w && w.expCap && L > w.expCap) return '0 (nível acima do limite deste mapa)';
     const er = S.data.expRef || { min: 0.02, max: 6 };
     const hk = Math.min(er.max || 6, Math.max(er.min || 0.02, (t.maxHp || 1) / refHp(L)));
-    const pct = t.boss ? 15 * (1 + ((S.char.vip && S.char.vip.tier) || 0)) * (1 + ((w && w.bossExpBonus) || 0) / 100) : vip * hk * (1 + ((w && w.expBonus) || 0) / 100);
+    const pg = er.prog || { perLevel: 0, perReset: 0 }, prog = (er.trim || 1) / ((1 + L * pg.perLevel) * (1 + (S.char.resets || 0) * pg.perReset));
+    const pct = (t.boss ? 15 * (1 + ((S.char.vip && S.char.vip.tier) || 0)) * (1 + ((w && w.bossExpBonus) || 0) / 100) : vip * hk * (1 + ((w && w.expBonus) || 0) / 100)) * prog;
     return `${fmt.format(Math.round(next * pct / 100))} (${pct.toFixed(pct < 1 ? 2 : 1)}%)`;
   }
   function renderChar() {
