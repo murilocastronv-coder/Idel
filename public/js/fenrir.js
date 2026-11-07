@@ -39,34 +39,92 @@
       '......KKK.KKK.......KKK.KKK.....',
     ],
   ];
-  const W = 32, H = BODY.length + LEGS[0].length;
+  // de frente (cabeça e peito virados para quem olha) e de costas (garupa e rabo); 16 de largura, mesma altura
+  const FRONT = [
+    '..K..........K..',
+    '.KLK........KLK.',
+    '.KGGK......KGGK.',
+    '.KGGGKKKKKKGGGK.',
+    '..KGGGGGGGGGGK..',
+    '..KGEGGGGGGEGK..',
+    '..KGGGGLLGGGGK..',
+    '...KGGLLLLGGK...',
+    '...KGGLKKLGGK...',
+    '..KMKGLLLLGKMK..',
+    '.KMMMKGGGGKMMMK.',
+    '.KMMGGGGGGGGMMK.',
+    '.KDGGGGLLGGGGDK.',
+    '..KDGGGGGGGGDK..',
+  ];
+  const BACK = [
+    '...K........K...',
+    '..KGK......KGK..',
+    '..KGGKKKKKKGGK..',
+    '...KGGGGGGGGK...',
+    '..KMMGGGGGGMMK..',
+    '.KMMGGGGGGGGMMK.',
+    '.KGGGGGGGGGGGGK.',
+    '.KGGGGLLLLGGGGK.',
+    '.KGGGGGLLGGGGGK.',
+    '..KGGGGGGGGGGK..',
+    '..KDGGGKKGGGDK..',
+    '..KDDGKLLKGDDK..',
+    '...KDDKLLKDDK...',
+    '....KKKLLKKK....',
+  ];
+  const LEGS_FB = [
+    [ // andando: uma pata no ar
+      '..KDDK....KDDK..',
+      '..KDK......KDK..',
+      '..KLK......KDK..',
+      '..KKK......KLK..',
+      '...........KKK..',
+    ],
+    [ // parado
+      '..KDDK....KDDK..',
+      '..KDK......KDK..',
+      '..KDK......KDK..',
+      '..KLK......KLK..',
+      '..KKK......KKK..',
+    ],
+  ];
+  const W = 32, H = BODY.length + LEGS[0].length, WF = 16;
   const cache = new Map();
-  function frame(i, v = 'gold') {
-    const key = v + i, PAL = PALS[v] || PALS.gold;
+  function frame(i, v = 'gold', view = 'side', flip = false) {
+    const key = v + i + view + (flip ? 'f' : ''), PAL = PALS[v] || PALS.gold;
     if (cache.has(key)) return cache.get(key);
-    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const side = view !== 'front' && view !== 'back', w = side ? W : WF;
+    const c = document.createElement('canvas'); c.width = w; c.height = H;
     const g = c.getContext('2d');
-    BODY.concat(LEGS[i]).forEach((row, y) => { for (let x = 0; x < W; x++) { const k = row[x]; if (k && k !== '.') { g.fillStyle = PAL[k]; g.fillRect(x, y, 1, 1); } } });
+    // de frente/de costas a pata no ar alterna de lado a cada passo
+    let legs = side ? LEGS[i] : LEGS_FB[i];
+    if (!side && flip) legs = legs.map((r) => r.split('').reverse().join(''));
+    const rows = (side ? BODY : view === 'front' ? FRONT : BACK).concat(legs);
+    rows.forEach((row, y) => { for (let x = 0; x < w; x++) { const k = row[x]; if (k && k !== '.') { g.fillStyle = PAL[k]; g.fillRect(x, y, 1, 1); } } });
     cache.set(key, c);
     return c;
   }
   // altura do assento (topo das costas) em pixels do desenho, a partir do chão
-  const SEAT_ROWS = H - 8;
-  function draw(ctx, x, y, p, flip, moving, now, v = 'gold') {
+  // de frente o herói fica logo atrás da cabeça; de costas, em cima da garupa
+  const SEAT_ROWS = H - 8, SEAT_VIEW = { front: H - 5, back: H - 6 };
+  function draw(ctx, x, y, p, flip, moving, now, v = 'gold', view = 'side') {
+    const side = view !== 'front' && view !== 'back';
     const f = moving ? Math.floor(now / 110) % 2 : 1;
-    const img = frame(f, v), glow = (PALS[v] || PALS.gold).glow;
+    const step = side ? false : Math.floor(now / 220) % 2 === 1;
+    const img = frame(f, v, side ? 'side' : view, step), glow = (PALS[v] || PALS.gold).glow;
+    const w = side ? W : WF;
     const bob = moving ? (f ? -1 : 0) * p : 0;
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     ctx.translate(Math.round(x), Math.round(y + bob));
-    if (flip) ctx.scale(-1, 1);
+    if (flip && side) ctx.scale(-1, 1);
     // brilho dourado suave em volta
     ctx.globalAlpha = 0.28 + 0.12 * Math.sin(now / 260);
     const gr = ctx.createRadialGradient(0, -H * p * 0.5, 2, 0, -H * p * 0.5, W * p * 0.6);
     gr.addColorStop(0, `rgba(${glow},.9)`); gr.addColorStop(1, `rgba(${glow},0)`);
     ctx.fillStyle = gr; ctx.fillRect(-W * p * 0.6, -H * p * 1.1, W * p * 1.2, H * p * 1.2);
     ctx.globalAlpha = 1;
-    ctx.drawImage(img, Math.round(-W * p / 2), Math.round(-H * p), Math.round(W * p), Math.round(H * p));
+    ctx.drawImage(img, Math.round(-w * p / 2), Math.round(-H * p), Math.round(w * p), Math.round(H * p));
     ctx.restore();
   }
   function icon(ctx, x, y, size, v = 'gold') {
@@ -121,5 +179,5 @@
   }
   // variante pela base do item: fenrir_gold → dourado, fenrir_red → vermelho
   const variantOf = (base) => (base === 'fenrir_red' ? 'red' : base === 'fenrir_gold' ? 'gold' : null);
-  window.Fenrir = { draw, icon, variantOf, drawPet, petIcon, isPet: (b) => !!PETS[b], SEAT: (p) => SEAT_ROWS * p, W, H };
+  window.Fenrir = { draw, icon, variantOf, drawPet, petIcon, isPet: (b) => !!PETS[b], SEAT: (p, view) => (SEAT_VIEW[view] || SEAT_ROWS) * p, W, H };
 }());

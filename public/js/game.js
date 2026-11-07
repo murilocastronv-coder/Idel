@@ -1870,8 +1870,12 @@
           } else {
             const fBob = mountMoving && Math.floor((now + (e.phase || 0)) / 110) % 2 === 0 ? -mp : 0;
             shadowAt(x, y, 20 * zoom);
-            Fenrir.draw(ctx, x + fdir * 2 * mp, y, mp, heroFlip, mountMoving, now + (e.phase || 0), mountV);
-            seatY = y + fBob - Fenrir.SEAT(mp) + mp;          // linha das costas
+            // o Fenrir vira junto com o herói: de lado, de frente (andando para baixo) ou de costas (para cima).
+            // De frente/de costas o herói é desenhado antes e a cabeça/garupa do Fenrir passa na frente das pernas.
+            const ft = now + (e.phase || 0);
+            if (view === 'side') Fenrir.draw(ctx, x + fdir * 2 * mp, y, mp, heroFlip, mountMoving, ft, mountV);
+            else mountAfter = () => Fenrir.draw(ctx, x, y, mp, heroFlip, mountMoving, ft, mountV, view);
+            seatY = y + fBob - Fenrir.SEAT(mp, view) + mp;          // linha das costas
           }
           lift = y - seatY - dim.hip * sc;                 // quadril do herói em cima da sela
         } else if (eq && eq.pet && window.Fenrir && Fenrir.isPet(eq.pet) && !e.dead) {
