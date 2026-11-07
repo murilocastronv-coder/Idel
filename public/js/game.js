@@ -3368,17 +3368,20 @@
   }
   function paintChatScreen() {
     const on = chatOnScreen();
+    const tg = $('#chat-toggle'); if (tg) { tg.textContent = on ? '💬 Chat: na tela' : '💬 Chat: escondido'; tg.classList.toggle('off', !on); }
     $$('[data-chat-screen]').forEach((b) => { b.textContent = on ? 'Mostrando · esconder' : 'Escondidas · mostrar'; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('btn-gold', !on); });
   }
   $$('[data-chat-screen]').forEach((b) => { b.onclick = () => { setChatScreen(!chatOnScreen()); feed(chatOnScreen() ? 'Mensagens do chat aparecendo na tela.' : 'Mensagens do chat escondidas da tela (continuam no botão Chat).'); }; });
-  paintChatScreen();
   let chatAsked = false;
+  // botão fixo na tela: reabre a escolha (ver ou não ver o chat) a qualquer momento
+  $$('[data-chat-screen-open]').forEach((b) => { b.onclick = () => askChatScreen(true); });
+  paintChatScreen();
   // na primeira entrada no jogo, o jogador escolhe se quer ver o chat na tela
-  function askChatScreen() {
-    if (chatAsked || chatPref() !== null) return;
+  function askChatScreen(force) {
+    if (!force && (chatAsked || chatPref() !== null)) return;
     chatAsked = true;
-    setTimeout(() => tradeDialog('<h3>Chat na tela</h3><p>Quer ver as mensagens do chat aparecendo na tela enquanto joga?</p><p class="muted">Escondendo, as mensagens continuam no botão <b>Chat</b>. Você pode mudar quando quiser em Chat ou Configurar.</p>',
-      [{ label: 'Mostrar chat', cls: 'btn-gold', fn: () => setChatScreen(true) }, { label: 'Esconder chat', fn: () => setChatScreen(false) }]), 1200);
+    setTimeout(() => tradeDialog('<h3>Chat na tela</h3><p>Quer ver as mensagens do chat aparecendo na tela enquanto joga?</p><p class="muted">Escondendo, as mensagens continuam no botão <b>Chat</b>. Para mudar depois, toque em <b>💬 Chat</b> no canto da tela.</p>',
+      [{ label: 'Mostrar chat', cls: 'btn-gold', fn: () => setChatScreen(true) }, { label: 'Esconder chat', fn: () => setChatScreen(false) }]), force ? 0 : 1200);
   }
   const CHAT_CHANNELS = ['local','global','private','guild','party','information'];
   const CHAT_LOGS = Object.fromEntries(CHAT_CHANNELS.map((c) => [c, []]));

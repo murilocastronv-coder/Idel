@@ -749,3 +749,8 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
   text-shadow: 0 2px 0 #2a0000, 0 0 12px rgba(255,60,40,.7); word-break: break-word; }
 /* chat: mostrar/esconder as mensagens na tela */
 .chat-screen-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 6px; font-size: 13px; color: var(--bone-dim, #b9ad93); }
+/* botão fixo que reabre a escolha do chat na tela */
+.chat-toggle { display: block; margin: 4px 0 0 auto; font: 600 11px var(--display); color: #f2ead8; background: rgba(20, 16, 10, .85); border: 2px solid var(--edge); padding: 2px 7px; cursor: pointer; pointer-events: auto; }
+.chat-toggle.off { color: #b9ad93; text-decoration: line-through; text-decoration-color: rgba(255,120,100,.8); }
+.chat-toggle:hover, .chat-toggle:focus-visible { border-color: var(--gold, #e8b84a); }
+@media (max-width: 700px) { .hud-map .chat-toggle { order: 2; margin-top: 0; font-size: 10px; } }

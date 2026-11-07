@@ -1505,4 +1505,11 @@ EN = {
 "Esconder chat": "Hide chat",
 "Mensagens do chat aparecendo na tela.": "Chat messages are showing on screen.",
 "Mensagens do chat escondidas da tela (continuam no botão Chat).": "Chat messages are hidden from the screen (still in the Chat button).",
+"💬 Chat": "💬 Chat",
+"💬 Chat: na tela": "💬 Chat: on screen",
+"💬 Chat: escondido": "💬 Chat: hidden",
+"Escolher se o chat aparece na tela": "Choose whether chat shows on screen",
+"Para mudar depois, toque em": "To change it later, tap",
+"no canto da tela.": "in the corner of the screen.",
+"Escondendo, as mensagens continuam no botão": "If hidden, messages stay in the",
 }
