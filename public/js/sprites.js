@@ -260,29 +260,64 @@
     bowCache.set(ck, c);
     return c;
   }
+  // linha real da arma dentro do ícone (cabo -> ponta), medida pelos pixels: o cabo é a ponta de baixo
+  const axisCache = new Map();
+  function iconAxis(key, cell) {
+    if (axisCache.has(key)) return axisCache.get(key);
+    const c = document.createElement('canvas'); c.width = c.height = cell.s;
+    const x = c.getContext('2d'); x.drawImage(cell.img, cell.sx, cell.sy, cell.s, cell.s, 0, 0, cell.s, cell.s);
+    const d = x.getImageData(0, 0, cell.s, cell.s).data, pts = [];
+    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 100) pts.push([(i / 4) % cell.s + 0.5, Math.floor(i / 4 / cell.s) + 0.5]);
+    let ax = null;
+    if (pts.length > 8) {
+      const mx = pts.reduce((a, p) => a + p[0], 0) / pts.length, my = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+      let sxx = 0, syy = 0, sxy = 0;
+      for (const [px, py] of pts) { sxx += (px - mx) ** 2; syy += (py - my) ** 2; sxy += (px - mx) * (py - my); }
+      const th = 0.5 * Math.atan2(2 * sxy, sxx - syy), ux = Math.cos(th), uy = Math.sin(th);
+      let lo = Infinity, hi = -Infinity;
+      for (const [px, py] of pts) { const t = (px - mx) * ux + (py - my) * uy; lo = Math.min(lo, t); hi = Math.max(hi, t); }
+      let e0 = [mx + ux * lo, my + uy * lo], e1 = [mx + ux * hi, my + uy * hi];
+      if (e1[1] > e0[1]) [e0, e1] = [e1, e0]; // cabo embaixo
+      ax = { e0, e1 };
+    }
+    axisCache.set(key, ax);
+    return ax;
+  }
+  const GRIP_BACK = { magic_gladiator: 5, dark_knight: 2 };
   function heldWeapon(ctx, cls, meta, rawW, row, f, scale, white, glow, behind) {
     const P = window.PixelArt; if (!P || !P.atlasCell || white || meta.bowLayer) return;
     const key = shopWeapon(cls, rawW), cell = key && P.atlasCell(key);
     if (!cell) return;
     const view = row === 0 || row === 1 || row === 3 ? 'side' : row === 5 || row === 6 ? 'front' : row === 7 || row === 8 ? 'back' : null;
-    if (!view || (view === 'back') !== !!behind) return;
+    // a arma fica atrás do corpo: a mão do herói cobre o cabo e ela parece segurada
+    if (!view || !behind) return;
+    const ax = iconAxis(key, cell); if (!ax) return;
     // onde a arma do desenho estava neste quadro (cabo -> ponta); sem isso, a mão padrão da classe
-    const segs = ((meta.wseg || {})[row] || [])[f];
-    let list;
-    if (segs) list = segs.map(([x1, y1, x2, y2]) => [x1, y1, Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI, Math.hypot(x2 - x1, y2 - y1), 0.03]);
-    else {
+    let segs = ((meta.wseg || {})[row] || [])[f];
+    if (!segs) {
       const H = HAND[cls]; if (!H || row === 3) return;
       const bob = ((meta.wbob || {})[row] || [])[f] || 0;
-      list = H[view === 'side' ? 'side' : 'front'].map(([hx, hy, ang, len, grip]) => view === 'back' ? [96 - hx, hy + bob, 180 - ang, len, grip] : [hx, hy + bob, ang, len, grip]);
+      segs = H[view === 'side' ? 'side' : 'front'].map(([hx, hy, ang, len, grip]) => {
+        if (view === 'back') { hx = 96 - hx; ang = 180 - ang; }
+        const dx = Math.cos(ang * Math.PI / 180), dy = Math.sin(ang * Math.PI / 180), x1 = hx - dx * len * grip, y1 = hy + bob - dy * len * grip;
+        return [x1, y1, x1 + dx * len, y1 + dy * len];
+      });
     }
-    for (const [hx, hy, ang, len, grip] of list) {
-      const s = cell.s * len / 66;
+    const vx = ax.e1[0] - ax.e0[0], vy = ax.e1[1] - ax.e0[1], il = Math.hypot(vx, vy) || 1;
+    const back = GRIP_BACK[cls] || 0;
+    for (let [x1, y1, x2, y2] of segs) {
+      if (back) { // empurra a arma para dentro do punho (o cabo some atrás da mão)
+        const L = Math.hypot(x2 - x1, y2 - y1) || 1, ux = (x2 - x1) / L, uy = (y2 - y1) / L;
+        x1 -= ux * back; y1 -= uy * back; x2 -= ux * back; y2 -= uy * back;
+      }
+      const k = Math.hypot(x2 - x1, y2 - y1) / il;
+      const rot = Math.atan2(y2 - y1, x2 - x1) - Math.atan2(vy, vx);
       ctx.save();
-      ctx.translate((hx - meta.pivot[0]) * scale, (hy - meta.pivot[1]) * scale);
-      ctx.rotate((ang + 45) * Math.PI / 180);
-      ctx.scale(scale, scale);
-      if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = 6 * scale; }
-      ctx.drawImage(cell.img, cell.sx, cell.sy, cell.s, cell.s, -s * grip, -s * (1 - grip), s, s);
+      ctx.translate((x1 - meta.pivot[0]) * scale, (y1 - meta.pivot[1]) * scale);
+      ctx.rotate(rot);
+      ctx.scale(scale * k, scale * k);
+      if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = 6 / k; }
+      ctx.drawImage(cell.img, cell.sx, cell.sy, cell.s, cell.s, -ax.e0[0], -ax.e0[1], cell.s, cell.s);
       ctx.restore();
     }
   }
