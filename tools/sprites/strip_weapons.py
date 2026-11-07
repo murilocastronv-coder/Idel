@@ -6,7 +6,7 @@ os pixels que batem são apagados e o lugar/ângulo da arma é guardado no manif
 para o jogo desenhar a arma nova exatamente ali.
 
 Gera heroes/<classe>_nw.png e heroes/<classe>_<visual>_nw.png.
-Uso: python3 tools/sprites/strip_weapons.py
+Uso: python3 tools/sprites/strip_weapons.py [classe ...]
 """
 import json
 import math
@@ -48,15 +48,17 @@ WEAPONS = {
         'back': (8, 0, [('b', 27, 58, 21, 19, 2.2), ('c', 21, 30, 8)], [(27, 58, 21, 19)]),
     },
     'fairy_elf': {
-        'front': (5, 0, [('b', 20, 72, 50, 73, 2), ('b', 50, 73, 66, 62, 2), ('b', 66, 62, 80, 43, 2.2), ('b', 55, 57, 73, 87, 1.6)],
+        'front': (5, 0, [('b', 14, 71, 50, 74, 2.6), ('b', 50, 74, 66, 62, 2.6), ('b', 66, 62, 81, 42, 2.8), ('b', 55, 57, 74, 88, 2),
+                         ('b', 16, 71, 80, 43, 1.8)],
                   [(20, 72, 80, 43)]),
-        'front_b': (6, 1, [('b', 26, 69, 52, 71, 2), ('b', 52, 71, 66, 61, 2), ('b', 66, 61, 79, 44, 2.2), ('b', 58, 58, 72, 86, 1.6)],
+        'front_b': (6, 1, [('b', 22, 69, 52, 72, 2.6), ('b', 52, 72, 66, 61, 2.6), ('b', 66, 61, 80, 43, 2.8), ('b', 58, 58, 73, 87, 2),
+                           ('b', 24, 69, 79, 44, 1.8)],
                     [(26, 69, 79, 44)], [6]),
     },
 }
 # ataque e morte ficam com a arma do desenho (mexe demais para achar); o jogo não desenha a nova nelas
-# a elfa segura o arco na frente do corpo inteiro: apagar abre buracos, então o arco novo só fica por cima
-KEEP_ART = {'fairy_elf'}
+# a elfa segura o arco na frente do corpo inteiro: o buraco que fica no corpo é tapado com a cor mais próxima
+INPAINT = {'fairy_elf'}
 VIEW_ROWS = {'side': [0, 1, 3], 'front': [5, 6], 'back': [7, 8]}
 WIDE_ROWS = set()
 
@@ -142,6 +144,25 @@ def tf(x, y, gx, gy, a, dx, dy):
     return round(c * (x - gx) - s * (y - gy) + gx + dx, 1), round(s * (x - gx) + c * (y - gy) + gy + dy, 1)
 
 
+def inpaint(cell, mask, before):
+    """Pixels apagados que ficam dentro do corpo: preenche de fora para dentro com a cor mais comum dos vizinhos."""
+    from collections import Counter
+    from scipy import ndimage as nd
+    keep = before & ~mask
+    todo = nd.binary_closing(keep, structure=np.ones((3, 3)), iterations=6) & mask
+    known = keep.copy()
+    for need in (5, 4, 3, 2, 1) * 4:
+        changed = []
+        for y, x in zip(*np.nonzero(todo & ~known)):
+            cols = [tuple(cell[y + j, x + i]) for j in (-1, 0, 1) for i in (-1, 0, 1)
+                    if (i or j) and 0 <= y + j < FW and 0 <= x + i < FW and known[y + j, x + i] and int(cell[y + j, x + i][:3].sum()) < 420]
+            if len(cols) >= need:
+                changed.append((y, x, Counter(cols).most_common(1)[0][0]))
+        for y, x, c in changed:
+            cell[y, x] = c
+            known[y, x] = True
+
+
 def specks(cell, mask):
     """Apaga pedacinhos soltos (até 4 px) que sobraram da arma perto do que foi apagado."""
     from scipy import ndimage as nd
@@ -183,7 +204,11 @@ def frames_of(meta, r, cols):
 def main():
     man_path = os.path.join(ROOT, 'manifest.json')
     man = json.load(open(man_path))
+    import sys
+    only = set(sys.argv[1:])
     for cls, views in WEAPONS.items():
+        if only and cls not in only:
+            continue
         meta = man['heroes'][cls]
         base = np.array(Image.open(os.path.join(ROOT, 'heroes', cls + '.png')).convert('RGBA'))
         cols = base.shape[1] // FW
@@ -212,9 +237,6 @@ def main():
         for r in sorted(wseg, key=int):
             print(cls, r, ''.join('.' if x is None else str(len(x)) for x in wseg[r]))
         meta['wseg'] = wseg
-        if cls in KEEP_ART:
-            meta.pop('nw', None)
-            continue
         meta['nw'] = True
         looks = [''] + ['_' + k for k in (meta.get('looks') or {})]
         for suf in looks:
@@ -224,7 +246,10 @@ def main():
             im = np.array(Image.open(src).convert('RGBA'))
             for (r, f), m in masks.items():
                 cell = im[r * FW:(r + 1) * FW, f * FW:(f + 1) * FW]
+                before = cell[..., 3] > 0
                 cell[m] = 0
+                if cls in INPAINT:
+                    inpaint(cell, m, before)
                 fill(cell, m)
                 specks(cell, m)
             Image.fromarray(im).save(os.path.join(ROOT, 'heroes', cls + suf + '_nw.png'), optimize=True)
