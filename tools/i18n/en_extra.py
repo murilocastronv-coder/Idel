@@ -270,4 +270,9 @@ EN_EXTRA = {
     "(presente de boas-vindas, +20% de EXP) até": "(welcome gift, +20% EXP) until",
     "VIP Free ativo até {0}: +20% de EXP, presente de boas-vindas!": "VIP Free active until {0}: +20% EXP, welcome gift!",
     "Você tem {0} pontos para distribuir! Abra o Herói para usar.": "You have {0} points to distribute! Open Hero to use them.",
+    # progressão Extreme Hard
+    "Progressão": "Progress", "fase": "stage", "Iniciante": "Beginner", "Aventureiro": "Adventurer", "Guerreiro": "Warrior", "Veterano": "Veteran", "Elite": "Elite", "Lendário": "Legendary",
+    "EXP por minuto": "EXP per minute", "EXP por hora": "EXP per hour", "Próximo nível em": "Next level in", "Mapa recomendado": "Recommended map",
+    "Próximo marco": "Next milestone", "Barra": "Bar", "cace para medir": "hunt to measure", "menos de 1 min": "under 1 min",
+    "Servidor Extreme Hard: a EXP fica mais difícil a cada nível. Medido pelos seus abates dos últimos 10 minutos (missões e eventos não entram na conta).": "Extreme Hard server: EXP gets harder every level. Measured from your kills in the last 10 minutes (quests and events are not counted).",
 }

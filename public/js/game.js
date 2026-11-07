@@ -69,7 +69,7 @@
       case 'char': S.char = m; renderChar(); if (S.panel === 'market' && MK.tab === 'sell') renderMarket(); return;
       case 'pj': S.players.set(m.id, { ...(S.players.get(m.id) || { x: 0, y: 0, rx: null }), info: m }); if (m.eq) Sprites.preloadEquip(m.cls, m.eq); return;
       case 'pl': S.players.delete(m.id); return;
-      case 'reward': if (window.Sfx) Sfx.coin(); return;
+      case 'reward': if (window.Sfx) Sfx.coin(); if (m.exp > 0) expTrack(m.exp); return;
       case 'duelInvite': return showDuelInvite(m);
       case 'duel': S.duel = { with: m.with, name: m.name, until: performance.now() + m.until }; renderDuelBar(); if (window.Sfx) Sfx.duel(); feed(`Duelo contra ${m.name} começou! Vence quem derrubar o outro.`, 'pvp'); return;
       case 'duelEnd': S.duel = null; renderDuelBar(); feed(m.result === 'win' ? 'Você venceu o duelo!' : m.result === 'loss' ? 'Você perdeu o duelo.' : 'Duelo encerrado sem vencedor.', m.result === 'win' ? 'lvl' : 'warn'); return;
@@ -2342,6 +2342,16 @@
     for (let i = 0; i < R.length - 1; i++) if (L <= R[i + 1][0]) return lerp(R[i], R[i + 1]);
     return lerp(R[R.length - 2], R[R.length - 1]);
   }
+  // curva Extreme Hard (a mesma do servidor): multiplicador por nível, interpolado em escala log entre as âncoras
+  function expCurveAt(L) {
+    const P = (S.data && S.data.expRef && S.data.expRef.curve) || [[1, 1], [1000, 1]];
+    if (L <= P[0][0]) return P[0][1];
+    for (let i = 0; i < P.length - 1; i++) {
+      const [l0, v0] = P[i], [l1, v1] = P[i + 1];
+      if (L <= l1) { const t = (Math.log(L) - Math.log(l0)) / ((Math.log(l1) - Math.log(l0)) || 1); return Math.exp(Math.log(v0) + t * (Math.log(v1) - Math.log(v0))); }
+    }
+    return P[P.length - 1][1];
+  }
   function expEstimate(t) {
     if (!S.char) return '?';
     const L = S.char.level, next = Math.floor(100 * Math.pow(L, 2.1) + 200);
@@ -2349,7 +2359,7 @@
     const w = S.data && S.map && S.data.world.find((x) => x.id === S.map.map);
     const er = S.data.expRef || { min: 0.02, max: 6 };
     const hk = Math.min(er.max || 6, Math.max(er.min || 0.02, (t.maxHp || 1) / refHp(L)));
-    const pg = er.prog || { perLevel: 0, perReset: 0 }, prog = (er.trim || 1) / ((1 + L * pg.perLevel) * (1 + (S.char.resets || 0) * pg.perReset));
+    const prog = (er.trim || 1) * expCurveAt(L) / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
     const pct = (t.boss ? 15 * (1 + ((S.char.vip && S.char.vip.tier) || 0)) * (1 + ((w && w.bossExpBonus) || 0) / 100) : vip * hk * (1 + ((w && w.expBonus) || 0) / 100)) * prog;
     return `${fmt.format(Math.round(next * pct / 100))} (${pct.toFixed(pct < 1 ? 2 : 1)}%)`;
   }
@@ -3034,6 +3044,47 @@
       <p class="muted">Todos os pontos investidos serão devolvidos para você distribuir onde quiser${i.points ? ` (${fmt.format(i.points)} pontos)` : ''}. ${i.free ? 'Este reset é grátis.' : 'Vai gastar 1 pergaminho Reset Status.'} A distribuição automática é desligada.</p>`,
       [{ label: 'CONFIRMAR', cls: 'btn-gold', fn: () => { RSI.busy = true; if (S.panel === 'hero') renderHero(); send({ type: 'resetStatus', action: 'use' }); } }, { label: 'CANCELAR' }]);
   }
+  // ---- progressão (Extreme Hard): EXP por minuto/hora dos últimos abates, tempo para o próximo nível, mapa e marco ----
+  const EXP_LOG = [];
+  function expTrack(n) {
+    const now = Date.now();
+    EXP_LOG.push([now, n]);
+    while (EXP_LOG.length && now - EXP_LOG[0][0] > 15 * 60000) EXP_LOG.shift();
+  }
+  const STAGES = [[200, 'Iniciante'], [400, 'Aventureiro'], [600, 'Guerreiro'], [800, 'Veterano'], [950, 'Elite'], [1000, 'Lendário']];
+  const stageOf = (L) => (STAGES.find(([max]) => L <= max) || STAGES[STAGES.length - 1])[1];
+  function fmtDur(min) {
+    if (!isFinite(min) || min <= 0) return '—';
+    if (min < 1) return 'menos de 1 min';
+    if (min < 60) return Math.round(min) + ' min';
+    const h = Math.floor(min / 60), m = Math.round(min % 60);
+    return h < 48 ? `${h} h ${m} min` : `${Math.round(h / 24)} dias de jogo (${h} h)`;
+  }
+  function progressHtml() {
+    const c = S.char, me = S.me || {};
+    if (!c) return '';
+    const L = c.level, exp = Number(me.exp) || 0, need = Number(me.next) || 1, pct = Math.min(100, exp / need * 100);
+    const now = Date.now(), win = EXP_LOG.filter(([t]) => now - t <= 10 * 60000);
+    const span = win.length > 1 ? Math.max(60, (now - win[0][0]) / 1000) : 0;
+    const gained = win.reduce((a, [, n]) => a + n, 0);
+    const perMin = span ? gained / (span / 60) : 0;
+    const eta = perMin > 0 ? (need - exp) / perMin : Infinity;
+    const maps = ((S.data && S.data.world) || []).filter((w) => !w.safe && w.minLevel <= L).sort((a, b) => b.minLevel - a.minLevel);
+    const rec = maps[0];
+    const nextMark = L >= 1000 ? null : Math.min(1000, (Math.floor(L / 50) + 1) * 50);
+    return `<div class="prog-box" id="prog-box">
+      <p><b>Progressão</b> · fase <b>${stageOf(L)}</b> · nível ${L}${L >= 1000 ? ' (máximo: conquista lendária!)' : ''}</p>
+      <div class="prog-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct.toFixed(1)}"><i style="width:${pct.toFixed(2)}%"></i></div>
+      <div class="derived">
+        <div><span>EXP</span><br>${fmt.format(Math.round(exp))} / ${fmt.format(need)}</div><div><span>Barra</span><br>${pct.toFixed(2)}%</div>
+        <div><span>EXP por minuto</span><br>${perMin ? fmt.format(Math.round(perMin)) : '—'}</div><div><span>EXP por hora</span><br>${perMin ? fmt.format(Math.round(perMin * 60)) : '—'}</div>
+        <div><span>Próximo nível em</span><br>${perMin ? fmtDur(eta) : 'cace para medir'}</div><div><span>Mapa recomendado</span><br>${rec ? esc(rec.name) : '—'}</div>
+        ${nextMark ? `<div><span>Próximo marco</span><br>Nível ${nextMark}${nextMark % 200 === 0 || nextMark === 950 ? ' · fase ' + stageOf(nextMark + 1) : ''}</div>` : ''}
+      </div>
+      <p class="muted small">Servidor Extreme Hard: a EXP fica mais difícil a cada nível. Medido pelos seus abates dos últimos 10 minutos (missões e eventos não entram na conta).</p>
+    </div>`;
+  }
+  setInterval(() => { if (S.panel === 'hero') { const b = $('#prog-box'); if (b) b.outerHTML = progressHtml(); } }, 3000);
   function renderHero() {
     const c = S.char, me = S.me || {};
     const names = { str: 'Força', agi: 'Agilidade', vit: 'Vitalidade', ene: 'Energia', cmd: 'Comando' };
@@ -3041,6 +3092,7 @@
     $('#hero-body').innerHTML = `
       <p>${esc(c.name)} · <b class="cls-name">${esc(c.className || S.data.classes[c.cls].name)}</b> · Nível ${c.level}${c.resets ? ` · ${c.resets} resets` : ''}</p>
       ${c.evolutions && c.evo < c.evolutions.length - 1 ? `<p class="muted small">Próxima evolução: ${esc(c.evolutions[c.evo + 1])} (missão com ${c.evo === 0 && !['magic_gladiator', 'dark_lord'].includes(c.cls) ? 'a Priestess Sevina, em Devias' : 'Marlon, em Lorencia'})</p>` : ''}
+      ${progressHtml()}
       <p class="free-pts">${c.free > 0 ? `${c.free} pontos para distribuir` : 'Nenhum ponto livre'}</p>
       <div class="rs-row">${resetStatusBtn()}</div>
       <div class="stat-rows">${keys.map((k) => `<div class="stat-row"><span>${names[k]}</span><b>${c.stats[k]}</b>

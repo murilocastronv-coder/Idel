@@ -9,6 +9,7 @@ const ADMIN = require('./admin');
 const CHAOS = require('./chaos');
 const ENTRIES = require('./entries');
 const AGI = require('./agility');
+const EXH = require('./exphard');
 const GM = require('./gm');
 const RET = require('./retention');
 const JOURNEY = require('./journey');
@@ -76,10 +77,9 @@ function expToNext(level) { return Math.floor(100 * Math.pow(level, 2.1) + 200);
 // 0,8 (−20%) e depois mais −25% em cima disso → 0,6 (−40% no total)
 const EXP_TRIM = 0.6;
 const XP = () => G.GAME_MODE.expRate * EXP_TRIM;
-// Hard progressivo: quanto maior o nível, menos EXP por monstro; cada reset deixa um pouco mais difícil.
-// Nível 1 = 100% · nível 300 = 67% · nível 600 = 50% · nível 1000 = 38%; cada reset tira mais 5% (1 ÷ (1 + 0,05 × resets)).
-const EXP_PROG = { perLevel: 1 / 600, perReset: 0.05 };
-const progK = (p) => 1 / ((1 + (p.level || 1) * EXP_PROG.perLevel) * (1 + (p.resets || 0) * EXP_PROG.perReset));
+// Extreme Hard (server/exphard.js): a curva por nível substitui o redutor progressivo antigo (1 ÷ (1 + nível/600)).
+// EXP_PROG fica só para a tela antiga de estimativa; o servidor usa EXH.levelK.
+const EXP_PROG = { perLevel: 0, perReset: 0.05 };
 // ---------- EXP por monstro (Hard, equilibrado) ----------
 // Matar um monstro do seu nível dá 0,5% da EXP do nível (Free), 0,7% (VIP Ouro) ou 0,8% (VIP Diamante).
 // A EXP de cada monstro é proporcional à vida dele comparada a um monstro comum do seu nível (bicho fraco dá pouco, elite dá mais).
@@ -133,7 +133,7 @@ const overCap = () => false;
 function killExp(p, T, def, pk) {
   if (overCap(p, def)) return 0;
   // GM.xpMult(): evento temporário de EXP do GM (1 quando não há evento)
-  return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * (pk && pk.welcome ? pk.exp : 1) * hpK(T, p.level) * mapExp(def) * XP() * progK(p) * GM.xpMult()));
+  return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * (pk && pk.welcome ? pk.exp : 1) * hpK(T, p.level) * mapExp(def) * XP() * EXH.levelK(p) * GM.xpMult()));
 }
 // bônus de EXP por mapa (servidor continua Hard): progressivo, cada mapa de caça dá um pouco mais que o anterior (+3% por mapa)
 // Vulcanus +3% · Dungeon +6% · Dungeon 2 +9% · Atlans +12% · Lost Tower +15% · Dungeon 3 +18% · Tarkan +21% · Icarus +24% · Aida +27% · Kalima +30% · Crywolf +33%
@@ -485,6 +485,7 @@ class World {
     JOURNEY.addProvider((p) => PROG.weekendEntry(p));
     RET.setHook((p, name) => { this.quest(p, name, 1); this.quest(p, 'event', 1); PROG.addPoints(p, 'event'); }); // eventos contam nas missões
     await AGI.init();
+    await EXH.init();
     await CHAOS.init(helpers);
     ENTRIES.init(helpers);
     FENRIR.init(helpers);
@@ -1063,7 +1064,8 @@ class World {
     const totalN = types.reduce((a, t) => a + t.n, 0);
     const avg = (f) => types.reduce((a, t) => a + f(t.T) * t.n, 0) / totalN;
     const mHp = avg((T) => T.hp), mDmg = avg((T) => T.dmg);
-    const killExpAvg = () => avg((T) => killExp(p, T, def, pk));
+    const offK = Number(EXH.cfg().offline);
+    const killExpAvg = () => avg((T) => killExp(p, T, def, pk)) * (Number.isFinite(offK) ? offK : 1);
     const mZen = avg((T) => monsterZen(T)), mDrop = avg((T) => dropChance(T)), mLvl = avg((T) => T.level);
     let kills = 0, exp = 0, zen = 0, levels = 0, potsUsed = 0, died = false, elapsed = 0;
     while (elapsed < secs) {
@@ -1105,6 +1107,7 @@ class World {
     p.recalc();
     p.hp = p.maxHp; p.mp = p.maxMp;
     p.dirty = true;
+    EXH.record(p, 'offline', exp, { secs });
     return { secs, capped: Number(row.offline_secs) > capS, capH: Math.round(capS / 3600), vip: pk.tier || 0, map: def.name, kills, exp: Math.round(exp), levels,
       zen: Math.round(zen), potsUsed: Math.round(potsUsed), died, items: found.map(publicItem) };
   }
@@ -1181,6 +1184,7 @@ class World {
   }
 
   levelUp(p, silent) {
+    EXH.onLevel(p);
     p.level++;
     p.free += G.POINTS_PER_LEVEL[p.cls];
     if (p.settings.autoStats) this.autoDistribute(p); else p.recalc();
@@ -1629,8 +1633,12 @@ class World {
       p.capNoteAt = Date.now();
       p.send({ type: 'log', kind: 'warn', text: `Seu nível passou do limite deste mapa (até o nível ${mapExpCap(map.def)}): aqui os monstros não dão EXP. Vá para um mapa do seu nível.` });
     }
-    const exp = capped ? 0 : Math.max(1, Math.round(killExp(p, m.T, map && map.def, pk) * trainingExpFactor)), zen = Math.round(monsterZen(m.T) * pk.zen);
+    // party: bônus só para membros ativos e perto (mesmo mapa); quem matou fica marcado como ativo
+    const partyK = 1 + EXH.partyBonus(p, SOCIAL.activeParty(p.charId), this.players);
+    p.lastKillAt = Date.now();
+    const exp = capped ? 0 : Math.max(1, Math.round(killExp(p, m.T, map && map.def, pk) * trainingExpFactor * partyK)), zen = Math.round(monsterZen(m.T) * pk.zen);
     p.exp += exp; p.kills++; p.zen += zen;
+    EXH.record(p, 'monster', exp, { map: map && map.def && map.def.name, mon: m.T.name });
     const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100);
     if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
     if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
@@ -1674,6 +1682,7 @@ class World {
     const exp = Math.round(killExp(p, m.T, p.map && p.map.def, pk) * 3 * Math.max(0, share) * expMult);
     const zen = Math.min(5, Math.max(0, Math.round(monsterZen(m.T) * Math.max(0, share) * pk.zen)));
     p.exp += exp; p.zen += zen; p.kills++;
+    EXH.record(p, 'event', exp, { kind: (p.arena && p.arena.kind) || (p.map && p.map.def && p.map.def.name) || 'evento' });
     const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; p.map.emit({ k: 'heal', t: p.id, d: recovered }); }
     if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
     this.quest(p, 'kill', 1); this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
@@ -1697,8 +1706,9 @@ class World {
       distributed += baseZen;
       const pk = p.perks();
       const zen = Math.round(baseZen * pk.zen);
-      const exp = overCap(p, map && map.def) ? 0 : Math.round(expToNext(p.level) * BOSS_PCT * bossMapExp(map && map.def) * pk.exp * XP() * progK(p) * GM.xpMult() * Math.max(0.1, share));
+      const exp = overCap(p, map && map.def) ? 0 : Math.round(expToNext(p.level) * BOSS_PCT * bossMapExp(map && map.def) * pk.exp * XP() * EXH.levelK(p) * GM.xpMult() * Math.max(0.1, share));
       p.exp += exp; p.zen += zen; p.bossesKilled++;
+      EXH.record(p, 'boss', exp, { name: m.T.name });
       const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
       if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
       this.quest(p, 'elite', 1); this.quest(p, 'boss', 1); this.quest(p, 'zen', zen);
@@ -2024,4 +2034,4 @@ class World {
   }
 }
 
-module.exports = { mapExp, mapExpCap, bossMapExp, World, expToNext, gearVisual, refHp, EXP_REF, HP_K_MIN, HP_K_MAX, EXP_TRIM, EXP_PROG };
+module.exports = { Player, killExp, mapExp, mapExpCap, bossMapExp, World, expToNext, gearVisual, refHp, EXP_REF, HP_K_MIN, HP_K_MAX, EXP_TRIM, EXP_PROG };

@@ -270,7 +270,7 @@ route('GET', '/api/gamedata', async () => ({
   classes: game.CLASSES, maps: game.MAPS, rarities: game.RARITIES, items: game.ITEMS, limits: game.LIMITS,
   world: Object.entries(game.WORLD).map(([id, w]) => ({ id, name: w.name, theme: w.theme, minLevel: w.minLevel, safe: !!w.safe, pvp: !!w.pvp, expBonus: Math.round((require('./world').mapExp(w) - 1) * 100), bossExpBonus: Math.round((require('./world').bossMapExp(w) - 1) * 100), expCap: Number.isFinite(require('./world').mapExpCap(w)) ? require('./world').mapExpCap(w) : null,
     monsters: [...w.groups.map((g) => game.MONSTERS[g.type].name), ...(w.boss ? [game.MONSTERS[w.boss.type].name + ' (boss)'] : [])] })),
-  expRef: { pts: require('./world').EXP_REF, min: require('./world').HP_K_MIN, max: require('./world').HP_K_MAX, trim: require('./world').EXP_TRIM, prog: require('./world').EXP_PROG },
+  expRef: { pts: require('./world').EXP_REF, min: require('./world').HP_K_MIN, max: require('./world').HP_K_MAX, trim: require('./world').EXP_TRIM, prog: require('./world').EXP_PROG, get curve() { return require('./exphard').cfg().curve; }, get perReset() { return require('./exphard').cfg().perReset; } },
   shop: game.SHOP, sets: game.SETS, classRules: CLS.publicRules(),
   vip: { plans: VIP.publicPlans(), days: VIP.DAYS, currency: VIP.CURRENCY, enabled: VIP.enabled() },
   premiumSets: STORE.publicCatalog(),
@@ -439,6 +439,30 @@ route('POST', '/api/admin/worldboss', bad(async (req) => {
   const body = await readJson(req, 8 * 1024);
   if (body.action === 'spawn') return WBOSS.spawnNow();
   return WBOSS.saveConfig(body.config || {});
+}));
+// ---- EXP Extreme Hard: curva por nível, party, offline, números reais e jogadores por faixa (Super ADM) ----
+const EXH = require('./exphard');
+async function expBands() {
+  // faixas de nível: quantos personagens, quantos com VIP e quantos estão parados há 7 dias ou mais (abandono)
+  const { rows } = await db.query(`SELECT CASE WHEN c.level <= 200 THEN 1 WHEN c.level <= 400 THEN 2 WHEN c.level <= 600 THEN 3 WHEN c.level <= 800 THEN 4 WHEN c.level <= 950 THEN 5 ELSE 6 END AS band,
+      count(*)::int AS chars,
+      count(*) FILTER (WHERE a.vip2_until > now())::int AS diamond,
+      count(*) FILTER (WHERE a.vip1_until > now() AND NOT (a.vip2_until > now()))::int AS gold,
+      count(*) FILTER (WHERE a.last_login_at < now() - interval '7 days' OR a.last_login_at IS NULL)::int AS idle7,
+      round(avg(c.level))::int AS avg_level, max(c.level)::int AS max_level
+    FROM characters c JOIN accounts a ON a.id = c.account_id GROUP BY 1 ORDER BY 1`);
+  const names = { 1: '1–200 Iniciante', 2: '201–400 Aventureiro', 3: '401–600 Guerreiro', 4: '601–800 Veterano', 5: '801–950 Elite', 6: '951–1000 Lendário' };
+  return rows.map((r) => ({ ...r, name: names[r.band] }));
+}
+route('GET', '/api/admin/exphard', async (req) => { await requireAdmin(req); return { ...EXH.adminView(), bands: await expBands() }; });
+route('POST', '/api/admin/exphard', bad(async (req) => {
+  const acc = await requireAdmin(req);
+  const body = await readJson(req, 32 * 1024);
+  const before = EXH.cfg();
+  const config = await EXH.save(body.config || {});
+  CMDS.log({ accountId: acc.id, name: acc.username, role: 'superadmin' }, 'panel:exphard', null, {}, before, config, 'ok', 'Curva de EXP Extreme Hard salva', null);
+  await audit(acc.id, 'exphard_save', req, { config });
+  return { ok: true, message: 'Curva de EXP salva. Vale para os próximos abates de todos (nenhum personagem foi alterado).', ...EXH.adminView(), bands: await expBands() };
 }));
 // ---- Agilidade: crítico, velocidade de ataque e defesa (Super ADM) ----
 route('GET', '/api/admin/agility', async (req) => { await requireAdmin(req); return AGI.adminView(); });

@@ -202,6 +202,54 @@
     $('#ret-save', box).onclick = async () => { const goals = {}; $$('[data-goal]', box).forEach((i) => { goals[i.dataset.goal] = Number(i.value); }); try { await X.api('POST', '/api/admin/retention/goals', { goals }); retention(box); } catch (e) { msg(box, e.message, true); } };
     $('#ret-reload', box).onclick = () => retention(box);
   }
+  // ---------------- EXP Extreme Hard ----------------
+  async function exphard(box) {
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    let V;
+    try { V = await X.api('GET', '/api/admin/exphard'); } catch (e) { box.innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+    const h = (x) => (x == null ? '—' : (Math.round(x * 10) / 10).toLocaleString('pt-BR'));
+    const draw = () => {
+      const C = V.config, P = V.projection, L = V.live;
+      box.innerHTML = `<p class="adt-msg" role="status"></p>
+        <p class="adt-sub">EXP por abate = barra do nível × % do plano (Free 0,5% · Ouro 0,7% · Diamante 0,8%) × vida do monstro × bônus do mapa × <b>multiplicador da curva</b> ÷ (1 + resets × dificuldade por reset). A curva liga as âncoras abaixo sem degraus. Mudar aqui não altera nenhum personagem: vale para os próximos abates.</p>
+        <b>Curva (nível → multiplicador do EXP por abate)</b>
+        <div style="overflow-x:auto"><table class="adm-table"><tr><th>Nível</th><th>Multiplicador</th><th></th></tr>
+        ${C.curve.map(([l, v], i) => `<tr><td><input type="number" min="1" max="1000" data-xl="${i}" value="${l}" style="width:80px" ${l === 1 || l === 1000 ? 'readonly' : ''}></td><td><input type="number" step="any" min="0.001" data-xv="${i}" value="${v}" style="width:100px"></td><td>${l === 1 || l === 1000 ? '' : `<button class="btn small" type="button" data-xdel="${i}">Remover</button>`}</td></tr>`).join('')}
+        </table></div>
+        <button class="btn small" type="button" id="xh-add">+ Âncora</button>
+        <div class="adm-row" style="flex-wrap:wrap;margin-top:8px">
+          <label>Dificuldade por reset <input type="number" step="0.01" min="0" max="1" id="xh-reset" value="${C.perReset}" style="width:80px"></label>
+          <label>Multiplicador do EXP offline <input type="number" step="0.05" min="0" max="2" id="xh-off" value="${C.offline}" style="width:80px"></label>
+          ${[2, 3, 4, 5].map((n) => `<label>Party ${n} <input type="number" step="0.01" min="0" max="1" data-xp="${n}" value="${C.party[n]}" style="width:70px"></label>`).join('')}
+        </div>
+        <button class="btn btn-gold" type="button" id="xh-save">Salvar</button> <button class="btn small" type="button" id="xh-default">Voltar à curva calibrada</button> <button class="btn small" type="button" id="xh-reload">Atualizar números</button>
+        <b style="display:block;margin-top:10px">Tempo estimado (Free solo, horas de jogo ativo, sem missões/eventos) × meta</b>
+        <div style="overflow-x:auto"><table class="adm-table"><tr><th>Nível</th>${V.target.slice(1).map(([l]) => `<th>${l}</th>`).join('')}</tr>
+          <tr><td>Estimado</td>${V.target.slice(1).map(([l]) => `<td>${h(P[l])} h</td>`).join('')}</tr>
+          <tr><td>Meta</td>${V.target.slice(1).map(([, t]) => `<td>${t} h</td>`).join('')}</tr></table></div>
+        <p class="muted small">Com 2 h por dia, ${h(P[1000])} h ≈ ${Math.round(P[1000] / 2)} dias; com 3 h por dia ≈ ${Math.round(P[1000] / 3)} dias.</p>
+        <b style="display:block;margin-top:10px">Jogadores por faixa de nível</b>
+        <div style="overflow-x:auto"><table class="adm-table"><tr><th>Faixa</th><th>Personagens</th><th>VIP Ouro</th><th>VIP Diamante</th><th>Nível médio</th><th>Maior</th><th>Parados 7+ dias</th></tr>
+        ${V.bands.map((b) => `<tr><td>${esc(b.name)}</td><td>${b.chars}</td><td>${b.gold}</td><td>${b.diamond}</td><td>${b.avg_level}</td><td>${b.max_level}</td><td>${b.idle7} (${b.chars ? Math.round(b.idle7 / b.chars * 100) : 0}%)</td></tr>`).join('') || '<tr><td colspan="7" class="muted">Sem personagens.</td></tr>'}</table></div>
+        <b style="display:block;margin-top:10px">Números reais desde ${new Date(L.since).toLocaleString('pt-BR')}</b>
+        <div style="overflow-x:auto"><table class="adm-table"><tr><th>Plano</th><th>Jogadores</th><th>EXP</th><th>Horas ativas</th><th>EXP por hora</th><th>Níveis</th><th>Min por nível</th></tr>
+        ${L.tiers.map((t) => `<tr><td>${esc(t.tier)}</td><td>${t.players}</td><td>${fmt.format(t.exp)}</td><td>${h(t.activeH)}</td><td>${fmt.format(t.expPerH)}</td><td>${t.levels}</td><td>${h(t.minPerLevel)}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">Ainda sem dados.</td></tr>'}</table></div>
+        <p class="muted small">Farm offline: ${fmt.format(L.offline.exp)} EXP em ${h(L.offline.hours)} h (${L.offline.reports} relatórios).</p>
+        ${[['Mapas', L.maps], ['Monstros', L.monsters], ['Bosses', L.bosses], ['Eventos', L.events]].map(([t, list]) => `<details><summary>EXP por ${t.toLowerCase()} (${list.length})</summary><table class="adm-table"><tr><th>${t}</th><th>EXP</th><th>Vezes</th></tr>${list.map((x) => `<tr><td>${esc(x.name)}</td><td>${fmt.format(x.exp)}</td><td>${x.n}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">Sem dados.</td></tr>'}</table></details>`).join('')}`;
+      const collect = () => {
+        const curve = $$('[data-xl]', box).map((i) => [Number(i.value), Number($(`[data-xv="${i.dataset.xl}"]`, box).value)]);
+        const party = {}; $$('[data-xp]', box).forEach((i) => { party[i.dataset.xp] = Number(i.value); });
+        return { curve, perReset: Number($('#xh-reset', box).value), offline: Number($('#xh-off', box).value), party };
+      };
+      const send = async (config) => { try { V = await X.api('POST', '/api/admin/exphard', { config }); draw(); msg(box, V.message); } catch (e) { msg(box, e.message, true); } };
+      $('#xh-save', box).onclick = () => send(collect());
+      $('#xh-default', box).onclick = () => send(V.defaults);
+      $('#xh-reload', box).onclick = () => exphard(box);
+      $('#xh-add', box).onclick = () => { const c = collect(); c.curve.splice(c.curve.length - 1, 0, [500, 1]); V.config = { ...V.config, ...c, curve: c.curve.sort((a, b) => a[0] - b[0]) }; draw(); };
+      $$('[data-xdel]', box).forEach((b) => { b.onclick = () => { const c = collect(); c.curve.splice(Number(b.dataset.xdel), 1); V.config = { ...V.config, ...c }; draw(); }; });
+    };
+    draw();
+  }
   // ---------------- Agilidade: crítico, velocidade de ataque e defesa ----------------
   async function agility(box) {
     box.innerHTML = '<p class="muted">Carregando…</p>';
@@ -835,11 +883,12 @@
       <details class="adm-sec adt-sec" data-sec="chaos"><summary><h3>Chaos Machine (asas e capas)</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="worldboss"><summary><h3>Boss Mundial: horários e força</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="retention"><summary><h3>Retenção: jogadores ativos, D1/D7/D30 e conversão</h3></summary><div class="adt-body"></div></details>
+      <details class="adm-sec adt-sec" data-sec="exphard"><summary><h3>EXP Extreme Hard: curva até o nível 1000, party e números reais</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="agility"><summary><h3>Agilidade: crítico, velocidade de ataque e defesa</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="excellent"><summary><h3>Opções Excellent semi-full</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="drops"><summary><h3>Drops de materiais e eventos</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="rules"><summary><h3>Comandos, reset e histórico ADM</h3></summary><div class="adt-body"></div></details>`;
-    const fn = { market, invasion, arena, upgrade, equip, vault, chaos, worldboss, retention, agility, excellent, drops, rules };
+    const fn = { market, invasion, arena, upgrade, equip, vault, chaos, worldboss, retention, agility, exphard, excellent, drops, rules };
     $$('.adt-sec', el).forEach((d) => { d.addEventListener('toggle', () => { if (d.open && !d.dataset.loaded) { d.dataset.loaded = 1; fn[d.dataset.sec]($('.adt-body', d)); } }); });
   }
 
