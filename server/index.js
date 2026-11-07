@@ -132,7 +132,7 @@ function clearCookie(res, req) {
 async function sessionAccount(req) {
   const token = parseCookies(req)[COOKIE];
   if (!token || token.length > 100) return null;
-  const { rows } = await db.query(`SELECT a.id, a.username, a.email, a.created_at, a.last_login_at, a.is_admin, a.vip1_until, a.vip2_until
+  const { rows } = await db.query(`SELECT a.id, a.username, a.email, a.created_at, a.last_login_at, a.is_admin, a.vip0_until, a.vip1_until, a.vip2_until
     FROM sessions s JOIN accounts a ON a.id = s.account_id
     WHERE s.token_hash = $1 AND s.expires_at > now()`, [sec.sha256(token)]);
   return rows[0] || null;
@@ -689,8 +689,8 @@ route('POST', '/api/register', async (req, url, res) => {
   const [pwHash, codeHash] = await Promise.all([sec.hashPassword(password), sec.hashPassword(code)]);
   let account;
   try {
-    const { rows } = await db.query(`INSERT INTO accounts (username, email, password_hash, recovery_hash, last_login_at, vip1_until, vip2_until)
-      VALUES ($1,$2,$3,$4, now(), NULL, NULL) RETURNING id, username`, [username, email, pwHash, codeHash]);
+    const { rows } = await db.query(`INSERT INTO accounts (username, email, password_hash, recovery_hash, last_login_at, vip0_until, vip1_until, vip2_until)
+      VALUES ($1,$2,$3,$4, now(), now() + ($5::int * interval '1 day'), NULL, NULL) RETURNING id, username`, [username, email, pwHash, codeHash, VIP.WELCOME_DAYS]);
     account = rows[0];
   } catch (e) {
     if (e.code === '23505') {
@@ -831,6 +831,8 @@ route('POST', '/api/recovery-code', async (req) => {
 });
 
 const HAIR_COLORS = 7, SKIN_TONES = 4;
+// pontos de boas-vindas de todo personagem novo
+const START_POINTS = 10000;
 route('POST', '/api/characters', async (req) => {
   const acc = await requireAccount(req);
   limit(req, 'char-create', 10, 60 * 60 * 1000, String(acc.id));
@@ -851,8 +853,9 @@ route('POST', '/api/characters', async (req) => {
   // Limite por conta verificado e aplicado na mesma instrução
   let rows;
   try {
-    ({ rows } = await db.query(`INSERT INTO characters (account_id, name, class, appearance, str, agi, vit, ene, cmd, combat_power, zen)
-      SELECT $1::bigint, $2::text, $3::text, $4::jsonb, $5::int, $6::int, $7::int, $8::int, $9::int, $10::int, 1000
+    // presente de boas-vindas: todo personagem novo já nasce com pontos para distribuir
+    ({ rows } = await db.query(`INSERT INTO characters (account_id, name, class, appearance, str, agi, vit, ene, cmd, combat_power, zen, free_points)
+      SELECT $1::bigint, $2::text, $3::text, $4::jsonb, $5::int, $6::int, $7::int, $8::int, $9::int, $10::int, 1000, ${START_POINTS}
       WHERE (SELECT count(*) FROM characters WHERE account_id = $1::bigint) < $11::int
       RETURNING id, name, class, level`,
     [acc.id, name, cls, JSON.stringify(appearance), b.str, b.agi, b.vit, b.ene, b.cmd, power, game.LIMITS.maxCharactersPerAccount]));

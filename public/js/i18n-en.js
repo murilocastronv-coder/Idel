@@ -2314,5 +2314,8 @@ window.I18N_EN = {
 "Suécia": "Sweden",
 "Suíça": "Switzerland",
 "Tchéquia": "Czechia",
-"Áustria": "Austria"
+"Áustria": "Austria",
+"(presente de boas-vindas, +20% de EXP) até": "(welcome gift, +20% EXP) until",
+"VIP Free ativo até {0}: +20% de EXP, presente de boas-vindas!": "VIP Free active until {0}: +20% EXP, welcome gift!",
+"Você tem {0} pontos para distribuir! Abra o Herói para usar.": "You have {0} points to distribute! Open Hero to use them."
 };

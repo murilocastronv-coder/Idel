@@ -24,6 +24,10 @@ const PLANS = {
 const DAYS = [15, 30];
 const CURRENCY = 'brl';
 const FREE = { tier: 0, exp: 1, zen: 1, drop: 1, offlineH: 8, damage: 1, bossDrop: 1, questReward: 1, healOnKill: 0 };
+// VIP Free: presente de boas-vindas de toda conta nova (3 dias), um pouco mais de EXP que o free normal.
+// Não é plano pago: drops, zen e o resto continuam como free.
+const WELCOME_DAYS = 3;
+const WELCOME = { ...FREE, exp: 1.2, welcome: true, name: 'VIP Free', color: '#9be27a' };
 
 const KEY = () => process.env.STRIPE_SECRET_KEY || '';
 const WHSEC = () => process.env.STRIPE_WEBHOOK_SECRET || '';
@@ -69,6 +73,10 @@ function status(row, now = Date.now()) {
   const u1 = row && row.vip1_until ? new Date(row.vip1_until).getTime() : 0;
   const u2 = row && row.vip2_until ? new Date(row.vip2_until).getTime() : 0;
   const plan = u2 > now ? PLANS.vip2 : u1 > now ? PLANS.vip1 : null;
+  const u0 = row && row.vip0_until ? new Date(row.vip0_until).getTime() : 0;
+  if (!plan && u0 > now) {
+    return { tier: 0, plan: 'vip0', name: WELCOME.name, welcome: true, until: u0, vip0Until: u0, vip1Until: 0, vip2Until: 0 };
+  }
   return {
     tier: plan ? plan.tier : 0, plan: plan ? plan.id : null, name: plan ? plan.name : null,
     until: plan ? (plan.tier === 2 ? u2 : u1) : 0, vip1Until: u1 > now ? u1 : 0, vip2Until: u2 > now ? u2 : 0,
@@ -183,4 +191,4 @@ async function webhook(raw, sigHeader, onGranted, onOther) {
   return { code: 200, body: { received: true } };
 }
 
-module.exports = { PLANS, DAYS, CURRENCY, enabled, loadPrices, savePrices, publicPlans, status, perks, grant, createCheckout, webhook, verifySig };
+module.exports = { WELCOME, WELCOME_DAYS, PLANS, DAYS, CURRENCY, enabled, loadPrices, savePrices, publicPlans, status, perks, grant, createCheckout, webhook, verifySig };

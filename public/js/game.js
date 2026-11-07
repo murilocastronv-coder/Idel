@@ -2408,7 +2408,7 @@
   function expEstimate(t) {
     if (!S.char) return '?';
     const L = S.char.level, next = Math.floor(100 * Math.pow(L, 2.1) + 200);
-    const vip = [0.5, 0.7, 0.8][(S.char.vip && S.char.vip.tier) || 0] || 0.5;
+    const vip = ([0.5, 0.7, 0.8][(S.char.vip && S.char.vip.tier) || 0] || 0.5) * (S.char.vip && S.char.vip.welcome ? 1.2 : 1);
     const w = S.data && S.map && S.data.world.find((x) => x.id === S.map.map);
     const er = S.data.expRef || { min: 0.02, max: 6 };
     const hk = Math.min(er.max || 6, Math.max(er.min || 0.02, (t.maxHp || 1) / refHp(L)));
@@ -3068,7 +3068,8 @@
   function vipHtml() {
     const V = S.data.vip; if (!V) return '';
     const me = S.char.vip || {};
-    const mine = me.tier ? `<p class="vip-mine">Seu VIP: <b style="color:${me.tier === 2 ? '#7fe3ff' : '#ffd36b'}">${esc(me.name)}</b> até ${dateFmt(me.until)}</p>` : '<p class="muted">Você ainda não tem VIP.</p>';
+    const mine = me.tier ? `<p class="vip-mine">Seu VIP: <b style="color:${me.tier === 2 ? '#7fe3ff' : '#ffd36b'}">${esc(me.name)}</b> até ${dateFmt(me.until)}</p>`
+      : me.welcome ? `<p class="vip-mine">Seu VIP: <b style="color:#9be27a">VIP Free</b> (presente de boas-vindas, +20% de EXP) até ${dateFmt(me.until)}</p>` : '<p class="muted">Você ainda não tem VIP.</p>';
     return `<div class="vip-box"><h3>VIP</h3>${mine}<div class="vip-plans">${V.plans.map((p) => `
       <div class="vip-plan t${p.tier}"><b style="color:${p.color}">${p.tier === 2 ? '◆' : '★'} ${esc(p.name)}</b>
         <ul>${p.perks.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>

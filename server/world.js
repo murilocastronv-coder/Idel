@@ -129,7 +129,7 @@ const overCap = () => false;
 function killExp(p, T, def, pk) {
   if (overCap(p, def)) return 0;
   // GM.xpMult(): evento temporário de EXP do GM (1 quando não há evento)
-  return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * hpK(T, p.level) * mapExp(def) * XP() * progK(p) * GM.xpMult()));
+  return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * (pk && pk.welcome ? pk.exp : 1) * hpK(T, p.level) * mapExp(def) * XP() * progK(p) * GM.xpMult()));
 }
 // bônus de EXP por mapa (servidor continua Hard): progressivo, cada mapa de caça dá um pouco mais que o anterior (+3% por mapa)
 // Vulcanus +3% · Dungeon +6% · Dungeon 2 +9% · Atlans +12% · Lost Tower +15% · Dungeon 3 +18% · Tarkan +21% · Icarus +24% · Aida +27% · Kalima +30% · Crywolf +33%
@@ -310,7 +310,7 @@ class Player {
     this.isPlayer = true;
     this.pvp = { kills: row.pvp_kills || 0, deaths: row.pvp_deaths || 0, duelW: row.duel_wins || 0, duelL: row.duel_losses || 0, pk: row.pk_count || 0 };
     this.pkUntil = 0; this.duel = null; this.duelInvite = null;
-    this.vipRow = { vip1_until: row.vip1_until, vip2_until: row.vip2_until };
+    this.vipRow = { vip0_until: row.vip0_until, vip1_until: row.vip1_until, vip2_until: row.vip2_until };
     this.isAdmin = !!row.is_admin_user;
     this.role = this.isAdmin ? 'superadmin' : (row.acc_role || 'player');
     this.mutedUntil = row.muted_until ? new Date(row.muted_until).getTime() : 0;
@@ -405,11 +405,11 @@ class Player {
     return this.queue;
   }
   vip() { return VIP.status(this.vipRow); }
-  perks() { return VIP.perks(this.vip().tier); }
+  perks() { const v = this.vip(); return v.welcome ? VIP.WELCOME : VIP.perks(v.tier); }
   charState() {
     const v = this.vip();
     return {
-      vip: { tier: v.tier, plan: v.plan, name: v.name, until: v.until, vip1Until: v.vip1Until, vip2Until: v.vip2Until },
+      vip: { tier: v.tier, plan: v.plan, name: v.name, until: v.until, welcome: !!v.welcome, vip1Until: v.vip1Until, vip2Until: v.vip2Until },
       admin: this.isAdmin, role: this.role, masterResets: this.masterResets, absorb: Math.round((this.absorb || 0) * 100),
       evo: this.evo, className: this.className(), evolutions: G.EVOLUTIONS[this.cls], classQuest: this.classQuest,
       type: 'char', id: this.id, name: this.name, cls: this.cls, ap: this.ap, level: this.level, resets: this.resets,
@@ -515,7 +515,7 @@ class World {
 
   // ficha de um personagem que não está no mundo (para comandos de administração)
   async loadShadow(charId) {
-    const { rows } = await db.query(`SELECT c.*, a.username AS acc_username, a.email AS acc_email, a.vip1_until, a.vip2_until, a.role AS acc_role, a.muted_until
+    const { rows } = await db.query(`SELECT c.*, a.username AS acc_username, a.email AS acc_email, a.vip0_until, a.vip1_until, a.vip2_until, a.role AS acc_role, a.muted_until
       FROM characters c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1`, [charId]);
     if (!rows[0]) throw new Error('Personagem não encontrado.');
     rows[0].is_admin_user = ADMIN.isAdmin({ username: rows[0].acc_username, email: rows[0].acc_email });
@@ -608,7 +608,7 @@ class World {
     const lastQ = this.lastQueues.get(String(charId));
     if (lastQ) await lastQ.catch(() => {});
     const { rows } = await db.query(`SELECT c.*, EXTRACT(EPOCH FROM (now() - c.last_seen_at))::int AS offline_secs,
-        a.username AS acc_username, a.email AS acc_email, a.vip1_until, a.vip2_until, a.role AS acc_role, a.muted_until
+        a.username AS acc_username, a.email AS acc_email, a.vip0_until, a.vip1_until, a.vip2_until, a.role AS acc_role, a.muted_until
       FROM characters c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1 AND c.account_id = $2`, [charId, client.meta.accountId]);
     const row = rows[0];
     if (row) row.is_admin_user = ADMIN.isAdmin({ username: row.acc_username, email: row.acc_email });
@@ -643,6 +643,8 @@ class World {
     this.enterMap(p, mapId, row.map === mapId && row.pos_x > 0 ? [row.pos_x, row.pos_y] : null);
     p.send(p.charState());
     p.send({ type: 'chatlog', lines: this.chat.slice(-30) });
+    { const v = p.vip(); if (v.welcome) p.send({ type: 'log', kind: 'quest', text: `VIP Free ativo até ${new Date(v.until).toLocaleDateString('pt-BR')}: +20% de EXP, presente de boas-vindas!` }); }
+    if (p.free >= 1000 && p.level <= 1) p.send({ type: 'log', kind: 'quest', text: `Você tem ${p.free} pontos para distribuir! Abra o Herói para usar.` });
     p.send({ type: 'invasion', phase: 'status', ...INV.status() });
     ARENA.onJoin(p);
     FRIENDS.onJoin(this, p);
@@ -1169,7 +1171,7 @@ class World {
 
   // ---------- VIP e administração ----------
   async refreshVip(accountId) {
-    const { rows } = await db.query('SELECT vip1_until, vip2_until FROM accounts WHERE id = $1', [accountId]);
+    const { rows } = await db.query('SELECT vip0_until, vip1_until, vip2_until FROM accounts WHERE id = $1', [accountId]);
     if (!rows[0]) return;
     for (const p of this.players.values()) {
       if (p.accountId !== String(accountId)) continue;
@@ -1184,7 +1186,7 @@ class World {
 
   async adminChar(name) {
     const { rows } = await db.query(`SELECT c.id, c.name, c.class, c.level, c.resets, c.zen, c.free_points, c.str, c.agi, c.vit, c.ene, c.cmd,
-        a.username, a.vip1_until, a.vip2_until,
+        a.username, a.vip0_until, a.vip1_until, a.vip2_until,
         (SELECT count(*) FROM items i WHERE i.character_id = c.id AND NOT i.equipped AND i.vault_no IS NULL)::int AS bag
       FROM characters c JOIN accounts a ON a.id = c.account_id WHERE lower(c.name) = lower($1)
       ORDER BY 1 LIMIT 1`, [String(name || '').trim()]);

@@ -266,4 +266,8 @@ EN_EXTRA = {
     "Austrália": "Australia", "Bélgica": "Belgium", "Canadá": "Canada", "Finlândia": "Finland", "França": "France", "Grécia": "Greece",
     "Itália": "Italy", "Japão": "Japan", "México": "Mexico", "Polônia": "Poland", "Romênia": "Romania", "Suécia": "Sweden", "Suíça": "Switzerland",
     "Tchéquia": "Czechia", "Áustria": "Austria",
+    # VIP Free e pontos de boas-vindas
+    "(presente de boas-vindas, +20% de EXP) até": "(welcome gift, +20% EXP) until",
+    "VIP Free ativo até {0}: +20% de EXP, presente de boas-vindas!": "VIP Free active until {0}: +20% EXP, welcome gift!",
+    "Você tem {0} pontos para distribuir! Abra o Herói para usar.": "You have {0} points to distribute! Open Hero to use them.",
 }
