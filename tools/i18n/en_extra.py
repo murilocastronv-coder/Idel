@@ -286,4 +286,5 @@ EN_EXTRA = {
     "Válido": "Valid", "Mesmo IP que o seu": "Same IP as yours", "IP repetido": "Repeated IP", "Sem IP": "No IP",
     "Chegou ao nível do prêmio": "Reached the reward level", "Subindo de nível": "Leveling up",
     "🎁 Convide amigos e ganhe peça +8 com 5 opções Excellent": "🎁 Invite friends and earn a +8 piece with 5 Excellent options", "🎁 Convide amigos": "🎁 Invite friends",
+    "🎁 Convidar amigos": "🎁 Invite friends", "🎁 Convidar amigos: seu link de afiliado (ganhe peça +8 com 5 opções Excellent)": "🎁 Invite friends: your referral link (earn a +8 piece with 5 Excellent options)",
 }

@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=2">
   <link rel="stylesheet" href="/css/style.css?v=22">
-  <link rel="stylesheet" href="/css/game.css?v=42">
+  <link rel="stylesheet" href="/css/game.css?v=43">
   <link rel="stylesheet" href="/css/art-upgrade.css?v=7">
   <link rel="stylesheet" href="/css/gfx-fx.css?v=13">
 </head>
@@ -28,6 +28,7 @@
     <div class="map-name"><i class="dot" id="g-conn"></i><span id="map-name">Conectando…</span></div>
     <div class="mode-tag">Hard XP</div>
     <button class="chat-toggle" type="button" id="chat-toggle" data-chat-screen-open aria-label="Escolher se o chat aparece na tela">💬 Chat</button>
+    <a class="chat-toggle invite-chip" href="/afiliados.html" target="_blank" rel="noopener" aria-label="Convidar amigos: seu link de afiliado">🎁 Convidar amigos</a>
     <button class="inv-timer" id="inv-timer" type="button" hidden aria-live="off"><b aria-hidden="true">♛</b><span id="inv-label">Próxima invasão</span><em id="inv-time">--:--</em></button>
     <canvas id="minimap" width="120" height="80" aria-label="Minimapa"></canvas>
   </div>
@@ -250,6 +251,7 @@
 
   <section class="panel window" id="panel-friends" hidden aria-labelledby="friends-title">
     <header><h2 id="friends-title">Amigos <small id="friends-count"></small></h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <a class="btn btn-gold wide invite-btn" href="/afiliados.html" target="_blank" rel="noopener">🎁 Convidar amigos: seu link de afiliado (ganhe peça +8 com 5 opções Excellent)</a>
     <div class="fr-add"><input id="fr-name" maxlength="20" placeholder="Nome do personagem" aria-label="Nome do personagem para adicionar"><button class="btn small btn-gold" type="button" id="fr-add">Adicionar amigo</button></div>
     <p class="fr-msg" id="fr-msg" role="status"></p>
     <div id="fr-requests"></div>
@@ -295,7 +297,7 @@
     <div class="row"><button class="btn btn-gold" type="button" data-close>Continuar</button></div>
   </dialog>
 
-  <script src="/js/i18n-en.js?v=45"></script>
+  <script src="/js/i18n-en.js?v=46"></script>
 
   <script src="/js/i18n.js?v=20"></script>
 

@@ -782,3 +782,8 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .col-cat summary { cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: 4px; align-items: center; }
 .col-cat summary .qbar { grid-column: 1 / -1; height: 6px; }
 .j-tabs { flex-wrap: wrap; } .j-tabs button { min-width: 30%; font-size: 12px; }
+/* atalho do link de afiliado (abaixo do botão do chat) */
+.invite-chip { text-decoration: none; color: #1a0f05; background: linear-gradient(180deg, #ffe08a, #e8b84a); border-color: #b8862a; width: max-content; }
+.invite-chip:hover, .invite-chip:focus-visible { color: #1a0f05; filter: brightness(1.08); }
+.invite-btn { display: block; text-align: center; margin: 0 0 10px; text-decoration: none; white-space: normal; }
+@media (max-width: 700px) { .hud-map .invite-chip { order: 3; margin-top: 2px; font-size: 10px; } }
