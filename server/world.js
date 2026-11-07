@@ -12,6 +12,8 @@ const AGI = require('./agility');
 const GM = require('./gm');
 const RET = require('./retention');
 const JOURNEY = require('./journey');
+const PROG = require('./progress');
+const WB = require('./worldboss');
 const FENRIR = require('./fenrircraft');
 const DROPS = require('./drops');
 const CMDS = require('./commands');
@@ -477,7 +479,11 @@ class World {
     await EXCELLENT.init(helpers);
     await RET.init(); await RET.closeStale();
     JOURNEY.init(this, { ARENA, INV, GM });
-    RET.setHook((p, name) => { this.quest(p, name, 1); this.quest(p, 'event', 1); }); // eventos contam nas missões
+    PROG.init(this);
+    WB.init(this, { PROG, RET });
+    JOURNEY.addProvider((p) => WB.calendarEntry(p));
+    JOURNEY.addProvider((p) => PROG.weekendEntry(p));
+    RET.setHook((p, name) => { this.quest(p, name, 1); this.quest(p, 'event', 1); PROG.addPoints(p, 'event'); }); // eventos contam nas missões
     await AGI.init();
     await CHAOS.init(helpers);
     ENTRIES.init(helpers);
@@ -648,6 +654,7 @@ class World {
     let mapId = G.WORLD[row.map] ? row.map : 'lorencia';
     if (G.WORLD[mapId].minLevel > p.level) mapId = 'lorencia';
     this.enterMap(p, mapId, row.map === mapId && row.pos_x > 0 ? [row.pos_x, row.pos_y] : null);
+    try { PROG.backfill(p); } catch (e) { console.error('[progresso] backfill', e.message); }
     p.send(p.charState());
     p.send({ type: 'chatlog', lines: this.chat.slice(-30) });
     { const v = p.vip(); if (v.welcome) p.send({ type: 'log', kind: 'quest', text: `VIP Free ativo até ${new Date(v.until).toLocaleDateString('pt-BR')}: +20% de EXP, presente de boas-vindas!` }); }
@@ -681,6 +688,7 @@ class World {
     if (!this.players.has(p.charId) || this.players.get(p.charId) !== p) return;
     this.players.delete(p.charId);
     RET.sessionEnd(p);
+    PROG.flush().catch(() => {});
     SOCIAL.onLeave(p);
     FRIENDS.onLeave(this, p);
     GUILD.onLeave(p);
@@ -716,6 +724,7 @@ class World {
     p.y = clamp(sy + (pos ? 0 : rand(-20, 20)), 20, m.def.h - 20);
     p.target = null; p.moveTo = null; p.joy = null;
     if (!m.def.safe && !m.def.arena) p.lastFarm = mapId;
+    if (!m.def.arena && p.quests && p.quests.daily) PROG.discover(p, 'maps', mapId);
     m.players.set(p.id, p);
     p.send({
       type: 'enter', map: mapId, room: m.room, rooms: ROOMS, name: m.def.name, theme: m.def.theme, w: m.def.w, h: m.def.h, safe: !!m.def.safe,
@@ -737,7 +746,7 @@ class World {
     // disfarce do Chaos Castle: só a aparência muda; itens e atributos reais continuam no servidor
     if (ARENA.disguise(p)) return { id: p.id, name: p.name, cls: 'dark_knight', ap: { hair: 0, skin: 1 }, level: p.level, evo: 0, className: 'Guerreiro do Castelo', weaponRarity: 'common', vip: 0, disguise: 1,
       eq: { helm: 'abyss', armor: 'abyss', gloves: 'abyss', boots: 'abyss', w: 'sword' } };
-    return { id: p.id, name: p.name, cls: p.cls, ap: p.ap, level: p.level, evo: p.evo, className: p.className(), weaponRarity: w ? w.rarity : 'common', vip: p.vip().tier, eq: gearVisual(p.equipped()), ...GUILD.tagOf(p) };
+    return { id: p.id, name: p.name, cls: p.cls, ap: p.ap, level: p.level, evo: p.evo, className: p.className(), weaponRarity: w ? w.rarity : 'common', vip: p.vip().tier, eq: gearVisual(p.equipped()), ...GUILD.tagOf(p), ...PROG.titleOf(p) };
   }
 
   // ---------- mensagens do navegador ----------
@@ -843,6 +852,7 @@ class World {
         return p.run(() => TRADE.act(this, p, msg));
       case 'market': return p.run(() => MARKET.act(this, p, msg));
       case 'resetStatus': return p.run(() => RSTAT.act(this, p, msg));
+      case 'progress': return p.run(() => PROG.act(p, msg));
       case 'journey': return p.send(msg.what === 'events' ? { type: 'calendar', events: JOURNEY.calendar(p) } : JOURNEY.journey(p));
       case 'vault': return p.run(() => VAULT.act(this, p, msg));
       case 'arena': return p.run(() => ARENA.act(this, p, msg));
@@ -947,6 +957,7 @@ class World {
     const it = p.items.find((i) => String(i.id) === id);
     if (!it) { EQUIP.logDenial(p, null, 'item que não está na bolsa: ' + id); return p.send({ type: 'log', kind: 'warn', text: 'Este item não está na sua bolsa.' }); }
     if (it.equipped) return undefined;
+    if (p.quests && p.quests.daily) PROG.onItem(p, it.base);
     const r = EQUIP.check(p, it, wanted);
     if (!r.ok) { EQUIP.logDenial(p, it.base, r.reason); return p.send({ type: 'log', kind: 'warn', text: r.reason }); }
     const cur = p.items.find((i) => i.equipped && EQUIP.eqSlotOf(i) === r.slot);
@@ -1110,6 +1121,7 @@ class World {
     const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus, excellent_options) VALUES ($1,$2,$3,$4,'[]'::jsonb)
       RETURNING id, base, rarity, plus, equipped, qty, excellent_options`, [p.charId, it.base, it.rarity, it.plus]);
     p.items.push(rows[0]);
+    PROG.onItem(p, it.base);
     this.quest(p, 'loot', 1);
     if (['epic', 'legendary', 'ancestral'].includes(it.rarity)) this.quest(p, 'excellent', 1);
     if (['legendary', 'ancestral'].includes(it.rarity)) { p.quests.life = p.quests.life || {}; p.quests.life.legendary = (p.quests.life.legendary || 0) + 1; this.achieve(p); }
@@ -1159,6 +1171,7 @@ class World {
     const { rows } = await db.query(`INSERT INTO items (character_id, base, rarity, plus, excellent_options) VALUES ($1,$2,$3,$4,$5)
       RETURNING id, base, rarity, plus, equipped, qty, excellent_options`, [p.charId, it.base, it.rarity, it.plus || 0, JSON.stringify(excellent)]);
     p.items.push(rows[0]);
+    if (p.quests && p.quests.daily) PROG.onItem(p, it.base);
     p.dirty = true;
     if (!opts.silent && p.client) {
       p.send({ type: 'drop', item: publicItem(rows[0]), gain: 1, src: opts.src || null, x: opts.x ?? null, y: opts.y ?? null });
@@ -1426,6 +1439,13 @@ class World {
     }
   }
 
+  // melhor + já alcançado (conquistas +9/+15 e título Ferreiro Lendário)
+  onUpgrade(p, to) {
+    if (!p.quests || !to) return;
+    p.quests.life = p.quests.life || {};
+    if (to > (p.quests.life.maxPlus || 0)) { p.quests.life.maxPlus = to; PROG.checkTitles(p); this.achieve(p); }
+  }
+
   // ---------- missões ----------
   quest(p, kind, amount, ctx) {
     if (!p.quests || !p.quests.daily) return;
@@ -1461,6 +1481,7 @@ class World {
       p.exp += n; parts.push(`${n.toLocaleString('pt-BR')} EXP`);
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
     }
+    if (reward.title && PROG.grantTitle(p, reward.title)) parts.push('título ' + PROG.TITLES[reward.title].name);
     if (reward.item) {
       const it = rollItem(Math.max(1, p.level), 'normal');
       it.rarity = reward.item;
@@ -1483,6 +1504,7 @@ class World {
       if (!m || m.claimed || m.prog < m.goal) return;
       m.claimed = true;
       await this.grant(p, G.DAILY_POOL.find((d) => d.id === id).reward, 'Prêmio da missão');
+      PROG.addPoints(p, 'daily');
     } else if (kind === 'login' || kind === 'cycle') {
       // ciclo de retorno de 7 etapas (substitui o prêmio de login; faltar um dia não zera o ciclo)
       if (!q.cycle || q.cycle.claimed) return;
@@ -1496,6 +1518,7 @@ class World {
       if (!m || m.claimed || m.prog < m.goal) return;
       m.claimed = true;
       await this.grant(p, G.WEEKLY_POOL.find((d) => d.id === id).reward, 'Prêmio da missão semanal');
+      PROG.addPoints(p, 'weekly');
     } else if (kind === 'weeklyBonus') {
       const w = q.weekly;
       if (!w || w.bonus || !w.list || !w.list.length || !w.list.every((x) => x.claimed)) return;
@@ -1539,6 +1562,7 @@ class World {
     m.flip = p.x > m.x;
     if (!m.target || m.target.dead || m.target.map !== p.map) m.target = p;
     m.contrib.set(p.charId, (m.contrib.get(p.charId) || 0) + Math.min(d, d + m.hp));
+    if (m.worldBoss) WB.onHit(p, m);
     if (m.hp <= 0) this.killMonster(m, p, now);
     return d;
   }
@@ -1551,12 +1575,14 @@ class World {
       p.hp = Math.min(p.maxHp, p.hp + v);
       p.mp -= sk.mana; p.cds[sk.id] = now + sk.cd;
       map.emit({ k: 'heal', t: p.id, d: v, fx: 'heal' });
+      WB.onSupport(p, v);
       return;
     }
     if (sk.buff) {
       p.mp -= sk.mana; p.cds[sk.id] = now + sk.cd;
       p.buffs[sk.buff] = { mult: sk.bmult, until: now + sk.dur };
       map.emit({ k: 'buff', t: p.id, b: sk.buff });
+      WB.onSupport(p, p.maxHp * 0.15);
       this.quest(p, 'skill', 1);
       return;
     }
@@ -1588,10 +1614,11 @@ class World {
     if (m.dead) return;
     m.dead = true; m.hp = 0; m.target = null;
     const map = killer.map;
-    m.respawnAt = m.golden ? Infinity : now + (m.T.respawnMs || MONSTER_RESPAWN_MS);
+    m.respawnAt = m.golden || m.worldBoss ? Infinity : now + (m.T.respawnMs || MONSTER_RESPAWN_MS);
     if (m.T.arena) return ARENA.onMonsterKill(this, m, map, killer);
     map.emit({ k: 'die', t: m.id });
     if (m.T.golden) return INV.onKill(this, m, map, killer);
+    if (m.worldBoss) { setTimeout(() => { const i = map.monsters.indexOf(m); if (i >= 0) { map.monsters.splice(i, 1); for (const o of map.players.values()) o.send({ type: 'mdel', id: m.id }); } }, 2500).unref(); return WB.onKill(this, m, map).catch((e) => console.error('[boss mundial] morte', e.message)); }
     if (m.T.boss) return this.bossRewards(m, map, killer);
     const p = killer;
     const pk = p.perks();
@@ -1610,6 +1637,7 @@ class World {
     // Zen de monstros normais é sempre creditado diretamente; bônus VIP/evento não ultrapassam o teto.
     this.quest(p, 'kill', 1); this.quest(p, 'zen', zen);
     if (m.T.elite) this.quest(p, 'elite', 1);
+    PROG.addPoints(p, m.T.elite ? 'elite' : 'kill');
     if (map && !map.def.arena && !m.T.training) {
       this.quest(p, 'explore', 1, { map: map.id });
       // "mapa do seu nível": dá EXP para você e não é um mapa muito abaixo do seu nível
@@ -1673,7 +1701,8 @@ class World {
       p.exp += exp; p.zen += zen; p.bossesKilled++;
       const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
       if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
-      this.quest(p, 'elite', 1); this.quest(p, 'boss', 1); this.quest(p, 'zen', zen); this.achieve(p);
+      this.quest(p, 'elite', 1); this.quest(p, 'boss', 1); this.quest(p, 'zen', zen);
+      PROG.addPoints(p, 'boss', Math.max(0.25, share)); PROG.discover(p, 'bosses', m.type); this.achieve(p);
       GUILD.onMonsterKill(p, m.T, { boss: true });
       p.send({ type: 'reward', exp, zen, mon: m.T.name, share: Math.round(share * 100) });
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
@@ -1787,13 +1816,15 @@ class World {
       if (m.slam) return; // parado preparando o golpe
       if (t && !m.slam && now >= (m.nextSpecial || 0) && dist(m, t) < 150) {
         m.nextSpecial = now + (m.enraged ? 6000 : 9000);
-        m.slam = { x: Math.round(t.x), y: Math.round(t.y), r: 64, at: now + 1300 };
-        map.emit({ k: 'warn', a: m.id, x: m.slam.x, y: m.slam.y, r: 64, ms: 1300 });
+        const sr = m.T.slamR || 64;
+        m.slam = { x: Math.round(t.x), y: Math.round(t.y), r: sr, at: now + 1300 };
+        map.emit({ k: 'warn', a: m.id, x: m.slam.x, y: m.slam.y, r: sr, ms: 1300 });
         return;
       }
     }
     if (t) {
       if (!m.trainingArea && Math.hypot(m.x - m.hx, m.y - m.hy) > 260) { // fugiu longe demais: volta e cura
+        if (m.worldBoss) { m.target = null; m.wander = { x: m.hx, y: m.hy }; return; } // Boss Mundial volta sem curar nem zerar a contribuição
         m.target = null; m.hp = m.T.hp; m.contrib.clear(); m.wander = { x: m.hx, y: m.hy }; return;
       }
       const d = dist(m, t);
@@ -1989,6 +2020,7 @@ class World {
   async shutdown() {
     clearInterval(this.timer); clearInterval(this.saver);
     await Promise.all([...this.players.values()].map((p) => this.save(p)));
+    await PROG.flush().catch(() => {}); // pontos de temporada ainda na memória
   }
 }
 

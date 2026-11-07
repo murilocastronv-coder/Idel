@@ -497,4 +497,4 @@ async function onJoin(world, p) {
 }
 function onLeave(p) { if (p.guildMisDirty) flushMissions(p).catch(() => {}); }
 
-module.exports = { init, act, onJoin, onLeave, onMonsterKill, onWarKill, atWar, tagOf, ROLE_NAME };
+module.exports = { init, act, onJoin, onLeave, onMonsterKill, onWarKill, atWar, tagOf, ROLE_NAME, rankingRows };

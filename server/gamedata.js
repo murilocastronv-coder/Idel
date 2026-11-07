@@ -494,6 +494,15 @@ const ACHIEVEMENTS = [
   { id: 'legend', text: 'Encontre um item lendário ou ancestral', stat: 'legendary', goal: 1, reward: { zen: 25000 } },
   { id: 'rich', text: 'Tenha 100.000 Zen', stat: 'zen', goal: 100000, reward: { pot_hp: 100, pot_mp: 100 } },
   { id: 'streak7', text: 'Entre 7 dias seguidos', stat: 'streak', goal: 7, reward: { item: 'epic' } },
+  { id: 'plus9', text: 'Tenha seu primeiro equipamento +9', stat: 'plus', goal: 9, reward: { zen: 20000, mats: [['jewel_of_bless', 1]] } },
+  { id: 'plus15', text: 'Tenha seu primeiro equipamento +15', stat: 'plus', goal: 15, reward: { zen: 200000, title: 'ferreiro' } },
+  { id: 'wing1', text: 'Conquiste sua primeira asa ou capa', stat: 'wings', goal: 1, reward: { zen: 30000, title: 'alado' } },
+  { id: 'guild1', text: 'Entre na sua primeira guilda', stat: 'guild', goal: 1, reward: { zen: 10000, title: 'irmao' } },
+  { id: 'event1', text: 'Participe do seu primeiro evento', stat: 'events', goal: 1, reward: { zen: 15000, mats: [['jewel_of_chaos', 1]] } },
+  { id: 'event10', text: 'Participe de 10 eventos', stat: 'events', goal: 10, reward: { zen: 60000, title: 'veterano' } },
+  { id: 'maps10', text: 'Explore 10 mapas diferentes', stat: 'maps', goal: 10, reward: { zen: 40000, title: 'explorador' } },
+  { id: 'sets8', text: 'Registre 8 conjuntos no livro de coleções', stat: 'colsets', goal: 8, reward: { zen: 60000, title: 'col_sets' } },
+  { id: 'wboss1', text: 'Ajude a derrotar um Boss Mundial', stat: 'wboss', goal: 1, reward: { zen: 50000, mats: [['jewel_of_soul', 1]] } },
 ];
 
 const POINTS_PER_LEVEL = { dark_knight: 5, dark_wizard: 5, fairy_elf: 5, magic_gladiator: 7, dark_lord: 7, summoner: 5 };

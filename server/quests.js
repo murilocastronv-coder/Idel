@@ -32,6 +32,7 @@ function rewardText(r) {
   if (r.box) parts.push((G.ITEM_BASES[r.box] || {}).name || r.box);
   if (r.item) parts.push(`item ${{ rare: 'raro', epic: 'épico', legendary: 'lendário' }[r.item] || r.item}`);
   if (r.expPct) parts.push(`EXP (${Math.round(r.expPct * 100)}% do nível)`);
+  if (r.title) { const t = require('./progress').TITLES[r.title]; parts.push(`título "${t ? t.name : r.title}"`); }
   return parts.join(' + ');
 }
 
@@ -107,6 +108,13 @@ function statValue(p, stat) {
     case 'legendary': return p.quests.life.legendary || 0;
     case 'zen': return p.zen;
     case 'streak': return p.quests.login.streak || 0;
+    case 'plus': return (p.quests.life && p.quests.life.maxPlus) || 0;
+    case 'wings': return (p.quests.col && p.quests.col.wings || []).length;
+    case 'maps': return (p.quests.col && p.quests.col.maps || []).length;
+    case 'colsets': return (p.quests.col && p.quests.col.sets || []).length;
+    case 'guild': return p.guild || (p.quests.life && p.quests.life.guild) ? 1 : 0;
+    case 'events': return (p.quests.life && p.quests.life.events) || 0;
+    case 'wboss': return (p.quests.life && p.quests.life.wboss) || 0;
     default: return 0;
   }
 }

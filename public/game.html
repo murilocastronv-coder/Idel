@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=2">
   <link rel="stylesheet" href="/css/style.css?v=22">
-  <link rel="stylesheet" href="/css/game.css?v=41">
+  <link rel="stylesheet" href="/css/game.css?v=42">
   <link rel="stylesheet" href="/css/art-upgrade.css?v=4">
   <link rel="stylesheet" href="/css/gfx-fx.css?v=13">
 </head>
@@ -201,7 +201,12 @@
       <button type="button" role="tab" data-by="resets">Resets</button>
       <button type="button" role="tab" data-by="bosses">Bosses</button>
       <button type="button" role="tab" data-by="pvp">PvP</button>
+      <button type="button" role="tab" data-by="season">Temporada</button>
+      <button type="button" role="tab" data-by="wboss">Boss Mundial</button>
+      <button type="button" role="tab" data-by="events">Eventos</button>
+      <button type="button" role="tab" data-by="guilds">Guildas</button>
     </div>
+    <p class="muted small" id="rank-note" style="margin:4px 0"></p>
     <div class="rank-wrap"><table class="g-rank">
       <thead><tr><th scope="col">#</th><th scope="col">Herói</th><th scope="col">Classe</th><th scope="col" id="g-rank-last">Resets</th></tr></thead>
       <tbody id="g-rank-body"></tbody>
@@ -210,7 +215,7 @@
 
   <section class="panel window" id="panel-quests" hidden aria-labelledby="quests-title">
     <header><h2 id="quests-title">Minha Jornada</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
-    <nav class="j-tabs" role="tablist" aria-label="Jornada"><button type="button" role="tab" data-jtab="journey" class="on">Minha Jornada</button><button type="button" role="tab" data-jtab="missions">Missões</button><button type="button" role="tab" data-jtab="events">Eventos</button></nav>
+    <nav class="j-tabs" role="tablist" aria-label="Jornada"><button type="button" role="tab" data-jtab="journey" class="on">Minha Jornada</button><button type="button" role="tab" data-jtab="missions">Missões</button><button type="button" role="tab" data-jtab="events">Eventos</button><button type="button" role="tab" data-jtab="season">Temporada</button><button type="button" role="tab" data-jtab="col">Coleções</button></nav>
     <div id="quests-body"></div>
   </section>
 
@@ -298,8 +303,8 @@
   <script src="/js/sprites.js?v=44"></script>
   <script src="/js/sfx.js?v=21"></script>
   <script src="/js/music.js?v=1"></script>
-  <script src="/js/admin-tools.js?v=17"></script>
+  <script src="/js/admin-tools.js?v=18"></script>
   <script src="/js/fenrir.js?v=6"></script>
-  <script src="/js/game.js?v=122"></script>
+  <script src="/js/game.js?v=123"></script>
 </body>
 </html>

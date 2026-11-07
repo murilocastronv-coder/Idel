@@ -126,6 +126,31 @@
       } catch (e) { msg(box, e.message || 'JSON inválido.', true); }
     };
   }
+  // ---------------- Boss Mundial ----------------
+  async function worldboss(box) {
+    box.innerHTML = '<p class="muted">Carregando…</p>';
+    let V;
+    try { V = await X.api('GET', '/api/admin/worldboss'); } catch (e) { box.innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+    const draw = () => {
+      const C = V.config;
+      box.innerHTML = `<p class="adt-msg" role="status"></p>
+        <p class="adt-sub">Nasce em 3 faixas de nível ao mesmo tempo (um boss por faixa, em todas as salas), girando de mapa a cada horário. Recompensa por contribuição (dano + apoio); quem ficou parado não recebe.</p>
+        <p>Próximo: <b>${new Date(V.next).toLocaleString('pt-BR')}</b> em ${esc(V.nextMaps.join(', '))}</p>
+        ${V.live.length ? `<table class="adm-table"><tr><th>Sala</th><th>Mapa</th><th>Boss</th><th>Vida</th></tr>${V.live.map((l) => `<tr><td>${l.room}</td><td>${esc(l.map)}</td><td>${esc(l.name)}</td><td>${Math.round(l.hp / l.maxHp * 100)}%</td></tr>`).join('')}</table>` : '<p class="muted">Nenhum Boss Mundial vivo agora.</p>'}
+        <div class="adm-row" style="flex-wrap:wrap">
+          <label><input type="checkbox" id="wb-on" ${C.enabled ? 'checked' : ''}> Ligado</label>
+          <label style="min-width:260px">Horários (Brasília) <input id="wb-times" value="${esc(C.times.join(', '))}"></label>
+          <label>Duração (min) <input type="number" id="wb-dur" value="${C.durationMin}" style="width:70px"></label>
+          <label>Vida (×) <input type="number" id="wb-hp" value="${C.hpMult}" style="width:70px"></label>
+          <label>Dano (×) <input type="number" step="0.1" id="wb-dmg" value="${C.dmgMult}" style="width:70px"></label>
+          <label>Defesa (×) <input type="number" step="0.1" id="wb-def" value="${C.defMult}" style="width:70px"></label>
+        </div>
+        <button class="btn btn-gold" type="button" id="wb-save">Salvar</button> <button class="btn" type="button" id="wb-spawn">Fazer aparecer agora</button>`;
+      $('#wb-save', box).onclick = async () => { try { V = await X.api('POST', '/api/admin/worldboss', { config: { enabled: $('#wb-on', box).checked, times: $('#wb-times', box).value, durationMin: $('#wb-dur', box).value, hpMult: $('#wb-hp', box).value, dmgMult: $('#wb-dmg', box).value, defMult: $('#wb-def', box).value } }); draw(); msg(box, 'Salvo.'); } catch (e) { msg(box, e.message, true); } };
+      $('#wb-spawn', box).onclick = async () => { try { V = await X.api('POST', '/api/admin/worldboss', { action: 'spawn' }); draw(); msg(box, 'Boss Mundial apareceu.'); } catch (e) { msg(box, e.message, true); } };
+    };
+    draw();
+  }
   // ---------------- Retenção: DAU/MAU, D1/D7/D30, sessões, eventos, guildas, VIP ----------------
   async function retention(box) {
     box.innerHTML = '<p class="muted">Calculando…</p>';
@@ -808,12 +833,13 @@
       <details class="adm-sec adt-sec" data-sec="arena"><summary><h3>Eventos: Chaos Castle, Devil Square e Blood Castle</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="upgrade"><summary><h3>Aprimoramento +0 a +15 e Ferreiro</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="chaos"><summary><h3>Chaos Machine (asas e capas)</h3></summary><div class="adt-body"></div></details>
+      <details class="adm-sec adt-sec" data-sec="worldboss"><summary><h3>Boss Mundial: horários e força</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="retention"><summary><h3>Retenção: jogadores ativos, D1/D7/D30 e conversão</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="agility"><summary><h3>Agilidade: crítico, velocidade de ataque e defesa</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="excellent"><summary><h3>Opções Excellent semi-full</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="drops"><summary><h3>Drops de materiais e eventos</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="rules"><summary><h3>Comandos, reset e histórico ADM</h3></summary><div class="adt-body"></div></details>`;
-    const fn = { market, invasion, arena, upgrade, equip, vault, chaos, retention, agility, excellent, drops, rules };
+    const fn = { market, invasion, arena, upgrade, equip, vault, chaos, worldboss, retention, agility, excellent, drops, rules };
     $$('.adt-sec', el).forEach((d) => { d.addEventListener('toggle', () => { if (d.open && !d.dataset.loaded) { d.dataset.loaded = 1; fn[d.dataset.sec]($('.adt-body', d)); } }); });
   }
 

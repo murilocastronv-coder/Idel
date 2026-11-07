@@ -773,3 +773,12 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .ev-list li.ev-no { opacity: .6; border-left-color: #6a6a6a; }
 .ev-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 13px; }
 .ev-live { color: #8fdc6f; } .ev-open { color: #ffd36b; }
+/* títulos e coleções */
+.t-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.t-chip { font: 600 12px var(--display); padding: 4px 9px; border-radius: 12px; border: 2px solid var(--tc, #8a7a5a); color: var(--tc, #d8cdb5); background: rgba(0,0,0,.3); cursor: pointer; }
+.t-chip.on { background: var(--tc, #e8b84a); color: #160f05; }
+.t-how { margin: 8px 0; font-size: 12px; } .t-how ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 3px; } .t-how li.got { opacity: .7; }
+.col-cat { margin: 6px 0; padding: 6px 8px; background: rgba(0,0,0,.22); border-radius: 6px; }
+.col-cat summary { cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: 4px; align-items: center; }
+.col-cat summary .qbar { grid-column: 1 / -1; height: 6px; }
+.j-tabs { flex-wrap: wrap; } .j-tabs button { min-width: 30%; font-size: 12px; }

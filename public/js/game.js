@@ -123,6 +123,7 @@
       case 'quests': S.quests = m; $('#quest-badge').hidden = !m.claimable; if (S.panel === 'quests') renderQuests(); return;
       case 'journey': S.journey = m; if (S.panel === 'quests') renderQuests(); return;
       case 'calendar': S.calendar = m.events; if (S.panel === 'quests') renderQuests(); return;
+      case 'progress': S.progress = { ...(S.progress || {}), ...m, season: { ...((S.progress || {}).season || {}), ...m.season } }; if (S.panel === 'quests') renderQuests(); return;
       case 'offline': return showOffline(m);
       case 'chat': return addChat(m, true);
       case 'chatlog': CHAT_CHANNELS.forEach((c) => { CHAT_LOGS[c] = []; }); m.lines.forEach((l) => addChat(l, false)); return;
@@ -1668,6 +1669,8 @@
       const pk = e.flags & 1, inDuel = e.flags & 2, pvpOn = e.flags & 4;
       const enemy = !isMe && hostileTo(e);
       const vipT = info.vip || 0;
+      if (info.guild) label(info.guild, x, top - 17 * dpr, GLD.enemies.has(info.gid) ? '#ff7a6a' : '#55a5ff', 10);
+      if (info.title) label(`« ${info.title} »`, x, top - (info.guild ? 30 : 17) * dpr, info.titleColor || '#ffd36b', 9);
       label(`${pk ? '[PK] ' : ''}${pvpOn ? '⚔ ' : ''}${vipT === 2 ? '◆ ' : vipT === 1 ? '★ ' : ''}${info.name} ${info.level}`, x, top - 4 * dpr, pk ? '#ff6a5a' : inDuel ? '#ffb02e' : enemy ? '#ff9a6a' : vipT === 2 ? '#7fe3ff' : vipT === 1 || isMe ? '#ffd36b' : '#bfe0ff', 11);
     });
   }
@@ -1908,6 +1911,7 @@
         if (enemy && e.id !== myTarget) { ctx.strokeStyle = `rgba(255,70,60,${0.35 + 0.2 * Math.sin(now / 200)})`; ctx.lineWidth = dpr * 1.5; ctx.beginPath(); ctx.ellipse(x, y, 11 * zoom, 3.6 * zoom, 0, 0, Math.PI * 2); ctx.stroke(); }
         const vipT = info.vip || 0;
         if (info.guild) label(info.guild, x, top - 17 * dpr, GLD.enemies.has(info.gid) ? '#ff7a6a' : '#55a5ff', 10);
+        if (info.title) label(`« ${info.title} »`, x, top - (info.guild ? 30 : 17) * dpr, info.titleColor || '#ffd36b', 9);
         label(`${pk ? '[PK] ' : ''}${pvpOn ? '⚔ ' : ''}${vipT === 2 ? '◆ ' : vipT === 1 ? '★ ' : ''}${info.name} ${info.level}`, x, top - 4 * dpr, pk ? '#ff6a5a' : inDuel ? '#ffb02e' : enemy ? '#ff9a6a' : vipT === 2 ? '#7fe3ff' : vipT === 1 || isMe ? '#ffd36b' : '#bfe0ff', 11);
       }
     }
@@ -2407,7 +2411,7 @@
 
   // ---- Jornada: abas Minha Jornada / Missões / Eventos ----
   S.jtab = 'journey';
-  $$('[data-jtab]').forEach((b) => { b.onclick = () => { S.jtab = b.dataset.jtab; $$('[data-jtab]').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', String(x === b)); }); if (S.jtab !== 'missions') send({ type: 'journey', what: S.jtab === 'events' ? 'events' : 'journey' }); renderQuests(); }; });
+  $$('[data-jtab]').forEach((b) => { b.onclick = () => { S.jtab = b.dataset.jtab; $$('[data-jtab]').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', String(x === b)); }); if (S.jtab === 'season' || S.jtab === 'col') send({ type: 'progress' }); else if (S.jtab !== 'missions') send({ type: 'journey', what: S.jtab === 'events' ? 'events' : 'journey' }); renderQuests(); }; });
   const inTime = (ms) => { const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}min` : `${m} min`; };
   function eventRows(list) {
     if (!list || !list.length) return '<p class="muted">Nenhum evento agendado agora.</p>';
@@ -2437,9 +2441,37 @@
       <h3>Eventos para você</h3>${eventRows(j.events.filter((e) => e.can).slice(0, 4))}`;
     $$('[data-jgo]', box).forEach((b) => { b.onclick = () => { const g = b.dataset.jgo; if (g === 'missions' || g === 'events') { const t = $(`[data-jtab="${g}"]`); if (t) t.click(); } else openPanel(g === 'maps' ? 'maps' : g === 'bag' ? 'bag' : 'smith'); }; });
   }
+  function renderSeason(box) {
+    const P = S.progress; if (!P) { box.innerHTML = '<p class="muted">Carregando…</p>'; return; }
+    const s = P.season, days = Math.max(0, Math.floor(s.endsIn / 86400000)), hrs = Math.floor((s.endsIn % 86400000) / 3600000);
+    const bar = (v, g) => `<div class="qbar"><span style="width:${Math.min(100, v / g * 100)}%"></span><em>${fmt.format(v)}/${fmt.format(g)}</em></div>`;
+    const capName = { kill: 'Monstros', elite: 'Elites', boss: 'Bosses', wboss: 'Boss Mundial', event: 'Eventos', daily: 'Diárias', weekly: 'Semanais' };
+    box.innerHTML = `
+      <div class="j-goal"><small>🏆 ${esc(s.theme)} · temporada ${s.n}</small><b>${fmt.format(s.pts)} pontos${s.rank ? ` · ${s.rank}º lugar` : ''}</b><small class="muted" style="color:inherit;font-weight:400">Termina em ${days}d ${hrs}h. Só os pontos e o ranking da temporada recomeçam: nível, resets e itens ficam.</small></div>
+      <h3>Missões da temporada</h3>
+      <ul class="qlist">${s.missions.map((m) => `<li class="${m.got ? 'claimed' : ''}"><div><b>${esc(m.text)}</b><small>Prêmio: ${esc(m.reward)}</small>${bar(m.prog, m.goal)}</div>${m.got ? '<span class="q-done">Recebido</span>' : `<button class="btn small ${m.prog >= m.goal ? 'btn-gold' : ''}" type="button" data-sclaim="${m.id}" ${m.prog >= m.goal ? '' : 'disabled'}>${m.prog >= m.goal ? 'Pegar prêmio' : 'Em andamento'}</button>`}</li>`).join('')}</ul>
+      <p class="muted small">Completando as 5 você ganha o título "${esc(s.titleGo)}". Os 10 primeiros do ranking ganham títulos de Campeão, Elite e Destaque.</p>
+      <h3>Pontos de hoje <small class="muted">(cada tipo tem um teto diário)</small></h3>
+      <div class="j-grid">${Object.entries(s.todayCaps).map(([k, c]) => `<div><small>${capName[k] || k} · ${c.each} pts</small><b>${fmt.format(c.got)} / ${fmt.format(c.max)}</b></div>`).join('')}</div>`;
+    $$('[data-sclaim]', box).forEach((b) => { b.onclick = () => { b.disabled = true; send({ type: 'progress', action: 'claim', id: b.dataset.sclaim }); }; });
+  }
+  function renderCollections(box) {
+    const P = S.progress; if (!P) { box.innerHTML = '<p class="muted">Carregando…</p>'; return; }
+    const T = P.titles;
+    box.innerHTML = `
+      <h3 style="margin-top:0">Títulos <small class="muted">(cosméticos: aparecem sobre o seu nome)</small></h3>
+      <div class="t-list">${T.owned.length ? T.owned.map((t) => `<button type="button" class="t-chip ${T.on === t.id ? 'on' : ''}" data-title="${esc(t.id)}" style="--tc:${esc(t.color)}">${esc(t.name)}</button>`).join('') + `<button type="button" class="t-chip ${!T.on ? 'on' : ''}" data-title="">Sem título</button>` : '<p class="muted">Nenhum título ainda. Veja como conseguir abaixo.</p>'}</div>
+      <details class="t-how"><summary>Como conseguir títulos</summary><ul>${T.all.map((t) => `<li class="${t.owned ? 'got' : ''}"><b style="color:${esc(t.color)}">${esc(t.name)}</b> — ${esc(t.how)}${t.owned ? ' ✓' : ''}</li>`).join('')}<li><b style="color:#ffd700">Títulos de temporada</b> — fique entre os 10 primeiros ou complete as 5 missões da temporada</li></ul></details>
+      <h3>Livro de coleções</h3>
+      ${Object.values(P.collection).map((c) => `<details class="col-cat"><summary><b>${esc(c.name)}</b> <span>${c.found.length}/${c.total}</span><div class="qbar"><span style="width:${Math.min(100, c.found.length / Math.max(1, c.total) * 100)}%"></span></div></summary>
+        <p class="small">${c.found.length ? c.found.map(esc).join(' · ') : '<span class="muted">Nada descoberto ainda.</span>'}</p></details>`).join('')}`;
+    $$('[data-title]', box).forEach((b) => { b.onclick = () => send({ type: 'progress', action: 'title', id: b.dataset.title }); });
+  }
   function renderQuests() {
     const box = $('#quests-body');
     if (S.jtab === 'journey') return renderJourney(box);
+    if (S.jtab === 'season') return renderSeason(box);
+    if (S.jtab === 'col') return renderCollections(box);
     if (S.jtab === 'events') { box.innerHTML = `<p class="muted" style="margin-top:0">Horários controlados pelo servidor (fuso de Brasília). Toque em Mapas para ir até o NPC do evento.</p>${S.calendar ? eventRows(S.calendar) : '<p class="muted">Carregando…</p>'}`; return; }
     return renderMissions(box);
   }
@@ -2480,7 +2512,7 @@
     if (name === 'smith') { SM.result = null; send({ type: 'smith', action: 'info', id: SM.sel }); }
     if (name !== 'bag') S.jewelSel = null;
     if (name === 'vault') { VT.sel = null; vaultSend({ action: 'open', no: VT.no }); }
-    if (name === 'quests' && S.jtab !== 'missions') send({ type: 'journey', what: S.jtab === 'events' ? 'events' : 'journey' });
+    if (name === 'quests') { if (S.jtab === 'season' || S.jtab === 'col') send({ type: 'progress' }); else if (S.jtab !== 'missions') send({ type: 'journey', what: S.jtab === 'events' ? 'events' : 'journey' }); }
     if (name === 'chat') { S.chatUnread = 0; $('#chat-badge').hidden = true; setTimeout(() => { const l = $('#chat-lines'); l.scrollTop = l.scrollHeight; }, 0); }
     renderPanel(name);
   }
@@ -2963,19 +2995,22 @@
   const RK = { by: 'resets', seq: 0 };
   async function renderRank() {
     $$('#rank-tabs [data-by]').forEach((t) => { const on = t.dataset.by === RK.by; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); });
-    const last = { resets: 'Resets', bosses: 'Bosses', pvp: 'PvP' }[RK.by];
+    const last = { resets: 'Resets', bosses: 'Bosses', pvp: 'PvP', season: 'Pontos', wboss: 'Bosses Mundiais', events: 'Eventos', guilds: 'Pontos' }[RK.by];
     $('#g-rank-last').textContent = last;
     const tb = $('#g-rank-body');
     if (!tb.children.length) tb.innerHTML = '<tr><td colspan="5" class="muted">Carregando…</td></tr>';
     const seq = ++RK.seq;
     try {
       const r = await fetch(`/api/ranking?by=${RK.by}`, { credentials: 'same-origin' });
-      const { ranking } = await r.json();
+      const J = await r.json(); const ranking = J.ranking || [];
       if (seq !== RK.seq || S.panel !== 'rank') return;
-      const val = (x) => RK.by === 'pvp' ? `${x.pvp_kills} · ${x.duel_wins} duelos` : RK.by === 'bosses' ? x.bosses_killed : x.resets;
+      const val = (x) => RK.by === 'pvp' ? `${x.pvp_kills} · ${x.duel_wins} duelos` : RK.by === 'bosses' ? x.bosses_killed : RK.by === 'season' ? fmt.format(x.points)
+        : RK.by === 'wboss' || RK.by === 'events' ? fmt.format(x.n) : RK.by === 'guilds' ? fmt.format(x.score) : x.resets;
       const medal = ['🥇', '🥈', '🥉'];
+      const sub = (x) => RK.by === 'guilds' ? `Mestre ${esc(x.leader || '—')} · ${x.members} membros` : esc((S.data.classes[x.class] || {}).name || x.class);
+      $('#rank-note') && ($('#rank-note').textContent = RK.by === 'season' ? `${J.theme} · termina em ${Math.max(0, Math.ceil((J.endsAt - Date.now()) / 86400000))} dias · só pontos e ranking da temporada recomeçam` : '');
       tb.innerHTML = ranking.length ? ranking.map((x, i) => `<tr class="${S.char && x.name === S.char.name ? 'me' : ''}">
-        <td>${medal[i] || i + 1}</td><td>${esc(x.name)}</td><td>${esc((S.data.classes[x.class] || {}).name || x.class)}</td><td>${val(x)}</td></tr>`).join('')
+        <td>${medal[i] || i + 1}</td><td>${esc(x.name)}</td><td>${sub(x)}</td><td>${val(x)}</td></tr>`).join('')
         : '<tr><td colspan="4" class="muted">Nenhum herói ainda.</td></tr>';
     } catch (e) {
       if (seq === RK.seq) tb.innerHTML = '<tr><td colspan="4" class="muted">Não foi possível carregar o ranking.</td></tr>';

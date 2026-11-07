@@ -431,6 +431,15 @@ route('POST', '/api/admin/retention/goals', bad(async (req) => {
   const body = await readJson(req, 4 * 1024);
   return { ok: true, goals: await RETENTION.saveGoals(body.goals || {}) };
 }));
+// ---- Boss Mundial (Super ADM) ----
+const WBOSS = require('./worldboss');
+route('GET', '/api/admin/worldboss', async (req) => { await requireAdmin(req); return WBOSS.adminView(); });
+route('POST', '/api/admin/worldboss', bad(async (req) => {
+  await requireAdmin(req);
+  const body = await readJson(req, 8 * 1024);
+  if (body.action === 'spawn') return WBOSS.spawnNow();
+  return WBOSS.saveConfig(body.config || {});
+}));
 // ---- Agilidade: crítico, velocidade de ataque e defesa (Super ADM) ----
 route('GET', '/api/admin/agility', async (req) => { await requireAdmin(req); return AGI.adminView(); });
 route('POST', '/api/admin/agility', bad(async (req) => {
@@ -659,7 +668,16 @@ route('GET', '/api/ranking', async (req, url) => {
     bosses: 'bosses_killed DESC, level DESC',
     pvp: 'pvp_kills DESC, duel_wins DESC, level DESC',
   };
-  const by = orders[url.searchParams.get('by')] ? url.searchParams.get('by') : 'resets';
+  const want = url.searchParams.get('by');
+  // rankings novos: temporada (pontos sazonais), Boss Mundial e eventos (participações reais) e guildas
+  if (want === 'season') { const PROG = require('./progress'); const n = PROG.seasonOf(); return { by: want, season: n, theme: PROG.theme(n), endsAt: PROG.seasonRange(n).end, ranking: await PROG.seasonRanking(n) }; }
+  if (want === 'wboss' || want === 'events') {
+    const { rows } = await db.query(`SELECT c.name, c.class, count(*)::int AS n FROM event_log e JOIN characters c ON c.id = e.character_id
+      WHERE ${want === 'wboss' ? "e.event = 'worldboss'" : "e.event <> 'worldboss'"} GROUP BY c.id, c.name, c.class ORDER BY n DESC, min(e.created_at) ASC LIMIT 50`);
+    return { by: want, ranking: rows };
+  }
+  if (want === 'guilds') { const g = await require('./guild').rankingRows(); return { by: want, ranking: g.slice(0, 50).map((x) => ({ name: x.name, leader: x.leader, members: x.members, score: x.score, wins: x.wins })) }; }
+  const by = orders[want] ? want : 'resets';
   const { rows } = await db.query(`SELECT name, class, level, resets, master_resets, combat_power, bosses_killed, pvp_kills, duel_wins
     FROM characters ORDER BY ${orders[by]}, id ASC LIMIT 50`);
   return { by, ranking: rows };
