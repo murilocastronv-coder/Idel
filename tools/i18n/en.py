@@ -1494,4 +1494,15 @@ EN = {
 "App Android": "Android app",
 "Atualização automática: o jogo aberto recarrega sozinho a cada nova versão": "Auto update: the open game reloads by itself on every new version",
 "Novos heróis Aether com poderes próprios e asas douradas": "New Aether heroes with their own powers and golden wings",
+# ---------------- chat na tela ----------------
+"Mensagens do chat na tela": "Chat messages on screen",
+"Mensagens na tela do jogo:": "Messages on the game screen:",
+"Mostrando · esconder": "Showing · hide",
+"Escondidas · mostrar": "Hidden · show",
+"Chat na tela": "Chat on screen",
+"Quer ver as mensagens do chat aparecendo na tela enquanto joga?": "Do you want to see chat messages on screen while you play?",
+"Mostrar chat": "Show chat",
+"Esconder chat": "Hide chat",
+"Mensagens do chat aparecendo na tela.": "Chat messages are showing on screen.",
+"Mensagens do chat escondidas da tela (continuam no botão Chat).": "Chat messages are hidden from the screen (still in the Chat button).",
 }

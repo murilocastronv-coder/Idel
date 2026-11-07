@@ -747,3 +747,5 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 #gm-msg small { display: block; font: 800 13px/1.2 "Exo 2", system-ui, sans-serif; letter-spacing: .12em; color: #ffb4a8; margin-bottom: 6px; }
 #gm-msg b { display: block; font: 900 clamp(20px, 5.4vw, 34px)/1.15 "Exo 2", system-ui, sans-serif; color: #ff3a2e; text-transform: uppercase;
   text-shadow: 0 2px 0 #2a0000, 0 0 12px rgba(255,60,40,.7); word-break: break-word; }
+/* chat: mostrar/esconder as mensagens na tela */
+.chat-screen-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 6px; font-size: 13px; color: var(--bone-dim, #b9ad93); }

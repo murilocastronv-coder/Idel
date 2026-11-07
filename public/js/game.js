@@ -140,6 +140,7 @@
 
   function onEnter(m) {
     joined = true;
+    askChatScreen();
     centerMsg(null);
     S.map = m; S.youId = m.you; S.trainingInside = false;
     S.monsters = new Map(m.monsters.map((mo) => [mo.id, { ...mo, x: 0, y: 0, rx: null, ry: null, hp: mo.maxHp, dead: false }]));
@@ -3345,7 +3346,8 @@
       const colors = { local: '#f2ead8', global: '#f0c64e', private: '#e99bdf', guild: '#7ddc86', party: '#77b8ff', information: '#ff9c52' };
       const name = l.from || 'Servidor';
       const message = l.en && window.I18N && I18N.lang === 'en' ? l.en : l.text;
-      feed(`[${labels[channel]}] ${name}: ${message}`, 'chat-toast', colors[channel]);
+      // chat escondido da tela: as mensagens continuam no painel Chat (e o privado segue avisando no botão)
+      if (!chatOnScreen()) { /* sem balão na tela */ } else feed(`[${labels[channel]}] ${name}: ${message}`, 'chat-toast', colors[channel]);
       if (channel === 'private' && S.panel !== 'chat') {
         S.chatUnread++;
         const badge = $('#chat-badge');
@@ -3354,6 +3356,29 @@
         badge.hidden = false;
       }
     }
+  }
+  // ---- mostrar ou esconder as mensagens do chat na tela (evita poluição); fica salvo neste aparelho ----
+  const CHAT_SCREEN_KEY = 'mui_chat_screen';
+  function chatPref() { try { return localStorage.getItem(CHAT_SCREEN_KEY); } catch (_) { return null; } }
+  function chatOnScreen() { return chatPref() !== 'off'; }
+  function setChatScreen(on) {
+    try { localStorage.setItem(CHAT_SCREEN_KEY, on ? 'on' : 'off'); } catch (_) { /* sem armazenamento */ }
+    if (!on) $$('#feed .chat-toast').forEach((el) => el.remove());
+    paintChatScreen();
+  }
+  function paintChatScreen() {
+    const on = chatOnScreen();
+    $$('[data-chat-screen]').forEach((b) => { b.textContent = on ? 'Mostrando · esconder' : 'Escondidas · mostrar'; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('btn-gold', !on); });
+  }
+  $$('[data-chat-screen]').forEach((b) => { b.onclick = () => { setChatScreen(!chatOnScreen()); feed(chatOnScreen() ? 'Mensagens do chat aparecendo na tela.' : 'Mensagens do chat escondidas da tela (continuam no botão Chat).'); }; });
+  paintChatScreen();
+  let chatAsked = false;
+  // na primeira entrada no jogo, o jogador escolhe se quer ver o chat na tela
+  function askChatScreen() {
+    if (chatAsked || chatPref() !== null) return;
+    chatAsked = true;
+    setTimeout(() => tradeDialog('<h3>Chat na tela</h3><p>Quer ver as mensagens do chat aparecendo na tela enquanto joga?</p><p class="muted">Escondendo, as mensagens continuam no botão <b>Chat</b>. Você pode mudar quando quiser em Chat ou Configurar.</p>',
+      [{ label: 'Mostrar chat', cls: 'btn-gold', fn: () => setChatScreen(true) }, { label: 'Esconder chat', fn: () => setChatScreen(false) }]), 1200);
   }
   const CHAT_CHANNELS = ['local','global','private','guild','party','information'];
   const CHAT_LOGS = Object.fromEntries(CHAT_CHANNELS.map((c) => [c, []]));

@@ -312,7 +312,8 @@ class Player {
     this.pkUntil = 0; this.duel = null; this.duelInvite = null;
     this.vipRow = { vip0_until: row.vip0_until, vip1_until: row.vip1_until, vip2_until: row.vip2_until };
     this.isAdmin = !!row.is_admin_user;
-    this.role = this.isAdmin ? 'superadmin' : (row.acc_role || 'player');
+    this.playOnly = ADMIN.isPlayOnly(row.acc_username); // conta só para jogar: sem nenhum comando
+    this.role = this.isAdmin ? 'superadmin' : this.playOnly ? 'player' : (row.acc_role || 'player');
     this.mutedUntil = row.muted_until ? new Date(row.muted_until).getTime() : 0;
     this.masterResets = row.master_resets || 0;
     this.evo = Math.max(0, Math.min((G.EVOLUTIONS[row.class] || [1]).length - 1, row.evo || 0));

@@ -8,7 +8,7 @@ const G = require('./gamedata');
 const SET = require('./settings');
 
 const GM_KEY = 'gm_chars';
-const GM_DEFAULT = { names: ['sacola'] };
+const GM_DEFAULT = { names: [] }; // nenhum GM por padrão
 const EV_KEY = 'gm_events';
 const NUM_KEY = 'item_numbers';
 const RAR = { comum: 'common', common: 'common', incomum: 'uncommon', uncommon: 'uncommon', raro: 'rare', rare: 'rare', epico: 'epic', epic: 'epic',
@@ -39,7 +39,7 @@ function lev(a, b) {
 }
 
 // ---------- quem é GM ----------
-function isGM(p) { const names = (SET.get(GM_KEY, GM_DEFAULT).names || []).map(norm); return !!(p && p.name && names.includes(norm(p.name))); }
+function isGM(p) { if (!p || p.playOnly) return false; const names = (SET.get(GM_KEY, GM_DEFAULT).names || []).map(norm); return !!(p && p.name && names.includes(norm(p.name))); }
 const gmAdmin = (p) => ({ accountId: p.accountId, name: p.name, role: 'gm' });
 
 // ---------- números fixos dos itens (para "/dar 30 1") ----------
