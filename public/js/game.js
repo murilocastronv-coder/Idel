@@ -121,6 +121,8 @@
       case 'gmmsg': return showGmMsg(m);
       case 'log': return feed(m.text, m.kind === 'warn' ? 'warn' : m.kind === 'quest' ? 'quest' : m.kind === 'pvp' ? 'pvp' : '');
       case 'quests': S.quests = m; $('#quest-badge').hidden = !m.claimable; if (S.panel === 'quests') renderQuests(); return;
+      case 'journey': S.journey = m; if (S.panel === 'quests') renderQuests(); return;
+      case 'calendar': S.calendar = m.events; if (S.panel === 'quests') renderQuests(); return;
       case 'offline': return showOffline(m);
       case 'chat': return addChat(m, true);
       case 'chatlog': CHAT_CHANNELS.forEach((c) => { CHAT_LOGS[c] = []; }); m.lines.forEach((l) => addChat(l, false)); return;
@@ -2403,17 +2405,64 @@
     }
   }
 
+  // ---- Jornada: abas Minha Jornada / Missões / Eventos ----
+  S.jtab = 'journey';
+  $$('[data-jtab]').forEach((b) => { b.onclick = () => { S.jtab = b.dataset.jtab; $$('[data-jtab]').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', String(x === b)); }); if (S.jtab !== 'missions') send({ type: 'journey', what: S.jtab === 'events' ? 'events' : 'journey' }); renderQuests(); }; });
+  const inTime = (ms) => { const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}min` : `${m} min`; };
+  function eventRows(list) {
+    if (!list || !list.length) return '<p class="muted">Nenhum evento agendado agora.</p>';
+    const now = Date.now();
+    return `<ul class="ev-list">${list.map((e) => {
+      const when = e.state === 'live' ? `<b class="ev-live">● acontecendo${e.endsAt ? ` · acaba em ${inTime(e.endsAt - now)}` : ''}</b>` : e.state === 'open' ? `<b class="ev-open">inscrições abertas · começa em ${inTime(e.at - now)}</b>` : e.at ? `começa em ${inTime(e.at - now)} <small class="muted">(${new Date(e.at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})</small>` : '';
+      return `<li class="${e.can ? '' : 'ev-no'}"><div class="ev-head"><b>${esc(e.name)}</b><span>${when}</span></div>
+        <small>${e.can ? '✓ ' : '✗ '}${esc(e.req)}${e.where ? ` · ${esc(e.where)}` : ''}</small>${e.rewards && e.rewards.length ? `<small class="muted">Prêmios: ${esc(e.rewards.join(' · '))}</small>` : ''}</li>`;
+    }).join('')}</ul>`;
+  }
+  function renderJourney(box) {
+    const j = S.journey;
+    if (!j) { box.innerHTML = '<p class="muted">Montando sua jornada…</p>'; return; }
+    const go = { missions: 'Ver missões', events: 'Ver eventos', maps: 'Abrir mapas', bag: 'Abrir bolsa', smith: 'Melhorar itens' };
+    const M = j.missions;
+    box.innerHTML = `
+      <div class="j-goal"><small>🧭 Seu próximo objetivo</small><b>${esc(j.goal.text)}</b>${go[j.goal.go] ? `<button class="btn small btn-gold" type="button" data-jgo="${esc(j.goal.go)}">${go[j.goal.go]}</button>` : ''}</div>
+      <div class="j-grid">
+        <div><small>Nível</small><b>${j.level}${j.resets ? ` · ${j.resets} resets` : ''}</b></div>
+        <div><small>Mapa recomendado</small><b>${j.map.best ? esc(j.map.best.name) : '—'}</b>${j.map.next ? `<small class="muted">Nível ${j.map.next.minLevel} libera ${esc(j.map.next.name)}</small>` : '<small class="muted">Último mapa liberado</small>'}</div>
+        <div><small>Equipamento</small><b class="j-small">${esc(j.gear.text)}</b></div>
+        <div><small>Boss para você</small>${j.boss ? `<b>${esc(j.boss.name)}</b><small class="muted">${esc(j.boss.map)} · ${j.boss.alive ? '<span class="ev-live">vivo agora</span>' : `volta em ${inTime(j.boss.respawnIn)}`}</small>` : '<b>—</b>'}</div>
+        <div><small>Missões de hoje</small><b>${M.dailyDone}/${M.daily}</b>${M.claimable ? `<small class="ev-open">${M.claimable} prêmio(s) para pegar</small>` : ''}</div>
+        <div><small>Semana</small><b>${M.weeklyDone}/${M.weekly} semanais</b><small class="muted">renovam em ${inTime(M.weekIn)}</small></div>
+      </div>
+      ${j.achievements.length ? `<h3>Conquistas quase lá</h3><ul class="qlist">${j.achievements.map((a) => `<li><div><b>${esc(a.text)}</b><div class="qbar"><span style="width:${Math.min(100, a.pct * 100)}%"></span><em>${fmt.format(a.prog)}/${fmt.format(a.goal)}</em></div></div></li>`).join('')}</ul>` : ''}
+      <h3>Eventos para você</h3>${eventRows(j.events.filter((e) => e.can).slice(0, 4))}`;
+    $$('[data-jgo]', box).forEach((b) => { b.onclick = () => { const g = b.dataset.jgo; if (g === 'missions' || g === 'events') { const t = $(`[data-jtab="${g}"]`); if (t) t.click(); } else openPanel(g === 'maps' ? 'maps' : g === 'bag' ? 'bag' : 'smith'); }; });
+  }
   function renderQuests() {
-    const q = S.quests; const box = $('#quests-body');
+    const box = $('#quests-body');
+    if (S.jtab === 'journey') return renderJourney(box);
+    if (S.jtab === 'events') { box.innerHTML = `<p class="muted" style="margin-top:0">Horários controlados pelo servidor (fuso de Brasília). Toque em Mapas para ir até o NPC do evento.</p>${S.calendar ? eventRows(S.calendar) : '<p class="muted">Carregando…</p>'}`; return; }
+    return renderMissions(box);
+  }
+  function renderMissions(box) {
+    const q = S.quests;
     if (!q) { box.innerHTML = '<p class="muted">Carregando…</p>'; return; }
     const h = Math.floor(q.resetIn / 3600000), mi = Math.floor((q.resetIn % 3600000) / 60000);
     const bar = (v, g) => `<div class="qbar"><span style="width:${Math.min(100, v / g * 100)}%"></span><em>${fmt.format(v)}/${fmt.format(g)}</em></div>`;
     const btn = (kind, id, ready, claimed) => claimed ? '<span class="q-done">Recebido</span>'
       : `<button class="btn small ${ready ? 'btn-gold' : ''}" type="button" data-claim="${kind}" data-id="${id}" ${ready ? '' : 'disabled'}>${ready ? 'Pegar prêmio' : 'Em andamento'}</button>`;
+    const wd = Math.floor((q.weekIn || 0) / 86400000), wh = Math.floor(((q.weekIn || 0) % 86400000) / 3600000);
+    const cyc = q.cycle || { step: 0, claimed: true, rewards: [] };
+    const cb = q.comeback;
     box.innerHTML = `
-      <h3 style="margin-top:0">Prêmio de login · dia ${q.login.streak}</h3>
-      <ol class="login-days">${q.login.rewards.map((r, i) => `<li class="${i < q.login.today || (i === q.login.today && q.login.claimed) ? 'got' : ''} ${i === q.login.today ? 'now' : ''}"><b>Dia ${i + 1}</b><small>${esc(r)}</small></li>`).join('')}</ol>
-      <div class="row" style="justify-content:flex-start">${btn('login', 'today', !q.login.claimed, q.login.claimed)}<small class="muted">Entre todo dia: se faltar um dia, a sequência recomeça.</small></div>
+      ${cb && !cb.claimed ? `<div class="q-comeback"><h3 style="margin-top:0">Bem-vindo de volta! <small class="muted">${cb.gap} dias fora · vale até ${esc(cb.until.split('-').reverse().join('/'))}</small></h3>
+        <ul class="qlist">${cb.list.map((m) => `<li><div><b>${esc(m.text)}</b>${bar(m.prog, m.goal)}</div></li>`).join('')}</ul>
+        <div class="row" style="justify-content:flex-start">${btn('comeback', 'go', cb.list.every((m) => m.prog >= m.goal), false)}<small>Prêmio: ${esc(cb.reward)}</small></div></div>` : ''}
+      <h3 style="margin-top:0">Ciclo de retorno · etapa ${cyc.step + 1} de 7</h3>
+      <ol class="login-days">${cyc.rewards.map((r, i) => `<li class="${i < cyc.step || (i === cyc.step && cyc.claimed) ? 'got' : ''} ${i === cyc.step ? 'now' : ''}"><b>Etapa ${i + 1}</b><small>${esc(r)}</small></li>`).join('')}</ol>
+      <div class="row" style="justify-content:flex-start">${btn('cycle', 'today', !cyc.claimed, cyc.claimed)}<small class="muted">Um prêmio por dia em que você entra. Faltou um dia? O ciclo continua de onde parou.</small></div>
+      <h3>Missões semanais <small class="muted">renovam em ${wd}d ${wh}h</small></h3>
+      <ul class="qlist">${(q.weekly || []).map((m) => `<li><div><b>${esc(m.text)}</b><small>Prêmio: ${esc(m.reward)}</small>${bar(m.prog, m.goal)}</div>${btn('weekly', m.id, m.prog >= m.goal, m.claimed)}</li>`).join('')}
+        ${q.weeklyBonus ? `<li class="${q.weeklyBonus.got ? 'claimed' : ''}"><div><b>Complete as 4 semanais</b><small>Bônus: ${esc(q.weeklyBonus.reward)}</small></div>${btn('weeklyBonus', 'all', q.weeklyBonus.ready, q.weeklyBonus.got)}</li>` : ''}</ul>
       <h3>Missões diárias <small class="muted">renovam em ${h}h ${mi}min</small></h3>
       <ul class="qlist">${q.daily.map((m) => `<li><div><b>${esc(m.text)}</b><small>Prêmio: ${esc(m.reward)}</small>${bar(m.prog, m.goal)}</div>${btn('daily', m.id, m.prog >= m.goal, m.claimed)}</li>`).join('')}</ul>
       <h3>Conquistas</h3>
@@ -2431,6 +2480,7 @@
     if (name === 'smith') { SM.result = null; send({ type: 'smith', action: 'info', id: SM.sel }); }
     if (name !== 'bag') S.jewelSel = null;
     if (name === 'vault') { VT.sel = null; vaultSend({ action: 'open', no: VT.no }); }
+    if (name === 'quests' && S.jtab !== 'missions') send({ type: 'journey', what: S.jtab === 'events' ? 'events' : 'journey' });
     if (name === 'chat') { S.chatUnread = 0; $('#chat-badge').hidden = true; setTimeout(() => { const l = $('#chat-lines'); l.scrollTop = l.scrollHeight; }, 0); }
     renderPanel(name);
   }

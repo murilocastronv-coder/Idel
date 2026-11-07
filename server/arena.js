@@ -325,6 +325,7 @@ async function start(kind) {
             if (!u.rows[0]) throw new Error('inscrição mudou');
           });
           if (q > 1) s.qty = q - 1; else p.items = p.items.filter((i) => i !== s);
+          require('./retention').event(p, kind); // participação em evento (painel de retenção e missões semanais)
           return 'ok';
         } catch (e) { return e.message || 'erro'; }
       });

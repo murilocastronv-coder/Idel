@@ -126,6 +126,57 @@
       } catch (e) { msg(box, e.message || 'JSON inválido.', true); }
     };
   }
+  // ---------------- Retenção: DAU/MAU, D1/D7/D30, sessões, eventos, guildas, VIP ----------------
+  async function retention(box) {
+    box.innerHTML = '<p class="muted">Calculando…</p>';
+    let V;
+    try { V = await X.api('GET', '/api/admin/retention'); } catch (e) { box.innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+    const n = (x) => (x == null ? '—' : Number(x).toLocaleString('pt-BR'));
+    const pc = (x) => (x == null ? '—' : `${String(x).replace('.', ',')}%`);
+    const goalTag = (val, goal) => (val == null ? '<small class="muted">sem dados ainda</small>' : val >= goal ? `<small style="color:#8fdc6f">✓ meta ${goal}%</small>` : `<small style="color:#ff9c7a">meta ${goal}%</small>`);
+    // barras simples em SVG (uma série), com rótulo do maior valor
+    const bars = (rows, key, color, label) => {
+      const max = Math.max(1, ...rows.map((r) => r[key])); const W = 300, H = 90, bw = W / rows.length;
+      return `<figure style="margin:6px 0"><figcaption class="muted" style="font-size:12px">${esc(label)} · máx. ${n(max)}</figcaption>
+        <svg viewBox="0 0 ${W} ${H + 14}" width="100%" role="img" aria-label="${esc(label)}">${rows.map((r, i) => { const h = Math.round((r[key] / max) * H); return `<rect x="${(i * bw + 1).toFixed(1)}" y="${H - h}" width="${(bw - 2).toFixed(1)}" height="${h}" rx="1.5" fill="${color}"><title>${esc(r.day)}: ${n(r[key])}</title></rect>`; }).join('')}
+        <text x="0" y="${H + 12}" font-size="9" fill="currentColor" opacity=".6">${esc(rows[0].day)}</text><text x="${W}" y="${H + 12}" font-size="9" fill="currentColor" opacity=".6" text-anchor="end">${esc(rows[rows.length - 1].day)}</text></svg></figure>`;
+    };
+    const R = V.retention, G = V.goals;
+    const card = (t, v, sub) => `<div class="adm-kpi" style="flex:1 1 130px;border:1px solid rgba(232,184,74,.35);padding:8px 10px;border-radius:6px"><small class="muted">${t}</small><br><b style="font-size:20px">${v}</b>${sub ? `<br>${sub}` : ''}</div>`;
+    box.innerHTML = `
+      <p class="adt-sub">Números reais do banco. "Ativo" = esteve dentro do mundo naquele dia. Retenção por coorte: das contas criadas num dia, quantas jogaram 1, 7 e 30 dias depois (só conta coortes que já chegaram nesse dia).</p>
+      <div class="adm-row" style="flex-wrap:wrap;gap:8px">
+        ${card('Online agora', n(V.online))}${card('Contas criadas', n(V.accounts.total), `<small class="muted">hoje ${n(V.accounts.today)} · 7 dias ${n(V.accounts.d7)} · 30 dias ${n(V.accounts.d30)}</small>`)}
+        ${card('DAU (hoje)', n(V.active.dau))}${card('WAU (7 dias)', n(V.active.wau))}${card('MAU (30 dias)', n(V.active.mau), `<small class="muted">DAU/MAU ${pc(V.active.stickiness)}</small>`)}
+      </div>
+      <div class="adm-row" style="flex-wrap:wrap;gap:8px;margin-top:8px">
+        ${card('Retenção D1', pc(R.d1.pct), `${goalTag(R.d1.pct, G.d1)} <small class="muted">· base ${n(R.d1.base)}</small>`)}
+        ${card('Retenção D7', pc(R.d7.pct), `${goalTag(R.d7.pct, G.d7)} <small class="muted">· base ${n(R.d7.base)}</small>`)}
+        ${card('Retenção D30', pc(R.d30.pct), `${goalTag(R.d30.pct, G.d30)} <small class="muted">· base ${n(R.d30.base)}</small>`)}
+      </div>
+      <div class="adm-row" style="flex-wrap:wrap;gap:8px;margin-top:8px">
+        ${card('Sessão média (7 dias)', `${String(V.sessions.avgMin).replace('.', ',')} min`, `<small class="muted">mediana ${String(V.sessions.medianMin).replace('.', ',')} min · ${n(V.sessions.count)} sessões</small>`)}
+        ${card('Voltaram (7 dias)', n(V.returned), '<small class="muted">ficaram 7+ dias fora e voltaram</small>')}
+        ${card('Abandonaram', n(V.abandoned), '<small class="muted">jogaram há 8–37 dias e sumiram</small>')}
+        ${card('Guildas ativas', `${n(V.guilds.active)} / ${n(V.guilds.total)}`, '<small class="muted">com membro ativo em 7 dias</small>')}
+        ${card('VIP ativos', n(V.vip.paid), `<small class="muted">+ ${n(V.vip.free)} no VIP Free</small>`)}
+        ${card('Conversão (pagantes)', pc(V.vip.conversion), `<small class="muted">${n(V.vip.payersAny)} contas já pagaram (VIP ${n(V.vip.payersVip)} · loja ${n(V.vip.payersShop)})</small>`)}
+      </div>
+      ${bars(V.daily, 'dau', '#e8b84a', 'Jogadores ativos por dia (30 dias)')}
+      ${bars(V.daily, 'new', '#7ab8ff', 'Contas novas por dia')}
+      ${bars(V.daily, 'events', '#8fdc6f', 'Heróis em eventos por dia')}
+      <b>Eventos nos últimos 7 dias</b>
+      <table class="adm-table"><tr><th>Evento</th><th>Entradas</th><th>Heróis</th></tr>${V.events.length ? V.events.map((e) => `<tr><td>${esc({ blood: 'Blood Castle', devil: 'Devil Square', castle: 'Chaos Castle', invasion: 'Invasão Dourada', worldboss: 'Boss Mundial', siege: 'Castle Siege' }[e.event] || e.event)}</td><td>${n(e.n)}</td><td>${n(e.players)}</td></tr>`).join('') : '<tr><td colspan="3" class="muted">Ainda sem participação registrada.</td></tr>'}</table>
+      <b>Coortes recentes (contas criadas por dia)</b>
+      <div style="overflow-x:auto"><table class="adm-table"><tr><th>Dia</th><th>Contas</th><th>D1</th><th>D7</th><th>D30</th></tr>
+        ${V.cohorts.map((c) => `<tr><td>${esc(c.day)}</td><td>${n(c.size)}</td>${[1, 7, 30].map((d) => `<td>${c.age > d ? `${pc(Math.round((c['d' + d] / Math.max(1, c.size)) * 1000) / 10)} <small class="muted">(${c['d' + d]})</small>` : '<small class="muted">—</small>'}</td>`).join('')}</tr>`).join('')}</table></div>
+      <b>Metas de teste (não são resultados garantidos)</b>
+      <div class="adm-row" style="flex-wrap:wrap">${['d1', 'd7', 'd30'].map((k) => `<label>${k.toUpperCase()} (%) <input type="number" min="0" max="100" step="0.5" data-goal="${k}" value="${esc(G[k])}" style="width:80px"></label>`).join('')}
+        <button class="btn small btn-gold" type="button" id="ret-save">Salvar metas</button> <button class="btn small" type="button" id="ret-reload">Atualizar</button></div>
+      <p class="adt-msg" role="status"></p>`;
+    $('#ret-save', box).onclick = async () => { const goals = {}; $$('[data-goal]', box).forEach((i) => { goals[i.dataset.goal] = Number(i.value); }); try { await X.api('POST', '/api/admin/retention/goals', { goals }); retention(box); } catch (e) { msg(box, e.message, true); } };
+    $('#ret-reload', box).onclick = () => retention(box);
+  }
   // ---------------- Agilidade: crítico, velocidade de ataque e defesa ----------------
   async function agility(box) {
     box.innerHTML = '<p class="muted">Carregando…</p>';
@@ -757,11 +808,12 @@
       <details class="adm-sec adt-sec" data-sec="arena"><summary><h3>Eventos: Chaos Castle, Devil Square e Blood Castle</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="upgrade"><summary><h3>Aprimoramento +0 a +15 e Ferreiro</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="chaos"><summary><h3>Chaos Machine (asas e capas)</h3></summary><div class="adt-body"></div></details>
+      <details class="adm-sec adt-sec" data-sec="retention"><summary><h3>Retenção: jogadores ativos, D1/D7/D30 e conversão</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="agility"><summary><h3>Agilidade: crítico, velocidade de ataque e defesa</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="excellent"><summary><h3>Opções Excellent semi-full</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="drops"><summary><h3>Drops de materiais e eventos</h3></summary><div class="adt-body"></div></details>
       <details class="adm-sec adt-sec" data-sec="rules"><summary><h3>Comandos, reset e histórico ADM</h3></summary><div class="adt-body"></div></details>`;
-    const fn = { market, invasion, arena, upgrade, equip, vault, chaos, agility, excellent, drops, rules };
+    const fn = { market, invasion, arena, upgrade, equip, vault, chaos, retention, agility, excellent, drops, rules };
     $$('.adt-sec', el).forEach((d) => { d.addEventListener('toggle', () => { if (d.open && !d.dataset.loaded) { d.dataset.loaded = 1; fn[d.dataset.sec]($('.adt-body', d)); } }); });
   }
 

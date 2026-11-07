@@ -216,4 +216,4 @@ function onLeave(p) {
   } else broadcastParty(party.leader, 'social', { action: 'partyChanged' });
   pruneParty(party.leader);
 }
-module.exports={init(world){W=world;},act,chat,messageInfo,info,onLeave};
+module.exports={init(world){W=world;},act,chat,messageInfo,info,onLeave,activeParty};

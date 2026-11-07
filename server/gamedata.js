@@ -433,7 +433,47 @@ const DAILY_POOL = [
   { id: 'loot', text: 'Encontre {n} itens', base: 3, per: 0, reward: { item: 'rare' } },
   { id: 'online', text: 'Jogue {n} minutos', base: 20, per: 0, reward: { zen: 2500, pot_mp: 10 } },
   { id: 'elite', text: 'Derrote {n} chefes ou elites', base: 2, per: 0, reward: { item: 'rare', zen: 3000 }, minLevel: 10 },
+  { id: 'party', text: 'Derrote {n} monstros jogando em party', base: 30, per: 0, reward: { zen: 3000, pot_hp: 10 }, minLevel: 5 },
+  { id: 'upgrade', text: 'Tente melhorar um equipamento {n} vez(es)', base: 1, per: 0, reward: { zen: 2500 }, minLevel: 5 },
+  { id: 'event', text: 'Participe de {n} evento (Blood Castle, Devil Square, Chaos Castle ou Invasão Dourada)', base: 1, per: 0, reward: { zen: 5000, mats: [['jewel_of_chaos', 1]] }, minLevel: 15 },
+  { id: 'mapkill', text: 'Derrote {n} monstros num mapa do seu nível', base: 30, per: 1, reward: { zen: 2500, expPct: 0.02 }, minLevel: 10 },
 ];
+
+// Missões semanais (renovam toda segunda-feira, 00h de Brasília). 4 sorteadas por semana, de acordo com o nível.
+// expPct = fração da EXP do nível atual (compatível com qualquer nível, sem mudar as taxas do jogo).
+const WEEKLY_POOL = [
+  { id: 'boss', text: 'Derrote {n} bosses', goal: 3, minLevel: 20, reward: { zen: 40000, mats: [['jewel_of_soul', 1]], expPct: 0.05 } },
+  { id: 'blood', text: 'Participe de {n} Blood Castle', goal: 2, minLevel: 15, reward: { zen: 30000, mats: [['jewel_of_bless', 1]], expPct: 0.05 } },
+  { id: 'devil', text: 'Participe de {n} Devil Square', goal: 2, minLevel: 15, reward: { zen: 30000, mats: [['jewel_of_bless', 1]], expPct: 0.05 } },
+  { id: 'castle', text: 'Participe de {n} Chaos Castle', goal: 1, minLevel: 15, reward: { zen: 30000, mats: [['jewel_of_chaos', 2]], expPct: 0.04 } },
+  { id: 'guildkill', text: 'Derrote {n} monstros sendo membro de uma guilda', goal: 600, minLevel: 20, reward: { zen: 25000, mats: [['jewel_of_chaos', 1]], expPct: 0.04 } },
+  { id: 'upgrade', text: 'Tente melhorar equipamentos {n} vezes', goal: 8, minLevel: 5, reward: { zen: 20000, mats: [['jewel_of_bless', 1]] } },
+  { id: 'excellent', text: 'Encontre {n} itens épicos ou melhores', goal: 3, minLevel: 10, reward: { zen: 25000, item: 'epic' } },
+  { id: 'explore', text: 'Cace em {n} mapas diferentes', goal: 3, minLevel: 10, reward: { zen: 20000, pot_hp: 40, expPct: 0.04 } },
+  { id: 'kill', text: 'Derrote {n} monstros', goal: 2500, minLevel: 1, reward: { zen: 20000, pot_hp: 30, pot_mp: 30, expPct: 0.04 } },
+  { id: 'elite', text: 'Derrote {n} elites ou chefes', goal: 25, minLevel: 10, reward: { zen: 30000, mats: [['jewel_of_soul', 1]] } },
+  { id: 'event', text: 'Participe de {n} eventos', goal: 4, minLevel: 15, reward: { zen: 35000, mats: [['jewel_of_soul', 1]], expPct: 0.05 } },
+];
+// prêmio por completar as 4 semanais: caixa pelo nível
+const WEEKLY_BONUS = (level) => (level >= 200 ? { box: 'kundun_4', zen: 50000 } : level >= 80 ? { box: 'kundun_3', zen: 30000 } : level >= 30 ? { box: 'kundun_2', zen: 20000 } : { box: 'kundun_1', zen: 10000 });
+
+// Ciclo de retorno de 7 etapas: avança uma etapa por dia em que você entra e pega o prêmio.
+// Faltou um dia? O ciclo continua de onde parou (não volta para o início).
+const CYCLE_REWARDS = [
+  { zen: 5000, pot_hp: 30, pot_mp: 20 },
+  { mats: [['jewel_of_chaos', 1]], zen: 3000 },
+  { mats: [['jewel_of_bless', 1]] },
+  { box: 'kundun_1' },
+  { mats: [['jewel_of_soul', 1]] },
+  { box: 'kundun_2' },
+  { box: 'kundun_3', mats: [['jewel_of_bless', 1], ['jewel_of_soul', 1]] },
+];
+// Bem-vindo de volta: quem ficou 7, 15 ou 30 dias sem entrar ganha missões curtas com prêmio (vale por 7 dias)
+const COMEBACK = {
+  7: { list: [['kill', 150], ['online', 20]], reward: { zen: 15000, mats: [['jewel_of_bless', 1]], pot_hp: 50 } },
+  15: { list: [['kill', 200], ['online', 30], ['elite', 3]], reward: { zen: 30000, mats: [['jewel_of_bless', 1], ['jewel_of_soul', 1]], box: 'kundun_2' } },
+  30: { list: [['kill', 250], ['online', 30], ['elite', 5]], reward: { zen: 60000, mats: [['jewel_of_bless', 2], ['jewel_of_soul', 1]], box: 'kundun_3', expPct: 0.1 } },
+};
 
 // Prêmio por dias seguidos de login (o 7º é o melhor; depois recomeça)
 const LOGIN_REWARDS = [
@@ -808,6 +848,6 @@ const MAX_STACK = 999;
 module.exports = {
   CLASSES, MAPS, RARITIES, ITEMS, LIMITS, PREMIUM_SET_PACKS, PREMIUM_PARTS,
   MONSTERS, WORLD, SKILLS, POINTS_PER_LEVEL, AUTO_STATS, CLASS_WEAPONS, ITEM_BASES, SETS,
-  RARITY_MULT, RARITY_WEIGHTS, SHOP, INVENTORY_SIZE, MAX_STACK, WING_EVOLVE, EVOLUTIONS, EQUIP_SLOTS, GAME_MODE, DAILY_POOL, LOGIN_REWARDS, ACHIEVEMENTS,
+  RARITY_MULT, RARITY_WEIGHTS, SHOP, INVENTORY_SIZE, MAX_STACK, WING_EVOLVE, EVOLUTIONS, EQUIP_SLOTS, GAME_MODE, DAILY_POOL, LOGIN_REWARDS, ACHIEVEMENTS, WEEKLY_POOL, WEEKLY_BONUS, CYCLE_REWARDS, COMEBACK,
 };
 

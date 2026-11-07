@@ -298,6 +298,7 @@ async function onKill(world, m, map, killer) {
   winners = [...new Set(winners)];
   const ctx = { source: m.T.name, mapId: map.id, tier: 'golden', x: m.x, y: m.y };
   for (const p of winners) p.run(() => DROPS.deliver(world, p, { rule: { delivery: 'bag' }, item: box, qty: 1 }, ctx));
+  for (const p of winners) require('./retention').event(p, 'invasion');
   DROPS.onKill(world, killer, m, map);
   if (active && m.invasion === active.id) active.killed++;
   const rewards = winners.map((p) => ({ char: p.charId, name: p.name, box, share: Math.round((ranked.find((x) => x.p === p) || {}).share * 100) || 0 }));

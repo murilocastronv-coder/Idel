@@ -156,6 +156,7 @@ async function direct(world, p, msg) {
   const name = nameOf(it.base);
   say(true, fill(success ? c.messages.success : c.messages.fail, { item: name, plus: to }), { success, item: H.publicItem(it), from: plus, to, chance });
   if (success && to >= 7) world.system(`${p.name} aprimorou ${name} para +${to}!`);
+  if (world.quest) world.quest(p, 'upgrade', 1); // missões: tentar melhorar equipamento
   return undefined;
 }
 function after(world, p, it) {
@@ -233,6 +234,7 @@ async function smith(world, p, msg) {
   const name = nameOf(it.base);
   say(true, fill(success ? c.messages.success : c.messages.smithFail, { item: name, plus: to }), { success, from: plus, to, chance: st.chance });
   if (success) world.system(`🔨 ${p.name} aprimorou ${name} para +${to} no Ferreiro Mestre!`);
+  if (world.quest) world.quest(p, 'upgrade', 1);
   return undefined;
 }
 

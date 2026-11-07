@@ -334,4 +334,12 @@ async function init(helpers) {
   setInterval(tickEvents, 2000).unref();
 }
 
-module.exports = { init, isGM, has, exec, xpMult, dropBox, onKill, numOf, CMDS };
+// eventos ativos do GM para o calendário
+function eventsStatus() {
+  const out = [];
+  if (EV.xp && EV.xp.until > Date.now()) out.push({ kind: 'xp', name: `Evento de EXP ${EV.xp.mult}x`, until: EV.xp.until, desc: `EXP ${EV.xp.mult}x em monstros e bosses` });
+  if (EV.drop && EV.drop.until > Date.now()) out.push({ kind: 'drop', name: 'Evento de drop', until: EV.drop.until, desc: `Todo monstro dá ${(G.ITEM_BASES[EV.drop.base] || {}).name || EV.drop.base}` });
+  return out;
+}
+
+module.exports = { eventsStatus, init, isGM, has, exec, xpMult, dropBox, onKill, numOf, CMDS };

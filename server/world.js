@@ -10,6 +10,8 @@ const CHAOS = require('./chaos');
 const ENTRIES = require('./entries');
 const AGI = require('./agility');
 const GM = require('./gm');
+const RET = require('./retention');
+const JOURNEY = require('./journey');
 const FENRIR = require('./fenrircraft');
 const DROPS = require('./drops');
 const CMDS = require('./commands');
@@ -473,6 +475,9 @@ class World {
   async init() {
     const helpers = { publicItem, bagUsed, itemValue, rollRarity, rollPlus };
     await EXCELLENT.init(helpers);
+    await RET.init(); await RET.closeStale();
+    JOURNEY.init(this, { ARENA, INV, GM });
+    RET.setHook((p, name) => { this.quest(p, name, 1); this.quest(p, 'event', 1); }); // eventos contam nas missões
     await AGI.init();
     await CHAOS.init(helpers);
     ENTRIES.init(helpers);
@@ -633,6 +638,7 @@ class World {
     p.room = Math.min(ROOMS, Math.max(1, Math.round(Number(room)) || 1));
     client.player = p;
     this.players.set(p.charId, p);
+    RET.sessionStart(p); // painel de retenção: duração das sessões
 
     if (!row.starter_given) await this.giveStarter(p);
     const report = await this.offlineProgress(p, row);
@@ -652,6 +658,8 @@ class World {
     GUILD.onJoin(this, p);
     p.send(Q.state(p));
     if (report) p.send({ type: 'offline', ...report });
+    // Minha Jornada: lembra o próximo objetivo logo depois de entrar
+    setTimeout(() => { if (this.players.get(p.charId) !== p) return; try { p.send({ type: 'log', kind: 'quest', text: `🧭 Seu próximo objetivo: ${JOURNEY.journey(p).goal.text}` }); } catch (_) { /* sem jornada */ } }, 6000);
     p.dirty = true;
   }
 
@@ -672,6 +680,7 @@ class World {
   async leave(p) {
     if (!this.players.has(p.charId) || this.players.get(p.charId) !== p) return;
     this.players.delete(p.charId);
+    RET.sessionEnd(p);
     SOCIAL.onLeave(p);
     FRIENDS.onLeave(this, p);
     GUILD.onLeave(p);
@@ -834,6 +843,7 @@ class World {
         return p.run(() => TRADE.act(this, p, msg));
       case 'market': return p.run(() => MARKET.act(this, p, msg));
       case 'resetStatus': return p.run(() => RSTAT.act(this, p, msg));
+      case 'journey': return p.send(msg.what === 'events' ? { type: 'calendar', events: JOURNEY.calendar(p) } : JOURNEY.journey(p));
       case 'vault': return p.run(() => VAULT.act(this, p, msg));
       case 'arena': return p.run(() => ARENA.act(this, p, msg));
       case 'upgPreview': return p.run(() => UPG.preview(p, msg));
@@ -1101,6 +1111,7 @@ class World {
       RETURNING id, base, rarity, plus, equipped, qty, excellent_options`, [p.charId, it.base, it.rarity, it.plus]);
     p.items.push(rows[0]);
     this.quest(p, 'loot', 1);
+    if (['epic', 'legendary', 'ancestral'].includes(it.rarity)) this.quest(p, 'excellent', 1);
     if (['legendary', 'ancestral'].includes(it.rarity)) { p.quests.life = p.quests.life || {}; p.quests.life.legendary = (p.quests.life.legendary || 0) + 1; this.achieve(p); }
     if (!silent) {
       p.send({ type: 'drop', item: publicItem(rows[0]), x: it.pos ? it.pos[0] : null, y: it.pos ? it.pos[1] : null });
@@ -1416,11 +1427,11 @@ class World {
   }
 
   // ---------- missões ----------
-  quest(p, kind, amount) {
+  quest(p, kind, amount, ctx) {
     if (!p.quests || !p.quests.daily) return;
-    const done = Q.track(p, kind, amount);
+    const done = Q.track(p, kind, amount, ctx);
     if (done.length || kind === 'kill' || kind === 'loot' || kind === 'elite' || kind === 'online') p.questsDirty = true;
-    for (const m of done) p.send({ type: 'log', kind: 'quest', text: 'Missão diária concluída! Abra Missões para pegar o prêmio.' });
+    for (const m of done) p.send({ type: 'log', kind: 'quest', text: m.where === 'weekly' ? 'Missão semanal concluída! Abra Missões para pegar o prêmio.' : m.where === 'comeback' ? 'Missão de boas-vindas concluída! Veja em Missões.' : 'Missão diária concluída! Abra Missões para pegar o prêmio.' });
     if (kind === 'zen' && Math.random() < 0.05) p.questsDirty = true;
   }
 
@@ -1437,6 +1448,19 @@ class World {
     if (reward.zen) { const n = Math.round(reward.zen * rewardScale); p.zen += n; parts.push(`${n.toLocaleString('pt-BR')} Zen`); }
     if (reward.pot_hp) { const n = Math.ceil(reward.pot_hp * rewardScale); p.pots.hp += n; parts.push(`${n} poções de vida`); }
     if (reward.pot_mp) { const n = Math.ceil(reward.pot_mp * rewardScale); p.pots.mp += n; parts.push(`${n} poções de mana`); }
+    for (const [base, qty] of reward.mats || []) {
+      const got = await this.giveMaterial(p, base, qty, { src: label, silent: true });
+      parts.push(got ? `${qty}× ${G.ITEM_BASES[base].name}` : `${G.ITEM_BASES[base].name} (bolsa cheia: libere espaço e peça de novo ao ADM)`);
+    }
+    if (reward.box) {
+      const got = await this.giveMaterial(p, reward.box, 1, { src: label, silent: true });
+      parts.push(got ? G.ITEM_BASES[reward.box].name : `${G.ITEM_BASES[reward.box].name} (bolsa cheia)`);
+    }
+    if (reward.expPct && p.level < G.LIMITS.maxLevel) {
+      const n = Math.max(1, Math.round(expToNext(p.level) * reward.expPct));
+      p.exp += n; parts.push(`${n.toLocaleString('pt-BR')} EXP`);
+      while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
+    }
     if (reward.item) {
       const it = rollItem(Math.max(1, p.level), 'normal');
       it.rarity = reward.item;
@@ -1459,12 +1483,29 @@ class World {
       if (!m || m.claimed || m.prog < m.goal) return;
       m.claimed = true;
       await this.grant(p, G.DAILY_POOL.find((d) => d.id === id).reward, 'Prêmio da missão');
-    } else if (kind === 'login') {
-      if (q.login.claimed) return;
-      q.login.claimed = true;
-      const idx = ((q.login.streak || 1) - 1) % G.LOGIN_REWARDS.length;
-      await this.grant(p, G.LOGIN_REWARDS[idx], `Prêmio do dia ${idx + 1}`);
+    } else if (kind === 'login' || kind === 'cycle') {
+      // ciclo de retorno de 7 etapas (substitui o prêmio de login; faltar um dia não zera o ciclo)
+      if (!q.cycle || q.cycle.claimed) return;
+      q.cycle.claimed = true; q.login.claimed = true;
+      const idx = (q.cycle.step || 0) % G.CYCLE_REWARDS.length;
+      q.cycle.step = (q.cycle.step || 0) + 1;
+      await this.grant(p, G.CYCLE_REWARDS[idx], `Ciclo de retorno · etapa ${idx + 1}`);
       Q.checkAchievements(p);
+    } else if (kind === 'weekly') {
+      const m = ((q.weekly && q.weekly.list) || []).find((x) => x.id === id);
+      if (!m || m.claimed || m.prog < m.goal) return;
+      m.claimed = true;
+      await this.grant(p, G.WEEKLY_POOL.find((d) => d.id === id).reward, 'Prêmio da missão semanal');
+    } else if (kind === 'weeklyBonus') {
+      const w = q.weekly;
+      if (!w || w.bonus || !w.list || !w.list.length || !w.list.every((x) => x.claimed)) return;
+      w.bonus = true;
+      await this.grant(p, G.WEEKLY_BONUS(p.level), 'Bônus da semana completa');
+    } else if (kind === 'comeback') {
+      const c = q.comeback;
+      if (!c || c.claimed || !c.list.every((x) => x.prog >= x.goal)) return;
+      c.claimed = true;
+      await this.grant(p, G.COMEBACK[c.tier].reward, 'Bem-vindo de volta');
     } else if (kind === 'ach') {
       if (q.ach[id] !== 'done') return;
       q.ach[id] = 'claimed';
@@ -1569,6 +1610,13 @@ class World {
     // Zen de monstros normais é sempre creditado diretamente; bônus VIP/evento não ultrapassam o teto.
     this.quest(p, 'kill', 1); this.quest(p, 'zen', zen);
     if (m.T.elite) this.quest(p, 'elite', 1);
+    if (map && !map.def.arena && !m.T.training) {
+      this.quest(p, 'explore', 1, { map: map.id });
+      // "mapa do seu nível": dá EXP para você e não é um mapa muito abaixo do seu nível
+      if (!capped && p.level - (map.def.minLevel || 0) <= 80) this.quest(p, 'mapkill', 1);
+    }
+    if (p.guild) this.quest(p, 'guildkill', 1);
+    if (SOCIAL.activeParty(p.charId)) this.quest(p, 'party', 1);
     GUILD.onMonsterKill(p, m.T);
     if (p.kills % 50 === 0 || p.kills === 100) this.achieve(p);
     p.send({ type: 'reward', exp, zen, mon: m.T.name });
@@ -1625,7 +1673,7 @@ class World {
       p.exp += exp; p.zen += zen; p.bossesKilled++;
       const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
       if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
-      this.quest(p, 'elite', 1); this.quest(p, 'zen', zen); this.achieve(p);
+      this.quest(p, 'elite', 1); this.quest(p, 'boss', 1); this.quest(p, 'zen', zen); this.achieve(p);
       GUILD.onMonsterKill(p, m.T, { boss: true });
       p.send({ type: 'reward', exp, zen, mon: m.T.name, share: Math.round(share * 100) });
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }

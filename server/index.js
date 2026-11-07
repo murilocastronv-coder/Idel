@@ -423,6 +423,14 @@ route('POST', '/api/admin/excellent', bad(async (req) => {
   CMDS.log({ accountId: acc.id, name: acc.username, role: 'superadmin' }, 'panel:excellent', null, {}, null, config, 'ok', 'Opções Excellent atualizadas', null);
   return { ok: true, message: 'Opções Excellent salvas.', ...EXCELLENT.adminView() };
 }));
+// ---- Retenção (Super ADM): DAU/MAU, D1/D7/D30 por coorte, sessões, eventos, guildas, VIP ----
+const RETENTION = require('./retention');
+route('GET', '/api/admin/retention', async (req) => { await requireAdmin(req); return RETENTION.view(world); });
+route('POST', '/api/admin/retention/goals', bad(async (req) => {
+  await requireAdmin(req);
+  const body = await readJson(req, 4 * 1024);
+  return { ok: true, goals: await RETENTION.saveGoals(body.goals || {}) };
+}));
 // ---- Agilidade: crítico, velocidade de ataque e defesa (Super ADM) ----
 route('GET', '/api/admin/agility', async (req) => { await requireAdmin(req); return AGI.adminView(); });
 route('POST', '/api/admin/agility', bad(async (req) => {

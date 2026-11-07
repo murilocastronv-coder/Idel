@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=2">
   <link rel="stylesheet" href="/css/style.css?v=22">
-  <link rel="stylesheet" href="/css/game.css?v=40">
+  <link rel="stylesheet" href="/css/game.css?v=41">
   <link rel="stylesheet" href="/css/art-upgrade.css?v=4">
   <link rel="stylesheet" href="/css/gfx-fx.css?v=13">
 </head>
@@ -74,7 +74,7 @@
       <button type="button" data-panel="hero">Herói<i class="badge" id="pts-badge" hidden></i></button>
       <button type="button" data-panel="maps">Mapas</button>
       <button type="button" data-panel="shop" id="btn-shop">Loja</button>
-      <button type="button" data-panel="quests">Missões<i class="badge" id="quest-badge" hidden></i></button>
+      <button type="button" data-panel="quests">Jornada<i class="badge" id="quest-badge" hidden></i></button>
       <button type="button" data-panel="config">Idle</button>
       <button type="button" data-panel="market">Mercado</button>
       <button type="button" data-panel="rank">Ranking</button>
@@ -209,7 +209,8 @@
   </section>
 
   <section class="panel window" id="panel-quests" hidden aria-labelledby="quests-title">
-    <header><h2 id="quests-title">Missões e prêmios</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <header><h2 id="quests-title">Minha Jornada</h2><button class="close" type="button" data-close aria-label="Fechar">×</button></header>
+    <nav class="j-tabs" role="tablist" aria-label="Jornada"><button type="button" role="tab" data-jtab="journey" class="on">Minha Jornada</button><button type="button" role="tab" data-jtab="missions">Missões</button><button type="button" role="tab" data-jtab="events">Eventos</button></nav>
     <div id="quests-body"></div>
   </section>
 
@@ -297,8 +298,8 @@
   <script src="/js/sprites.js?v=44"></script>
   <script src="/js/sfx.js?v=21"></script>
   <script src="/js/music.js?v=1"></script>
-  <script src="/js/admin-tools.js?v=16"></script>
+  <script src="/js/admin-tools.js?v=17"></script>
   <script src="/js/fenrir.js?v=6"></script>
-  <script src="/js/game.js?v=121"></script>
+  <script src="/js/game.js?v=122"></script>
 </body>
 </html>
