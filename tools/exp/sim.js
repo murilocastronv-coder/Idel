@@ -11,7 +11,7 @@ const G = require('../../server/gamedata');
 const W = require('../../server/world');
 
 const TARGET = [[1, 0], [50, 1], [100, 3], [200, 10], [300, 20], [400, 35], [500, 55], [600, 85], [700, 125], [800, 175], [900, 235], [950, 275], [1000, 320]];
-const START_POINTS = 10000;
+const START_POINTS = 1000;
 
 function gear(cls, level, tier) {
   // equipamento que um jogador Free costuma ter: o melhor item comum (básico) ou épico +9 (avançado) que o nível permite usar

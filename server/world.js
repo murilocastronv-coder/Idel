@@ -617,6 +617,39 @@ class World {
     return this.withCharLock(charId, () => this.joinLocked(client, charId, room));
   }
 
+  // Bônus de pontos virou 1.000 (uma vez por personagem, marcado em points_fix):
+  // quem nasceu com os 10.000 fica só com 1.000 (os 9.000 saem dos pontos livres e, se faltar, dos atributos
+  // na mesma proporção que o jogador distribuiu, nunca abaixo do base da classe); todo o resto ganha +1.000 livres.
+  async pointsFix(row) {
+    if (Number(row.points_fix)) return;
+    const { rows } = await db.query('SELECT created_at, class, str, agi, vit, ene, cmd, free_points, points_fix FROM characters WHERE id = $1', [row.id]);
+    const r = rows[0];
+    if (!r || Number(r.points_fix)) return;
+    const KEYS = ['str', 'agi', 'vit', 'ene', 'cmd'];
+    const base = (G.CLASSES[r.class] || {}).base || {};
+    const st = Object.fromEntries(KEYS.map((k) => [k, Number(r[k]) || 0]));
+    let free = Number(r.free_points) || 0;
+    const above = (k) => Math.max(0, st[k] - (base[k] || 0));
+    const extra = KEYS.reduce((a, k) => a + above(k), 0) + free;
+    const got10k = new Date(r.created_at).getTime() >= Date.parse('2026-11-07T07:40:00Z') && extra >= 10000;
+    if (got10k) {
+      let rem = 9000;
+      const take = Math.min(free, rem); free -= take; rem -= take;
+      const pool = KEYS.reduce((a, k) => a + above(k), 0);
+      if (rem > 0 && pool > 0) {
+        const cut = Object.fromEntries(KEYS.map((k) => [k, Math.min(above(k), Math.floor(rem * above(k) / pool))]));
+        let left = rem - KEYS.reduce((a, k) => a + cut[k], 0);
+        for (const k of [...KEYS].sort((a, b) => above(b) - above(a))) { if (left <= 0) break; const more = Math.min(left, above(k) - cut[k]); cut[k] += more; left -= more; }
+        for (const k of KEYS) st[k] -= cut[k];
+      }
+    } else free += 1000;
+    const res = await db.query('UPDATE characters SET str = $2, agi = $3, vit = $4, ene = $5, cmd = $6, free_points = $7, points_fix = 1 WHERE id = $1 AND points_fix = 0',
+      [row.id, st.str, st.agi, st.vit, st.ene, st.cmd, free]);
+    if (!res.rowCount) return;
+    Object.assign(row, st, { free_points: free, points_fix: 1 });
+    console.log(`[pontos] ${row.name}: ${got10k ? 'bônus 10.000 → 1.000' : '+1.000 pontos'}`);
+  }
+
   async joinLocked(client, charId, room) {
     const lastQ = this.lastQueues.get(String(charId));
     if (lastQ) await lastQ.catch(() => {});
@@ -635,6 +668,7 @@ class World {
       }
     }
     if (client.player) await this.leave(client.player);
+    await this.pointsFix(row);
 
     const items = (await db.query('SELECT id, base, rarity, plus, equipped, qty, eq_slot, locked, excellent_options FROM items WHERE character_id = $1 AND vault_no IS NULL ORDER BY id', [row.id])).rows;
     if (Number(row.level) < 120) for (const it of items) if (it.equipped && G.ITEM_BASES[it.base] && G.ITEM_BASES[it.base].slot === 'wings') {

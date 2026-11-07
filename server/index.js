@@ -883,7 +883,7 @@ route('POST', '/api/recovery-code', async (req) => {
 
 const HAIR_COLORS = 7, SKIN_TONES = 4;
 // pontos de boas-vindas de todo personagem novo
-const START_POINTS = 10000;
+const START_POINTS = 1000;
 route('POST', '/api/characters', async (req) => {
   const acc = await requireAccount(req);
   limit(req, 'char-create', 10, 60 * 60 * 1000, String(acc.id));
@@ -905,8 +905,8 @@ route('POST', '/api/characters', async (req) => {
   let rows;
   try {
     // presente de boas-vindas: todo personagem novo já nasce com pontos para distribuir
-    ({ rows } = await db.query(`INSERT INTO characters (account_id, name, class, appearance, str, agi, vit, ene, cmd, combat_power, zen, free_points)
-      SELECT $1::bigint, $2::text, $3::text, $4::jsonb, $5::int, $6::int, $7::int, $8::int, $9::int, $10::int, 1000, ${START_POINTS}
+    ({ rows } = await db.query(`INSERT INTO characters (account_id, name, class, appearance, str, agi, vit, ene, cmd, combat_power, zen, free_points, points_fix)
+      SELECT $1::bigint, $2::text, $3::text, $4::jsonb, $5::int, $6::int, $7::int, $8::int, $9::int, $10::int, 1000, ${START_POINTS}, 1
       WHERE (SELECT count(*) FROM characters WHERE account_id = $1::bigint) < $11::int
       RETURNING id, name, class, level`,
     [acc.id, name, cls, JSON.stringify(appearance), b.str, b.agi, b.vit, b.ene, b.cmd, power, game.LIMITS.maxCharactersPerAccount]));

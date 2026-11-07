@@ -7,7 +7,9 @@ const fs = require('fs');
 const path = require('path');
 const TARGET = [[1, 0], [50, 1], [100, 3], [200, 10], [300, 20], [400, 35], [500, 55], [600, 85], [700, 125], [800, 175], [900, 235], [950, 275], [1000, 320]];
 const expToNext = (L) => Math.floor(100 * Math.pow(L, 2.1) + 200);
-const oldProg = (L) => 1 / (1 + L / 600);   // redutor que estava ligado durante a medição
+// multiplicador que estava ligado durante a medição: redutor antigo (padrão) ou a curva atual do servidor (--curva-atual)
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://cal@localhost/cal';
+const oldProg = process.argv.includes('--curva-atual') ? ((E) => (L) => E.curveAt(L))(require('../../server/exphard')) : (L) => 1 / (1 + L / 600);
 
 // pontos medidos: minutos por nível SEM curva (EXP/s medido ÷ redutor antigo)
 const pts = [];
