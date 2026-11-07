@@ -163,6 +163,7 @@
     return out || eq;
   }
   function equipPaths(cls, eq) {
+    const rawW = eq && eq.w;
     eq = normEq(eq);
     const out = [];
     const m = S.manifest; if (!m || !m.equip) return out;
@@ -175,7 +176,10 @@
       const W = m.weapons.classes[cls]; if (W && W.sheet) out.push(W.sheet);
     }
     const WG = m.wings;
-    if (meta.full) { const lp = lookPath(meta, eq); if (lp) out.push(lp); }
+    if (meta.full) {
+      const lp = lookPath(meta, eq); if (lp) out.push(lp);
+      const np = shopWeapon(cls, rawW) && nwPath(meta, cls, lp); if (np) out.push(np);
+    }
     if (meta.full && eq.wings && newWingPath(eq.wings)) out.push(newWingPath(eq.wings));
     else if (WG && eq.wings) {
       const key = WG.sheets[eq.wings] ? eq.wings : WING_VARIANT[eq.wings] || 'wings_dragon';
@@ -220,18 +224,29 @@
     dark_lord: { side: [[53, 71, -86, 62, 0.38]], front: [[66, 56, -88, 66, 0.5]] },
     fairy_elf: { side: [[51, 64, -78, 52, 0.5]], front: [[54, 60, -28, 62, 0.5]] },
   };
+  // arma da loja equipada: chave do ícone (ou null)
+  const shopWeapon = (cls, rawW) => (window.PixelArt && window.PixelArt.setWeaponKey ? window.PixelArt.setWeaponKey(rawW, cls) : null);
+  // herói sem a arma do desenho (tools/sprites/strip_weapons.py): usado quando a arma da loja está equipada
+  const nwPath = (meta, cls, lp) => (meta && meta.nw ? (lp ? lp.replace(/\.png$/, '_nw.png') : 'heroes/' + cls + '_nw.png') : null);
   function heldWeapon(ctx, cls, meta, rawW, row, f, scale, white, glow, behind) {
-    const P = window.PixelArt; if (!P || !P.setWeaponKey || white) return;
-    const key = P.setWeaponKey(rawW, cls), cell = key && P.atlasCell(key);
-    const H = HAND[cls]; if (!cell || !H) return;
-    const view = row === 0 || row === 1 ? 'side' : row === 5 || row === 6 ? 'front' : row === 7 || row === 8 ? 'back' : null;
+    const P = window.PixelArt; if (!P || !P.atlasCell || white) return;
+    const key = shopWeapon(cls, rawW), cell = key && P.atlasCell(key);
+    if (!cell) return;
+    const view = row === 0 || row === 1 || row === 3 ? 'side' : row === 5 || row === 6 ? 'front' : row === 7 || row === 8 ? 'back' : null;
     if (!view || (view === 'back') !== !!behind) return;
-    const bob = ((meta.wbob || {})[row] || [])[f] || 0;
-    for (const [hx0, hy, ang0, len, grip] of H[view === 'side' ? 'side' : 'front']) {
-      const hx = view === 'back' ? 96 - hx0 : hx0, ang = view === 'back' ? 180 - ang0 : ang0;
-      const k = len / 66, s = cell.s * k;
+    // onde a arma do desenho estava neste quadro (cabo -> ponta); sem isso, a mão padrão da classe
+    const segs = ((meta.wseg || {})[row] || [])[f];
+    let list;
+    if (segs) list = segs.map(([x1, y1, x2, y2]) => [x1, y1, Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI, Math.hypot(x2 - x1, y2 - y1), 0.03]);
+    else {
+      const H = HAND[cls]; if (!H || row === 3) return;
+      const bob = ((meta.wbob || {})[row] || [])[f] || 0;
+      list = H[view === 'side' ? 'side' : 'front'].map(([hx, hy, ang, len, grip]) => view === 'back' ? [96 - hx, hy + bob, 180 - ang, len, grip] : [hx, hy + bob, ang, len, grip]);
+    }
+    for (const [hx, hy, ang, len, grip] of list) {
+      const s = cell.s * len / 66;
       ctx.save();
-      ctx.translate((hx - meta.pivot[0]) * scale, (hy + bob - meta.pivot[1]) * scale);
+      ctx.translate((hx - meta.pivot[0]) * scale, (hy - meta.pivot[1]) * scale);
       ctx.rotate((ang + 45) * Math.PI / 180);
       ctx.scale(scale, scale);
       if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = 6 * scale; }
@@ -246,7 +261,10 @@
     const meta = S.manifest.heroes[cls];
     if (!meta || (!meta.layers && !meta.full)) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts);
     const full = !!meta.full;
-    const lp = full && lookPath(meta, eq), lookIm = lp && img(lp);
+    const lp0 = full && lookPath(meta, eq);
+    // arma da loja equipada: usa o desenho sem a arma original (se já carregou)
+    const np = full && shopWeapon(cls, rawW) && nwPath(meta, cls, lp0), npIm = np && img(np);
+    const lp = npIm ? np : lp0, lookIm = lp && img(lp);
     const back = full ? (lookIm ? recolored('L:' + lp, lookIm, meta, true, ap, opts.white) : sheet('heroes', cls, ap, opts.white)) : recolored('L:' + meta.layers.back, img(meta.layers.back), meta, true, ap, opts.white);
     const front = full ? back : recolored('L:' + meta.layers.front, img(meta.layers.front), meta, true, ap, opts.white);
     if (!back || !front) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts); // ainda carregando
