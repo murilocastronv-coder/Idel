@@ -367,6 +367,17 @@
     const list = SET_WEAPONS[cls] || SET_WEAPONS.dark_knight;
     return list[Math.min(list.length - 1, Math.floor((Math.max(1, n) - 1) * list.length / 30))];
   }
+  // arma da loja que aparece na mão do herói: chave do ícone e recorte no atlas
+  function setWeaponKey(base, cls) {
+    const m = /^festive_(\d+)_(sword|bow)$/.exec(base || '');
+    if (!m) return null;
+    return m[2] === 'bow' || cls === 'fairy_elf' ? setWeapon('fairy_elf', Number(m[1])) : setWeapon(cls, Number(m[1]));
+  }
+  function atlasCell(key) {
+    const A = itemAtlas, i = A.idx && A.idx[key];
+    if (i === undefined || i === null || !A.img.naturalWidth) return null;
+    return { img: A.img, sx: (i % A.cols) * A.size, sy: Math.floor(i / A.cols) * A.size, s: A.size };
+  }
   function drawItem(ctx, item, x, y, size) {
     if (item && window.Fenrir && window.Fenrir.isPet && window.Fenrir.isPet(item.base)) return window.Fenrir.petIcon(ctx, item.base, x, y, size);
     if (item && window.Fenrir && window.Fenrir.variantOf(item.base)) { window.Fenrir.icon(ctx, x, y, size, window.Fenrir.variantOf(item.base)); return true; }
@@ -390,5 +401,5 @@
     return true;
   }
 
-  window.PixelArt = { drawItem, itemsReady, drawCharacter, drawMonster, monsterSize, drawIcon, drawLandscape, drawGrid, HAIR, SKIN, GRID_W, GRID_H };
+  window.PixelArt = { drawItem, setWeaponKey, atlasCell, itemsReady, drawCharacter, drawMonster, monsterSize, drawIcon, drawLandscape, drawGrid, HAIR, SKIN, GRID_W, GRID_H };
 })();

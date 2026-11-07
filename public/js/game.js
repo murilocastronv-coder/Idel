@@ -3149,7 +3149,7 @@
         const current = (S.players.get(S.youId) && S.players.get(S.youId).info && S.players.get(S.youId).info.eq) || {};
         // as peças de verdade deste conjunto (elmo, armadura, luvas, botas, asa e arma do conjunto)
         const equip = { ...current, helm: product.id, armor: product.id, gloves: product.id, boots: product.id, wings: product.id + '_wings', wingRarity: 'epic',
-          w: cls === 'fairy_elf' ? product.id + '_bow' : ['dark_knight', 'magic_gladiator'].includes(cls) ? product.id + '_sword' : current.w || null, wg: product.tone || null };
+          w: product.id + (cls === 'fairy_elf' ? '_bow' : '_sword'), wg: product.tone || null };
         if (is3d) {
           canvas.width = 300; canvas.height = 320;
           W3().preview(canvas, { kind: 'hero', cls, eq: equip });
@@ -3163,7 +3163,7 @@
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.imageSmoothingEnabled = false;
           ctx.fillStyle = 'rgba(8,12,25,.55)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-          Sprites.hero(ctx, cls, ap, 'idle', performance.now(), canvas.width / 2, canvas.height - 16, 2.25, false, { equip });
+          Sprites.hero(ctx, cls, ap, 'idle_front', performance.now(), canvas.width / 2, canvas.height - 16, 2.25, false, { equip });
           raf = requestAnimationFrame(draw);
         };
         Sprites.ready.then(draw).catch(() => { ctx.fillStyle = '#eee'; ctx.fillText('Prévia indisponível', 55, 140); });

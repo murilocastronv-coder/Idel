@@ -209,7 +209,38 @@
     return look ? meta.looks[look] || null : null;
   };
   // eq: { w: base da arma, wg: cor do brilho da arma, helm/armor/gloves/boots: conjunto }
+  // armas da loja de cash na mão do herói de arte completa (o ícone fica na diagonal: cabo embaixo à esquerda).
+  // Por vista: mão (x, y no quadro 96x96), direção da ponta em graus (0 = frente, 90 = para baixo),
+  // comprimento e ponto da pegada (0 = ponta do cabo, 1 = ponta da arma). De costas usa a de frente espelhada.
+  const HAND = {
+    dark_knight: { side: [[48, 72, 44, 36, 0.22]], front: [[31, 66, 127, 36, 0.22]] },
+    magic_gladiator: { side: [[50, 72, 30, 34, 0.22]], front: [[63, 63, 48, 32, 0.22], [29, 64, 132, 32, 0.22]] },
+    dark_wizard: { side: [[51, 79, -86, 62, 0.28]], front: [[67, 58, -86, 66, 0.45]] },
+    summoner: { side: [[51, 79, -86, 62, 0.28]], front: [[67, 58, -86, 66, 0.45]] },
+    dark_lord: { side: [[53, 71, -86, 62, 0.38]], front: [[66, 56, -88, 66, 0.5]] },
+    fairy_elf: { side: [[51, 64, -78, 52, 0.5]], front: [[54, 60, -28, 62, 0.5]] },
+  };
+  function heldWeapon(ctx, cls, meta, rawW, row, f, scale, white, glow, behind) {
+    const P = window.PixelArt; if (!P || !P.setWeaponKey || white) return;
+    const key = P.setWeaponKey(rawW, cls), cell = key && P.atlasCell(key);
+    const H = HAND[cls]; if (!cell || !H) return;
+    const view = row === 0 || row === 1 ? 'side' : row === 5 || row === 6 ? 'front' : row === 7 || row === 8 ? 'back' : null;
+    if (!view || (view === 'back') !== !!behind) return;
+    const bob = ((meta.wbob || {})[row] || [])[f] || 0;
+    for (const [hx0, hy, ang0, len, grip] of H[view === 'side' ? 'side' : 'front']) {
+      const hx = view === 'back' ? 96 - hx0 : hx0, ang = view === 'back' ? 180 - ang0 : ang0;
+      const k = len / 66, s = cell.s * k;
+      ctx.save();
+      ctx.translate((hx - meta.pivot[0]) * scale, (hy + bob - meta.pivot[1]) * scale);
+      ctx.rotate((ang + 45) * Math.PI / 180);
+      ctx.scale(scale, scale);
+      if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = 6 * scale; }
+      ctx.drawImage(cell.img, cell.sx, cell.sy, cell.s, cell.s, -s * grip, -s * (1 - grip), s, s);
+      ctx.restore();
+    }
+  }
   function heroEquip(ctx, cls, ap, action, t, x, y, scale, flip, opts = {}, eq = {}) {
+    const rawW = eq && eq.w;
     eq = normEq(eq) || {};
     if (!S.manifest || !S.manifest.equip) return draw(ctx, 'heroes', cls, ap, action, t, x, y, scale, flip, opts);
     const meta = S.manifest.heroes[cls];
@@ -315,8 +346,10 @@
       ctx.restore();
     };
     if (wk && WG && !fromBack) drawWing();
+    if (full) heldWeapon(ctx, cls, meta, rawW, row, f, scale, opts.white, eq.wg, true);
     blit(back, 0);
     if (full) {
+      heldWeapon(ctx, cls, meta, rawW, row, f, scale, opts.white, eq.wg, false);
       if (wk && WG && fromBack) drawWing();
       ctx.restore();
       return true;
