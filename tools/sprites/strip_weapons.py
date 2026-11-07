@@ -266,6 +266,21 @@ def main():
             continue
         meta['wseg'] = wseg
         meta['nw'] = True
+        # arma original recortada (vista de frente): o jogo desenha ela na mão nos quadros em que o desenho não tem arma
+        # (ex.: Lorde andando de frente/de lado, Mago parado de lado)
+        rr, rf, shapes, segs = views['front'][:4]
+        keepw = np.zeros((FW, FW), bool)
+        for y in range(FW):
+            for x in range(FW):
+                keepw[y, x] = any(in_shape(x, y, sh) for sh in shapes)
+        for suf in [''] + ['_' + k for k in (meta.get('looks') or {})]:
+            src = os.path.join(ROOT, 'heroes', cls + suf + '.png')
+            if not os.path.exists(src):
+                continue
+            cell = np.array(Image.open(src).convert('RGBA'))[rr * FW:(rr + 1) * FW, rf * FW:(rf + 1) * FW].copy()
+            cell[~keepw] = 0
+            Image.fromarray(cell).save(os.path.join(ROOT, 'heroes', cls + suf + '_wpn.png'), optimize=True)
+        meta['wpn'] = True
         looks = [''] + ['_' + k for k in (meta.get('looks') or {})]
         for suf in looks:
             src = os.path.join(ROOT, 'heroes', cls + suf + '.png')

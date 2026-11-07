@@ -429,7 +429,8 @@
      ]
     ]
    },
-   "nw": true
+   "nw": true,
+   "wpn": true
   },
   "dark_wizard": {
    "sheet": "heroes/dark_wizard.png",
@@ -799,7 +800,8 @@
      ]
     ]
    },
-   "nw": true
+   "nw": true,
+   "wpn": true
   },
   "fairy_elf": {
    "sheet": "heroes/fairy_elf.png",
@@ -1492,7 +1494,8 @@
      ]
     ]
    },
-   "nw": true
+   "nw": true,
+   "wpn": true
   },
   "dark_lord": {
    "sheet": "heroes/dark_lord.png",
@@ -1762,7 +1765,8 @@
      ]
     ]
    },
-   "nw": true
+   "nw": true,
+   "wpn": true
   },
   "summoner": {
    "sheet": "heroes/summoner.png",
@@ -2132,7 +2136,8 @@
      ]
     ]
    },
-   "nw": true
+   "nw": true,
+   "wpn": true
   }
  },
  "monsters": {

@@ -180,6 +180,7 @@
       const lp = lookPath(meta, eq); if (lp) out.push(lp);
       const np = shopWeapon(cls, rawW) && nwPath(meta, cls, lp); if (np) out.push(np);
       if (meta.bowLayer && shopWeapon(cls, rawW)) out.push(meta.bowLayer);
+      if (meta.wpn) out.push(lp ? lp.replace(/\.png$/, '_wpn.png') : 'heroes/' + cls + '_wpn.png');
     }
     if (meta.full && eq.wings && newWingPath(eq.wings)) out.push(newWingPath(eq.wings));
     else if (WG && eq.wings) {
@@ -284,18 +285,29 @@
     return ax;
   }
   const GRIP_BACK = { magic_gladiator: 5, dark_knight: 2 };
-  function heldWeapon(ctx, cls, meta, rawW, row, f, scale, white, glow, behind) {
+  // wpnPath: arma original recortada do desenho (heroes/<classe>[_visual]_wpn.png), para os quadros sem arma
+  function heldWeapon(ctx, cls, meta, rawW, row, f, scale, white, glow, behind, wpnPath) {
     const P = window.PixelArt; if (!P || !P.atlasCell || white || meta.bowLayer) return;
-    const key = shopWeapon(cls, rawW), cell = key && P.atlasCell(key);
-    if (!cell) return;
     const view = row === 0 || row === 1 || row === 3 ? 'side' : row === 5 || row === 6 ? 'front' : row === 7 || row === 8 ? 'back' : null;
-    // a arma fica atrás do corpo: a mão do herói cobre o cabo e ela parece segurada
-    if (!view || !behind) return;
-    const ax = iconAxis(key, cell); if (!ax) return;
-    // onde a arma do desenho estava neste quadro (cabo -> ponta); sem isso, a mão padrão da classe
-    let segs = ((meta.wseg || {})[row] || [])[f];
+    if (!view) return;
+    const rowSegs = (meta.wseg || {})[row];
+    const key = shopWeapon(cls, rawW);
+    let cell = key && P.atlasCell(key), axKey = key;
+    if (!key) {
+      // sem arma da loja: só completa os quadros em que o desenho não tem a arma
+      const wim = !rowSegs && meta.wpn && wpnPath && img(wpnPath);
+      if (!wim) return;
+      cell = { img: wim, sx: 0, sy: 0, s: wim.width }; axKey = wpnPath;
+    }
+    if (!cell) return;
+    // arma no lugar da arma do desenho: atrás do corpo (a mão cobre o cabo).
+    // quadro sem arma no desenho (linha sem wseg): na mão padrão da classe, na frente do corpo (atrás de costas)
+    if (rowSegs ? !behind : (view === 'back') !== !!behind) return;
+    const ax = iconAxis(axKey, cell); if (!ax) return;
+    let segs = rowSegs && rowSegs[f];
+    if (rowSegs && !segs) return;
     if (!segs) {
-      const H = HAND[cls]; if (!H || row === 3) return;
+      const H = HAND[cls]; if (!H) return;
       const bob = ((meta.wbob || {})[row] || [])[f] || 0;
       segs = H[view === 'side' ? 'side' : 'front'].map(([hx, hy, ang, len, grip]) => {
         if (view === 'back') { hx = 96 - hx; ang = 180 - ang; }
@@ -431,11 +443,12 @@
       ctx.restore();
     };
     if (wk && WG && !fromBack) drawWing();
-    if (full) heldWeapon(ctx, cls, meta, rawW, row, f, scale, opts.white, eq.wg, true);
+    const wpnPath = full && meta.wpn ? (lp0 ? lp0.replace(/\.png$/, '_wpn.png') : 'heroes/' + cls + '_wpn.png') : null;
+    if (full) heldWeapon(ctx, cls, meta, rawW, row, f, scale, opts.white, eq.wg, true, wpnPath);
     blit(back, 0);
     if (full) {
       if (meta.bowLayer && !opts.white) { const bl = bowLayer(meta, shopWeapon(cls, rawW)); if (bl) blit(bl, 0); }
-      heldWeapon(ctx, cls, meta, rawW, row, f, scale, opts.white, eq.wg, false);
+      heldWeapon(ctx, cls, meta, rawW, row, f, scale, opts.white, eq.wg, false, wpnPath);
       if (wk && WG && fromBack) drawWing();
       ctx.restore();
       return true;
