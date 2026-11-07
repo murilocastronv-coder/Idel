@@ -371,7 +371,7 @@
     glacier: { base: '#6a7e94', a: '#7a90a8', b: '#566a80', blade: '#a8c4dc' },
     abyss: { base: '#1e0c0c', a: '#2a1010', b: '#140808', blade: '#3a1414' },
   };
-  const OBJ_SIZE = { mushrooms: [62, 55], elven_house: [120, 112], ice_cave: [115, 107], lamp_post: [24, 62], bridge: [94, 94], snow_pine: [65, 89], barrels: [55, 54], stone_house: [94, 107], magic_tree: [106, 118],
+  const OBJ_SIZE = { fountain_stone: [84, 75], castle_wall: [98, 115], mushrooms: [62, 55], elven_house: [120, 112], ice_cave: [115, 107], lamp_post: [24, 62], bridge: [94, 94], snow_pine: [65, 89], barrels: [55, 54], stone_house: [94, 107], magic_tree: [106, 118],
     portal_01: [62, 62], portal_02: [62, 60], portal_03: [60, 60], portal_04: [60, 61], portal_05: [62, 61], portal_06: [60, 62], portal_07: [60, 60], portal_08: [62, 61],
     portal_09: [64, 63], portal_10: [57, 60], portal_11: [62, 61], portal_12: [56, 61], portal_13: [48, 63], portal_14: [58, 62], portal_15: [57, 62], portal_16: [61, 61] };
   const OBJ_IMG = {}, OBJ_CANVAS = new Map();
@@ -814,6 +814,26 @@
       }
       for (let i = 0; i < 24; i++) crystal(r() * W, r() * H, ['#5a1a8a', '#ff8ae8'], '220,90,255');
     }
+    // chafariz e muralhas com torre desenhados à mão: cidades (Lorencia, Noria, Devias) e cantos das arenas de evento
+    const fountain = (x, y, s) => {
+      objProp('fountain_stone', x, y, s);
+      light(x, y - 34 * s, 120, '140,210,255', 0.1);
+      emitter(x, y - 62 * s, 'spray'); emit[emit.length - 1].keep = true;   // jato de água (fica mesmo com o chão desenhado)
+    };
+    const wallSeg = (x, y, s = 1.3) => objProp('castle_wall', x, y, s);
+    if (m.map === 'lorencia') {
+      fountain(m.w, m.h + 34, 1.7);
+      for (let x = 130; x < W - 160; x += 240) if (Math.abs(x - m.w) > 150) wallSeg(x, H - 6);          // muralha de baixo, com o portão no meio
+      for (let y = 420; y < H - 160; y += 250) wallSeg(64, y);                                            // lado esquerdo (à direita fica o rio)
+    } else if (m.map === 'noria') {
+      fountain(560 * GS, 430 * GS, 1.6);
+    } else if (m.map === 'devias') {
+      fountain(380 * GS, 420 * GS, 1.6);
+      for (let x = 140; x < W - 120; x += 260) wallSeg(x, 150);                                            // muralha no alto da cidade
+    } else if (m.theme === 'castle' || m.theme === 'devilsq') {
+      const M = (m.margin || 46) * GS;
+      for (const [x, y] of [[M + 40, M + 80], [W - M - 40, M + 80], [M + 40, H - M + 10], [W - M - 40, H - M + 10]]) wallSeg(x, y, 1.2);   // torres nos cantos
+    }
     // portal animado: atrás do Guardião do Portal quando ele está no mapa; na cidade, na borda da praça
     if (m.theme !== 'castle' && m.theme !== 'devilsq' && !m.arena) {
       let hsh = 0; for (const ch of String(m.map)) hsh = (hsh * 31 + ch.charCodeAt(0)) >>> 0;
@@ -832,7 +852,7 @@
       base.drawImage(art, Math.round((W - dw) / 2), Math.round((H - dh) / 2), Math.round(dw), Math.round(dh));
       g = base;
       for (const pr of props) shadow(pr.x * GS + 3, pr.y * GS + 2, Math.min(pr.w * 0.3, 22));   // sombras dos objetos de volta
-      W2 = []; E2 = emit.filter((e) => e.kind !== 'spray');                                       // água pintada do tema sumiu junto
+      W2 = []; E2 = emit.filter((e) => e.kind !== 'spray' || e.keep);                                       // água pintada do tema sumiu junto
     }
     // área segura (ponto de entrada dos mapas de caça): círculo de runas no chão
     if (m.safeZone) {
