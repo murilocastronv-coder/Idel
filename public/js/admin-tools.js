@@ -219,6 +219,7 @@
         <button class="btn small" type="button" id="xh-add">+ Âncora</button>
         <div class="adm-row" style="flex-wrap:wrap;margin-top:8px">
           <label>Dificuldade por reset <input type="number" step="0.01" min="0" max="1" id="xh-reset" value="${C.perReset}" style="width:80px"></label>
+          <label>Multiplicador geral do EXP (0,5 = −50%) <input type="number" step="0.05" min="0.05" max="5" id="xh-global" value="${C.globalMult}" style="width:80px"></label>
           <label>Corte progressivo no nível 1000 (0,6 = −60%) <input type="number" step="0.05" min="0" max="0.95" id="xh-cut" value="${C.levelCut}" style="width:80px"></label>
           <label>Multiplicador do EXP offline <input type="number" step="0.05" min="0" max="2" id="xh-off" value="${C.offline}" style="width:80px"></label>
           ${[2, 3, 4, 5].map((n) => `<label>Party ${n} <input type="number" step="0.01" min="0" max="1" data-xp="${n}" value="${C.party[n]}" style="width:70px"></label>`).join('')}
@@ -240,7 +241,7 @@
       const collect = () => {
         const curve = $$('[data-xl]', box).map((i) => [Number(i.value), Number($(`[data-xv="${i.dataset.xl}"]`, box).value)]);
         const party = {}; $$('[data-xp]', box).forEach((i) => { party[i.dataset.xp] = Number(i.value); });
-        return { curve, perReset: Number($('#xh-reset', box).value), levelCut: Number($('#xh-cut', box).value), offline: Number($('#xh-off', box).value), party };
+        return { curve, perReset: Number($('#xh-reset', box).value), levelCut: Number($('#xh-cut', box).value), globalMult: Number($('#xh-global', box).value), offline: Number($('#xh-off', box).value), party };
       };
       const send = async (config) => { try { V = await X.api('POST', '/api/admin/exphard', { config }); draw(); msg(box, V.message); } catch (e) { msg(box, e.message, true); } };
       $('#xh-save', box).onclick = () => send(collect());

@@ -2360,7 +2360,7 @@
     const er = S.data.expRef || { min: 0.02, max: 6 };
     const hk = Math.min(er.max || 6, Math.max(er.min || 0.02, (t.maxHp || 1) / refHp(L)));
     const cut = 1 - (Number(er.levelCut) || 0) * (Math.min(1000, Math.max(1, L)) - 1) / 999;   // corte progressivo por nível
-    const prog = (er.trim || 1) * expCurveAt(L) * cut / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
+    const prog = (er.trim || 1) * expCurveAt(L) * cut * (Number(er.globalMult) > 0 ? Number(er.globalMult) : 1) / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
     const pct = (t.boss ? 15 * (1 + ((S.char.vip && S.char.vip.tier) || 0)) * (1 + ((w && w.bossExpBonus) || 0) / 100) : vip * hk * (1 + ((w && w.expBonus) || 0) / 100)) * prog;
     return `${fmt.format(Math.round(next * pct / 100))} (${pct.toFixed(pct < 1 ? 2 : 1)}%)`;
   }

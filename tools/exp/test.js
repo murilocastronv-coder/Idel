@@ -18,7 +18,7 @@ t('curva contínua: de um nível para o outro o EXP por abate muda pouco (menos 
 });
 
 t('tempo total Free solo perto de 320 h (±10%) e marcos dentro de ±20%', () => {
-  const P = EXH.projection(undefined, 0);   // calibração base (sem o corte progressivo por nível)
+  const P = EXH.projection(undefined, 0, 1);   // calibração base (sem corte progressivo nem multiplicador geral)
   assert(Math.abs(P[1000] - 320) / 320 < 0.1, `total ${P[1000]} h`);
   for (const [l, h] of EXH.TARGET.slice(2)) assert(Math.abs(P[l] - h) / h < 0.2, `nível ${l}: ${P[l]} h (meta ${h})`);
 });
