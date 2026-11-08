@@ -1601,6 +1601,7 @@ class World {
     // todo golpe tira pelo menos 25% do dano do herói: monstros de defesa alta não ficam "imortais" (dano 1)
     const d = Math.max(1, Math.round(raw * 0.25), Math.round(raw - m.T.def / 2));
     m.hp -= d;
+    m.lastHitAt = now;   // apanhando: não desiste nem se cura enquanto alguém está batendo
     m.flip = p.x > m.x;
     if (!m.target || m.target.dead || m.target.map !== p.map) m.target = p;
     m.contrib.set(p.charId, (m.contrib.get(p.charId) || 0) + Math.min(d, d + m.hp));
@@ -1871,7 +1872,9 @@ class World {
       }
     }
     if (t) {
-      if (!m.trainingArea && Math.hypot(m.x - m.hx, m.y - m.hy) > 260) { // fugiu longe demais: volta e cura
+      // fugiu longe demais: volta e cura — só se ninguém acertou nele nos últimos 6 s
+      // (antes cada golpe fazia o monstro mirar de novo e no tick seguinte curava tudo: a vida nunca caía)
+      if (!m.trainingArea && Math.hypot(m.x - m.hx, m.y - m.hy) > 260 && now - (m.lastHitAt || 0) > 6000) {
         if (m.worldBoss) { m.target = null; m.wander = { x: m.hx, y: m.hy }; return; } // Boss Mundial volta sem curar nem zerar a contribuição
         m.target = null; m.hp = m.T.hp; m.contrib.clear(); m.wander = { x: m.hx, y: m.hy }; return;
       }
@@ -1881,7 +1884,7 @@ class World {
       else if (now >= m.nextAtk) { m.nextAtk = now + m.T.atkMs * (m.enraged ? 0.7 : 1); m.flip = t.x > m.x; this.hurtPlayer(m, t, now); }
       return;
     }
-    if (m.hp < m.T.hp) m.hp = Math.min(m.T.hp, m.hp + m.T.hp * 0.02 * dt);
+    if (m.hp < m.T.hp && now - (m.lastHitAt || 0) > 6000) m.hp = Math.min(m.T.hp, m.hp + m.T.hp * 0.02 * dt);
     if (now >= m.nextWander) {
       m.nextWander = now + rand(2500, 6000);
       m.wander = Math.random() < 0.6 ? {

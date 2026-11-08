@@ -83,13 +83,30 @@ function publicCatalog(admin = false) {
   const sets = G.PREMIUM_SET_PACKS.map((p) => {
     const c = config[p.id] || {};
     return { id:p.id, name:p.name, price:Number.isInteger(c.price)?c.price:p.price, enabled:c.enabled !== false,
-      req:p.req, plus:p.plus, tier:p.tier, tone:p.tone, pieces:12, type:'set', attributes:setAttributes(p), excellentOptions:'2–4 opções Excellent semi-full por peça', admin };
+      req:p.req, plus:p.plus, tier:p.tier, tone:p.tone, pieces:12, type:'set', attributes:setAttributes(p), excellentOptions:'Armadura e arma: 2–4 opções Excellent semi-full · anel, pendente e asa: 6 opções semi-full', admin };
   });
   const boxes = BOX_PROMOS.map((p) => ({ ...p, enabled:true, pieces:p.qty, req:1, plus:0, admin }));
   const c = config[FENRIR.id] || {};
   const fenrir = { ...FENRIR, price:Number.isInteger(c.price)?c.price:FENRIR.price, enabled:c.enabled !== false, pieces:1, req:1, admin,
     attributes:fenrirAttributes(), excellentOptions:'3 opções Excellent fixas (semi-full)' };
   return [fenrir].concat(sets, boxes, [{ ...STAT_RESET, enabled:true, pieces:1, req:1, plus:0, admin }]);
+}
+// quem já comprou: anel, pendente e asa dos conjuntos da loja que vieram com menos de 6 opções Excellent
+// são completados para 6 (semi-full) automaticamente, onde estiverem (bolsa, equipados ou baú). Roda ao ligar o servidor.
+async function upgradeSixOptions() {
+  try {
+    const EX = require('./excellent');
+    const { rows } = await db.query(`SELECT id, base FROM items WHERE base ~ '^festive_[0-9]+_(wings|pendant|ring1|ring2)$'
+      AND (excellent_options IS NULL OR jsonb_typeof(excellent_options) <> 'array' OR jsonb_array_length(excellent_options) < 6)`);
+    let n = 0;
+    for (const r of rows) {
+      const opts = EX.six(r.base);
+      if (opts.length < 6) continue;
+      await db.query('UPDATE items SET excellent_options = $2 WHERE id = $1', [r.id, JSON.stringify(opts)]);
+      n++;
+    }
+    if (n) console.log(`[loja] ${n} anéis/pendentes/asas da loja atualizados para 6 opções Excellent`);
+  } catch (e) { console.error('[loja] 6 opções:', e.message); }
 }
 async function init() {
   await db.query(`CREATE TABLE IF NOT EXISTS premium_orders (
@@ -99,6 +116,7 @@ async function init() {
     character_id BIGINT REFERENCES characters(id) ON DELETE SET NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), claimed_at TIMESTAMPTZ
   )`);
   try { const r = await db.query("SELECT value FROM game_settings WHERE key='premium_sets'"); config = r.rows[0]?.value || {}; } catch (_) { config = {}; }
+  await upgradeSixOptions();
 }
 async function saveConfig(input) {
   const next = {};
@@ -206,7 +224,9 @@ function itemList(productId) {
   if (productId === FENRIR.id) return [{ base:FENRIR.base, rarity:'legendary', plus:FENRIR.plus, options:fenrirOptions() }];
   const p=G.PREMIUM_SET_PACKS.find(x=>x.id===productId); if(!p) throw new Error('Produto inválido.');
   const suffix=['helm','armor','pants','gloves','boots','wings','pendant','ring1','ring2','sword','bow','shield'];
-  return suffix.map((s)=>({base:`${p.id}_${s}`,rarity:s==='wings'?'epic':'rare',plus:s==='wings'?0:p.plus}));
+  // anel, pendente e asa: semi-full com 6 opções Excellent (as outras peças sorteiam as opções na entrega)
+  const SIX=['wings','pendant','ring1','ring2'];
+  return suffix.map((s)=>({base:`${p.id}_${s}`,rarity:s==='wings'?'epic':'rare',plus:s==='wings'?0:p.plus,...(SIX.includes(s)?{options:require('./excellent').six(`${p.id}_${s}`)}:{})}));
 }
 async function claim({accountId,orderId,charId,world}) {
   const claimed=await db.query(`UPDATE premium_orders SET status='claiming' WHERE id=$1 AND account_id=$2 AND status='pending' RETURNING product_id,character_id`,[orderId,accountId]);

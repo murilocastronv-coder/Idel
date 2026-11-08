@@ -89,6 +89,14 @@ function full6(base) {
   if (!ids) return [];
   return ids.map((id) => { const d = DEFINITIONS[id]; return { id, name: d.name, value: d.max, unit: d.unit, effect: d.effect }; });
 }
+// semi-full de 6 opções (anel, pendente e asa da loja de cash, e qualquer outra peça): as 6 opções do tipo da peça,
+// cada uma com valor sorteado entre o mínimo e o máximo
+function six(base) {
+  const slot = (G.ITEM_BASES[base] || {}).slot;
+  const ids = FULL6[category(slot) || slot];
+  if (!ids) return [];
+  return ids.map((id) => { const d = DEFINITIONS[id]; return { id, name: d.name, value: d.min + Math.floor(Math.random() * (d.max - d.min + 1)), unit: d.unit, effect: d.effect }; });
+}
 function effects(options) {
   const out = {};
   for (const x of Array.isArray(options) ? options : []) {
@@ -102,4 +110,4 @@ function effects(options) {
 }
 function adminView() { return { config: config(), definitions: DEFINITIONS, pools: POOLS }; }
 async function save(input) { const c = cleanConfig(input || {}); await SET.save('excellent_options', c); return c; }
-module.exports = { init, roll, hasPool, full6, effects, adminView, save, cleanConfig, DEFAULTS };
+module.exports = { init, roll, hasPool, full6, six, effects, adminView, save, cleanConfig, DEFAULTS };
