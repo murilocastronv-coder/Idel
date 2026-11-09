@@ -20,7 +20,7 @@ const DEFAULTS = {
   // [nível, multiplicador do EXP por abate]
   curve: [[1,10.338],[10,10.338],[20,11.387],[30,11.118],[40,11.259],[50,12.236],[75,14.006],[100,17.543],[150,18.033],[200,21.256],[250,22.564],[300,19.229],[350,17.885],[400,18.298],[450,16.38],[500,12.991],[550,12.507],[600,15.376],[650,14.229],[700,12.135],[750,7.752],[800,5.27],[850,4.227],[900,3.424],[950,2.717],[1000,2.47]],
   perReset: 0.05,          // cada reset deixa 5% mais difícil (igual ao sistema anterior)
-  globalMult: 0.125,       // multiplicador geral do EXP de todos os níveis (0,125 = −87,5%, servidor mais hard)
+  globalMult: 0.814,       // multiplicador geral do EXP: calibrado para 1 reset por mês (~720 h de AUTO até o nível 1000)
   levelCut: 0.6,           // corte progressivo: 0% no nível 1 subindo até este valor no nível 1000 (0,6 = −60%)
   offline: 1,              // multiplicador extra do EXP no farm offline (1 = igual ao online calculado)
   party: { 2: 0.10, 3: 0.12, 4: 0.15, 5: 0.20 },   // bônus por membros ativos e perto
