@@ -176,6 +176,8 @@
     if (S.panel === 'maps') renderMaps();
     if (S.panel === 'shop') renderShop();
     IDL.enemies.clear(); paintIdleBtn();
+    // jogo idle: ao entrar, o herói já sai caçando sozinho (uma vez por abertura do jogo; dá para desligar no AUTO)
+    if (!IDL.autoOnce && idleActive()) { IDL.autoOnce = true; setTimeout(() => { if (S.me && !S.me.auto && !S.me.dead) send({ type: 'auto', on: true }); }, 1200); }
   }
 
   function onSnap(m) {
@@ -2070,7 +2072,7 @@
   const IDLE_KEY = 'mui_idle_view';
   const IDL = { scroll: 0, seed: Math.random() * 1000, dmg: [], kills: 0, lastLv: 0, lvKills: 0, hpPrev: new Map(), enemies: new Map(), walk: 0, zoneT: 0 };
   function idlePref() { try { return localStorage.getItem(IDLE_KEY) !== 'map'; } catch (_) { return true; } }
-  const idleMapOk = () => !!(S.map && !S.map.arena && (!S.map.safe || S.map.training));
+  const idleMapOk = () => !!(S.map && !S.map.arena);   // em todo lugar, menos dentro das arenas e eventos
   function idleActive() { return idleMapOk() && idlePref(); }
   function setIdlePref(on) {
     try { localStorage.setItem(IDLE_KEY, on ? 'idle' : 'map'); } catch (_) { /* sem armazenamento */ }
