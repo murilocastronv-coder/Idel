@@ -298,8 +298,8 @@ async function statusLines(t, full) {
   return L;
 }
 
-// /reset de jogador: no nível 1000 volta ao nível 1 e ganha 4.000 pontos livres; os atributos já distribuídos ficam.
-const PLAYER_RESET = { level: 1000, points: 4000 };
+// /reset de jogador: no nível 1000 volta ao nível 1 e ganha 100 pontos livres; os atributos já distribuídos ficam.
+const PLAYER_RESET = { level: 1000, points: 100 };
 async function playerReset(p, parts) {
   if (p.level < PLAYER_RESET.level) return reply(p, false, `O /reset libera no nível ${fmt(PLAYER_RESET.level)} (você está no ${fmt(p.level)}).`);
   if ((parts[0] || '').toLowerCase() !== 'confirmar') {
