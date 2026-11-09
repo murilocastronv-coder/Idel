@@ -9,7 +9,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=2">
   <link rel="stylesheet" href="/css/style.css?v=22">
-  <link rel="stylesheet" href="/css/landing.css?v=1">
+  <link rel="stylesheet" href="/css/landing.css?v=2">
 </head>
 <body>
   <a class="skip" href="#conteudo">Pular para o conteúdo</a>
@@ -20,6 +20,7 @@
       <span class="brand-name">Muonline<b>Claude</b></span>
     </a>
     <nav class="nav" aria-label="Seções">
+      <a href="#idle">Como funciona</a>
       <a href="#jogo">O jogo</a>
       <a href="#classes">Classes</a>
       <a href="#mapas">Mapas</a>
@@ -40,12 +41,17 @@
     <section class="hero" id="topo">
       <canvas id="hero-scene" aria-label="Cena animada: os seis heróis enfrentam monstros em Lorencia ao entardecer" role="img"></canvas>
       <div class="hero-copy">
-        <p class="logo-kicker">Jogo IDLE em pixel art · 2D e 3D</p>
+        <p class="logo-kicker">RPG IDLE em pixel art · 2D e 3D</p>
         <h1 class="logo logo-mc"><span class="lg-a">Muonline</span><span class="lg-b">Claude</span></h1>
-        <p class="tagline">Um jogo <b>idle</b>: seu herói caça sozinho no AUTO, evolui e coleta tesouros até quando você está fora. Cada um joga no seu mundo, sem ninguém atrapalhando, e o PvP continua para quem quiser lutar. Suba do nível 1 ao 1000.</p>
-        <p class="mode-badge"><b>IDLE · Servidor novo, todos no nível 1</b> · 4 poderes por classe · missões diárias e prêmios de login</p>
+        <p class="tagline">O RPG que joga por você. Seu herói caça sozinho, sobe de nível e junta tesouros até com o jogo fechado. Você só escolhe a estratégia.</p>
+        <ul class="hero-chips" aria-label="Destaques">
+          <li class="chip-new">Servidor novo · todos no nível 1</li>
+          <li>Caça automática</li>
+          <li>Progresso offline</li>
+          <li>PvP quando quiser</li>
+        </ul>
         <div class="hero-actions">
-          <button class="btn btn-gold" id="btn-play" type="button" title="Gráfico em pixel art">Jogar 2D</button>
+          <button class="btn btn-gold" id="btn-play" type="button" title="Gráfico em pixel art">▶ Jogar agora</button>
           <button class="btn btn-gold play-3d" id="btn-play-3d" type="button" title="Gráfico 3D realista (mesmo servidor)">Jogar 3D</button>
           <button class="btn" id="btn-hero-register" type="button">Criar conta</button>
           <button class="btn btn-ghost" id="btn-hero-ranking" type="button">Ver ranking</button>
@@ -78,6 +84,37 @@
     </div>
 
 
+    <section class="block idle-intro" id="idle" aria-labelledby="idle-title">
+      <p class="eyebrow">Novo por aqui?</p>
+      <h2 id="idle-title">O que é um jogo idle?</h2>
+      <div class="idle-grid">
+        <figure class="idle-phone">
+          <div class="phone-frame"><img src="/assets/landing/idle-phone.jpg?v=1" width="540" height="1099" loading="lazy"
+            alt="Tela do jogo no celular: o herói na trilha enfrentando goblins, com os níveis em círculos, a barra de monstros até o próximo nível, Zen, dano por segundo e abates"></div>
+          <figcaption>A tela idle: seu herói anda pela trilha e luta sozinho.</figcaption>
+        </figure>
+        <div class="idle-copy">
+          <p class="idle-lead">Num jogo <b>idle</b> o herói não precisa de você apertando botão o tempo todo. Ele caça, ganha EXP, junta Zen e itens <b>sozinho</b>. Você entra quando quiser para fazer as escolhas que deixam ele mais forte.</p>
+          <ol class="idle-steps">
+            <li><b>Crie seu herói</b><span>Escolha uma das 6 classes. Ele nasce com 1.000 pontos para distribuir.</span></li>
+            <li><b>Ligue o AUTO</b><span>O herói vai sozinho para a área de caça e luta com os monstros do nível dele.</span></li>
+            <li><b>Pode sair do jogo</b><span>Fora do jogo ele continua caçando (até 8 h no Free, 12 h no VIP Ouro e 24 h no VIP Diamante). Na volta aparece o relatório.</span></li>
+            <li><b>Fique mais forte</b><span>Distribua pontos, equipe o que caiu, melhore itens, troque de mapa e suba até o nível 1000.</span></li>
+          </ol>
+          <div class="idle-cards">
+            <article><h3>⚔ PvP quando quiser</h3><p>Cada um joga no seu mundo, sem ninguém atrapalhando. Quer briga? Ligue o PvP e toque em <b>Procurar luta</b> para ir até outro jogador.</p></article>
+            <article><h3>🏆 Ranking zerado</h3><p>Servidor novo: todo mundo recomeçou do nível 1. Quem chega primeiro nos bosses, no PvP e na temporada?</p></article>
+          </div>
+        </div>
+      </div>
+      <div class="idle-faq">
+        <details><summary>Preciso deixar o jogo aberto?</summary><p>Não. Com o jogo fechado o herói continua caçando por até 8 horas (Free), 12 horas (VIP Ouro) ou 24 horas (VIP Diamante). Na volta você vê quanto EXP, Zen e itens ele ganhou.</p></details>
+        <details><summary>É de graça?</summary><p>Sim, é só criar a conta e jogar no navegador ou no app Android. O VIP e a loja são opcionais.</p></details>
+        <details><summary>Dá para jogar com amigos?</summary><p>Dá: party (com bônus de EXP para quem caça junto), guildas, amigos, chat e o mercado de jogadores. E o PvP para quem gosta de luta.</p></details>
+        <details><summary>Funciona no celular?</summary><p>Funciona no navegador do celular e no app Android, em 2D ou 3D, no mesmo servidor do computador.</p></details>
+      </div>
+    </section>
+
     <section class="block showcase" id="jogo" aria-labelledby="jogo-title">
       <p class="eyebrow">Tudo que tem no jogo</p>
       <h2 id="jogo-title">Um mundo inteiro em pixel art</h2>
@@ -86,7 +123,7 @@
         <article class="feat"><b class="feat-num">6</b><h3>Classes de herói</h3><p>Cavaleiro Negro, Mago Negro, Elfa, Gladiador Mágico, Lorde Sombrio e Invocadora, cada um com animações de andar, atacar, levar dano e cair em todas as direções.</p></article>
         <article class="feat"><b class="feat-num">34</b><h3>Mapas até o nível 1000</h3><p>De Lorencia ao Exile: masmorras, desertos, ilhas no céu, torres e abismos, com área segura na entrada de cada mapa de caça.</p></article>
         <article class="feat"><b class="feat-num">31</b><h3>Asas para colecionar</h3><p>Seis famílias (Angelical, Demoníaca, Dragônica, Cristalina, Elemental e Sombria) do nível 1 ao 5, batendo nas costas do herói.</p></article>
-        <article class="feat"><b class="feat-num">1000</b><h3>Servidor Hard XP</h3><p>Cada nível conta. Monstros fortes dão mais experiência, e todo mapa dá EXP para todo mundo.</p></article>
+        <article class="feat"><b class="feat-num">1000</b><h3>Níveis para subir</h3><p>Servidor idle novo: todo mundo começou do nível 1. Monstros mais fortes dão mais experiência.</p></article>
       </div>
       <div class="show-row">
         <figure class="show-card"><img src="/assets/landing/mount.png?v=2" alt="Fenrir dourado, a montaria do jogo" width="320" height="300" loading="lazy">
@@ -418,7 +455,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="/js/i18n-en.js?v=52"></script>
+  <script src="/js/i18n-en.js?v=53"></script>
 
   <script src="/js/i18n.js?v=20"></script>
 
