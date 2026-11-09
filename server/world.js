@@ -1519,7 +1519,7 @@ class World {
       parts.push(got ? G.ITEM_BASES[reward.box].name : `${G.ITEM_BASES[reward.box].name} (bolsa cheia)`);
     }
     if (reward.expPct && p.level < G.LIMITS.maxLevel) {
-      const n = Math.max(1, Math.round(expToNext(p.level) * reward.expPct));
+      const n = Math.max(1, Math.round(expToNext(p.level) * reward.expPct * EXH.rewardK(p)));
       p.exp += n; parts.push(`${n.toLocaleString('pt-BR')} EXP`);
       while (p.exp >= expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= expToNext(p.level); this.levelUp(p); }
     }

@@ -20,7 +20,7 @@ const DEFAULTS = {
   // [nível, multiplicador do EXP por abate]
   curve: [[1,10.338],[10,10.338],[20,11.387],[30,11.118],[40,11.259],[50,12.236],[75,14.006],[100,17.543],[150,18.033],[200,21.256],[250,22.564],[300,19.229],[350,17.885],[400,18.298],[450,16.38],[500,12.991],[550,12.507],[600,15.376],[650,14.229],[700,12.135],[750,7.752],[800,5.27],[850,4.227],[900,3.424],[950,2.717],[1000,2.47]],
   perReset: 0.05,          // cada reset deixa 5% mais difícil (igual ao sistema anterior)
-  globalMult: 0.25,        // multiplicador geral do EXP de todos os níveis (0,25 = −75%, servidor mais hard)
+  globalMult: 0.125,       // multiplicador geral do EXP de todos os níveis (0,125 = −87,5%, servidor mais hard)
   levelCut: 0.6,           // corte progressivo: 0% no nível 1 subindo até este valor no nível 1000 (0,6 = −60%)
   offline: 1,              // multiplicador extra do EXP no farm offline (1 = igual ao online calculado)
   party: { 2: 0.10, 3: 0.12, 4: 0.15, 5: 0.20 },   // bônus por membros ativos e perto
@@ -50,6 +50,13 @@ const cutAt = (L, cut) => 1 - Math.min(0.95, Math.max(0, Number(cut) || 0)) * (M
 function levelK(p) {
   const C = cfg();
   const g = Number(C.globalMult); return curveAt(p.level || 1) * cutAt(p.level || 1, C.levelCut) * (g > 0 ? g : 1) / (1 + (p.resets || 0) * (Number(C.perReset) || 0));
+}
+
+// prêmios fixos de EXP (missões, Boss Mundial, eventos): mesmo corte geral e progressivo do farm (sem a curva,
+// que só compensa o tempo de abate). Antes eles davam a % cheia da barra e escapavam do servidor hard.
+function rewardK(p) {
+  const C = cfg(), g = Number(C.globalMult);
+  return (g > 0 ? g : 1) * cutAt((p && p.level) || 1, C.levelCut);
 }
 
 // bônus de party: só membros da mesma party, no mesmo mapa e sala, perto e que mataram algo nos últimos segundos.
@@ -134,4 +141,4 @@ function adminView() {
   return { ok: true, config: c, defaults: DEFAULTS, target: TARGET, projection: projection(c.curve, c.levelCut, Number(c.globalMult) || 1), live: liveStats() };
 }
 
-module.exports = { init, cfg, levelK, curveAt, cutAt, partyBonus, projection, save, adminView, interp, record, onLevel, liveStats, TARGET, BASE_MIN, DEFAULTS };
+module.exports = { init, cfg, levelK, rewardK, curveAt, cutAt, partyBonus, projection, save, adminView, interp, record, onLevel, liveStats, TARGET, BASE_MIN, DEFAULTS };

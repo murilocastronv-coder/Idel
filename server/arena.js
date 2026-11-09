@@ -645,6 +645,7 @@ async function deliverPending(p) {
       }
       for (const [st, q] of bumped) st.qty = q;
       for (const c of created) p.items.push(c);
+      if (exp) exp = Math.max(1, Math.round(exp * require('./exphard').rewardK(p)));   // mesmo corte do servidor hard
       if (exp) { p.exp += exp; while (p.exp >= H.expToNext(p.level) && p.level < G.LIMITS.maxLevel) { p.exp -= H.expToNext(p.level); W.levelUp(p); } }
       p.dirty = true;
       p.send({ type: 'log', kind: 'quest', text: `Prêmio recebido (${row.label.replace(/: \w+$/, '')}): ${list.map(rewardLabel).join(', ')}.` });
