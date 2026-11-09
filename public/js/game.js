@@ -132,6 +132,7 @@
         (ok) => (m.kind === 'guild' ? send({ type: 'guild', action: ok ? 'accept' : 'decline' }) : send({ type: 'social', area: m.kind, action: ok ? 'accept' : 'decline' }))); return;
       case 'guild': onGuild(m); return;
       case 'friends': onFriends(m); return;
+      case 'pvplist': return showPvpList(m);
       case 'kicked': S.kicked = true; centerMsg(esc(m.reason), true); return;
       case 'left': location.href = backHome(); return;
       case 'error':
@@ -2409,7 +2410,7 @@
     const er = S.data.expRef, next = Math.floor(100 * Math.pow(L, 2.1) + 200);
     const vipK = [1, 1.2, 1.25][(S.char.vip && S.char.vip.tier) || 0] * (S.char.vip && S.char.vip.welcome ? 1.2 : 1);
     const cut = 1 - (Number(er.levelCut) || 0) * (Math.min(1000, Math.max(1, L)) - 1) / 999;
-    return next * (Number(er.killPct) || 0.003) * cut * vipK / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
+    return next * (Number(er.killPct) || 0.0039) * cut * vipK / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
   }
 
   // toque na tela idle: tocar num monstro (ou jogador inimigo) escolhe o alvo
@@ -2746,7 +2747,7 @@
     const vipK = [1, 1.2, 1.25][(S.char.vip && S.char.vip.tier) || 0] * (S.char.vip && S.char.vip.welcome ? 1.2 : 1);
     const hk = Math.min(er.max || 6, Math.max(er.min || 0.02, (t.maxHp || 1) / refHp(L)));
     const cut = 1 - (Number(er.levelCut) || 0) * (Math.min(1000, Math.max(1, L)) - 1) / 999;
-    const base = (Number(er.killPct) || 0.003) * 100 * cut / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
+    const base = (Number(er.killPct) || 0.0039) * 100 * cut / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
     const pct = t.boss ? base * (Number(er.bossKills) || 30) * vipK : base * vipK * hk;
     return `${fmt.format(Math.round(next * pct / 100))} (${pct.toFixed(pct < 1 ? 2 : 1)}%)`;
   }
@@ -5282,6 +5283,22 @@
   }
 
   // ================= botões =================
+  // ----- Procurar luta: lista de quem está com PvP ligado; "Lutar" leva você até o adversário -----
+  $('#pvp-find') && ($('#pvp-find').onclick = () => send({ type: 'pvpfind' }));
+  function showPvpList(m) {
+    const rows = m.rows || [];
+    const lv = (S.char && S.char.level) || 1;
+    const list = rows.length ? `<ul class="pvp-list">${rows.map((r, i) => {
+      const locked = lv < (r.minLevel || 1);
+      const cls = (S.data.classes[r.cls] || {}).name || r.className || r.cls;
+      return `<li><div><b>${r.vip === 2 ? '◆ ' : r.vip === 1 ? '★ ' : ''}${esc(r.name)}</b> <span class="muted">Nv. ${r.level}${r.resets ? ` · ${r.resets} resets` : ''}</span><br>
+        <small>${esc(cls)} · ${esc(r.mapName)} · Sala ${r.room} · poder ${fmt.format(r.power)}</small></div>
+        <button class="btn small ${locked ? '' : 'btn-danger'}" type="button" data-pvp="${i}" ${locked ? 'disabled' : ''}>${locked ? `Nv. ${r.minLevel}` : '⚔ Lutar'}</button></li>`;
+    }).join('')}</ul>` : '<p class="muted">Ninguém com PvP ligado agora. Ligue o seu PvP fora da cidade: outros jogadores vão poder te achar aqui.</p>';
+    tradeDialog(`<h3>⚔ Procurar luta</h3><p class="muted small">Jogadores online com PvP ligado. Tocando em <b>Lutar</b> você vai até o mapa dele com o PvP ligado e o herói ataca sozinho.</p>${list}`,
+      [{ label: 'Atualizar', fn: () => send({ type: 'pvpfind' }) }, { label: 'Fechar' }]);
+    $$('#trade-dlg [data-pvp]').forEach((b) => { b.onclick = () => { const r = rows[Number(b.dataset.pvp)]; $('#trade-dlg').hidden = true; if (r) send({ type: 'pvpgo', id: r.id }); }; });
+  }
   $('#idle-view') && ($('#idle-view').onclick = () => { setIdlePref(!idlePref()); feed(idlePref() ? 'Tela idle: o grupo caça sozinho pela trilha.' : 'Mapa: ande pelo mapa com o dedo.'); });
   $('#btn-auto').onclick = () => send({ type: 'auto', on: !(S.me && S.me.auto) });
   $('#btn-pvp').onclick = () => send({ type: 'pvp', on: !(S.me && S.me.pvpOn) });

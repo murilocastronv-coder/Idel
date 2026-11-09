@@ -219,7 +219,7 @@
         <button class="btn small" type="button" id="xh-add">+ Âncora</button>
         <div class="adm-row" style="flex-wrap:wrap;margin-top:8px">
           <label>Dificuldade por reset <input type="number" step="0.01" min="0" max="1" id="xh-reset" value="${C.perReset}" style="width:80px"></label>
-          <label>% da barra por monstro do nível (Free, 0,003 = 0,3%) <input type="number" step="0.0005" min="0.0001" max="0.05" id="xh-kill" value="${C.killPct}" style="width:90px"></label>
+          <label>% da barra por monstro do nível (Free, 0,0039 = 0,39%) <input type="number" step="0.0005" min="0.0001" max="0.05" id="xh-kill" value="${C.killPct}" style="width:90px"></label>
           <label>Multiplicador do EXP de missões/eventos <input type="number" step="0.05" min="0.05" max="5" id="xh-global" value="${C.globalMult}" style="width:80px"></label>
           <label>Corte progressivo no nível 1000 (0,6 = −60%) <input type="number" step="0.05" min="0" max="0.95" id="xh-cut" value="${C.levelCut}" style="width:80px"></label>
           <label>Multiplicador do EXP offline <input type="number" step="0.05" min="0" max="2" id="xh-off" value="${C.offline}" style="width:80px"></label>

@@ -136,7 +136,7 @@ const overCap = () => false;
 function killExp(p, T, def, pk) {
   if (overCap(p, def)) return 0;
   // GM.xpMult(): evento temporário de EXP do GM (1 quando não há evento)
-  // Hard: % fixa da barra por monstro do nível (EXH.killFrac: 0,3% no nível 1 caindo até 0,12% no 1000), igual em todos os mapas,
+  // Hard: % fixa da barra por monstro do nível (EXH.killFrac: 0,39% no nível 1 caindo até 0,156% no 1000), igual em todos os mapas,
   // × vantagem do VIP × vida do monstro comparada a um monstro comum do nível. Evento de EXP do GM continua valendo.
   return Math.max(1, Math.round(expToNext(p.level) * EXH.killFrac(p) * vipExpK(pk) * hpK(T, p.level) * GM.xpMult()));
 }
@@ -885,6 +885,8 @@ class World {
       case 'duel': return this.duelRequest(p, String(msg.id));
       case 'duelAnswer': return this.duelAnswer(p, String(msg.id), !!msg.accept);
       case 'pvp': return this.setPvp(p, !!msg.on, Date.now());
+      case 'pvpfind': return this.pvpFind(p);
+      case 'pvpgo': return this.pvpGo(p, String(msg.id || ''));
       case 'room': return this.switchRoom(p, msg.room);
       case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS, ...[1, 2, 3, 4, 5, 6, 7].flatMap((n) => ['devil_eye_' + n, 'devil_key_' + n, 'scroll_of_archangel_' + n, 'blood_bone_' + n])])));
       case 'chaos': return p.run(() => CHAOS.craft(this, p, String(msg.recipe), String(msg.main || '')));
@@ -1391,6 +1393,47 @@ class World {
     p.send({ type: 'log', kind: on ? 'pvp' : 'info', text: on
       ? 'Modo PvP LIGADO: fora da cidade você pode atacar e ser atacado por quem também está com PvP ligado. Em Vulcanus o PvP é sempre aberto.'
       : 'Modo PvP desligado.' });
+  }
+
+  // ----- Procurar luta (PvP do jogo idle) -----
+  // quem pode ser procurado: online, vivo, fora da cidade e dos eventos, com PvP ligado (ou num mapa de PvP aberto)
+  pvpOpen(o) {
+    return !!(o && o.map && !o.dead && !o.map.def.safe && !o.map.def.arena && !o.arena && (o.settings.pvpOn || o.map.def.pvp));
+  }
+  pvpFind(p) {
+    const rows = [];
+    for (const o of this.players.values()) {
+      if (o === p || !this.pvpOpen(o)) continue;
+      rows.push({ id: o.id, name: o.name, cls: o.cls, className: o.className(), level: o.level, resets: o.resets || 0, map: o.map.id, mapName: o.map.def.name,
+        room: o.room || 1, minLevel: o.map.def.minLevel || 1, power: o.power || 0, vip: o.vip().tier });
+    }
+    rows.sort((a, b) => Math.abs(a.level - p.level) - Math.abs(b.level - p.level));
+    p.send({ type: 'pvplist', rows: rows.slice(0, 30), myPvp: !!p.settings.pvpOn });
+  }
+  pvpGo(p, id) {
+    const now = Date.now();
+    if (p.dead) return;
+    let o = null;
+    for (const x of this.players.values()) if (x.id === id) { o = x; break; }
+    if (!o || o === p || !this.pvpOpen(o)) return p.send({ type: 'log', kind: 'warn', text: 'Esse jogador não está mais disponível para PvP.' });
+    const ab = ARENA.blocked(p); if (ab) return p.send({ type: 'log', kind: 'warn', text: ab });
+    if (p.duel || p.trade) return p.send({ type: 'log', kind: 'warn', text: 'Termine o duelo ou a troca primeiro.' });
+    if (p.level < (o.map.def.minLevel || 1)) return p.send({ type: 'log', kind: 'warn', text: `${o.map.def.name} abre no nível ${o.map.def.minLevel}. Suba de nível para lutar com ${o.name}.` });
+    if (now - (p.pvpGoAt || 0) < 15000) return p.send({ type: 'log', kind: 'warn', text: `Espere ${Math.ceil((15000 - (now - p.pvpGoAt)) / 1000)}s para procurar outra luta.` });
+    if (now - Math.max(p.pvpHitAt || 0, p.pvpAtkAt || 0) < 10000 && p.map !== o.map) return p.send({ type: 'log', kind: 'warn', text: 'Em combate PvP: espere alguns segundos.' });
+    p.pvpGoAt = now;
+    // vai para o mesmo mapa e sala, um pouco à esquerda do adversário, com PvP e ataque a jogadores ligados
+    if (p.map !== o.map) {
+      p.room = o.room || 1;
+      const side = Math.random() < 0.5 ? -1 : 1;
+      this.enterMap(p, o.map.id, [clamp(o.x + side * 90, 20, o.map.def.w - 20), clamp(o.y, 20, o.map.def.h - 20)], o.map);
+    }
+    p.settings.pvpOn = true; p.settings.pvpAuto = true; p.dirty = true;
+    p.auto = true;
+    if (this.hostile(p, o)) p.target = o;
+    p.send(p.charState());
+    p.send({ type: 'log', kind: 'pvp', text: `⚔ Você foi lutar com ${o.name} (Nv. ${o.level}) em ${o.map.def.name}. PvP ligado!` });
+    o.send({ type: 'log', kind: 'pvp', text: `⚔ ${p.name} (Nv. ${p.level}) veio lutar com você!` });
   }
 
   damagePlayer(a, v, mult, crit, now) {

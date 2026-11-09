@@ -792,3 +792,9 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 body.idle-stage #minimap { display: none; }
 .idle-view-btn { border-color: #6aa84f; color: #bfe8b0; }
 .idle-view-btn[hidden] { display: none !important; }
+
+/* Procurar luta (PvP) */
+.pvp-find-btn { border-color: #c0392b; color: #ffb0a0; }
+.pvp-list { list-style: none; margin: 8px 0; padding: 0; max-height: 50vh; overflow-y: auto; }
+.pvp-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.pvp-list small { color: #c8bba0; }
