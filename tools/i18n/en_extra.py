@@ -289,5 +289,5 @@ EN_EXTRA = {
     "🎁 Convidar amigos": "🎁 Invite friends", "🎁 Convidar amigos: seu link de afiliado (ganhe peça +8 com 5 opções Excellent)": "🎁 Invite friends: your referral link (earn a +8 piece with 5 Excellent options)",
     "Excellent semi-full: 2–4 opções aleatórias na armadura e na arma; anel, pendente e asa com 6 opções.": "Excellent semi-full: 2–4 random options on armor and weapon; ring, pendant and wings with 6 options.",
     "Armadura e arma: 2–4 opções Excellent semi-full · anel, pendente e asa: 6 opções semi-full": "Armor and weapon: 2–4 semi-full Excellent options · ring, pendant and wings: 6 semi-full options",
-    "EXP +20% (reset em ~25 dias de AUTO)": "EXP +20% (reset in ~25 days of AUTO)", "EXP +25% (reset em ~24 dias de AUTO)": "EXP +25% (reset in ~24 days of AUTO)",
+    "EXP +20% (reset em ~50 dias de AUTO)": "EXP +20% (reset in ~50 days of AUTO)", "EXP +25% (reset em ~48 dias de AUTO)": "EXP +25% (reset in ~48 days of AUTO)",
 }
