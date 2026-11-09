@@ -12,13 +12,13 @@ const PLANS = {
     id: 'vip1', tier: 1, name: 'VIP Ouro', color: '#ffd36b',
     prices: { 15: 1300, 30: 2340 }, // centavos de real (30 dias = 2 × 15 dias com 10% de desconto)
     exp: 1.2, zen: 1.5, drop: 1.25, offlineH: 12, damage: 1, bossDrop: 1, questReward: 1, healOnKill: 0,
-    perks: ['EXP +20% (reset em ~50 dias de AUTO)', 'Zen +50%', 'Drops +25%', 'Progresso offline de até 12 horas', 'Selo VIP Ouro no nome'],
+    perks: ['EXP +20% (reset ~2 meses antes do Free)', 'Zen +50%', 'Drops +25%', 'Progresso offline de até 12 horas', 'Selo VIP Ouro no nome'],
   },
   vip2: {
     id: 'vip2', tier: 2, name: 'VIP Diamante', color: '#7fe3ff',
     prices: { 15: 2600, 30: 4680 },
     exp: 1.25, zen: 2, drop: 1.5, offlineH: 24, damage: 1, bossDrop: 1, questReward: 1, healOnKill: 0,
-    perks: ['EXP +25% (reset em ~48 dias de AUTO)', 'Zen em dobro', 'Drops +50%', 'Progresso offline de até 24 horas', 'Selo VIP Diamante no nome'],
+    perks: ['EXP +25% (reset ~2 meses e meio antes do Free)', 'Zen em dobro', 'Drops +50%', 'Progresso offline de até 24 horas', 'Selo VIP Diamante no nome'],
   },
 };
 const DAYS = [15, 30];

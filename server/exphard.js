@@ -19,6 +19,10 @@ const BASE_MIN = [[1,8.832],[10,11.535],[20,12.5],[30,13.102],[40,15.289],[50,20
 const DEFAULTS = {
   // [nível, multiplicador do EXP por abate]
   curve: [[1,10.338],[10,10.338],[20,11.387],[30,11.118],[40,11.259],[50,12.236],[75,14.006],[100,17.543],[150,18.033],[200,21.256],[250,22.564],[300,19.229],[350,17.885],[400,18.298],[450,16.38],[500,12.991],[550,12.507],[600,15.376],[650,14.229],[700,12.135],[750,7.752],[800,5.27],[850,4.227],[900,3.424],[950,2.717],[1000,2.47]],
+  // % da barra que um monstro do seu nível dá ao Free (igual em todos os mapas). 0,002 = 0,2% por monstro no nível 1;
+  // o corte progressivo (levelCut) faz cair até 40% disso no nível 1000. VIP Ouro +20%, Diamante +25%.
+  killPct: 0.002,
+  bossKills: 30,           // um boss vale quantos monstros do nível
   perReset: 0.05,          // cada reset deixa 5% mais difícil (igual ao sistema anterior)
   globalMult: 0.407,       // multiplicador geral do EXP: calibrado para 1 reset a cada ~2 meses (~1.440 h de AUTO até o nível 1000)
   levelCut: 0.6,           // corte progressivo: 0% no nível 1 subindo até este valor no nível 1000 (0,6 = −60%)
@@ -50,6 +54,12 @@ const cutAt = (L, cut) => 1 - Math.min(0.95, Math.max(0, Number(cut) || 0)) * (M
 function levelK(p) {
   const C = cfg();
   const g = Number(C.globalMult); return curveAt(p.level || 1) * cutAt(p.level || 1, C.levelCut) * (g > 0 ? g : 1) / (1 + (p.resets || 0) * (Number(C.perReset) || 0));
+}
+
+// fração da barra por abate de um monstro do nível (antes do ajuste pela vida do monstro): % fixa × corte por nível ÷ resets
+function killFrac(p) {
+  const C = cfg(), k = Number(C.killPct);
+  return (k > 0 ? k : 0.002) * cutAt((p && p.level) || 1, C.levelCut) / (1 + ((p && p.resets) || 0) * (Number(C.perReset) || 0));
 }
 
 // prêmios fixos de EXP (missões, Boss Mundial, eventos): mesmo corte geral e progressivo do farm (sem a curva,
@@ -103,13 +113,15 @@ function liveStats() {
 }
 
 // horas estimadas até cada marco com a curva atual (Free solo, sem eventos/missões)
-function projection(curve, levelCut, globalMult) {
-  const C = curve || cfg().curve, cut = levelCut === undefined ? cfg().levelCut : levelCut;
-  const gm = globalMult === undefined ? (Number(cfg().globalMult) || 1) : globalMult;
+const BASE_KILLS = 1 / (0.005 * 0.6 * 1.2);   // abates por nível na medição (BASE_MIN)
+// horas estimadas de AUTO até cada marco (Free solo): abates por nível × segundos por abate medidos
+function projection(killPct, levelCut) {
+  const C = cfg(), k = killPct === undefined ? (Number(C.killPct) || 0.002) : killPct, cut = levelCut === undefined ? C.levelCut : levelCut;
   let h = 0;
   const out = {};
   for (let L = 1; L < 1000; L++) {
-    h += interp(BASE_MIN, L) / (interp(C, L) * cutAt(L, cut) * gm) / 60;
+    const secPerKill = interp(BASE_MIN, L) * 60 / BASE_KILLS;
+    h += (1 / (k * cutAt(L, cut))) * secPerKill / 3600;
     if ([50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].includes(L + 1)) out[L + 1] = h;
   }
   out[1000] = h;
@@ -125,6 +137,7 @@ function clean(input) {
     out.curve = pts;
   }
   if (input.perReset !== undefined) { const v = Number(input.perReset); if (!(v >= 0 && v <= 1)) throw new Error('Dificuldade por reset: 0 a 1.'); out.perReset = v; }
+  if (input.killPct !== undefined) { const v = Number(input.killPct); if (!(v > 0 && v <= 0.05)) throw new Error('% da barra por monstro: maior que 0 e até 0,05 (5%).'); out.killPct = v; }
   if (input.globalMult !== undefined) { const v = Number(input.globalMult); if (!(v > 0 && v <= 5)) throw new Error('Multiplicador geral: maior que 0 e até 5.'); out.globalMult = v; }
   if (input.levelCut !== undefined) { const v = Number(input.levelCut); if (!(v >= 0 && v <= 0.95)) throw new Error('Corte progressivo: 0 a 0,95.'); out.levelCut = v; }
   if (input.offline !== undefined) { const v = Number(input.offline); if (!(v >= 0 && v <= 2)) throw new Error('EXP offline: 0 a 2.'); out.offline = v; }
@@ -138,7 +151,7 @@ function clean(input) {
 async function save(input) { const v = clean(input || {}); await SET.save(KEY, v); return v; }
 function adminView() {
   const c = cfg();
-  return { ok: true, config: c, defaults: DEFAULTS, target: TARGET, projection: projection(c.curve, c.levelCut, Number(c.globalMult) || 1), live: liveStats() };
+  return { ok: true, config: c, defaults: DEFAULTS, target: TARGET, projection: projection(), live: liveStats() };
 }
 
-module.exports = { init, cfg, levelK, rewardK, curveAt, cutAt, partyBonus, projection, save, adminView, interp, record, onLevel, liveStats, TARGET, BASE_MIN, DEFAULTS };
+module.exports = { init, cfg, levelK, rewardK, killFrac, curveAt, cutAt, partyBonus, projection, save, adminView, interp, record, onLevel, liveStats, TARGET, BASE_MIN, DEFAULTS };

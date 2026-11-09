@@ -17,10 +17,13 @@ t('curva contínua: de um nível para o outro o EXP por abate muda pouco (menos 
   }
 });
 
-t('tempo total Free solo perto de 320 h (±10%) e marcos dentro de ±20%', () => {
-  const P = EXH.projection(undefined, 0, 1);   // calibração base (sem corte progressivo nem multiplicador geral)
-  assert(Math.abs(P[1000] - 320) / 320 < 0.1, `total ${P[1000]} h`);
-  for (const [l, h] of EXH.TARGET.slice(2)) assert(Math.abs(P[l] - h) / h < 0.2, `nível ${l}: ${P[l]} h (meta ${h})`);
+t('barra por monstro do nível: 0,2% no nível 1, caindo até 0,08% no 1000 (igual em todos os mapas)', () => {
+  assert(Math.abs(EXH.killFrac({ level: 1 }) - 0.002) < 1e-12);
+  assert(Math.abs(EXH.killFrac({ level: 1000 }) - 0.0008) < 1e-12);
+  const p = S.player('dark_knight', 300, 'basic', null), T = { hp: W.refHp(300) };
+  const a = W.killExp(p, T, Object.values(G.WORLD).find((d) => d.minLevel === 300), p.perks());
+  const b = W.killExp(p, T, Object.values(G.WORLD).find((d) => d.minLevel === 45), p.perks());
+  assert.strictEqual(a, b, 'mesmo monstro rende igual em qualquer mapa');
 });
 
 t('VIP: Ouro = 1,2× e Diamante = 1,25× o Free (reset em ~25 e ~24 dias)', () => {

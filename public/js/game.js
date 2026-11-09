@@ -2355,13 +2355,13 @@
   function expEstimate(t) {
     if (!S.char) return '?';
     const L = S.char.level, next = Math.floor(100 * Math.pow(L, 2.1) + 200);
-    const vip = ([0.5, 0.6, 0.625][(S.char.vip && S.char.vip.tier) || 0] || 0.5) * (S.char.vip && S.char.vip.welcome ? 1.2 : 1);
-    const w = S.data && S.map && S.data.world.find((x) => x.id === S.map.map);
+    // Hard: % fixa da barra por monstro do nível (igual em todos os mapas) × VIP × vida do monstro × corte por nível ÷ resets
     const er = S.data.expRef || { min: 0.02, max: 6 };
+    const vipK = [1, 1.2, 1.25][(S.char.vip && S.char.vip.tier) || 0] * (S.char.vip && S.char.vip.welcome ? 1.2 : 1);
     const hk = Math.min(er.max || 6, Math.max(er.min || 0.02, (t.maxHp || 1) / refHp(L)));
-    const cut = 1 - (Number(er.levelCut) || 0) * (Math.min(1000, Math.max(1, L)) - 1) / 999;   // corte progressivo por nível
-    const prog = (er.trim || 1) * expCurveAt(L) * cut * (Number(er.globalMult) > 0 ? Number(er.globalMult) : 1) / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
-    const pct = (t.boss ? 15 * vip / 0.5 * (1 + ((w && w.bossExpBonus) || 0) / 100) : vip * hk * (1 + ((w && w.expBonus) || 0) / 100)) * prog;
+    const cut = 1 - (Number(er.levelCut) || 0) * (Math.min(1000, Math.max(1, L)) - 1) / 999;
+    const base = (Number(er.killPct) || 0.002) * 100 * cut / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
+    const pct = t.boss ? base * (Number(er.bossKills) || 30) * vipK : base * vipK * hk;
     return `${fmt.format(Math.round(next * pct / 100))} (${pct.toFixed(pct < 1 ? 2 : 1)}%)`;
   }
   function renderChar() {

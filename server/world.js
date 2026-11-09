@@ -136,7 +136,9 @@ const overCap = () => false;
 function killExp(p, T, def, pk) {
   if (overCap(p, def)) return 0;
   // GM.xpMult(): evento temporário de EXP do GM (1 quando não há evento)
-  return Math.max(1, Math.round(expToNext(p.level) * (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) * (pk && pk.welcome ? pk.exp : 1) * hpK(T, p.level) * mapExp(def) * XP() * EXH.levelK(p) * GM.xpMult()));
+  // Hard: % fixa da barra por monstro do nível (EXH.killFrac: 0,2% no nível 1 caindo até 0,08% no 1000), igual em todos os mapas,
+  // × vantagem do VIP × vida do monstro comparada a um monstro comum do nível. Evento de EXP do GM continua valendo.
+  return Math.max(1, Math.round(expToNext(p.level) * EXH.killFrac(p) * vipExpK(pk) * hpK(T, p.level) * GM.xpMult()));
 }
 // bônus de EXP por mapa (servidor continua Hard): progressivo, cada mapa de caça dá um pouco mais que o anterior (+3% por mapa)
 // Vulcanus +3% · Dungeon +6% · Dungeon 2 +9% · Atlans +12% · Lost Tower +15% · Dungeon 3 +18% · Tarkan +21% · Icarus +24% · Aida +27% · Kalima +30% · Crywolf +33%
@@ -1747,7 +1749,7 @@ class World {
       distributed += baseZen;
       const pk = p.perks();
       const zen = Math.round(baseZen * pk.zen);
-      const exp = overCap(p, map && map.def) ? 0 : Math.round(expToNext(p.level) * BOSS_PCT * bossMapExp(map && map.def) * vipExpK(pk) * XP() * EXH.levelK(p) * GM.xpMult() * Math.max(0.1, share));
+      const exp = overCap(p, map && map.def) ? 0 : Math.round(expToNext(p.level) * EXH.killFrac(p) * (Number(EXH.cfg().bossKills) || 30) * vipExpK(pk) * GM.xpMult() * Math.max(0.1, share));   // boss = 30 monstros do nível
       p.exp += exp; p.zen += zen; p.bossesKilled++;
       EXH.record(p, 'boss', exp, { name: m.T.name });
       const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }
