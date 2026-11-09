@@ -2401,5 +2401,10 @@ window.I18N_EN = {
 "Um jogo": "An",
 "idle": "idle",
 ": seu herói caça sozinho no AUTO, evolui e coleta tesouros até quando você está fora. Cada um joga no seu mundo, sem ninguém atrapalhando, e o PvP continua para quem quiser lutar. Suba do nível 1 ao 1000.": " game: your hero hunts on its own in AUTO, levels up and collects treasure even while you are away. Everyone plays in their own world with no one in the way, and PvP is still there for those who want to fight. Climb from level 1 to 1000.",
-"IDLE · Servidor novo, todos no nível 1": "IDLE · New server, everyone at level 1"
+"IDLE · Servidor novo, todos no nível 1": "IDLE · New server, everyone at level 1",
+"🗺 Ver mapa": "🗺 View map",
+"⚔ Tela idle": "⚔ Idle view",
+"IDLE": "IDLE",
+"Tela idle: o grupo caça sozinho pela trilha.": "Idle view: your party hunts on its own along the trail.",
+"Mapa: ande pelo mapa com o dedo.": "Map: move around the map with your finger."
 };

@@ -787,3 +787,8 @@ body.game { margin: 0; overflow: hidden; height: 100dvh; background: #0b1020; to
 .invite-chip:hover, .invite-chip:focus-visible { color: #1a0f05; filter: brightness(1.08); }
 .invite-btn { display: block; text-align: center; margin: 0 0 10px; text-decoration: none; white-space: normal; }
 @media (max-width: 700px) { .hud-map .invite-chip { order: 3; margin-top: 2px; font-size: 10px; } }
+
+/* tela idle (visão lateral): sem minimapa; botão para trocar entre a trilha e o mapa */
+body.idle-stage #minimap { display: none; }
+.idle-view-btn { border-color: #6aa84f; color: #bfe8b0; }
+.idle-view-btn[hidden] { display: none !important; }

@@ -69,7 +69,7 @@
       case 'char': S.char = m; renderChar(); if (S.panel === 'market' && MK.tab === 'sell') renderMarket(); return;
       case 'pj': S.players.set(m.id, { ...(S.players.get(m.id) || { x: 0, y: 0, rx: null }), info: m }); if (m.eq) Sprites.preloadEquip(m.cls, m.eq); return;
       case 'pl': S.players.delete(m.id); return;
-      case 'reward': if (window.Sfx) Sfx.coin(); if (m.exp > 0) expTrack(m.exp); return;
+      case 'reward': if (window.Sfx) Sfx.coin(); if (m.exp > 0) { expTrack(m.exp); IDL.kills++; } return;
       case 'duelInvite': return showDuelInvite(m);
       case 'duel': S.duel = { with: m.with, name: m.name, until: performance.now() + m.until }; renderDuelBar(); if (window.Sfx) Sfx.duel(); feed(`Duelo contra ${m.name} começou! Vence quem derrubar o outro.`, 'pvp'); return;
       case 'duelEnd': S.duel = null; renderDuelBar(); feed(m.result === 'win' ? 'Você venceu o duelo!' : m.result === 'loss' ? 'Você perdeu o duelo.' : 'Duelo encerrado sem vencedor.', m.result === 'win' ? 'lvl' : 'warn'); return;
@@ -175,6 +175,7 @@
     $('#btn-shop').hidden = false;
     if (S.panel === 'maps') renderMaps();
     if (S.panel === 'shop') renderShop();
+    IDL.enemies.clear(); paintIdleBtn();
   }
 
   function onSnap(m) {
@@ -257,6 +258,7 @@
 
   function handleEvent(ev, now) {
     if (ev.k === 'h') {
+      idleOnHit(ev);
       const a = ent(ev.a), t = ent(ev.t);
       if (!t) return;
       if (a) { a.attackStart = now; a.attackUntil = now + 340; a.atkT = t; if (window.PX && a.info) PX.attack(a, t.rx, t.ry, false); }
@@ -1505,12 +1507,14 @@
       }
       const sx = Math.max(0, camX), sy = Math.max(0, camY);
       const sw = Math.min(S.map.w - sx, vw), sh = Math.min(S.map.h - sy, vh);
-      if (is3d) {
+      if (is3d && !idleActive()) {
         // 3D: a câmera olha para o centro da mesma janela que o 2D mostraria
         W3().setView(camX + vw / 2, camY + vh / 2, zoom, cv.width, cv.height);
         W3().setActors(actors3d(now, me));
         W3().render(now);
-      } else ctx.drawImage(S.ground, sx * GS, sy * GS, sw * GS, sh * GS, (sx - camX) * zoom, (sy - camY) * zoom, sw * zoom, sh * zoom);
+      } else if (!idleActive()) ctx.drawImage(S.ground, sx * GS, sy * GS, sw * GS, sh * GS, (sx - camX) * zoom, (sy - camY) * zoom, sw * zoom, sh * zoom);
+      if (idleActive()) drawIdleStage(now, dt, me);
+      else {
       drawArenaZone(now);
       drawDangers(now);
       drawClickMark(now);
@@ -1526,6 +1530,7 @@
       drawHitParticles(now, dt);
       if (!is3d) drawAtmosphere(now);
       drawFloats(now);
+      }
       // tela vermelha rápida quando o herói leva um golpe forte
       if (S.hurtFlash && now - S.hurtFlash < 260) {
         const a = 0.35 * (1 - (now - S.hurtFlash) / 260);
@@ -1541,7 +1546,7 @@
       // escurece e clareia ao entrar no mapa
       if (S.enterAt && now - S.enterAt < 700) { ctx.fillStyle = `rgba(5,6,14,${1 - (now - S.enterAt) / 700})`; ctx.fillRect(0, 0, cv.width, cv.height); }
       camX = baseX; camY = baseY; S.camBase = null;
-      drawMinimap();
+      if (!idleActive()) drawMinimap();
     }
   }
   requestAnimationFrame(frame);
@@ -2058,6 +2063,361 @@
       return true;
     });
   }
+  // ================= TELA IDLE (visão lateral) =================
+  // Nos mapas de caça o jogo mostra o grupo andando sozinho pela trilha, da esquerda para a direita, e os monstros
+  // chegando pela direita. É só a apresentação: o combate, o EXP e os drops continuam vindo do servidor (AUTO).
+  // Na cidade, nas arenas e em eventos volta o mapa de cima. O jogador troca a qualquer momento (botão Idle / Mapa).
+  const IDLE_KEY = 'mui_idle_view';
+  const IDL = { scroll: 0, seed: Math.random() * 1000, dmg: [], kills: 0, lastLv: 0, lvKills: 0, hpPrev: new Map(), enemies: new Map(), walk: 0, zoneT: 0 };
+  function idlePref() { try { return localStorage.getItem(IDLE_KEY) !== 'map'; } catch (_) { return true; } }
+  const idleMapOk = () => !!(S.map && !S.map.arena && (!S.map.safe || S.map.training));
+  function idleActive() { return idleMapOk() && idlePref(); }
+  function setIdlePref(on) {
+    try { localStorage.setItem(IDLE_KEY, on ? 'idle' : 'map'); } catch (_) { /* sem armazenamento */ }
+    paintIdleBtn();
+    if (on && S.me && !S.me.auto && idleMapOk()) send({ type: 'auto', on: true });
+  }
+  function paintIdleBtn() {
+    const b = $('#idle-view'); if (!b) return;
+    const can = idleMapOk();
+    b.hidden = !can;
+    b.textContent = idlePref() ? '🗺 Ver mapa' : '⚔ Tela idle';
+    document.body.classList.toggle('idle-stage', can && idlePref());
+  }
+  // paletas de cada tema (céu, morros ao fundo, árvores, chão, trilha, detalhe)
+  const IDLE_PAL = {
+    grass: ['#9fd3f0', '#d9f1d0', '#5f8f4a', '#3f6f34', '#5c9a3e', '#b89a68', '#7a5a3a'],
+    forest: ['#7fb8d8', '#cfe8c0', '#3e6a35', '#2a4f26', '#4d8a34', '#a88a5a', '#6a4a2a'],
+    darkforest: ['#2a2a48', '#4a3a5a', '#2a3a2a', '#1a2a1c', '#2f4a2a', '#5a4a3a', '#3a2a1a'],
+    noria: ['#a8dcf0', '#e8f6d8', '#6aa04a', '#4a803a', '#6aac46', '#c8aa70', '#8a6a3a'],
+    snow: ['#bcd8ee', '#f2f8ff', '#a8c0d8', '#7d97b5', '#e8f0f8', '#c8d4e0', '#8aa0b8'],
+    glacier: ['#9cc8e8', '#e8f6ff', '#8ab4d8', '#5a84b0', '#d8ecff', '#b0cce4', '#6a8cb0'],
+    desert: ['#f0c88a', '#f8e2b0', '#d4a060', '#b07a40', '#e0b878', '#f0d8a0', '#a0703a'],
+    lava: ['#3a1410', '#7a2a14', '#4a1a12', '#2a0e0a', '#5a2416', '#8a3a1a', '#ff6a2a'],
+    cave: ['#1c1a24', '#34303e', '#2a2632', '#1a1820', '#3a3440', '#5a5260', '#24202a'],
+    dungeon: ['#1a1622', '#302a3a', '#2a2432', '#18141e', '#3a3240', '#5a5060', '#2a2230'],
+    castle: ['#3a2a3a', '#5a4050', '#4a3440', '#2a1e28', '#5a4a4a', '#7a6a60', '#3a2a2a'],
+    devilsq: ['#2a0a14', '#5a1424', '#3a0e18', '#20060c', '#4a1a22', '#6a2a2a', '#ff3a3a'],
+    tower: ['#2a2a4a', '#4a4a70', '#3a3a5a', '#24243a', '#4a4a62', '#6a6a82', '#9a9aff'],
+    sky: ['#7ab8f0', '#e8f4ff', '#c8e0f8', '#a0c4ec', '#e0eef8', '#f4f8ff', '#ffd36b'],
+    water: ['#6ab0d8', '#bfe4f4', '#3a8ab0', '#2a6a90', '#4a9ab8', '#c8b88a', '#2a6a8a'],
+    crystal: ['#3a3a6a', '#6a6aa8', '#5a5a9a', '#34346a', '#4a4a80', '#8a8ac8', '#bfe8ff'],
+    abyss: ['#140a1e', '#2a1438', '#1e0e2a', '#0e0614', '#2a1a34', '#4a3050', '#c060ff'],
+    void: ['#0a0a14', '#1a1a2e', '#14142a', '#08080e', '#1e1e30', '#3a3a50', '#8a8aff'],
+  };
+  const idlePal = () => IDLE_PAL[S.map && S.map.theme] || IDLE_PAL.grass;
+  // números grandes no estilo idle: 1,2 mil · 3,4 mi · 5,6 bi · 7,8 tri
+  function bigNum(n) {
+    n = Number(n) || 0;
+    const U = [[1e12, ' tri'], [1e9, ' bi'], [1e6, ' mi'], [1e3, ' mil']];
+    for (const [v, s] of U) if (Math.abs(n) >= v) return (n / v).toFixed(n / v >= 100 ? 0 : 1).replace('.', ',') + s;
+    return fmt.format(Math.round(n));
+  }
+  // ruído simples e estável para espalhar árvores, pedras e morros
+  const hash = (i, k = 0) => { const s = Math.sin(i * 127.1 + k * 311.7 + IDL.seed) * 43758.5453; return s - Math.floor(s); };
+
+  function idleBackground(now, W, H, groundY) {
+    const P = idlePal(), px = Math.max(2, Math.round(2 * dpr));
+    // céu
+    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
+    sky.addColorStop(0, P[0]); sky.addColorStop(1, P[1]);
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, groundY);
+    // morros ao fundo (andam devagar)
+    const far = IDL.scroll * 0.15;
+    ctx.fillStyle = P[2];
+    ctx.beginPath(); ctx.moveTo(0, groundY);
+    for (let x = 0; x <= W + px * 4; x += px * 4) {
+      const wx = (x + far) / (120 * dpr);
+      const h = (Math.sin(wx) * 0.5 + Math.sin(wx * 0.37 + 1.3) * 0.8 + 1.6) * 34 * dpr;
+      ctx.lineTo(x, Math.round((groundY - h - 30 * dpr) / px) * px);
+    }
+    ctx.lineTo(W, groundY); ctx.closePath(); ctx.fill();
+    // árvores (ou rochas/colunas) no meio
+    const mid = IDL.scroll * 0.45, step = 70 * dpr;
+    const first = Math.floor(mid / step) - 1;
+    for (let i = first; i < first + W / step + 3; i++) {
+      if (hash(i) < 0.25) continue;
+      const x = i * step - mid + hash(i, 1) * step * 0.6, s = (0.8 + hash(i, 2) * 0.7) * dpr;
+      idleTree(x, groundY - 4 * dpr, s, P, px, hash(i, 3));
+    }
+    // chão e trilha
+    ctx.fillStyle = P[4]; ctx.fillRect(0, groundY, W, H - groundY);
+    const pathTop = groundY + (H - groundY) * 0.18, pathH = (H - groundY) * 0.34;
+    ctx.fillStyle = P[5]; ctx.fillRect(0, Math.round(pathTop), W, Math.round(pathH));
+    ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(0, Math.round(pathTop), W, px);
+    ctx.fillStyle = 'rgba(255,255,255,.10)'; ctx.fillRect(0, Math.round(pathTop + pathH - px), W, px);
+    // pedrinhas e tufos que passam na velocidade do grupo
+    const near = IDL.scroll, st2 = 26 * dpr, f2 = Math.floor(near / st2) - 1;
+    for (let i = f2; i < f2 + W / st2 + 3; i++) {
+      const x = Math.round((i * st2 - near + hash(i, 4) * st2) / px) * px;
+      const onPath = hash(i, 5) < 0.55;
+      const y = onPath ? pathTop + hash(i, 6) * pathH : groundY + hash(i, 6) * (H - groundY);
+      if (onPath) { ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(x, Math.round(y / px) * px, px * (1 + (hash(i, 7) > 0.6)), px); }
+      else { ctx.fillStyle = P[3]; ctx.fillRect(x, Math.round(y / px) * px, px, px * 2); ctx.fillRect(x + px, Math.round(y / px) * px - px, px, px * 3); }
+    }
+    return { pathTop, pathH };
+  }
+  function idleTree(x, base, s, P, px, r) {
+    const theme = S.map && S.map.theme;
+    const rock = ['cave', 'dungeon', 'lava', 'desert', 'crystal', 'abyss', 'void', 'tower', 'castle', 'devilsq'].includes(theme);
+    const R = (v) => Math.round(v / px) * px;
+    if (rock) {
+      // pedra / coluna / cristal
+      const w = R(22 * s), h = R((30 + r * 40) * s);
+      ctx.fillStyle = P[3]; ctx.fillRect(R(x - w / 2), R(base - h), w, h);
+      ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(R(x - w / 2), R(base - h), px * 2, h);
+      if (theme === 'crystal' || theme === 'abyss' || theme === 'lava' || theme === 'void') { ctx.fillStyle = P[6]; ctx.globalAlpha = 0.5; ctx.fillRect(R(x - px), R(base - h - 6 * s), px * 2, R(10 * s)); ctx.globalAlpha = 1; }
+      return;
+    }
+    const th = R((22 + r * 16) * s), tw = R(7 * s);
+    ctx.fillStyle = P[6]; ctx.fillRect(R(x - tw / 2), R(base - th), tw, th);
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(R(x - tw / 2), R(base - th), R(tw / 2), th);
+    const snow = theme === 'snow' || theme === 'glacier';
+    const pine = snow || theme === 'darkforest' || r > 0.72;
+    if (pine) {
+      // pinheiro em degraus
+      for (let k = 0; k < 4; k++) {
+        const cw = R((40 - k * 9) * s), ch = R(12 * s), y = R(base - th - ch * k * 0.85);
+        ctx.fillStyle = k % 2 ? P[2] : P[3]; ctx.fillRect(R(x - cw / 2), y - ch, cw, ch);
+        ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(R(x - cw / 2), y - ch, R(cw / 3), px);
+        if (snow) { ctx.fillStyle = '#f4faff'; ctx.fillRect(R(x - cw / 2), y - ch, cw, px * 2); }
+      }
+      return;
+    }
+    // copa redonda: bolas sobrepostas em pixels, sombra embaixo e brilho em cima
+    const blob = (cx, cy, rad, col) => { ctx.fillStyle = col; for (let dy = -rad; dy <= rad; dy += px) { const w = Math.sqrt(Math.max(0, rad * rad - dy * dy)); ctx.fillRect(R(cx - w), R(cy + dy), R(w * 2) || px, px); } };
+    const cy = base - th - 10 * s, rad = (15 + r * 6) * s;
+    blob(x - rad * 0.55, cy + rad * 0.25, rad * 0.75, P[3]);
+    blob(x + rad * 0.55, cy + rad * 0.25, rad * 0.75, P[3]);
+    blob(x, cy, rad, P[2]);
+    blob(x - rad * 0.3, cy - rad * 0.35, rad * 0.45, 'rgba(255,255,255,.12)');
+  }
+
+  // um herói (ou membro da party) na tela idle, virado para a direita
+  function idleHero(e, x, y, sc, now, walking, faceLeft) {
+    const info = e.info; if (!info) return;
+    const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : undefined;
+    let act = 'idle', t = now + (e.phase || 0), once = false;
+    if (e.dyingAt) { act = 'death'; t = now - e.dyingAt; once = true; }
+    else if (now < (e.attackUntil || 0)) { act = 'attack'; t = now - (e.attackStart || now); once = true; }
+    else if (now < (e.hurtUntil || 0) && now >= (e.hitAt || 0)) { act = 'hit'; t = now - (e.hitAt || now); once = true; }
+    else if (walking) act = 'walk';
+    const dim = heroDim(info.cls), flip = !!faceLeft;
+    shadowAt(x, y, 10 * sc * 2);
+    const mountV = eq && eq.pet && window.Fenrir && !e.dead ? Fenrir.variantOf(eq.pet) : null;
+    const bob = act === 'walk' ? Math.round(Math.abs(Math.sin((now + (e.phase || 0)) * 0.012)) * 1.5 * sc) : 0;
+    let lift = 0;
+    if (mountV) {
+      const BULL = window.Sprites && Sprites.meta('mounts', 'bull');
+      const moving = act === 'walk';
+      let seatY;
+      if (BULL) {
+        const mAct = moving ? 'walk' : 'idle', mopt = mountV === 'red' ? { tint: '#b02a20' } : {};
+        Sprites.mount(ctx, 'bull', mAct, t, x, y, sc, flip, mopt);
+        seatY = y - (BULL.seat.side[1] - Sprites.mountBob('bull', mAct, t)) * sc;
+      } else {
+        const mp = sc * 2, fBob = moving && Math.floor(t / 110) % 2 === 0 ? -mp : 0;
+        Fenrir.draw(ctx, x + (flip ? -2 : 2) * mp, y, mp, flip, moving, t, mountV);
+        seatY = y + fBob - Fenrir.SEAT(mp, 'side') + mp;
+      }
+      lift = y - seatY - dim.hip * sc;
+      ctx.save(); ctx.beginPath(); ctx.rect(x - 200 * sc, seatY - 400 * sc, 400 * sc, 402 * sc); ctx.clip();
+      Sprites.hero(ctx, info.cls, info.ap, act === 'walk' ? 'idle' : act, t, x, y - lift, sc, flip, { once, equip: eq });
+      ctx.restore();
+    } else {
+      if (eq && eq.pet && window.Fenrir && Fenrir.isPet(eq.pet)) Fenrir.drawPet(ctx, eq.pet, x + (flip ? 1 : -1) * 27 * sc, y, sc * 2.2, t, dim.h * sc * 0.55);
+      Sprites.hero(ctx, info.cls, info.ap, act, t, x, y - bob, sc, flip, { once, equip: eq });
+    }
+    e.ix = x; e.iy = y - lift - dim.h * sc * 0.5; e.itop = y - lift - dim.h * sc;
+  }
+
+  function drawIdleStage(now, dt, me) {
+    const W = cv.width, H = cv.height;
+    // área útil: entre o HUD de cima e os botões de baixo
+    const groundY = Math.round(H * 0.5);
+    const sc = Math.max(1.2, Math.min(4.2, (H * 0.11) / HERO_H)) ;
+    // inimigos: monstros vivos mais perto do herói (e quem morreu agora há pouco) + jogadores inimigos (PvP)
+    const myT = S.me && S.me.target;
+    const list = [];
+    if (me && me.rx != null) {
+      S.monsters.forEach((m, id) => {
+        if (m.rx == null) return;
+        if (m.dead && !(m.dyingAt && now - m.dyingAt < 1100)) return;
+        const d = Math.hypot(m.rx - me.rx, m.ry - me.ry);
+        if (d > 520 && id !== myT) return;
+        list.push({ e: m, d: id === myT ? -1 : d, mon: true, id });
+      });
+      S.players.forEach((p, id) => { if (id !== S.youId && p.info && !p.dead && hostileTo(p)) list.push({ e: p, d: Math.hypot(p.rx - me.rx, p.ry - me.ry) - 1000, mon: false, id }); });
+    }
+    list.sort((a, b) => a.d - b.d);
+    const shown = list.slice(0, 6);
+    const fighting = shown.some((x) => !x.e.dead && x.d < 160) || (me && now < (me.attackUntil || 0) + 900);
+    // o grupo anda enquanto não tem ninguém para bater
+    const walking = !fighting && !!(me && !me.dead) && !!(S.me && S.me.auto);
+    if (walking) IDL.scroll += dt * 90 * dpr;
+    const bg = idleBackground(now, W, H, groundY);
+    const laneY = bg.pathTop + bg.pathH * 0.62;
+    // grupo: você na frente, a party atrás em formação
+    const heroX = Math.round(W * 0.34);
+    const party = [];
+    const pm = S.social && S.social.party && S.social.party.members || [];
+    S.players.forEach((p, id) => { if (id !== S.youId && p.info && !p.dead && pm.includes(p.info.name)) party.push(p); });
+    const SLOTS = [[-0.13, -0.10], [-0.13, 0.12], [-0.25, -0.02], [-0.25, 0.2]];
+    const actors = [];
+    party.slice(0, 4).forEach((p, i) => actors.push({ kind: 'h', e: p, x: heroX + SLOTS[i][0] * W, y: laneY + SLOTS[i][1] * bg.pathH * 1.4 }));
+    if (me && me.info) actors.push({ kind: 'h', e: me, x: heroX, y: laneY, me: true });
+    // posições dos inimigos: o alvo encosta no herói, os outros fazem fila pela direita
+    const frontX = heroX + 46 * sc;
+    shown.forEach((s, i) => {
+      const e = s.e, key = s.id;
+      let st = IDL.enemies.get(key);
+      const tx = frontX + i * 34 * sc + (i ? 14 * sc : 0), ty = laneY + ((i % 3) - 1) * bg.pathH * 0.28 * (i ? 1 : 0);
+      if (!st) { st = { x: W + 40 * sc + i * 20 * sc, y: ty }; IDL.enemies.set(key, st); }
+      const k = Math.min(1, dt * 3.2);
+      const moving = Math.abs(tx - st.x) > 6 * dpr;
+      st.x += (tx - st.x) * k; st.y += (ty - st.y) * k; st.seen = now; st.moving = moving;
+      actors.push({ kind: s.mon ? 'm' : 'p', e, x: st.x, y: st.y, moving });
+    });
+    for (const [k, st] of IDL.enemies) if (now - st.seen > 3000) IDL.enemies.delete(k);
+    actors.sort((a, b) => a.y - b.y);
+    for (const a of actors) {
+      if (a.kind === 'h') { idleHero(a.e, a.x, a.y, sc, now, walking, false); continue; }
+      if (a.kind === 'p') { idleHero(a.e, a.x, a.y, sc, now, a.moving, true); continue; }
+      const m = a.e, name = monSprite(m), meta = Sprites.meta('monsters', name);
+      let [act, t, once] = animOf(m, now);
+      if (!m.dyingAt && /^(walk|run)$/.test(act)) act = 'idle';
+      if (a.moving && act === 'idle') { act = 'walk'; t = now + (m.phase || 0); }
+      const ms = (meta ? meta.scale : 1) * (m.scale || 1), h = monH(name) * ms * sc, w = Math.max(10 * sc, h * 0.45);
+      if (m.boss && !m.dead) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const ar = w * 2.2; const g = ctx.createRadialGradient(a.x, a.y - h * 0.4, 0, a.x, a.y - h * 0.4, ar); g.addColorStop(0, 'rgba(190,100,255,.3)'); g.addColorStop(1, 'rgba(190,100,255,0)'); ctx.fillStyle = g; ctx.fillRect(a.x - ar, a.y - h * 0.4 - ar, ar * 2, ar * 2); ctx.restore(); }
+      if (m.golden && !m.dead) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const ar = w * 2; const g = ctx.createRadialGradient(a.x, a.y - h * 0.45, 0, a.x, a.y - h * 0.45, ar); g.addColorStop(0, 'rgba(255,205,70,.4)'); g.addColorStop(1, 'rgba(255,190,40,0)'); ctx.fillStyle = g; ctx.fillRect(a.x - ar, a.y - h * 0.45 - ar, ar * 2, ar * 2); ctx.restore(); }
+      shadowAt(a.x, a.y, w * 0.8);
+      const recoilAge = (now - (m.hitAt || 0)) / 1000;
+      const recoil = recoilAge >= 0 && recoilAge < .18 ? Math.sin((recoilAge / .18) * Math.PI) * 3 * sc : 0;
+      const mTint = m.tint && m.tint[0] === '#' ? m.tint : null;
+      Sprites.monster(ctx, name, act, t, a.x + recoil, a.y, sc * (m.scale || 1), false, { once, tint: mTint });
+      if (now < (m.hurtUntil || 0) && now >= (m.hitAt || 0) && !m.dyingAt) Sprites.monster(ctx, name, act, t, a.x + recoil, a.y, sc * (m.scale || 1), false, { once, white: true, alpha: 0.6, tint: mTint });
+      m.ix = a.x; m.iy = a.y - h * 0.5; m.itop = a.y - h;
+      if (m.dead) continue;
+      m.hpShow = m.hpShow === undefined ? m.hp : m.hpShow + (m.hp - m.hpShow) * 0.25;
+      hpBar(a.x, a.y - h - 6 * dpr, Math.max(30 * dpr, w * 1.6), m.hpShow / m.maxHp, m.boss ? '#c06bff' : m.elite ? '#ffb02e' : '#e0473a');
+      if (m.boss || m.golden || m.elite || m === (shown[0] && shown[0].e)) label(`${m.golden ? '♛ ' : ''}${m.name} Nv.${m.level}`, a.x, a.y - h - 9 * dpr, m.boss ? '#e0b0ff' : m.golden ? '#ffd36b' : m.elite ? '#ffd36b' : '#f0e6cc', 10);
+    }
+    // nomes do grupo
+    for (const a of actors) if (a.kind !== 'm' && a.e.info && !a.e.dead) {
+      const e = a.e;
+      e.hpShow = e.hpShow === undefined ? e.hp : e.hpShow + (e.hp - e.hpShow) * 0.25;
+      hpBar(a.x, e.itop - 6 * dpr, 18 * sc, e.hpShow / e.maxHp, a.me ? '#6aa84f' : a.kind === 'p' ? '#ff5a4a' : '#4aa3ff');
+      label(`${a.kind === 'p' ? '⚔ ' : ''}${e.info.name} ${e.info.level}`, a.x, e.itop - 9 * dpr, a.me ? '#ffd36b' : a.kind === 'p' ? '#ff9a6a' : '#9ad0ff', 10);
+    }
+    // golpes: projéteis simples e números de dano
+    drawIdleFloats(now);
+    drawIdleHud(now, W, H, groundY, walking, fighting);
+  }
+
+  function drawIdleFloats(now) {
+    S.floats = S.floats.filter((f) => {
+      const age = now - f.t0;
+      if (age < 0) return true;
+      if (age > 1000) return false;
+      const e = f.at; if (!e || e.ix == null) return age < 1000;
+      ctx.globalAlpha = age > 700 ? 1 - (age - 700) / 300 : 1;
+      const pop = age < 140 ? 1 + (1 - age / 140) * 0.7 : 1;
+      const big = f.big || e === S.players.get(S.youId);
+      label(f.text, e.ix + (f.dx || (f.dx = (Math.random() - 0.5) * 24 * dpr)), (e.itop || e.iy) - 6 * dpr - age / 22 * dpr, f.color, Math.round((big ? 17 : 13) * pop));
+      ctx.globalAlpha = 1;
+      return true;
+    });
+  }
+
+  // registra golpes (para o "dano por segundo") e mortes do grupo
+  function idleOnHit(ev) {
+    if (ev.a === S.youId && ev.d > 0) IDL.dmg.push([performance.now(), ev.d]);
+  }
+  function idleDps(now) {
+    IDL.dmg = IDL.dmg.filter((d) => now - d[0] < 10000);
+    if (!IDL.dmg.length) return 0;
+    const span = Math.max(3000, now - IDL.dmg[0][0]);
+    return IDL.dmg.reduce((a, d) => a + d[1], 0) / (span / 1000);
+  }
+
+  function idleChip(x, y, w, h, title, value, sub, col, icon) {
+    ctx.fillStyle = 'rgba(10,8,16,.72)'; ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = 'rgba(255,211,107,.35)'; ctx.lineWidth = dpr; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.font = `700 ${Math.round(9.5 * dpr)}px "Exo 2", system-ui, sans-serif`; ctx.fillStyle = '#c9b88a';
+    ctx.fillText(`${icon} ${title}`, x + 7 * dpr, y + 5 * dpr);
+    ctx.font = `800 ${Math.round(15 * dpr)}px "Exo 2", system-ui, sans-serif`; ctx.fillStyle = col;
+    ctx.fillText(value, x + 7 * dpr, y + 18 * dpr);
+    if (sub) { ctx.font = `600 ${Math.round(9 * dpr)}px "Exo 2", system-ui, sans-serif`; ctx.fillStyle = '#9be27a'; ctx.fillText(sub, x + 7 * dpr, y + 37 * dpr); }
+  }
+
+  function drawIdleHud(now, W, H, groundY, walking, fighting) {
+    const c = S.char; if (!c) return;
+    // faixa de níveis (como fases): o atual no meio, os próximos à direita e o cadeado no fim
+    const L = c.level, R = 15 * dpr, gap = 8 * dpr;
+    const lv = [L - 1, L, L + 1, L + 2].filter((v) => v >= 1 && v <= 1000);
+    const n = lv.length + 1, total = n * R * 2 + (n - 1) * gap;
+    let x0 = Math.round(W / 2 - total / 2) + R;
+    const cy = Math.round(Math.max(H * 0.3, 230 * dpr) + R);   // abaixo das caixas do topo (alvo, área de treino)
+    ctx.fillStyle = 'rgba(10,8,16,.6)'; ctx.fillRect(x0 - R - 8 * dpr, cy - R - 6 * dpr, total + 16 * dpr, R * 2 + 12 * dpr);
+    ctx.strokeStyle = '#6aa84f'; ctx.lineWidth = 3 * dpr; ctx.beginPath(); ctx.moveTo(x0, cy); ctx.lineTo(x0 + (n - 1) * (R * 2 + gap), cy); ctx.stroke();
+    lv.forEach((v, i) => {
+      const x = x0 + i * (R * 2 + gap), cur = v === L, done = v < L;
+      ctx.beginPath(); ctx.arc(x, cy, R, 0, Math.PI * 2);
+      ctx.fillStyle = cur ? '#2f6a2a' : done ? '#1f3a1c' : '#1a1a24'; ctx.fill();
+      ctx.lineWidth = (cur ? 3 : 2) * dpr; ctx.strokeStyle = cur ? '#9be27a' : done ? '#5a8a4a' : '#5a5a6a'; ctx.stroke();
+      ctx.font = `800 ${Math.round((v >= 100 ? 9.5 : 11) * dpr)}px "Exo 2", system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = cur ? '#ffffff' : done ? '#bfe8b0' : '#9a9aaa'; ctx.fillText(String(v), x, cy + dpr);
+    });
+    { // cadeado: próximo reset (nível 1000) ou o boss do mapa
+      const x = x0 + (n - 1) * (R * 2 + gap);
+      ctx.beginPath(); ctx.arc(x, cy, R, 0, Math.PI * 2); ctx.fillStyle = '#3a1418'; ctx.fill();
+      ctx.lineWidth = 2 * dpr; ctx.strokeStyle = '#a04a4a'; ctx.stroke();
+      ctx.font = `700 ${Math.round(12 * dpr)}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#ffb0a0';
+      ctx.fillText(S.boss ? '☠' : '🔒', x, cy + dpr);
+    }
+    // barra: abates estimados para o próximo nível (pela EXP de um monstro comum do nível)
+    const me2 = S.me || {}, next = Number(me2.next) || Math.floor(100 * Math.pow(L, 2.1) + 200), have = Number(me2.exp) || 0, frac = Math.max(0, Math.min(1, have / next));
+    const per = idleKillExp(L);
+    const left = per > 0 ? Math.max(0, Math.ceil((next - have) / per)) : 0;
+    const bw = Math.min(W * 0.7, 300 * dpr), bx = Math.round(W / 2 - bw / 2), by = cy + R + 10 * dpr, bh = 13 * dpr;
+    ctx.fillStyle = '#0b0a12'; ctx.fillRect(bx - dpr, by - dpr, bw + 2 * dpr, bh + 2 * dpr);
+    const g = ctx.createLinearGradient(0, by, 0, by + bh); g.addColorStop(0, '#ffd36b'); g.addColorStop(1, '#d08a1a');
+    ctx.fillStyle = g; ctx.fillRect(bx, by, bw * frac, bh);
+    ctx.font = `700 ${Math.round(9.5 * dpr)}px "Exo 2", system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
+    ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.lineWidth = 3 * dpr;
+    const txt = `${(frac * 100).toFixed(1).replace('.', ',')}% · faltam ~${fmt.format(left)} monstros para o nível ${L + 1}`;
+    ctx.strokeText(txt, W / 2, by + bh / 2 + dpr); ctx.fillText(txt, W / 2, by + bh / 2 + dpr);
+    // números grandes: Zen, dano por segundo e abates
+    const dps = idleDps(now);
+    const cw = Math.min(118 * dpr, (W - 24 * dpr) / 3 - 6 * dpr), ch = 50 * dpr, cyy = by + bh + 10 * dpr;
+    const cx0 = Math.round(W / 2 - (cw * 3 + 12 * dpr) / 2);
+    const vipT = (c.vip && c.vip.tier) || 0;
+    idleChip(cx0, cyy, cw, ch, 'ZEN', bigNum(S.me && S.me.zen != null ? S.me.zen : c.zen), vipT ? `+${vipT === 2 ? 100 : 50}% VIP` : null, '#ffd36b', '●');
+    idleChip(cx0 + cw + 6 * dpr, cyy, cw, ch, 'DANO/SEG', bigNum(dps), null, '#ff9a6a', '⚔');
+    idleChip(cx0 + (cw + 6 * dpr) * 2, cyy, cw, ch, 'ABATES', bigNum(IDL.kills), 'nesta sessão', '#9ad0ff', '☠');
+    // estado do grupo
+    const status = !(S.me && S.me.auto) ? 'AUTO desligado · toque em AUTO para o herói caçar sozinho'
+      : fighting ? 'Em combate' : walking ? 'Procurando monstros…' : '';
+    if (status) label(status, W / 2, groundY - 8 * dpr, !(S.me && S.me.auto) ? '#ffb02e' : '#f0e6cc', 11);
+  }
+  // EXP de um monstro comum do nível (a mesma conta do servidor: % da barra × VIP × corte por nível ÷ resets)
+  function idleKillExp(L) {
+    if (!S.char || !S.data || !S.data.expRef) return 0;
+    const er = S.data.expRef, next = Math.floor(100 * Math.pow(L, 2.1) + 200);
+    const vipK = [1, 1.2, 1.25][(S.char.vip && S.char.vip.tier) || 0] * (S.char.vip && S.char.vip.welcome ? 1.2 : 1);
+    const cut = 1 - (Number(er.levelCut) || 0) * (Math.min(1000, Math.max(1, L)) - 1) / 999;
+    return next * (Number(er.killPct) || 0.003) * cut * vipK / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
+  }
+
+  // toque na tela idle: tocar num monstro (ou jogador inimigo) escolhe o alvo
+  function idleTap(ev) {
+    const x = ev.clientX * dpr, y = ev.clientY * dpr;
+    let best = null, bd = 60 * dpr;
+    S.monsters.forEach((m, id) => { if (m.dead || m.ix == null || !IDL.enemies.has(id)) return; const d = Math.hypot(m.ix - x, m.iy - y); if (d < bd) { bd = d; best = id; } });
+    S.players.forEach((p, id) => { if (id === S.youId || p.dead || p.ix == null || !IDL.enemies.has(id)) return; const d = Math.hypot(p.ix - x, p.iy - y); if (d < bd) { bd = d; best = id; } });
+    if (best) send({ type: 'target', id: best });
+  }
   function drawFloats(now) {
     S.floats = S.floats.filter((f) => {
       const age = now - f.t0;
@@ -2267,6 +2627,7 @@
     if (JOY.id != null) return; // só um dedo controla o movimento
     if (!S.map || !S.me || S.me.dead) return;
     if (S.panel && window.innerWidth < 700) closePanel();
+    if (idleActive()) { idleTap(ev); return; }
     const g = tapWorld(ev);
     if (!g) return;
     JOY.id = ev.pointerId; JOY.active = false; JOY.x0 = ev.clientX; JOY.y0 = ev.clientY; JOY.ground = g; JOY.sent = '';
@@ -4919,6 +5280,7 @@
   }
 
   // ================= botões =================
+  $('#idle-view') && ($('#idle-view').onclick = () => { setIdlePref(!idlePref()); feed(idlePref() ? 'Tela idle: o grupo caça sozinho pela trilha.' : 'Mapa: ande pelo mapa com o dedo.'); });
   $('#btn-auto').onclick = () => send({ type: 'auto', on: !(S.me && S.me.auto) });
   $('#btn-pvp').onclick = () => send({ type: 'pvp', on: !(S.me && S.me.pvpOn) });
   $('#btn-ptarget').onclick = cycleTarget;
