@@ -211,7 +211,7 @@
     const draw = () => {
       const C = V.config, P = V.projection, L = V.live;
       box.innerHTML = `<p class="adt-msg" role="status"></p>
-        <p class="adt-sub">EXP por abate = barra do nível × % do plano (Free 0,5% · Ouro 0,7% · Diamante 0,8%) × vida do monstro × bônus do mapa × <b>multiplicador da curva</b> ÷ (1 + resets × dificuldade por reset). A curva liga as âncoras abaixo sem degraus. Por cima dela entra o corte progressivo: 0% no nível 1 subindo até o valor escolhido no nível 1000. Mudar aqui não altera nenhum personagem: vale para os próximos abates.</p>
+        <p class="adt-sub">EXP por abate = barra do nível × % do plano (Free 0,5% · Ouro 0,6% · Diamante 0,625%) × vida do monstro × bônus do mapa × <b>multiplicador da curva</b> ÷ (1 + resets × dificuldade por reset). A curva liga as âncoras abaixo sem degraus. Por cima dela entra o corte progressivo: 0% no nível 1 subindo até o valor escolhido no nível 1000. Mudar aqui não altera nenhum personagem: vale para os próximos abates.</p>
         <b>Curva (nível → multiplicador do EXP por abate)</b>
         <div style="overflow-x:auto"><table class="adm-table"><tr><th>Nível</th><th>Multiplicador</th><th></th></tr>
         ${C.curve.map(([l, v], i) => `<tr><td><input type="number" min="1" max="1000" data-xl="${i}" value="${l}" style="width:80px" ${l === 1 || l === 1000 ? 'readonly' : ''}></td><td><input type="number" step="any" min="0.001" data-xv="${i}" value="${v}" style="width:100px"></td><td>${l === 1 || l === 1000 ? '' : `<button class="btn small" type="button" data-xdel="${i}">Remover</button>`}</td></tr>`).join('')}

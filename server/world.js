@@ -82,12 +82,14 @@ const XP = () => G.GAME_MODE.expRate * EXP_TRIM;
 // EXP_PROG fica só para a tela antiga de estimativa; o servidor usa EXH.levelK.
 const EXP_PROG = { perLevel: 0, perReset: 0.05 };
 // ---------- EXP por monstro (Hard, equilibrado) ----------
-// Matar um monstro do seu nível dá 0,5% da EXP do nível (Free), 0,7% (VIP Ouro) ou 0,8% (VIP Diamante).
+// Matar um monstro do seu nível dá 0,5% da EXP do nível (Free), 0,6% (VIP Ouro) ou 0,625% (VIP Diamante).
 // A EXP de cada monstro é proporcional à vida dele comparada a um monstro comum do seu nível (bicho fraco dá pouco, elite dá mais).
 // Por cima ainda entra o bônus do mapa. Chefes: 15% do nível, dividido pelo dano.
-// % da barra por monstro do seu nível, pelo plano da conta (já inclui o VIP; não multiplica de novo): Free 0,5% · VIP Ouro 0,7% · VIP Diamante 0,8%
+// % da barra por monstro do seu nível, pelo plano da conta (já inclui o VIP; não multiplica de novo): Free 0,5% · VIP Ouro 0,6% · VIP Diamante 0,625%
 // (reduzido a 1/4: antes 2% / 2,8% / 3,2% davam ~4 níveis por hora na Dungeon)
-const KILL_PCT = { 0: 0.005, 1: 0.007, 2: 0.008 }, BOSS_PCT = 0.15;
+// VIP calibrado para o reset: Free ~30 dias de AUTO até o nível 1000 · VIP Ouro ~25 dias (+20%) · VIP Diamante ~24 dias (+25%)
+const KILL_PCT = { 0: 0.005, 1: 0.006, 2: 0.00625 }, BOSS_PCT = 0.15;
+const vipExpK = (pk) => (KILL_PCT[(pk && pk.tier) || 0] || KILL_PCT[0]) / KILL_PCT[0] * (pk && pk.welcome ? pk.exp : 1);
 // EXP ajustada ao monstro: quanto mais vida o monstro tem em relação a um monstro "padrão" do seu nível, mais EXP.
 // Assim matar rápido bicho fraco de mapa baixo não rende mais que caçar no mapa do seu nível (vale para todos os mapas).
 // Curva de referência = vida dos monstros comuns de cada nível (interpolada).
@@ -1745,7 +1747,7 @@ class World {
       distributed += baseZen;
       const pk = p.perks();
       const zen = Math.round(baseZen * pk.zen);
-      const exp = overCap(p, map && map.def) ? 0 : Math.round(expToNext(p.level) * BOSS_PCT * bossMapExp(map && map.def) * pk.exp * XP() * EXH.levelK(p) * GM.xpMult() * Math.max(0.1, share));
+      const exp = overCap(p, map && map.def) ? 0 : Math.round(expToNext(p.level) * BOSS_PCT * bossMapExp(map && map.def) * vipExpK(pk) * XP() * EXH.levelK(p) * GM.xpMult() * Math.max(0.1, share));
       p.exp += exp; p.zen += zen; p.bossesKilled++;
       EXH.record(p, 'boss', exp, { name: m.T.name });
       const heal = Math.round(p.maxHp * pk.healOnKill) + Math.round(p.maxHp * (p.hpOnKill || 0) / 100); if (heal > 0 && p.hp < p.maxHp) { const recovered = Math.min(heal, p.maxHp - p.hp); p.hp += recovered; map.emit({ k: 'heal', t: p.id, d: recovered }); }

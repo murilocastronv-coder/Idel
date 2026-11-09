@@ -2,7 +2,7 @@
 // MU Extreme Hard: quanto EXP cada monstro rende em cada nível, calibrado para ~320 horas de jogo ativo até o nível 1000
 // (jogador Free, sozinho, no mapa do seu nível). Nada aqui mexe em personagens: só no EXP que os próximos abates rendem.
 //
-// EXP por abate = barra do nível × % do plano (Free 0,5% · Ouro 0,7% · Diamante 0,8%) × vida do monstro × bônus do mapa
+// EXP por abate = barra do nível × % do plano (Free 0,5% · Ouro 0,6% · Diamante 0,625%) × vida do monstro × bônus do mapa
 //               × corte geral × CURVA(nível) ÷ (1 + resets × perReset)
 // CURVA(nível): multiplicadores em níveis-âncora (configuráveis no ADM), interpolados suavemente entre si (escala log),
 // sem saltos entre faixas. A barra de EXP de cada nível (EXP necessária) continua a mesma: quem já tem EXP guardada não perde nada.

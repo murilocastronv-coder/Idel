@@ -23,14 +23,14 @@ t('tempo total Free solo perto de 320 h (±10%) e marcos dentro de ±20%', () =>
   for (const [l, h] of EXH.TARGET.slice(2)) assert(Math.abs(P[l] - h) / h < 0.2, `nível ${l}: ${P[l]} h (meta ${h})`);
 });
 
-t('VIP mantém a proporção: Ouro = 1,4× e Diamante = 1,6× o Free', () => {
+t('VIP: Ouro = 1,2× e Diamante = 1,25× o Free (reset em ~25 e ~24 dias)', () => {
   const T = G.MONSTERS[Object.keys(G.MONSTERS).find((k) => !G.MONSTERS[k].boss && G.MONSTERS[k].level >= 300)];
   const def = Object.values(G.WORLD).find((d) => d.minLevel === 300);
   const free = W.killExp(S.player('dark_knight', 400, 'basic', null), T, def, S.player('dark_knight', 400, 'basic', null).perks());
   const pg = S.player('dark_knight', 400, 'basic', 'gold'), pd = S.player('dark_knight', 400, 'basic', 'diamond');
   const gold = W.killExp(pg, T, def, pg.perks()), dia = W.killExp(pd, T, def, pd.perks());
-  assert(Math.abs(gold / free - 1.4) < 0.01, `ouro ${gold / free}`);
-  assert(Math.abs(dia / free - 1.6) < 0.01, `diamante ${dia / free}`);
+  assert(Math.abs(gold / free - 1.2) < 0.01, `ouro ${gold / free}`);
+  assert(Math.abs(dia / free - 1.25) < 0.01, `diamante ${dia / free}`);
 });
 
 t('reset deixa 5% mais difícil por reset (sem mexer no nível)', () => {
