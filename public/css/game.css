@@ -798,3 +798,8 @@ body.idle-stage #minimap { display: none; }
 .pvp-list { list-style: none; margin: 8px 0; padding: 0; max-height: 50vh; overflow-y: auto; }
 .pvp-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,.08); }
 .pvp-list small { color: #c8bba0; }
+
+/* troca rápida 2D | 3D */
+.gfx-btn { border-color: #7a5ad8; color: #e0d4ff; }
+.gfx-btn b { color: #fff; }
+.gfx-btn .off { opacity: .5; }

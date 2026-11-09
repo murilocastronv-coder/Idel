@@ -485,12 +485,13 @@
   // ------------------------------------------------------------------ câmera e projeção
   const PITCH = 0.8; // ~46° olhando para baixo (estilo MU)
   const focus = V3();
-  W3.setView = function (fx, fy, zoomPx, cvW, cvH) {
+  W3.setView = function (fx, fy, zoomPx, cvW, cvH, pitch, lift) {
     // distância tal que, no ponto focado, 1 unidade do mapa = zoomPx pixels (as sobreposições 2D batem com o 3D)
-    const pxPerM = zoomPx * K;
+    // pitch/lift opcionais: a tela idle usa a câmera baixa (de lado) olhando um pouco acima do chão
+    const pxPerM = zoomPx * K, P = pitch || PITCH;
     const dist = cvH / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * pxPerM);
-    focus.set(fx / K, 0, fy / K);
-    camera.position.set(focus.x, Math.sin(PITCH) * dist, focus.z + Math.cos(PITCH) * dist);
+    focus.set(fx / K, lift || 0, fy / K);
+    camera.position.set(focus.x, (lift || 0) + Math.sin(P) * dist, focus.z + Math.cos(P) * dist);
     camera.lookAt(focus);
     camera.updateMatrixWorld();
     W3.cvW = cvW; W3.cvH = cvH;

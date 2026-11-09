@@ -21,7 +21,11 @@ const DEFAULTS = {
   curve: [[1,10.338],[10,10.338],[20,11.387],[30,11.118],[40,11.259],[50,12.236],[75,14.006],[100,17.543],[150,18.033],[200,21.256],[250,22.564],[300,19.229],[350,17.885],[400,18.298],[450,16.38],[500,12.991],[550,12.507],[600,15.376],[650,14.229],[700,12.135],[750,7.752],[800,5.27],[850,4.227],[900,3.424],[950,2.717],[1000,2.47]],
   // % da barra que um monstro do seu nível dá ao Free (igual em todos os mapas). 0,0039 = 0,39% por monstro no nível 1;
   // o corte progressivo (levelCut) faz cair até 40% disso no nível 1000. VIP Ouro +20%, Diamante +25%.
-  killPct: 0.0039,
+  killPct: 0.005,
+  // começo rápido (jogo idle): bônus no EXP por monstro que some aos poucos. Nível 1 = ×(1 + earlyBoost) (~8 monstros por nível),
+  // nível 30 ≈ ×10, nível 60 ≈ ×4, nível 100 ≈ ×2, nível 150+ ≈ sem bônus.
+  earlyBoost: 24,
+  earlyScale: 30,
   bossKills: 30,           // um boss vale quantos monstros do nível
   perReset: 0.05,          // cada reset deixa 5% mais difícil (igual ao sistema anterior)
   globalMult: 0.793,       // multiplicador dos prêmios fixos de EXP (missões, eventos): +50% junto com o EXP dos monstros no servidor idle
@@ -57,9 +61,10 @@ function levelK(p) {
 }
 
 // fração da barra por abate de um monstro do nível (antes do ajuste pela vida do monstro): % fixa × corte por nível ÷ resets
+const earlyAt = (L, C) => 1 + Math.max(0, Number(C.earlyBoost) || 0) * Math.exp(-(Math.max(1, L) - 1) / Math.max(1, Number(C.earlyScale) || 30));
 function killFrac(p) {
-  const C = cfg(), k = Number(C.killPct);
-  return (k > 0 ? k : 0.0039) * cutAt((p && p.level) || 1, C.levelCut) / (1 + ((p && p.resets) || 0) * (Number(C.perReset) || 0));
+  const C = cfg(), k = Number(C.killPct), L = (p && p.level) || 1;
+  return (k > 0 ? k : 0.005) * earlyAt(L, C) * cutAt(L, C.levelCut) / (1 + ((p && p.resets) || 0) * (Number(C.perReset) || 0));
 }
 
 // prêmios fixos de EXP (missões, Boss Mundial, eventos): mesmo corte geral e progressivo do farm (sem a curva,
@@ -116,12 +121,12 @@ function liveStats() {
 const BASE_KILLS = 1 / (0.005 * 0.6 * 1.2);   // abates por nível na medição (BASE_MIN)
 // horas estimadas de AUTO até cada marco (Free solo): abates por nível × segundos por abate medidos
 function projection(killPct, levelCut) {
-  const C = cfg(), k = killPct === undefined ? (Number(C.killPct) || 0.0039) : killPct, cut = levelCut === undefined ? C.levelCut : levelCut;
+  const C = cfg(), k = killPct === undefined ? (Number(C.killPct) || 0.005) : killPct, cut = levelCut === undefined ? C.levelCut : levelCut;
   let h = 0;
   const out = {};
   for (let L = 1; L < 1000; L++) {
     const secPerKill = interp(BASE_MIN, L) * 60 / BASE_KILLS;
-    h += (1 / (k * cutAt(L, cut))) * secPerKill / 3600;
+    h += (1 / (k * earlyAt(L, C) * cutAt(L, cut))) * secPerKill / 3600;
     if ([50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].includes(L + 1)) out[L + 1] = h;
   }
   out[1000] = h;
@@ -154,4 +159,4 @@ function adminView() {
   return { ok: true, config: c, defaults: DEFAULTS, target: TARGET, projection: projection(), live: liveStats() };
 }
 
-module.exports = { init, cfg, levelK, rewardK, killFrac, curveAt, cutAt, partyBonus, projection, save, adminView, interp, record, onLevel, liveStats, TARGET, BASE_MIN, DEFAULTS };
+module.exports = { init, cfg, levelK, rewardK, killFrac, earlyAt, curveAt, cutAt, partyBonus, projection, save, adminView, interp, record, onLevel, liveStats, TARGET, BASE_MIN, DEFAULTS };

@@ -136,7 +136,7 @@ const overCap = () => false;
 function killExp(p, T, def, pk) {
   if (overCap(p, def)) return 0;
   // GM.xpMult(): evento temporário de EXP do GM (1 quando não há evento)
-  // Hard: % fixa da barra por monstro do nível (EXH.killFrac: 0,39% no nível 1 caindo até 0,156% no 1000), igual em todos os mapas,
+  // Hard: % fixa da barra por monstro do nível (EXH.killFrac: 0,5% × bônus de começo no nível 1, caindo até 0,2% no 1000), igual em todos os mapas,
   // × vantagem do VIP × vida do monstro comparada a um monstro comum do nível. Evento de EXP do GM continua valendo.
   return Math.max(1, Math.round(expToNext(p.level) * EXH.killFrac(p) * vipExpK(pk) * hpK(T, p.level) * GM.xpMult()));
 }
@@ -837,34 +837,7 @@ class World {
       case 'auto': {
         p.auto = !!msg.on; p.dirty = true;
         if (!p.auto) { p.target = null; p.moveTo = null; return; }
-        // Cidades seguras não têm monstros de farm: guie o personagem para Nória
-        // (área inicial) ou para o último mapa de caça desbloqueado.
-        if (p.map && p.map.def.safe && !p.duel) {
-          // já está numa cidade com monstros (área de treino ou Devias): luta ali mesmo, em qualquer nível
-          if (monsterCombatAt(p, p.map.def)) return;
-          const training = p.map.def.training;
-          if (training && (p.level <= training.maxLevel || autoFarmMapId(p) === p.map.id)) {
-            const a = training.area;
-            if (!insideRect(p, a)) {
-              p.target = null;
-              p.moveTo = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
-              p.send({ type: 'log', kind: 'info', text: 'Modo AUTO: indo para a área de treinamento.' });
-            }
-            return;
-          }
-          const dest = autoFarmMapId(p);
-          if (dest && dest !== p.map.id) {
-            const def = G.WORLD[dest];
-            this.enterMap(p, dest);
-            if (def.training) {
-              const a = def.training.area;
-              p.moveTo = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
-            }
-            p.send({ type: 'log', kind: 'info', text: `Modo AUTO: indo caçar em ${def.name}.` });
-          } else if (!dest) {
-            p.send({ type: 'log', kind: 'warn', text: 'Não há mapa de caça desbloqueado para seu nível.' });
-          }
-        }
+        this.autoGuide(p, false);
         return;
       }
       case 'potion': return this.usePotion(p, msg.kind === 'mp' ? 'mp' : 'hp', Date.now(), true);
@@ -1393,6 +1366,37 @@ class World {
     p.send({ type: 'log', kind: on ? 'pvp' : 'info', text: on
       ? 'Modo PvP LIGADO: fora da cidade você pode atacar e ser atacado por quem também está com PvP ligado. Em Vulcanus o PvP é sempre aberto.'
       : 'Modo PvP desligado.' });
+  }
+
+  // AUTO numa cidade segura: leva o herói para a área de treino ou para o mapa de caça do nível dele.
+  // Roda ao ligar o AUTO e também sozinho a cada poucos segundos (quem entra no jogo com o AUTO já ligado
+  // ou renasce na cidade depois de morrer não fica parado sem ganhar EXP).
+  autoGuide(p, quiet) {
+    if (!p.map || !p.map.def.safe || p.duel || p.dead || p.map.def.arena) return;
+    // já está numa cidade com monstros (área de treino ou Devias): luta ali mesmo, em qualquer nível
+    if (monsterCombatAt(p, p.map.def)) return;
+    const training = p.map.def.training;
+    if (training && (p.level <= training.maxLevel || autoFarmMapId(p) === p.map.id)) {
+      const a = training.area;
+      if (!insideRect(p, a)) {
+        p.target = null;
+        p.moveTo = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+        if (!quiet) p.send({ type: 'log', kind: 'info', text: 'Modo AUTO: indo para a área de treinamento.' });
+      }
+      return;
+    }
+    const dest = autoFarmMapId(p);
+    if (dest && dest !== p.map.id) {
+      const def = G.WORLD[dest];
+      this.enterMap(p, dest);
+      if (def.training) {
+        const a = def.training.area;
+        p.moveTo = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+      }
+      p.send({ type: 'log', kind: 'info', text: `Modo AUTO: indo caçar em ${def.name}.` });
+    } else if (!dest && !quiet) {
+      p.send({ type: 'log', kind: 'warn', text: 'Não há mapa de caça desbloqueado para seu nível.' });
+    }
   }
 
   // ----- Procurar luta (PvP do jogo idle) -----
@@ -2014,7 +2018,10 @@ class World {
     if (p.moveTo) { this.stepToward(p, p.moveTo, PLAYER_SPEED * moveK(p) * dt); if (dist(p, p.moveTo) < 2) p.moveTo = null; return; }
     // evento com área segura diminuindo: o automático volta para dentro antes de lutar
     if (p.auto && map.def.arena) { const e = ARENA.escape(p); if (e) { p.target = null; this.stepToward(p, e, PLAYER_SPEED * moveK(p) * dt); return; } }
-    if (map.def.safe && !p.duel && !trainingCombat) return;
+    if (map.def.safe && !p.duel && !trainingCombat) {
+      if (p.auto && !p.moveTo && now - (p.guideAt || 0) > 3000) { p.guideAt = now; this.autoGuide(p, true); }
+      return;
+    }
 
     // escolhe alvo
     if (p.target && (p.target.isPlayer ? !this.hostile(p, p.target) : (p.target.dead || !map.monsters.includes(p.target)))) p.target = null;

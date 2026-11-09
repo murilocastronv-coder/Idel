@@ -828,7 +828,7 @@
   function load3D() {
     const files = ['vendor/three/three.min.js', 'vendor/three/GLTFLoader.js', 'vendor/three/SkeletonUtils.js', 'vendor/three/RoomEnvironment.js',
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
-      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=4', 'world3d-actors.js?v=9', 'world3d-fx.js?v=1'];
+      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=5', 'world3d-actors.js?v=9', 'world3d-fx.js?v=1'];
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();
@@ -1510,13 +1510,20 @@
       }
       const sx = Math.max(0, camX), sy = Math.max(0, camY);
       const sw = Math.min(S.map.w - sx, vw), sh = Math.min(S.map.h - sy, vh);
-      if (is3d && !idleActive()) {
+      if (is3d && idleActive() && me && me.rx != null) {
+        // 3D na tela idle: câmera baixa de lado, herói à esquerda e os inimigos em fila à direita (cenário 3D do mapa)
+        const lane = idleLane3d(now, dt, me);
+        W3().setView(me.rx + (cv.width * 0.17) / (zoom * 1.15), me.ry, zoom * 1.15, cv.width, cv.height, 0.3, 2.2);
+        W3().setActors(lane.actors);
+        W3().render(now);
+        drawIdle3dOverlay(now, lane);
+      } else if (is3d && !idleActive()) {
         // 3D: a câmera olha para o centro da mesma janela que o 2D mostraria
         W3().setView(camX + vw / 2, camY + vh / 2, zoom, cv.width, cv.height);
         W3().setActors(actors3d(now, me));
         W3().render(now);
       } else if (!idleActive()) ctx.drawImage(S.ground, sx * GS, sy * GS, sw * GS, sh * GS, (sx - camX) * zoom, (sy - camY) * zoom, sw * zoom, sh * zoom);
-      if (idleActive()) drawIdleStage(now, dt, me);
+      if (idleActive() && is3d) { /* desenhado acima */ } else if (idleActive()) drawIdleStage(now, dt, me);
       else {
       drawArenaZone(now);
       drawDangers(now);
@@ -2410,9 +2417,87 @@
     const er = S.data.expRef, next = Math.floor(100 * Math.pow(L, 2.1) + 200);
     const vipK = [1, 1.2, 1.25][(S.char.vip && S.char.vip.tier) || 0] * (S.char.vip && S.char.vip.welcome ? 1.2 : 1);
     const cut = 1 - (Number(er.levelCut) || 0) * (Math.min(1000, Math.max(1, L)) - 1) / 999;
-    return next * (Number(er.killPct) || 0.0039) * cut * vipK / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
+    return next * (Number(er.killPct) || 0.005) * earlyK(L) * cut * vipK / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
   }
 
+  // ----- tela idle no 3D -----
+  // mesma escolha de inimigos do 2D, mas em coordenadas do mapa: a fila sai do herói para a direita (+x)
+  function idleEnemyList(now, me) {
+    const myT = S.me && S.me.target, list = [];
+    S.monsters.forEach((m, id) => {
+      if (m.rx == null) return;
+      if (m.dead && !(m.dyingAt && now - m.dyingAt < 1100)) return;
+      const d = Math.hypot(m.rx - me.rx, m.ry - me.ry);
+      if (d > 520 && id !== myT) return;
+      list.push({ e: m, d: id === myT ? -1 : d, mon: true, id });
+    });
+    S.players.forEach((p, id) => { if (id !== S.youId && p.info && !p.dead && hostileTo(p)) list.push({ e: p, d: Math.hypot(p.rx - me.rx, p.ry - me.ry) - 1000, mon: false, id }); });
+    list.sort((a, b) => a.d - b.d);
+    return list.slice(0, 6);
+  }
+  function heroActor(p, now, x, y, faceX, walking) {
+    const info = p.info;
+    const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : null;
+    let act = 'idle';
+    if (p.dyingAt) act = 'death'; else if (now < (p.attackUntil || 0)) act = 'attack'; else if (now < (p.hurtUntil || 0) && now >= (p.hitAt || 0)) act = 'hit'; else if (walking) act = 'walk';
+    return { key: 'p' + p.id, kind: 'hero', cls: info.cls, eq, x, y, vx: walking ? 40 : 0, vy: 0, speed: walking ? 40 : 0, act,
+      atkAt: p.attackStart, atkDur: (p.attackUntil || 0) - (p.attackStart || 0), hitAt: p.hitAt, flip: faceX < x, faceX, faceY: y, flash: false };
+  }
+  function idleLane3d(now, dt, me) {
+    const shown = idleEnemyList(now, me);
+    const fighting = shown.some((x) => !x.e.dead && x.d < 160) || now < (me.attackUntil || 0) + 900;
+    const walking = !fighting && !me.dead && !!(S.me && S.me.auto) && (me.speed || 0) > 5;
+    const ax = me.rx, ay = me.ry, actors = [], marks = [];
+    actors.push(heroActor(me, now, ax, ay, ax + 200, walking));
+    marks.push({ e: me, x: ax, y: ay, me: true, h: 2.05 });
+    const pm = (S.social && S.social.party && S.social.party.members) || [];
+    let k = 0;
+    S.players.forEach((p, id) => {
+      if (id === S.youId || !p.info || p.dead || !pm.includes(p.info.name) || k >= 4) return;
+      const x = ax - 26 - Math.floor(k / 2) * 24, y = ay + (k % 2 ? 14 : -14); k++;
+      actors.push(heroActor(p, now, x, y, x + 200, walking));
+      marks.push({ e: p, x, y, party: true, h: 2.05 });
+    });
+    shown.forEach((s, i) => {
+      const e = s.e;
+      let st = IDL.enemies.get(s.id);
+      const tx = ax + 30 + i * 24, ty = ay + (i ? ((i % 3) - 1) * 12 : 0);
+      if (!st || st.d3 !== true) { st = { x: ax + 160 + i * 20, y: ty, d3: true }; IDL.enemies.set(s.id, st); }
+      const kk = Math.min(1, dt * 3.2), moving = Math.abs(tx - st.x) > 3;
+      st.x += (tx - st.x) * kk; st.y += (ty - st.y) * kk; st.seen = now;
+      if (s.mon) {
+        let [act] = animOf(e, now);
+        if (!e.dyingAt && /^(walk|run)$/.test(act)) act = 'idle';
+        if (moving && act === 'idle') act = 'walk';
+        actors.push({ key: 'm' + e.id, kind: 'mon', mtype: e.type, tint: e.tint, golden: e.golden || null, scale: e.scale || 1, x: st.x, y: st.y, vx: moving ? -40 : 0, vy: 0, speed: moving ? 40 : 0, act,
+          atkAt: e.attackStart, atkDur: (e.attackUntil || 0) - (e.attackStart || 0), hitAt: e.hitAt, flip: true, faceX: ax, faceY: ay, flash: now < (e.hurtUntil || 0) && now >= (e.hitAt || 0) && !e.dyingAt });
+        marks.push({ e, x: st.x, y: st.y, mon: true, h: MON_H3(e) / W3().K * 1.08 });
+      } else {
+        actors.push(heroActor(e, now, st.x, st.y, ax, moving));
+        marks.push({ e, x: st.x, y: st.y, enemy: true, h: 2.05 });
+      }
+    });
+    for (const [key, st] of IDL.enemies) if (now - st.seen > 3000) IDL.enemies.delete(key);
+    return { actors, marks, walking, fighting };
+  }
+  function drawIdle3dOverlay(now, lane) {
+    const K3 = W3().K, first = lane.marks.find((m) => m.mon);
+    for (const m of lane.marks) {
+      const e = m.e, top = W3().project(m.x, m.y, m.h * K3), mid = W3().project(m.x, m.y, m.h * K3 * 0.5);
+      e.ix = top[0]; e.iy = mid[1]; e.itop = top[1];
+      if (e.dead) continue;
+      e.hpShow = e.hpShow === undefined ? e.hp : e.hpShow + (e.hp - e.hpShow) * 0.25;
+      if (m.mon) {
+        hpBar(top[0], top[1] - 6 * dpr, 34 * dpr, e.hpShow / e.maxHp, e.boss ? '#c06bff' : e.elite ? '#ffb02e' : '#e0473a');
+        if (e.boss || e.golden || e.elite || m === first) label(`${e.golden ? '♛ ' : ''}${e.name} Nv.${e.level}`, top[0], top[1] - 9 * dpr, e.boss ? '#e0b0ff' : e.golden || e.elite ? '#ffd36b' : '#f0e6cc', 10);
+      } else if (e.info) {
+        hpBar(top[0], top[1] - 6 * dpr, 30 * dpr, e.hpShow / e.maxHp, m.me ? '#6aa84f' : m.enemy ? '#ff5a4a' : '#4aa3ff');
+        label(`${m.enemy ? '⚔ ' : ''}${e.info.name} ${e.info.level}`, top[0], top[1] - 9 * dpr, m.me ? '#ffd36b' : m.enemy ? '#ff9a6a' : '#9ad0ff', 10);
+      }
+    }
+    drawIdleFloats(now);
+    drawIdleHud(now, cv.width, cv.height, Math.round(cv.height * 0.5), lane.walking, lane.fighting);
+  }
   // toque na tela idle: tocar num monstro (ou jogador inimigo) escolhe o alvo
   function idleTap(ev) {
     const x = ev.clientX * dpr, y = ev.clientY * dpr;
@@ -2739,6 +2824,8 @@
     }
     return P[P.length - 1][1];
   }
+  // bônus de começo do servidor idle (igual ao servidor: some aos poucos até o nível ~150)
+  function earlyK(L) { const er = (S.data && S.data.expRef) || {}; return 1 + (Number(er.earlyBoost) || 0) * Math.exp(-(Math.max(1, L) - 1) / (Number(er.earlyScale) || 30)); }
   function expEstimate(t) {
     if (!S.char) return '?';
     const L = S.char.level, next = Math.floor(100 * Math.pow(L, 2.1) + 200);
@@ -2747,7 +2834,7 @@
     const vipK = [1, 1.2, 1.25][(S.char.vip && S.char.vip.tier) || 0] * (S.char.vip && S.char.vip.welcome ? 1.2 : 1);
     const hk = Math.min(er.max || 6, Math.max(er.min || 0.02, (t.maxHp || 1) / refHp(L)));
     const cut = 1 - (Number(er.levelCut) || 0) * (Math.min(1000, Math.max(1, L)) - 1) / 999;
-    const base = (Number(er.killPct) || 0.0039) * 100 * cut / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
+    const base = (Number(er.killPct) || 0.005) * 100 * earlyK(L) * cut / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
     const pct = t.boss ? base * (Number(er.bossKills) || 30) * vipK : base * vipK * hk;
     return `${fmt.format(Math.round(next * pct / 100))} (${pct.toFixed(pct < 1 ? 2 : 1)}%)`;
   }
@@ -5284,6 +5371,11 @@
 
   // ================= botões =================
   // ----- Procurar luta: lista de quem está com PvP ligado; "Lutar" leva você até o adversário -----
+  // 2D ou 3D: o jogador escolhe (a página recarrega com o outro gráfico, mesmo servidor e mesmo herói)
+  if ($('#gfx-switch')) {
+    $('#gfx-switch').innerHTML = is3d ? '<span class="off">2D</span> | <b>3D</b>' : '<b>2D</b> | <span class="off">3D</span>';
+    $('#gfx-switch').onclick = () => setGfx(is3d ? '2d' : '3d');
+  }
   $('#pvp-find') && ($('#pvp-find').onclick = () => send({ type: 'pvpfind' }));
   function showPvpList(m) {
     const rows = m.rows || [];
