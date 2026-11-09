@@ -5,7 +5,7 @@
   const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
   const PA = window.PixelArt;
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const state = { data: null, me: null, selectedClass: 'dark_knight', selectedItem: 0, rankBy: 'resets' };
+  const state = { data: null, me: null, selectedClass: 'dark_knight', selectedItem: 0, rankBy: 'bosses' };
   if (/MUIdleApp/.test(navigator.userAgent)) document.querySelectorAll('[data-hide-in-app]').forEach((e) => e.remove());
   const fmt = new Intl.NumberFormat(window.I18N ? I18N.locale : 'pt-BR');
 
@@ -603,9 +603,9 @@
     const tb = $('#rank-body');
     try {
       const { ranking } = await api('GET', `/api/ranking?by=${by}`);
-      const lastCol = $('#rank-last'); if (lastCol) lastCol.textContent = { pvp: 'PvP', bosses: 'Bosses' }[by] || 'Resets';
+      const lastCol = $('#rank-last'); if (lastCol) lastCol.textContent = { pvp: 'PvP', bosses: 'Bosses' }[by] || 'Bosses';
       tb.innerHTML = ranking.length ? ranking.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)}</td>
-        <td>${esc((state.data && state.data.classes[r.class] || {}).name || r.class)}</td><td>${by === 'pvp' ? `${r.pvp_kills} · ${r.duel_wins} duelos` : by === 'bosses' ? r.bosses_killed : r.resets}</td></tr>`).join('')
+        <td>${esc((state.data && state.data.classes[r.class] || {}).name || r.class)}</td><td>${by === 'pvp' ? `${r.pvp_kills} · ${r.duel_wins} duelos` : r.bosses_killed}</td></tr>`).join('')
         : '<tr><td colspan="4" class="empty">Nenhum herói ainda. Crie o seu e seja o primeiro do ranking.</td></tr>';
     } catch (e) { tb.innerHTML = `<tr><td colspan="4" class="empty">${esc(e.message)}</td></tr>`; }
   }

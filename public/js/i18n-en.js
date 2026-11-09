@@ -2387,5 +2387,19 @@ window.I18N_EN = {
 "Excellent semi-full: 2–4 opções aleatórias na armadura e na arma; anel, pendente e asa com 6 opções.": "Excellent semi-full: 2–4 random options on armor and weapon; ring, pendant and wings with 6 options.",
 "Armadura e arma: 2–4 opções Excellent semi-full · anel, pendente e asa: 6 opções semi-full": "Armor and weapon: 2–4 semi-full Excellent options · ring, pendant and wings: 6 semi-full options",
 "EXP +20% (reset ~2 meses antes do Free)": "EXP +20% (reset ~2 months before Free)",
-"EXP +25% (reset ~2 meses e meio antes do Free)": "EXP +25% (reset ~2.5 months before Free)"
+"EXP +25% (reset ~2 meses e meio antes do Free)": "EXP +25% (reset ~2.5 months before Free)",
+"Jogo IDLE em pixel art · 2D e 3D": "IDLE game in pixel art · 2D and 3D",
+"Outros jogadores no mapa": "Other players on the map",
+"Vendo todos · esconder": "Seeing everyone · hide",
+"Modo idle · mostrar todos": "Idle mode · show everyone",
+"Modo idle": "Idle mode",
+"Mostrando todos os jogadores do mapa.": "Showing every player on the map.",
+"Modo idle: só aparecem inimigos de PvP, sua party e adversários de arena.": "Idle mode: only PvP enemies, your party and arena opponents show up.",
+"Ranking por bosses, PvP, temporada, eventos e guildas": "Rankings by bosses, PvP, season, events and guilds",
+"EXP +20% (nível 1000 ~5 semanas antes do Free)": "EXP +20% (level 1000 ~5 weeks before Free)",
+"EXP +25% (nível 1000 ~1 mês e meio antes do Free)": "EXP +25% (level 1000 ~1.5 months before Free)",
+"Um jogo": "An",
+"idle": "idle",
+": seu herói caça sozinho no AUTO, evolui e coleta tesouros até quando você está fora. Cada um joga no seu mundo, sem ninguém atrapalhando, e o PvP continua para quem quiser lutar. Suba do nível 1 ao 1000.": " game: your hero hunts on its own in AUTO, levels up and collects treasure even while you are away. Everyone plays in their own world with no one in the way, and PvP is still there for those who want to fight. Climb from level 1 to 1000.",
+"IDLE · Servidor novo, todos no nível 1": "IDLE · New server, everyone at level 1"
 };

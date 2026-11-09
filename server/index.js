@@ -693,7 +693,6 @@ route('GET', '/api/news', async () => {
 
 route('GET', '/api/ranking', async (req, url) => {
   const orders = {
-    resets: 'master_resets DESC, resets DESC, level DESC, exp DESC',
     power: 'combat_power DESC, level DESC',
     bosses: 'bosses_killed DESC, level DESC',
     pvp: 'pvp_kills DESC, duel_wins DESC, level DESC',
@@ -707,7 +706,7 @@ route('GET', '/api/ranking', async (req, url) => {
     return { by: want, ranking: rows };
   }
   if (want === 'guilds') { const g = await require('./guild').rankingRows(); return { by: want, ranking: g.slice(0, 50).map((x) => ({ name: x.name, leader: x.leader, members: x.members, score: x.score, wins: x.wins })) }; }
-  const by = orders[want] ? want : 'resets';
+  const by = orders[want] ? want : 'bosses';
   const { rows } = await db.query(`SELECT name, class, level, resets, master_resets, combat_power, bosses_killed, pvp_kills, duel_wins
     FROM characters ORDER BY ${orders[by]}, id ASC LIMIT 50`);
   return { by, ranking: rows };
@@ -1160,6 +1159,7 @@ setInterval(() => {
 
 (async () => {
   await db.migrate();
+  await require('./wipe').run(() => world);   // servidor idle: todos ao nível 1 (uma vez)
   await refreshCounts();
   await VIP.loadPrices();
   await STORE.init();

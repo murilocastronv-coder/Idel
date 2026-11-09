@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>MuonlineClaude — MMORPG em pixel art 2D e 3D</title>
-  <meta name="description" content="MuonlineClaude: MMORPG em pixel art 2D e 3D. Heróis com asas e montarias, mapas até o nível 1000, bosses, eventos, guildas, mercado e caça automática.">
+  <title>MuonlineClaude — Jogo IDLE em pixel art 2D e 3D</title>
+  <meta name="description" content="MuonlineClaude: jogo IDLE em pixel art 2D e 3D, com PvP. Heróis com asas e montarias, mapas até o nível 1000, bosses, eventos, guildas, mercado e caça automática.">
   <meta name="theme-color" content="#141b33">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=2">
@@ -40,10 +40,10 @@
     <section class="hero" id="topo">
       <canvas id="hero-scene" aria-label="Cena animada: os seis heróis enfrentam monstros em Lorencia ao entardecer" role="img"></canvas>
       <div class="hero-copy">
-        <p class="logo-kicker">MMORPG em pixel art · 2D e 3D</p>
+        <p class="logo-kicker">Jogo IDLE em pixel art · 2D e 3D</p>
         <h1 class="logo logo-mc"><span class="lg-a">Muonline</span><span class="lg-b">Claude</span></h1>
-        <p class="tagline">Monte seu herói, abra as asas e suba até o nível 1000. Seu herói caça, evolui e coleta tesouros até quando você está fora.</p>
-        <p class="mode-badge"><b>Servidor Hard XP</b> · 4 poderes por classe · missões diárias e prêmios de login</p>
+        <p class="tagline">Um jogo <b>idle</b>: seu herói caça sozinho no AUTO, evolui e coleta tesouros até quando você está fora. Cada um joga no seu mundo, sem ninguém atrapalhando, e o PvP continua para quem quiser lutar. Suba do nível 1 ao 1000.</p>
+        <p class="mode-badge"><b>IDLE · Servidor novo, todos no nível 1</b> · 4 poderes por classe · missões diárias e prêmios de login</p>
         <div class="hero-actions">
           <button class="btn btn-gold" id="btn-play" type="button" title="Gráfico em pixel art">Jogar 2D</button>
           <button class="btn btn-gold play-3d" id="btn-play-3d" type="button" title="Gráfico 3D realista (mesmo servidor)">Jogar 3D</button>
@@ -224,7 +224,7 @@
             <li class="done">Party, amigos e chat (local, global, party, guilda e privado)</li>
             <li class="done">PvP livre fora da cidade e duelos</li>
             <li class="done">Troca segura entre jogadores</li>
-            <li class="done">Ranking por resets, nível, bosses e PvP</li>
+            <li class="done">Ranking por bosses, PvP, temporada, eventos e guildas</li>
           </ul>
         </article>
         <article class="window rm-card">
@@ -257,13 +257,12 @@
       <div id="ranking">
         <h2>Ranking</h2>
         <div class="tabs" role="tablist" aria-label="Ordenar ranking">
-          <button type="button" role="tab" class="tab is-on" data-by="resets" aria-selected="true">Resets</button>
-          <button type="button" role="tab" class="tab" data-by="bosses" aria-selected="false">Bosses</button>
+          <button type="button" role="tab" class="tab is-on" data-by="bosses" aria-selected="true">Bosses</button>
           <button type="button" role="tab" class="tab" data-by="pvp" aria-selected="false">PvP</button>
         </div>
         <div class="window rank-box">
           <table class="rank">
-            <thead><tr><th scope="col">#</th><th scope="col">Herói</th><th scope="col">Classe</th><th scope="col" id="rank-last">Resets</th></tr></thead>
+            <thead><tr><th scope="col">#</th><th scope="col">Herói</th><th scope="col">Classe</th><th scope="col" id="rank-last">Bosses</th></tr></thead>
             <tbody id="rank-body"><tr><td colspan="4" class="muted">Carregando…</td></tr></tbody>
           </table>
         </div>
@@ -419,12 +418,12 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="/js/i18n-en.js?v=50"></script>
+  <script src="/js/i18n-en.js?v=51"></script>
 
   <script src="/js/i18n.js?v=20"></script>
 
   <script src="/js/pixel.js?v=31"></script>
   <script src="/js/sprites.js?v=44"></script>
-  <script src="/js/app.js?v=9926"></script>
+  <script src="/js/app.js?v=9927"></script>
 </body>
 </html>

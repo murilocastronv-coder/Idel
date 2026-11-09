@@ -19,12 +19,12 @@ const BASE_MIN = [[1,8.832],[10,11.535],[20,12.5],[30,13.102],[40,15.289],[50,20
 const DEFAULTS = {
   // [nível, multiplicador do EXP por abate]
   curve: [[1,10.338],[10,10.338],[20,11.387],[30,11.118],[40,11.259],[50,12.236],[75,14.006],[100,17.543],[150,18.033],[200,21.256],[250,22.564],[300,19.229],[350,17.885],[400,18.298],[450,16.38],[500,12.991],[550,12.507],[600,15.376],[650,14.229],[700,12.135],[750,7.752],[800,5.27],[850,4.227],[900,3.424],[950,2.717],[1000,2.47]],
-  // % da barra que um monstro do seu nível dá ao Free (igual em todos os mapas). 0,002 = 0,2% por monstro no nível 1;
+  // % da barra que um monstro do seu nível dá ao Free (igual em todos os mapas). 0,003 = 0,3% por monstro no nível 1;
   // o corte progressivo (levelCut) faz cair até 40% disso no nível 1000. VIP Ouro +20%, Diamante +25%.
-  killPct: 0.002,
+  killPct: 0.003,
   bossKills: 30,           // um boss vale quantos monstros do nível
   perReset: 0.05,          // cada reset deixa 5% mais difícil (igual ao sistema anterior)
-  globalMult: 0.407,       // multiplicador geral do EXP: calibrado para 1 reset a cada ~2 meses (~1.440 h de AUTO até o nível 1000)
+  globalMult: 0.61,        // multiplicador dos prêmios fixos de EXP (missões, eventos): +50% junto com o EXP dos monstros no servidor idle
   levelCut: 0.6,           // corte progressivo: 0% no nível 1 subindo até este valor no nível 1000 (0,6 = −60%)
   offline: 1,              // multiplicador extra do EXP no farm offline (1 = igual ao online calculado)
   party: { 2: 0.10, 3: 0.12, 4: 0.15, 5: 0.20 },   // bônus por membros ativos e perto
@@ -59,7 +59,7 @@ function levelK(p) {
 // fração da barra por abate de um monstro do nível (antes do ajuste pela vida do monstro): % fixa × corte por nível ÷ resets
 function killFrac(p) {
   const C = cfg(), k = Number(C.killPct);
-  return (k > 0 ? k : 0.002) * cutAt((p && p.level) || 1, C.levelCut) / (1 + ((p && p.resets) || 0) * (Number(C.perReset) || 0));
+  return (k > 0 ? k : 0.003) * cutAt((p && p.level) || 1, C.levelCut) / (1 + ((p && p.resets) || 0) * (Number(C.perReset) || 0));
 }
 
 // prêmios fixos de EXP (missões, Boss Mundial, eventos): mesmo corte geral e progressivo do farm (sem a curva,
@@ -116,7 +116,7 @@ function liveStats() {
 const BASE_KILLS = 1 / (0.005 * 0.6 * 1.2);   // abates por nível na medição (BASE_MIN)
 // horas estimadas de AUTO até cada marco (Free solo): abates por nível × segundos por abate medidos
 function projection(killPct, levelCut) {
-  const C = cfg(), k = killPct === undefined ? (Number(C.killPct) || 0.002) : killPct, cut = levelCut === undefined ? C.levelCut : levelCut;
+  const C = cfg(), k = killPct === undefined ? (Number(C.killPct) || 0.003) : killPct, cut = levelCut === undefined ? C.levelCut : levelCut;
   let h = 0;
   const out = {};
   for (let L = 1; L < 1000; L++) {

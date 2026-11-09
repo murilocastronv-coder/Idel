@@ -136,7 +136,7 @@ const overCap = () => false;
 function killExp(p, T, def, pk) {
   if (overCap(p, def)) return 0;
   // GM.xpMult(): evento temporário de EXP do GM (1 quando não há evento)
-  // Hard: % fixa da barra por monstro do nível (EXH.killFrac: 0,2% no nível 1 caindo até 0,08% no 1000), igual em todos os mapas,
+  // Hard: % fixa da barra por monstro do nível (EXH.killFrac: 0,3% no nível 1 caindo até 0,12% no 1000), igual em todos os mapas,
   // × vantagem do VIP × vida do monstro comparada a um monstro comum do nível. Evento de EXP do GM continua valendo.
   return Math.max(1, Math.round(expToNext(p.level) * EXH.killFrac(p) * vipExpK(pk) * hpK(T, p.level) * GM.xpMult()));
 }
@@ -659,6 +659,10 @@ class World {
   async joinLocked(client, charId, room) {
     const lastQ = this.lastQueues.get(String(charId));
     if (lastQ) await lastQ.catch(() => {});
+    // wipe do servidor idle: confere a ficha antes de carregar (com a conta certa)
+    if ((await db.query('SELECT 1 FROM characters WHERE id = $1 AND account_id = $2', [charId, client.meta.accountId])).rowCount) {
+      await require('./wipe').onJoin(charId).catch((e) => console.error('[wipe] entrada:', e.message));
+    }
     const { rows } = await db.query(`SELECT c.*, EXTRACT(EPOCH FROM (now() - c.last_seen_at))::int AS offline_secs,
         a.username AS acc_username, a.email AS acc_email, a.vip0_until, a.vip1_until, a.vip2_until, a.role AS acc_role, a.muted_until
       FROM characters c JOIN accounts a ON a.id = c.account_id WHERE c.id = $1 AND c.account_id = $2`, [charId, client.meta.accountId]);

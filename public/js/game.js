@@ -1194,7 +1194,7 @@
     const WCOL = { uncommon: '#9affb0', rare: '#9ad0ff', epic: '#d8a0ff', legendary: '#ffe08a', ancestral: '#ff9a9a' };
     S.players.forEach((pl) => {
       const eq = pl.info && pl.info.eq;
-      if (!eq || pl.dead || !inView(pl.rx, pl.ry, 40)) return;
+      if (!eq || pl.dead || pl.hid || !inView(pl.rx, pl.ry, 40)) return;
       if (eq.wings) {
         pl.wingAcc = (pl.wingAcc || 0) + dt * (3 + Math.min(4, pl.speed / 20 || 0)) * k * (eq.wingPlus >= 9 ? 1.6 : 1);
         if (pl.wingAcc > 1) {
@@ -1255,7 +1255,7 @@
     const vis = (S.lights || []).filter((l) => l.x + l.r > camX && l.x - l.r < camX + cv.width / zoom && l.y + l.r > camY && l.y - l.r < camY + cv.height / zoom);
     if (Q.lights) S.players.forEach((player) => {
       const equipment = player.info && player.info.eq;
-      if (!equipment || player.rx < camX - 120 || player.rx > camX + cv.width / zoom + 120 || player.ry < camY - 120 || player.ry > camY + cv.height / zoom + 120) return;
+      if (!equipment || player.hid || player.rx < camX - 120 || player.rx > camX + cv.width / zoom + 120 || player.ry < camY - 120 || player.ry > camY + cv.height / zoom + 120) return;
       const glowByRarity = { uncommon: '95,220,120', rare: '90,170,255', epic: '190,100,255', legendary: '255,190,70', ancestral: '255,90,120' };
       const rarity = equipment.wingRarity || equipment.wr || (equipment.wp >= 9 ? 'legendary' : equipment.wp >= 6 ? 'rare' : null);
       const glow = glowByRarity[rarity] || (equipment.wings ? '130,220,255' : null);
@@ -1484,7 +1484,7 @@
     else { ctx.fillStyle = '#0b1020'; ctx.fillRect(0, 0, cv.width, cv.height); }
     if (S.map && S.ground) {
       LK = LIGHT_K[S.map.theme] ?? 1;
-      S.players.forEach((p) => lerp(p, dt));
+      S.players.forEach((p, id) => { lerp(p, dt); p.hid = !seenPlayer(p, id); });
       S.monsters.forEach((m) => lerp(m, dt));
       const me = S.players.get(S.youId);
       const vw = cv.width / zoom, vh = cv.height / zoom;
@@ -1608,7 +1608,7 @@
         atkAt: m.attackStart, atkDur: (m.attackUntil || 0) - (m.attackStart || 0), hitAt: m.hitAt, flip: m.flip, faceX: tgt ? tgt.rx : undefined, faceY: tgt ? tgt.ry : undefined, flash: now < (m.hurtUntil || 0) && now >= (m.hitAt || 0) && !m.dyingAt });
     });
     S.players.forEach((p) => {
-      if (!p.info || p.rx === null || p.rx === undefined) return;
+      if (!p.info || p.hid || p.rx === null || p.rx === undefined) return;
       if (p.dead && !(p.dyingAt && now - p.dyingAt < 2400)) return;
       const [act0] = heroAnim(p, now);
       const act = act0.replace(/_(front|back)$/, '');
@@ -1655,7 +1655,7 @@
       if (e.boss || e.elite || e.id === myTarget) label(`${e.name} Nv.${e.level}`, x, top - 4 * dpr, e.boss ? '#e0b0ff' : e.elite ? '#ffd36b' : '#f0e6cc', 10);
     });
     S.players.forEach((e) => {
-      if (!e.info || e.dead || e.rx === null || e.rx === undefined) return;
+      if (!e.info || e.hid || e.dead || e.rx === null || e.rx === undefined) return;
       const info = e.info, isMe = e === me;
       const [fx, fy] = toScreen(e.rx, e.ry);
       if (e.id === myTarget) { ctx.strokeStyle = '#ff5a4a'; ctx.lineWidth = dpr * 2; ctx.beginPath(); ctx.ellipse(fx, fy, 12 * zoom, 4.5 * zoom, 0, 0, Math.PI * 2); ctx.stroke(); }
@@ -1682,7 +1682,7 @@
       list.push(['m', m, m.ry]);
     });
     S.players.forEach((p) => {
-      if (!p.info) return;
+      if (!p.info || p.hid) return;
       if (p.dead && !(p.dyingAt && now - p.dyingAt < 1400)) return;
       list.push(['p', p, p.ry]);
     });
@@ -2085,12 +2085,35 @@
     mmx.drawImage(S.ground, 0, 0, W, H);
     mmx.fillStyle = 'rgba(11,16,32,.35)'; mmx.fillRect(0, 0, W, H);
     S.monsters.forEach((m) => { if (m.dead) return; mmx.fillStyle = m.boss ? '#c06bff' : m.elite ? '#ffb02e' : '#ff5a4a'; const s = m.boss ? 4 : 2; mmx.fillRect(m.rx * sx - s / 2, m.ry * sy - s / 2, s, s); });
-    S.players.forEach((p, id) => { if (!p.info || p.dead) return; mmx.fillStyle = id === S.youId ? '#ffd36b' : '#59c7ff'; mmx.fillRect(p.rx * sx - 2, p.ry * sy - 2, id === S.youId ? 4 : 3, id === S.youId ? 4 : 3); });
+    S.players.forEach((p, id) => { if (!p.info || p.dead || p.hid) return; mmx.fillStyle = id === S.youId ? '#ffd36b' : '#59c7ff'; mmx.fillRect(p.rx * sx - 2, p.ry * sy - 2, id === S.youId ? 4 : 3, id === S.youId ? 4 : 3); });
     mmx.strokeStyle = 'rgba(255,255,255,.6)'; mmx.lineWidth = 1;
     mmx.strokeRect(camX * sx, camY * sy, cv.width / zoom * sx, cv.height / zoom * sy);
   }
 
   // ================= PvP no cliente (só para a interface; o servidor decide) =================
+  // Modo idle: cada um joga no seu mundo. Outros jogadores só aparecem se forem inimigos de PvP (os dois com PvP ligado,
+  // mapa de PvP, guerra de guildas ou duelo), da sua party ou numa arena/evento. Dá para ver todos nas Opções.
+  const SEE_KEY = 'mui_see_players';
+  function seeAll() { try { return localStorage.getItem(SEE_KEY) === 'on'; } catch (_) { return false; } }
+  function seenPlayer(p, id) {
+    if (id === S.youId || seeAll() || !p.info) return true;
+    if (S.map && S.map.arena) return true;
+    const party = S.social && S.social.party;
+    if (party && (party.members || []).includes(p.info.name)) return true;
+    p.id = id;
+    return hostileTo(p);
+  }
+  function paintSeePlayers() {
+    const on = seeAll();
+    $$('[data-see-players]').forEach((b) => { b.textContent = on ? 'Vendo todos · esconder' : 'Modo idle · mostrar todos'; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('btn-gold', on); });
+  }
+  $$('[data-see-players]').forEach((b) => { b.onclick = () => {
+    const on = !seeAll();
+    try { localStorage.setItem(SEE_KEY, on ? 'on' : 'off'); } catch (_) { /* sem armazenamento */ }
+    paintSeePlayers();
+    feed(on ? 'Mostrando todos os jogadores do mapa.' : 'Modo idle: só aparecem inimigos de PvP, sua party e adversários de arena.');
+  }; });
+  paintSeePlayers();
   function hostileTo(p) {
     if (!S.me || !p || !p.info || p.dead || p.id === S.youId) return false;
     if (S.duel && S.duel.with === p.id) return true;
@@ -2128,7 +2151,7 @@
     let wx = camX + cx * dpr / zoom, wy = camY + cy * dpr / zoom;
     if (is3d) { const q = W3().pick(cx, cy); if (!q) return null; wx = q[0]; wy = q[1]; }
     let pl = null, pd = 16;
-    S.players.forEach((p, id) => { if (id === S.youId || !p.info || p.dead) return; const d = Math.hypot(p.rx - wx, p.ry - 14 - wy); if (d < pd) { pd = d; pl = p; pl.id = id; } });
+    S.players.forEach((p, id) => { if (id === S.youId || !p.info || p.dead || p.hid) return; const d = Math.hypot(p.rx - wx, p.ry - 14 - wy); if (d < pd) { pd = d; pl = p; pl.id = id; } });
     return pl;
   }
   cv.addEventListener('contextmenu', (ev) => {
@@ -2168,7 +2191,7 @@
     // tocar num jogador abre o cartão (atacar / duelo)
     let pl = null, pd = 14;
     S.players.forEach((p, id) => {
-      if (id === S.youId || !p.info || p.dead) return;
+      if (id === S.youId || !p.info || p.dead || p.hid) return;
       const d = Math.hypot(p.rx - wx, p.ry - 14 - wy);
       if (d < pd) { pd = d; pl = p; }
     });
@@ -2360,7 +2383,7 @@
     const vipK = [1, 1.2, 1.25][(S.char.vip && S.char.vip.tier) || 0] * (S.char.vip && S.char.vip.welcome ? 1.2 : 1);
     const hk = Math.min(er.max || 6, Math.max(er.min || 0.02, (t.maxHp || 1) / refHp(L)));
     const cut = 1 - (Number(er.levelCut) || 0) * (Math.min(1000, Math.max(1, L)) - 1) / 999;
-    const base = (Number(er.killPct) || 0.002) * 100 * cut / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
+    const base = (Number(er.killPct) || 0.003) * 100 * cut / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
     const pct = t.boss ? base * (Number(er.bossKills) || 30) * vipK : base * vipK * hk;
     return `${fmt.format(Math.round(next * pct / 100))} (${pct.toFixed(pct < 1 ? 2 : 1)}%)`;
   }
@@ -3003,10 +3026,10 @@
   $('#btn-autoequip').onclick = () => send({ type: 'autoequip' });
 
   // ranking dentro do jogo
-  const RK = { by: 'resets', seq: 0 };
+  const RK = { by: 'bosses', seq: 0 };
   async function renderRank() {
     $$('#rank-tabs [data-by]').forEach((t) => { const on = t.dataset.by === RK.by; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); });
-    const last = { resets: 'Resets', bosses: 'Bosses', pvp: 'PvP', season: 'Pontos', wboss: 'Bosses Mundiais', events: 'Eventos', guilds: 'Pontos' }[RK.by];
+    const last = { bosses: 'Bosses', pvp: 'PvP', season: 'Pontos', wboss: 'Bosses Mundiais', events: 'Eventos', guilds: 'Pontos' }[RK.by];
     $('#g-rank-last').textContent = last;
     const tb = $('#g-rank-body');
     if (!tb.children.length) tb.innerHTML = '<tr><td colspan="5" class="muted">Carregando…</td></tr>';
@@ -3016,7 +3039,7 @@
       const J = await r.json(); const ranking = J.ranking || [];
       if (seq !== RK.seq || S.panel !== 'rank') return;
       const val = (x) => RK.by === 'pvp' ? `${x.pvp_kills} · ${x.duel_wins} duelos` : RK.by === 'bosses' ? x.bosses_killed : RK.by === 'season' ? fmt.format(x.points)
-        : RK.by === 'wboss' || RK.by === 'events' ? fmt.format(x.n) : RK.by === 'guilds' ? fmt.format(x.score) : x.resets;
+        : RK.by === 'wboss' || RK.by === 'events' ? fmt.format(x.n) : RK.by === 'guilds' ? fmt.format(x.score) : x.bosses_killed;
       const medal = ['🥇', '🥈', '🥉'];
       const sub = (x) => RK.by === 'guilds' ? `Mestre ${esc(x.leader || '—')} · ${x.members} membros` : esc((S.data.classes[x.class] || {}).name || x.class);
       $('#rank-note') && ($('#rank-note').textContent = RK.by === 'season' ? `${J.theme} · termina em ${Math.max(0, Math.ceil((J.endsAt - Date.now()) / 86400000))} dias · só pontos e ranking da temporada recomeçam` : '');
