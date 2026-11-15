@@ -18,7 +18,7 @@ const PLANS = {
     id: 'vip2', tier: 2, name: 'VIP Diamante', color: '#7fe3ff',
     prices: { 15: 2600, 30: 4680 },
     exp: 1.25, zen: 2, drop: 1.5, offlineH: 24, damage: 1, bossDrop: 1, questReward: 1, healOnKill: 0,
-    perks: ['EXP +25% (nível 1000 ~5 semanas antes do Free)', 'Zen em dobro', 'Drops +50%', 'Progresso offline de até 24 horas', 'Selo VIP Diamante no nome'],
+    perks: ['EXP +25% (nível 1000 ~1 mês antes do Free)', 'Zen em dobro', 'Drops +50%', 'Progresso offline de até 24 horas', 'Selo VIP Diamante no nome'],
   },
 };
 const DAYS = [15, 30];

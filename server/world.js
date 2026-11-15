@@ -27,6 +27,7 @@ const CLS = require('./classes');
 const ARENA = require('./arena');
 const UPG = require('./upgrade');
 const TRADE = require('./trade');
+const CHEST = require('./idlechest');   // baú de caça e prêmios de marco de nível (jogo idle)
 const MARKET = require('./market');
 const RSTAT = require('./reset-status');
 const SOCIAL = require('./social');
@@ -711,6 +712,7 @@ class World {
     GUILD.onJoin(this, p);
     p.send(Q.state(p));
     if (report) p.send({ type: 'offline', ...report });
+    CHEST.milestones(this, p); CHEST.send(p);
     // Minha Jornada: lembra o próximo objetivo logo depois de entrar
     setTimeout(() => { if (this.players.get(p.charId) !== p) return; try { p.send({ type: 'log', kind: 'quest', text: `🧭 Seu próximo objetivo: ${JOURNEY.journey(p).goal.text}` }); } catch (_) { /* sem jornada */ } }, 6000);
     p.dirty = true;
@@ -859,6 +861,7 @@ class World {
       case 'duelAnswer': return this.duelAnswer(p, String(msg.id), !!msg.accept);
       case 'pvp': return this.setPvp(p, !!msg.on, Date.now());
       case 'pvpfind': return this.pvpFind(p);
+      case 'chest': return CHEST.open(this, p);
       case 'pvpgo': return this.pvpGo(p, String(msg.id || ''));
       case 'room': return this.switchRoom(p, msg.room);
       case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS, ...[1, 2, 3, 4, 5, 6, 7].flatMap((n) => ['devil_eye_' + n, 'devil_key_' + n, 'scroll_of_archangel_' + n, 'blood_bone_' + n])])));
@@ -1108,6 +1111,7 @@ class World {
     p.pots.hp = Math.floor(p.pots.hp);
     p.zen += Math.round(zen);
     p.kills += kills;
+    CHEST.addKills(p, kills);   // o baú de caça enche também fora do jogo
     const found = [];
     const drops = Math.min(12 + (pk.tier || 0) * 6, Math.round(kills * mDrop * pk.drop * rand(0.7, 1.1)));
     for (let i = 0; i < drops; i++) {
@@ -1211,6 +1215,7 @@ class World {
     if (p.settings.autoStats) this.autoDistribute(p); else p.recalc();
     p.hp = p.maxHp; p.mp = p.maxMp;
     if (p.quests && p.quests.ach) this.achieve(p, silent);
+    if (p.level % 10 === 0 && p.quests) CHEST.milestones(this, p);
     if (!silent && p.map) {
       p.map.emit({ k: 'lv', t: p.id });
       for (const o of p.map.players.values()) o.send({ type: 'pj', ...this.pinfo(p) });
@@ -1738,6 +1743,7 @@ class World {
     if (p.mpOnKill && p.mp < p.maxMp) p.mp = Math.min(p.maxMp, p.mp + Math.round(p.maxMp * p.mpOnKill / 100));
     // Zen de monstros normais é sempre creditado diretamente; bônus VIP/evento não ultrapassam o teto.
     this.quest(p, 'kill', 1); this.quest(p, 'zen', zen);
+    CHEST.addKills(p, 1);
     if (m.T.elite) this.quest(p, 'elite', 1);
     PROG.addPoints(p, m.T.elite ? 'elite' : 'kill');
     if (map && !map.def.arena && !m.T.training) {

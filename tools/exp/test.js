@@ -17,9 +17,9 @@ t('curva contínua: de um nível para o outro o EXP por abate muda pouco (menos 
   }
 });
 
-t('barra por monstro do nível: 12,5% no nível 1 (começo rápido), 0,2% no 1000 (igual em todos os mapas)', () => {
-  assert(Math.abs(EXH.killFrac({ level: 1 }) - 0.125) < 1e-9, EXH.killFrac({ level: 1 }));
-  assert(Math.abs(EXH.killFrac({ level: 1000 }) - 0.002) < 1e-6, EXH.killFrac({ level: 1000 }));
+t('barra por monstro do nível: 5,46% no nível 1 (começo rápido), 0,168% no 1000 (igual em todos os mapas)', () => {
+  assert(Math.abs(EXH.killFrac({ level: 1 }) - 0.0546) < 1e-9, EXH.killFrac({ level: 1 }));
+  assert(Math.abs(EXH.killFrac({ level: 1000 }) - 0.00168) < 1e-6, EXH.killFrac({ level: 1000 }));
   assert(EXH.killFrac({ level: 30 }) > EXH.killFrac({ level: 60 }) && EXH.killFrac({ level: 60 }) > EXH.killFrac({ level: 150 }));
   const p = S.player('dark_knight', 300, 'basic', null), T = { hp: W.refHp(300) };
   const a = W.killExp(p, T, Object.values(G.WORLD).find((d) => d.minLevel === 300), p.perks());

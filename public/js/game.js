@@ -133,6 +133,7 @@
       case 'guild': onGuild(m); return;
       case 'friends': onFriends(m); return;
       case 'pvplist': return showPvpList(m);
+      case 'idlechest': S.chest = m; paintChest(); return;
       case 'kicked': S.kicked = true; centerMsg(esc(m.reason), true); return;
       case 'left': location.href = backHome(); return;
       case 'error':
@@ -2276,6 +2277,18 @@
     const actors = [];
     party.slice(0, 4).forEach((p, i) => actors.push({ kind: 'h', e: p, x: heroX + SLOTS[i][0] * W, y: laneY + SLOTS[i][1] * bg.pathH * 1.4 }));
     if (me && me.info) actors.push({ kind: 'h', e: me, x: heroX, y: laneY, me: true });
+    // outros jogadores do mapa (perto de você): aparecem na trilha de trás, na posição relativa a você
+    if (me && me.rx != null) {
+      const others = [];
+      S.players.forEach((p, id) => {
+        if (id === S.youId || !p.info || p.dead || p.hid || p.rx == null || pm.includes(p.info.name) || hostileTo(p)) return;
+        const d = Math.hypot(p.rx - me.rx, p.ry - me.ry); if (d < 700) others.push([d, p]);
+      });
+      others.sort((a, b) => a[0] - b[0]).slice(0, 5).forEach(([, p], i) => {
+        const x = Math.max(24 * dpr, Math.min(W - 24 * dpr, heroX + (p.rx - me.rx) * 1.1 * dpr));
+        actors.push({ kind: 'o', e: p, x, y: bg.pathTop + bg.pathH * (0.12 + (i % 2) * 0.1) });
+      });
+    }
     // posições dos inimigos: o alvo encosta no herói, os outros fazem fila pela direita
     const frontX = heroX + 46 * sc;
     shown.forEach((s, i) => {
@@ -2293,6 +2306,7 @@
     for (const a of actors) {
       if (a.kind === 'h') { idleHero(a.e, a.x, a.y, sc, now, walking, false); continue; }
       if (a.kind === 'p') { idleHero(a.e, a.x, a.y, sc, now, a.moving, true); continue; }
+      if (a.kind === 'o') { idleHero(a.e, a.x, a.y, sc * 0.9, now, (a.e.speed || 0) > 10, !!a.e.faceLeft); continue; }
       const m = a.e, name = monSprite(m), meta = Sprites.meta('monsters', name);
       let [act, t, once] = animOf(m, now);
       if (!m.dyingAt && /^(walk|run)$/.test(act)) act = 'idle';
@@ -2317,7 +2331,8 @@
       const e = a.e;
       e.hpShow = e.hpShow === undefined ? e.hp : e.hpShow + (e.hp - e.hpShow) * 0.25;
       hpBar(a.x, e.itop - 6 * dpr, 18 * sc, e.hpShow / e.maxHp, a.me ? '#6aa84f' : a.kind === 'p' ? '#ff5a4a' : '#4aa3ff');
-      label(`${a.kind === 'p' ? '⚔ ' : ''}${e.info.name} ${e.info.level}`, a.x, e.itop - 9 * dpr, a.me ? '#ffd36b' : a.kind === 'p' ? '#ff9a6a' : '#9ad0ff', 10);
+      const vipT = e.info.vip || 0, tag = a.kind === 'p' ? '⚔ ' : vipT === 2 ? '◆ ' : vipT === 1 ? '★ ' : '';
+      label(`${tag}${e.info.guild && a.kind === 'o' ? '[' + e.info.guild + '] ' : ''}${e.info.name} ${e.info.level}`, a.x, e.itop - 9 * dpr, a.me ? '#ffd36b' : a.kind === 'p' ? '#ff9a6a' : a.kind === 'o' ? '#e8f0ff' : '#9ad0ff', 10);
     }
     // golpes: projéteis simples e números de dano
     drawIdleFloats(now);
@@ -2384,7 +2399,7 @@
       ctx.beginPath(); ctx.arc(x, cy, R, 0, Math.PI * 2); ctx.fillStyle = '#3a1418'; ctx.fill();
       ctx.lineWidth = 2 * dpr; ctx.strokeStyle = '#a04a4a'; ctx.stroke();
       ctx.font = `700 ${Math.round(12 * dpr)}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#ffb0a0';
-      ctx.fillText(S.boss ? '☠' : '🔒', x, cy + dpr);
+      ctx.fillText(S.boss ? '☠' : '🏅', x, cy + dpr);
     }
     // barra: abates estimados para o próximo nível (pela EXP de um monstro comum do nível)
     const me2 = S.me || {}, next = Number(me2.next) || Math.floor(100 * Math.pow(L, 2.1) + 200), have = Number(me2.exp) || 0, frac = Math.max(0, Math.min(1, have / next));
@@ -2396,7 +2411,7 @@
     ctx.fillStyle = g; ctx.fillRect(bx, by, bw * frac, bh);
     ctx.font = `700 ${Math.round(9.5 * dpr)}px "Exo 2", system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
     ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.lineWidth = 3 * dpr;
-    const txt = `${(frac * 100).toFixed(1).replace('.', ',')}% · faltam ~${fmt.format(left)} monstros para o nível ${L + 1}`;
+    const txt = `${(frac * 100).toFixed(1).replace('.', ',')}% · faltam ~${fmt.format(left)} monstros para o nível ${L + 1}${S.chest && S.chest.nextMilestone ? ` · 🏅 prêmio no ${S.chest.nextMilestone}` : ''}`;
     ctx.strokeText(txt, W / 2, by + bh / 2 + dpr); ctx.fillText(txt, W / 2, by + bh / 2 + dpr);
     // números grandes: Zen, dano por segundo e abates
     const dps = idleDps(now);
@@ -2408,7 +2423,7 @@
     idleChip(cx0 + (cw + 6 * dpr) * 2, cyy, cw, ch, 'ABATES', bigNum(IDL.kills), 'nesta sessão', '#9ad0ff', '☠');
     // estado do grupo
     const status = !(S.me && S.me.auto) ? 'AUTO desligado · toque em AUTO para o herói caçar sozinho'
-      : fighting ? 'Em combate' : walking ? 'Procurando monstros…' : '';
+      : fighting ? 'Em combate' : walking ? (IDL.enemies.size ? 'Indo até o monstro…' : 'Procurando monstros…') : '';
     if (status) label(status, W / 2, groundY - 8 * dpr, !(S.me && S.me.auto) ? '#ffb02e' : '#f0e6cc', 11);
   }
   // EXP de um monstro comum do nível (a mesma conta do servidor: % da barra × VIP × corte por nível ÷ resets)
@@ -2417,7 +2432,7 @@
     const er = S.data.expRef, next = Math.floor(100 * Math.pow(L, 2.1) + 200);
     const vipK = [1, 1.2, 1.25][(S.char.vip && S.char.vip.tier) || 0] * (S.char.vip && S.char.vip.welcome ? 1.2 : 1);
     const cut = 1 - (Number(er.levelCut) || 0) * (Math.min(1000, Math.max(1, L)) - 1) / 999;
-    return next * (Number(er.killPct) || 0.005) * earlyK(L) * cut * vipK / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
+    return next * (Number(er.killPct) || 0.0042) * earlyK(L) * cut * vipK / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
   }
 
   // ----- tela idle no 3D -----
@@ -2458,6 +2473,13 @@
       actors.push(heroActor(p, now, x, y, x + 200, walking));
       marks.push({ e: p, x, y, party: true, h: 2.05 });
     });
+    S.players.forEach((p, id) => {
+      if (id === S.youId || !p.info || p.dead || p.hid || p.rx == null || pm.includes(p.info.name) || hostileTo(p)) return;
+      if (Math.hypot(p.rx - ax, p.ry - ay) > 500) return;
+      const x = p.rx, y = Math.min(p.ry, ay - 22);
+      actors.push(heroActor(p, now, x, y, p.faceLeft ? x - 200 : x + 200, (p.speed || 0) > 10));
+      marks.push({ e: p, x, y, other: true, h: 2.05 });
+    });
     shown.forEach((s, i) => {
       const e = s.e;
       let st = IDL.enemies.get(s.id);
@@ -2492,7 +2514,7 @@
         if (e.boss || e.golden || e.elite || m === first) label(`${e.golden ? '♛ ' : ''}${e.name} Nv.${e.level}`, top[0], top[1] - 9 * dpr, e.boss ? '#e0b0ff' : e.golden || e.elite ? '#ffd36b' : '#f0e6cc', 10);
       } else if (e.info) {
         hpBar(top[0], top[1] - 6 * dpr, 30 * dpr, e.hpShow / e.maxHp, m.me ? '#6aa84f' : m.enemy ? '#ff5a4a' : '#4aa3ff');
-        label(`${m.enemy ? '⚔ ' : ''}${e.info.name} ${e.info.level}`, top[0], top[1] - 9 * dpr, m.me ? '#ffd36b' : m.enemy ? '#ff9a6a' : '#9ad0ff', 10);
+        label(`${m.enemy ? '⚔ ' : ''}${e.info.name} ${e.info.level}`, top[0], top[1] - 9 * dpr, m.me ? '#ffd36b' : m.enemy ? '#ff9a6a' : m.other ? '#e8f0ff' : '#9ad0ff', 10);
       }
     }
     drawIdleFloats(now);
@@ -2542,7 +2564,7 @@
   // Modo idle: cada um joga no seu mundo. Outros jogadores só aparecem se forem inimigos de PvP (os dois com PvP ligado,
   // mapa de PvP, guerra de guildas ou duelo), da sua party ou numa arena/evento. Dá para ver todos nas Opções.
   const SEE_KEY = 'mui_see_players';
-  function seeAll() { try { return localStorage.getItem(SEE_KEY) === 'on'; } catch (_) { return false; } }
+  function seeAll() { try { return localStorage.getItem(SEE_KEY) !== 'off'; } catch (_) { return true; } }
   function seenPlayer(p, id) {
     if (id === S.youId || seeAll() || !p.info) return true;
     if (S.map && S.map.arena) return true;
@@ -2553,13 +2575,13 @@
   }
   function paintSeePlayers() {
     const on = seeAll();
-    $$('[data-see-players]').forEach((b) => { b.textContent = on ? 'Vendo todos · esconder' : 'Modo idle · mostrar todos'; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('btn-gold', on); });
+    $$('[data-see-players]').forEach((b) => { b.textContent = on ? 'Vendo todos · modo solo' : 'Modo solo · ver todos'; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('btn-gold', on); });
   }
   $$('[data-see-players]').forEach((b) => { b.onclick = () => {
     const on = !seeAll();
     try { localStorage.setItem(SEE_KEY, on ? 'on' : 'off'); } catch (_) { /* sem armazenamento */ }
     paintSeePlayers();
-    feed(on ? 'Mostrando todos os jogadores do mapa.' : 'Modo idle: só aparecem inimigos de PvP, sua party e adversários de arena.');
+    feed(on ? 'Mostrando todos os jogadores do mapa.' : 'Modo solo: só aparecem inimigos de PvP, sua party e adversários de arena.');
   }; });
   paintSeePlayers();
   function hostileTo(p) {
@@ -2834,7 +2856,7 @@
     const vipK = [1, 1.2, 1.25][(S.char.vip && S.char.vip.tier) || 0] * (S.char.vip && S.char.vip.welcome ? 1.2 : 1);
     const hk = Math.min(er.max || 6, Math.max(er.min || 0.02, (t.maxHp || 1) / refHp(L)));
     const cut = 1 - (Number(er.levelCut) || 0) * (Math.min(1000, Math.max(1, L)) - 1) / 999;
-    const base = (Number(er.killPct) || 0.005) * 100 * earlyK(L) * cut / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
+    const base = (Number(er.killPct) || 0.0042) * 100 * earlyK(L) * cut / (1 + (S.char.resets || 0) * (er.perReset != null ? er.perReset : 0.05));
     const pct = t.boss ? base * (Number(er.bossKills) || 30) * vipK : base * vipK * hk;
     return `${fmt.format(Math.round(next * pct / 100))} (${pct.toFixed(pct < 1 ? 2 : 1)}%)`;
   }
@@ -3037,6 +3059,8 @@
   function marketNotice() {
     if (mkNoticeShown) return;
     mkNoticeShown = true;
+    const day = new Date().toDateString();
+    try { if (localStorage.getItem('mui_mk_notice_day') === day) return; localStorage.setItem('mui_mk_notice_day', day); } catch (_) { /* sem armazenamento */ }
     setTimeout(() => {
       const n = document.createElement('div');
       n.className = 'mk-notice'; n.setAttribute('role', 'status'); n.setAttribute('aria-live', 'polite');
@@ -3556,7 +3580,7 @@
         <div><span>Próximo nível em</span><br>${perMin ? fmtDur(eta) : 'cace para medir'}</div><div><span>Mapa recomendado</span><br>${rec ? esc(rec.name) : '—'}</div>
         ${nextMark ? `<div><span>Próximo marco</span><br>Nível ${nextMark}${nextMark % 200 === 0 || nextMark === 950 ? ' · fase ' + stageOf(nextMark + 1) : ''}</div>` : ''}
       </div>
-      <p class="muted small">Servidor Extreme Hard: a EXP fica mais difícil a cada nível. Medido pelos seus abates dos últimos 10 minutos (missões e eventos não entram na conta).</p>
+      <p class="muted small">Servidor idle: os primeiros níveis são rápidos e a EXP fica mais difícil a cada nível. Medido pelos seus abates dos últimos 10 minutos (missões e eventos não entram na conta).</p>
     </div>`;
   }
   setInterval(() => { if (S.panel === 'hero') { const b = $('#prog-box'); if (b) b.outerHTML = progressHtml(); } }, 3000);
@@ -5376,6 +5400,31 @@
     $('#gfx-switch').innerHTML = is3d ? '<span class="off">2D</span> | <b>3D</b>' : '<b>2D</b> | <span class="off">3D</span>';
     $('#gfx-switch').onclick = () => setGfx(is3d ? '2d' : '3d');
   }
+  // ----- baú de caça -----
+  function paintChest() {
+    const c = S.chest, b = $('#idle-chest'); if (!c || !b) return;
+    b.hidden = false;
+    const full = c.ready >= c.max;
+    $('#ic-title').textContent = c.ready ? `Baú de caça · ${c.ready}/${c.max} pronto${c.ready > 1 ? 's' : ''}` : 'Baú de caça';
+    $('#ic-fill').style.width = full ? '100%' : `${Math.min(100, c.prog / c.need * 100)}%`;
+    $('#ic-sub').textContent = full ? 'CHEIO: abra para voltar a encher' : c.ready ? `toque para abrir · ${c.prog}/${c.need}` : `${c.prog}/${c.need} monstros`;
+    b.classList.toggle('ready', c.ready > 0); b.classList.toggle('full', full);
+    placeChest();
+  }
+  // fica logo acima do botão AUTO (não cobre as mensagens nem as caixas do topo)
+  function placeChest() {
+    const b = $('#idle-chest'), a = $('#btn-auto'); if (!b || !a || b.hidden) return;
+    const r = a.getBoundingClientRect(); if (!r.height) return;
+    b.style.top = Math.max(8, Math.round(r.top - b.offsetHeight - 10)) + 'px';
+  }
+  window.addEventListener('resize', () => setTimeout(placeChest, 50));
+  $('#idle-chest') && ($('#idle-chest').onclick = () => {
+    const c = S.chest; if (!c) return;
+    if (c.ready > 0) { send({ type: 'chest' }); if (window.Sfx) Sfx.coin(); return; }
+    tradeDialog(`<h3>🎁 Baú de caça</h3><p>O baú enche sozinho com os monstros que o seu herói mata, até fora do jogo. A cada <b>${c.need} monstros</b> fica um baú pronto, com Zen, poções e chance de joias, Box Kundun e equipamento.</p>
+      <p>Ele guarda no máximo <b>${c.max} baús</b>. Com ${c.max} prontos ele <b>para de encher</b>: volte para abrir!</p><p class="muted">Agora: ${c.prog}/${c.need} monstros.</p>
+      ${c.nextMilestone ? `<p>🏅 Próximo prêmio de marco: <b>nível ${c.nextMilestone}</b> (Zen, poções e joia; a cada 50 níveis, uma Box Kundun).</p>` : ''}`, [{ label: 'Fechar' }]);
+  });
   $('#pvp-find') && ($('#pvp-find').onclick = () => send({ type: 'pvpfind' }));
   function showPvpList(m) {
     const rows = m.rows || [];

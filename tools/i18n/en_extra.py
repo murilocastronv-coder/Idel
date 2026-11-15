@@ -326,4 +326,12 @@ EN_EXTRA = {
     "Funciona no celular?": "Does it work on phones?", "Funciona no navegador do celular e no app Android, em 2D ou 3D, no mesmo servidor do computador.": "It works in the phone browser and the Android app, in 2D or 3D, on the same server as the computer.",
     "Níveis para subir": "Levels to climb", "Servidor idle novo: todo mundo começou do nível 1. Monstros mais fortes dão mais experiência.": "New idle server: everyone started at level 1. Stronger monsters give more experience.",
     "Procurar luta": "Find a fight", "⚔ Procurar luta": "⚔ Find a fight", "⚔ Lutar": "⚔ Fight", "Atualizar": "Refresh",
+    "Baú de caça": "Hunting chest", "Servidor idle: os primeiros níveis são rápidos e a EXP fica mais difícil a cada nível.": "Idle server: the first levels are fast and EXP gets harder every level.",
+    "Vendo todos · modo solo": "Seeing everyone · solo mode", "Modo solo · ver todos": "Solo mode · see everyone", "Vendo todos": "Seeing everyone",
+    "Modo solo: só aparecem inimigos de PvP, sua party e adversários de arena.": "Solo mode: only PvP enemies, your party and arena opponents show up.",
+    "O RPG online que joga por você. Seu herói caça sozinho, sobe de nível e junta tesouros até com o jogo fechado, nos mesmos mapas que os outros jogadores.": "The online RPG that plays for you. Your hero hunts on its own, levels up and gathers treasure even with the game closed, on the same maps as the other players.",
+    "Online: todos se veem": "Online: everyone sees each other", "⚔ Online e PvP": "⚔ Online and PvP",
+    "Os jogadores se veem nos mapas, formam party e guildas. Quer briga? Ligue o PvP e toque em": "Players see each other on the maps and form parties and guilds. Want a fight? Turn on PvP and tap",
+    "Volte para abrir os baús": "Come back to open the chests",
+    "O baú de caça enche com os monstros que o herói mata, até 3 baús. Cheio, ele para: volte para abrir. A cada 10 níveis tem prêmio.": "The hunting chest fills with the monsters your hero kills, up to 3 chests. When full it stops: come back to open them. Every 10 levels there's a reward.",
 }

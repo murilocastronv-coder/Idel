@@ -21,10 +21,10 @@ const DEFAULTS = {
   curve: [[1,10.338],[10,10.338],[20,11.387],[30,11.118],[40,11.259],[50,12.236],[75,14.006],[100,17.543],[150,18.033],[200,21.256],[250,22.564],[300,19.229],[350,17.885],[400,18.298],[450,16.38],[500,12.991],[550,12.507],[600,15.376],[650,14.229],[700,12.135],[750,7.752],[800,5.27],[850,4.227],[900,3.424],[950,2.717],[1000,2.47]],
   // % da barra que um monstro do seu nível dá ao Free (igual em todos os mapas). 0,0039 = 0,39% por monstro no nível 1;
   // o corte progressivo (levelCut) faz cair até 40% disso no nível 1000. VIP Ouro +20%, Diamante +25%.
-  killPct: 0.005,
-  // começo rápido (jogo idle): bônus no EXP por monstro que some aos poucos. Nível 1 = ×(1 + earlyBoost) (~8 monstros por nível),
-  // nível 30 ≈ ×10, nível 60 ≈ ×4, nível 100 ≈ ×2, nível 150+ ≈ sem bônus.
-  earlyBoost: 24,
+  killPct: 0.0042,
+  // começo rápido (jogo idle): bônus no EXP por monstro que some aos poucos. Nível 1 = ×(1 + earlyBoost) (~18 monstros por nível),
+  // nível 30 ≈ ×5,4, nível 60 ≈ ×2,6, nível 100 ≈ ×1,4, nível 150+ ≈ sem bônus.
+  earlyBoost: 12,
   earlyScale: 30,
   bossKills: 30,           // um boss vale quantos monstros do nível
   perReset: 0.05,          // cada reset deixa 5% mais difícil (igual ao sistema anterior)

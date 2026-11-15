@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=2">
   <link rel="stylesheet" href="/css/style.css?v=22">
-  <link rel="stylesheet" href="/css/game.css?v=46">
+  <link rel="stylesheet" href="/css/game.css?v=47">
   <link rel="stylesheet" href="/css/art-upgrade.css?v=7">
   <link rel="stylesheet" href="/css/gfx-fx.css?v=13">
 </head>
@@ -22,6 +22,10 @@
     <div class="gbar mp"><span id="mp-fill"></span><em id="mp-text">0/0</em></div>
     <div class="me-zen"><i class="coin"></i><span id="zen">0</span> Zen</div>
   </div>
+
+  <button class="idle-chest" id="idle-chest" type="button" hidden aria-label="Baú de caça">
+    <span class="ic-ico" aria-hidden="true">🎁</span><span class="ic-txt"><b id="ic-title">Baú de caça</b><i class="ic-bar"><em id="ic-fill"></em></i><small id="ic-sub">0/150</small></span>
+  </button>
 
   <!-- HUD superior direito -->
   <div class="hud-map">
@@ -227,7 +231,7 @@
     <div id="config-body"></div>
     <p class="lang-row"><span>Idioma / Language</span> <button class="lang-switch" type="button" data-lang-switch aria-label="PT / EN"></button></p>
     <p class="lang-row"><span>Mensagens do chat na tela</span> <button class="btn small" type="button" data-chat-screen aria-pressed="true">Mostrando</button></p>
-    <p class="lang-row"><span>Outros jogadores no mapa</span> <button class="btn small" type="button" data-see-players aria-pressed="false">Modo idle</button></p>
+    <p class="lang-row"><span>Outros jogadores no mapa</span> <button class="btn small" type="button" data-see-players aria-pressed="true">Vendo todos</button></p>
     <p class="discord-row"><a class="btn-discord" href="https://discord.gg/bSEx5JYUF7" target="_blank" rel="noopener">Entrar no Discord</a></p>
   </section>
 
@@ -300,7 +304,7 @@
     <div class="row"><button class="btn btn-gold" type="button" data-close>Continuar</button></div>
   </dialog>
 
-  <script src="/js/i18n-en.js?v=53"></script>
+  <script src="/js/i18n-en.js?v=54"></script>
 
   <script src="/js/i18n.js?v=20"></script>
 
@@ -310,6 +314,6 @@
   <script src="/js/music.js?v=1"></script>
   <script src="/js/admin-tools.js?v=25"></script>
   <script src="/js/fenrir.js?v=6"></script>
-  <script src="/js/game.js?v=136"></script>
+  <script src="/js/game.js?v=137"></script>
 </body>
 </html>
