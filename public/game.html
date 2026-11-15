@@ -8,7 +8,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/fonts.css?v=2">
   <link rel="stylesheet" href="/css/style.css?v=22">
-  <link rel="stylesheet" href="/css/game.css?v=50">
+  <link rel="stylesheet" href="/css/game.css?v=54">
   <link rel="stylesheet" href="/css/art-upgrade.css?v=7">
   <link rel="stylesheet" href="/css/gfx-fx.css?v=13">
 </head>
@@ -69,7 +69,10 @@
 
   <!-- Barra inferior -->
   <div class="bottom">
+    <div class="vjoy" id="vjoy" aria-label="Joystick: arraste para andar" role="application"><div class="vj-base"><i class="vj-arrow"></i></div><div class="vj-knob"></div></div>
+    <button type="button" class="menu-btn" id="btn-menu" aria-expanded="false" aria-controls="game-menu" aria-label="Menu do jogo"><span aria-hidden="true">☰</span><small>MENU</small><i class="badge" id="menu-badge" hidden></i></button>
     <div class="actions">
+      <button type="button" class="act attack" id="btn-attack" aria-label="Atacar o inimigo mais perto"><span aria-hidden="true">⚔</span></button>
       <button type="button" class="act auto" id="btn-auto" aria-pressed="false"><b>AUTO</b><small id="auto-state">desligado</small></button>
       <button type="button" class="act pvp" id="btn-pvp" aria-pressed="false" title="Liga/desliga o modo PvP"><b>PvP</b><small id="pvp-state">desligado</small></button>
       <button type="button" class="act target" id="btn-ptarget" hidden title="Escolher o próximo jogador inimigo"><b>Alvo</b><small id="ptarget-n">0</small></button>
@@ -77,7 +80,7 @@
       <button type="button" class="act pot" id="btn-pot-hp" aria-label="Usar poção de vida"><canvas width="48" height="48" style="width:36px;height:36px"></canvas><small id="pot-hp">0</small></button>
       <button type="button" class="act pot" id="btn-pot-mp" aria-label="Usar poção de mana"><canvas width="48" height="48" style="width:36px;height:36px"></canvas><small id="pot-mp">0</small></button>
     </div>
-    <nav class="menu" aria-label="Menu do jogo">
+    <nav class="menu" id="game-menu" aria-label="Menu do jogo" hidden>
       <button type="button" data-panel="bag">Bolsa</button>
       <button type="button" data-panel="hero">Herói<i class="badge" id="pts-badge" hidden></i></button>
       <button type="button" data-panel="maps">Mapas</button>
@@ -314,6 +317,6 @@
   <script src="/js/music.js?v=1"></script>
   <script src="/js/admin-tools.js?v=25"></script>
   <script src="/js/fenrir.js?v=6"></script>
-  <script src="/js/game.js?v=140"></script>
+  <script src="/js/game.js?v=143"></script>
 </body>
 </html>

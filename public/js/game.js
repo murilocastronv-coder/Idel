@@ -831,7 +831,7 @@
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
       'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=7', 'world3d-actors.js?v=9', 'world3d-fx.js?v=1'];
     // modo blocos: o mesmo motor 3D com terreno e personagens de cubos
-    if (GFX === 'blocks') { window.MUI_BLOCKS = true; files.push('world3d-blocks.js?v=3'); }
+    if (GFX === 'blocks') { window.MUI_BLOCKS = true; document.body.classList.add('blocks'); files.push('world3d-blocks.js?v=3'); }
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();
@@ -1530,7 +1530,8 @@
         drawIdle3dOverlay(now, lane);
       } else if (is3d && !idleActive()) {
         // 3D: a câmera olha para o centro da mesma janela que o 2D mostraria
-        W3().setView(camX + vw / 2, camY + vh / 2, zoom, cv.width, cv.height);
+        if (window.MUI_BLOCKS) W3().setView(me && me.rx != null ? me.rx : camX + vw / 2, (me && me.ry != null ? me.ry : camY + vh / 2) - vh * 0.03, zoom * 0.9, cv.width, cv.height, 0.62, 0);   // mundo aberto: câmera sempre no herói, atrás e acima
+        else W3().setView(camX + vw / 2, camY + vh / 2, zoom, cv.width, cv.height);
         W3().setActors(actors3d(now, me));
         W3().render(now);
       } else if (!idleActive()) ctx.drawImage(S.ground, sx * GS, sy * GS, sw * GS, sh * GS, (sx - camX) * zoom, (sy - camY) * zoom, sw * zoom, sh * zoom);
@@ -2092,7 +2093,7 @@
   const IDL = { scroll: 0, seed: Math.random() * 1000, dmg: [], kills: 0, lastLv: 0, lvKills: 0, hpPrev: new Map(), enemies: new Map(), walk: 0, zoneT: 0 };
   function idlePref() { try { return localStorage.getItem(IDLE_KEY) !== 'map'; } catch (_) { return true; } }
   const idleMapOk = () => !!(S.map && !S.map.arena);   // em todo lugar, menos dentro das arenas e eventos
-  function idleActive() { return idleMapOk() && idlePref(); }
+  function idleActive() { return !window.MUI_BLOCKS && idleMapOk() && idlePref(); }
   function setIdlePref(on) {
     try { localStorage.setItem(IDLE_KEY, on ? 'idle' : 'map'); } catch (_) { /* sem armazenamento */ }
     paintIdleBtn();
@@ -2100,7 +2101,7 @@
   }
   function paintIdleBtn() {
     const b = $('#idle-view'); if (!b) return;
-    const can = idleMapOk();
+    const can = idleMapOk() && !window.MUI_BLOCKS;
     b.hidden = !can;
     b.textContent = idlePref() ? '🗺 Ver mapa' : '⚔ Tela idle';
     document.body.classList.toggle('idle-stage', can && idlePref());
@@ -2140,7 +2141,7 @@
   // espaço livre da cena idle: abaixo dos quadros de cima e acima dos botões de baixo (muda com a altura da tela)
   function idleLayout(W, H) {
     const edge = (sel, side) => { const el = $(sel); if (!el || el.hidden) return 0; const r = el.getBoundingClientRect(); return r.height ? r[side] * dpr : 0; };
-    const ctl = edge('#btn-auto', 'top') || H * 0.78;
+    const ctl = Math.min(edge('#btn-auto', 'top') || H, edge('#vjoy', 'top') || H, edge('#btn-pot-hp', 'top') || H) || H * 0.78;
     const top = Math.max(edge('.hud-me', 'bottom'), edge('.hud-map', 'bottom'), 40 * dpr) + 6 * dpr;
     const compact = (ctl - top) < 380 * dpr;
     const R = (compact ? 12 : 15) * dpr;
@@ -2942,9 +2943,13 @@
         b.className = 'act skill' + (sk.on ? '' : ' off') + (sk.buff ? ' buff' : '');
         b.dataset.id = sk.id; b.dataset.cd = sk.cd;
         b.setAttribute('aria-pressed', sk.on);
-        b.title = sk.on ? 'O AUTO usa este poder. Toque para desligar.' : 'Desligado. Toque para o AUTO usar.';
+        b.title = (sk.on ? 'Toque: usar agora. Segure: o AUTO deixa de usar.' : 'Toque: usar agora. Segure: o AUTO volta a usar.');
         b.innerHTML = `${skLabel(sk.name)}<span class="mana">${sk.mana} MP</span><span class="cd"></span>`;
-        b.onclick = () => send({ type: 'settings', settings: { skills: { [sk.id]: !sk.on } } });
+        let held = false, lp = null;
+        b.onpointerdown = () => { held = false; clearTimeout(lp); lp = setTimeout(() => { held = true; send({ type: 'settings', settings: { skills: { [sk.id]: !sk.on } } }); feed(sk.on ? `${sk.name}: o AUTO não usa mais.` : `${sk.name}: o AUTO volta a usar.`); }, 550); };
+        b.onpointerup = b.onpointerleave = b.onpointercancel = () => clearTimeout(lp);
+        b.oncontextmenu = (ev) => ev.preventDefault();
+        b.onclick = () => { if (held) return; send({ type: 'cast', id: sk.id }); b.classList.add('queued'); setTimeout(() => b.classList.remove('queued'), 900); };
       }
       box.appendChild(b);
     }
@@ -5449,7 +5454,7 @@
   }
   // fica logo acima do botão AUTO (não cobre as mensagens nem as caixas do topo)
   function placeChest() {
-    const b = $('#idle-chest'), a = $('#btn-auto'); if (!b || !a || b.hidden) return;
+    const b = $('#idle-chest'), a = $('#btn-pot-hp') || $('#btn-auto'); if (!b || !a || b.hidden) return;
     const r = a.getBoundingClientRect(); if (!r.height) return;
     b.style.top = Math.max(8, Math.round(r.top - b.offsetHeight - 10)) + 'px';
   }
@@ -5477,6 +5482,44 @@
     $$('#trade-dlg [data-pvp]').forEach((b) => { b.onclick = () => { const r = rows[Number(b.dataset.pvp)]; $('#trade-dlg').hidden = true; if (r) send({ type: 'pvpgo', id: r.id }); }; });
   }
   $('#idle-view') && ($('#idle-view').onclick = () => { setIdlePref(!idlePref()); feed(idlePref() ? 'Tela idle: o grupo caça sozinho pela trilha.' : 'Mapa: ande pelo mapa com o dedo.'); });
+  // ----- controle de celular -----
+  $('#btn-attack').onclick = () => send({ type: 'attack' });
+  // menu ☰: as telas do jogo (Bolsa, Herói, Mapas...) ficam aqui
+  const gm = $('#game-menu'), mb = $('#btn-menu');
+  const menuOpen = (on) => { gm.hidden = !on; mb.setAttribute('aria-expanded', String(on)); };
+  mb.onclick = (ev) => { ev.stopPropagation(); menuOpen(gm.hidden); };
+  gm.addEventListener('click', (ev) => { if (ev.target.closest('button')) setTimeout(() => menuOpen(false), 0); });
+  document.addEventListener('pointerdown', (ev) => { if (!gm.hidden && !gm.contains(ev.target) && !mb.contains(ev.target)) menuOpen(false); });
+  setInterval(() => { $('#menu-badge').hidden = !$$('#game-menu .badge').some((b) => !b.hidden); }, 1000);
+  // joystick fixo: arrastar a bolinha anda (8 direções; quanto mais longe, mais rápido)
+  (() => {
+    const box = $('#vjoy'), knob = box.querySelector('.vj-knob'), arrow = box.querySelector('.vj-arrow');
+    let id = null, keep = 0;
+    const R0 = () => box.getBoundingClientRect().width / 2 - 14;
+    const move = (ev) => {
+      if (ev.pointerId !== id) return;
+      const r = box.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const ddx = ev.clientX - cx, ddy = ev.clientY - cy, d = Math.hypot(ddx, ddy), R1 = R0(), kd = Math.min(d, R1);
+      knob.style.transform = d ? `translate(${ddx / d * kd}px, ${ddy / d * kd}px)` : '';
+      if (d < 10) { box.classList.remove('on'); joySend(0, 0, 0); return; }
+      const oct = Math.round(Math.atan2(ddy, ddx) / (Math.PI / 4)), ang = oct * Math.PI / 4;
+      const dx = Math.round(Math.cos(ang) * 1000) / 1000, dy = Math.round(Math.sin(ang) * 1000) / 1000;
+      const k = Math.max(0.35, Math.min(1, (d - 10) / (R1 - 10)));
+      box.classList.add('on'); arrow.style.transform = `rotate(${ang}rad)`;
+      joySend(dx, dy, k);
+    };
+    const end = (ev) => {
+      if (ev.pointerId !== id) return;
+      id = null; clearInterval(keep); knob.style.transform = ''; box.classList.remove('on'); joySend(0, 0, 0, true);
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', end); window.removeEventListener('pointercancel', end);
+    };
+    box.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault(); if (id != null || !S.me || S.me.dead) return;
+      id = ev.pointerId; move(ev);
+      clearInterval(keep); keep = setInterval(() => { if (id != null && JOY.sent && JOY.sent !== '0') { const [a, b, c] = JOY.sent.split(','); joySend(+a, +b, +c, true); } }, 250);
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', end); window.addEventListener('pointercancel', end);
+    });
+  })();
   $('#btn-auto').onclick = () => send({ type: 'auto', on: !(S.me && S.me.auto) });
   $('#btn-pvp').onclick = () => send({ type: 'pvp', on: !(S.me && S.me.pvpOn) });
   $('#btn-ptarget').onclick = cycleTarget;

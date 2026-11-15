@@ -862,6 +862,16 @@ class World {
       case 'pvp': return this.setPvp(p, !!msg.on, Date.now());
       case 'pvpfind': return this.pvpFind(p);
       case 'chest': return CHEST.open(this, p);
+      // botões de ataque da tela (controle de celular): atacar o mais perto e usar um poder no próximo golpe
+      case 'attack': { if (!p.dead) this.pickNearest(p, true); return; }
+      case 'cast': {
+        if (p.dead) return;
+        const sk = p.skills().find((x) => x.id === String(msg.id || ''));
+        if (!sk) return;
+        p.castNext = { id: sk.id, until: Date.now() + 3000 };
+        if (!p.target || (p.target.isPlayer ? !this.hostile(p, p.target) : p.target.dead)) this.pickNearest(p, false);
+        return;
+      }
       case 'pvpgo': return this.pvpGo(p, String(msg.id || ''));
       case 'room': return this.switchRoom(p, msg.room);
       case 'chaosInfo': return p.send(CHAOS.info(p, DROPS.sources(['jewel_of_chaos', 'loch_feather', ...CHAOS.CHAOS_WEAPONS, ...[1, 2, 3, 4, 5, 6, 7].flatMap((n) => ['devil_eye_' + n, 'devil_key_' + n, 'scroll_of_archangel_' + n, 'blood_bone_' + n])])));
@@ -1402,6 +1412,20 @@ class World {
     } else if (!dest && !quiet) {
       p.send({ type: 'log', kind: 'warn', text: 'Não há mapa de caça desbloqueado para seu nível.' });
     }
+  }
+
+  // alvo mais perto (monstro ou jogador inimigo) para os botões de ataque
+  pickNearest(p, warn) {
+    const map = p.map; if (!map) return null;
+    let best = null, bd = 420;
+    for (const m of map.monsters) {
+      if (m.dead || (m.trainingArea && !insideRect(p, m.trainingArea))) continue;
+      const d = dist(p, m); if (d < bd) { bd = d; best = m; }
+    }
+    for (const o of map.players.values()) { if (o === p || !this.hostile(p, o)) continue; const d = dist(p, o) - 40; if (d < bd) { bd = d; best = o; } }
+    if (best) { p.target = best; p.moveTo = null; p.joy = null; }
+    else if (warn) p.send({ type: 'log', kind: 'warn', text: 'Nenhum inimigo por perto.' });
+    return best;
   }
 
   // ----- Procurar luta (PvP do jogo idle) -----
@@ -2056,7 +2080,16 @@ class World {
     const heal = skills.find((s) => s.heal && p.skillOn(s.id));
     if (heal && p.hp < p.maxHp * 0.6 && p.mp >= heal.mana && !(p.cds[heal.id] > now)) { this.attack(p, heal, t, now); return; }
     let sk = null;
-    if (p.auto) {
+    // poder escolhido no botão: entra no próximo golpe (se tiver mana e não estiver recarregando)
+    if (p.castNext) {
+      const c = Date.now() < p.castNext.until ? skills.find((s) => s.id === p.castNext.id) : null;
+      if (!c) p.castNext = null;
+      else if (p.mp >= c.mana && !(p.cds[c.id] > now)) {
+        if (c.heal || c.buff) { p.castNext = null; this.attack(p, c, t, now); return; }
+        sk = c;
+      }
+    }
+    if (!sk && p.auto) {
       const buff = skills.find((s) => s.buff && p.skillOn(s.id) && p.mp >= s.mana && !(p.cds[s.id] > now) && !(p.buffs[s.buff] && p.buffs[s.buff].until > now));
       if (buff && dist(p, t) < 160) { this.attack(p, buff, t, now); return; }
       sk = skills.filter((s) => s.id !== 'basic' && !s.heal && !s.buff && p.skillOn(s.id) && p.mp >= s.mana && !(p.cds[s.id] > now))
@@ -2066,7 +2099,7 @@ class World {
     const d = dist(p, t);
     const reach = sk.range + 8 * (t.T ? t.T.size : 1);
     if (d > reach) { this.stepToward(p, t, PLAYER_SPEED * moveK(p) * dt, reach - 2); return; }
-    if (now >= p.nextAtk) this.attack(p, sk, t, now);
+    if (now >= p.nextAtk) { this.attack(p, sk, t, now); if (p.castNext && p.castNext.id === sk.id) p.castNext = null; }
   }
 
   stepToward(p, dest, step, stopAt = 0) {

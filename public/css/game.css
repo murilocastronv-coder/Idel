@@ -835,3 +835,76 @@ body.idle-stage #training-hud, body.idle-stage #target-hud { display: none !impo
 
 /* modo blocos é o padrão: a troca de gráfico fica só nas Opções */
 #gfx-switch { display: none !important; }
+
+/* ================= controle de celular: joystick, botões redondos e menu ☰ (de pé ou deitado) ================= */
+.bottom { display: block; padding: 0; height: 0; }
+.bottom .xpbar { position: fixed; left: 0; right: 0; bottom: 0; height: 9px; border-width: 1px 0 0; z-index: 6; }
+.bottom .xpbar em { font-size: 8px; line-height: 8px; }
+/* joystick fixo (esquerda) */
+.vjoy { position: fixed; z-index: 6; left: calc(16px + env(safe-area-inset-left)); bottom: calc(22px + env(safe-area-inset-bottom)); width: 132px; height: 132px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.vj-base { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 50% 40%, rgba(60, 70, 110, .55), rgba(10, 12, 26, .65) 70%);
+  border: 3px solid rgba(255, 224, 138, .55); box-shadow: 0 6px 18px rgba(0, 0, 0, .45), inset 0 0 0 6px rgba(255, 255, 255, .05); }
+.vj-base::before { content: ''; position: absolute; inset: 18px; border-radius: 50%; border: 2px dashed rgba(255, 224, 138, .25); }
+.vj-base::after { content: '▲'; position: absolute; left: 50%; top: 4px; transform: translateX(-50%); font-size: 12px; color: rgba(255, 224, 138, .45);
+  text-shadow: 0 50px 0 transparent; }
+.vj-arrow { position: absolute; left: 50%; top: 50%; width: 60px; height: 0; transform-origin: 0 0; opacity: 0; transition: opacity .1s; }
+.vj-arrow::after { content: ''; position: absolute; right: -4px; top: -10px; border-left: 16px solid rgba(255, 214, 107, .95); border-top: 10px solid transparent; border-bottom: 10px solid transparent; }
+.vjoy.on .vj-arrow { opacity: 1; }
+.vj-knob { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #fff3c4, #f2c75c 45%, #b8862a 100%); border: 3px solid #3a2a10; box-shadow: 0 4px 10px rgba(0, 0, 0, .55), inset 0 -4px 0 rgba(0, 0, 0, .2); }
+.vjoy.on .vj-base { border-color: rgba(255, 224, 138, .9); }
+/* botões de ação (direita): ataque grande, poderes em arco, AUTO, PvP e alvo em cima */
+.actions { position: fixed; z-index: 6; right: calc(12px + env(safe-area-inset-right)); bottom: calc(20px + env(safe-area-inset-bottom)); width: 240px; height: 290px; display: block; pointer-events: none; }
+.actions > *, .actions .skills > * { pointer-events: auto; }
+.actions .act, .actions .skills .act { position: absolute; border-radius: 50%; padding: 0; display: grid; place-items: center; align-content: center; text-align: center; touch-action: manipulation;
+  background: radial-gradient(circle at 50% 35%, rgba(70, 80, 120, .9), rgba(16, 18, 36, .92)); border: 3px solid rgba(255, 224, 138, .5); box-shadow: 0 4px 12px rgba(0, 0, 0, .5); min-width: 0; }
+.actions .act:active { transform: scale(.93); }
+.act.attack { right: 0; bottom: 0; width: 84px; height: 84px; font-size: 38px; color: #fff3c4; background: radial-gradient(circle at 45% 35%, #e0473a, #7a1410); border-color: #ffd36b; text-shadow: 0 2px 0 #3a0a08; }
+.act.auto { right: 0; bottom: 214px; width: 64px; height: 64px; }
+.act.auto b { font-size: 13px; } .act.auto small { font-size: 8px; line-height: 1; }
+.act.pvp { right: 72px; bottom: 222px; width: 52px; height: 52px; } .act.pvp b { font-size: 12px; } .act.pvp small { font-size: 7px; }
+.act.target { right: 132px; bottom: 222px; width: 52px; height: 52px; } .act.target b { font-size: 12px; }
+.actions .skills { position: absolute; inset: 0; display: block; pointer-events: none; }
+.actions .act.skill { width: 58px; height: 58px; font-size: 8.5px; line-height: 1.05; padding: 4px; overflow: hidden; color: #f2ead8; }
+.actions .act.skill .mana { display: block; font-size: 8px; }
+.actions .act.skill .cd { inset: 0; border-radius: 50%; }
+.actions .act.skill.off { opacity: 1; border-style: dashed; border-color: rgba(200, 200, 200, .45); }
+.actions .act.skill.queued { border-color: #9ae07a; box-shadow: 0 0 0 3px rgba(154, 224, 122, .45), 0 4px 12px rgba(0, 0, 0, .5); }
+.actions .skills .act:nth-child(1) { right: 103px; bottom: 6px; }
+.actions .skills .act:nth-child(2) { right: 82px; bottom: 82px; }
+.actions .skills .act:nth-child(3) { right: 6px; bottom: 103px; }
+.actions .skills .act:nth-child(4) { right: 166px; bottom: 6px; }
+.actions .skills .act:nth-child(5) { right: 140px; bottom: 74px; }
+.actions .skills .act:nth-child(6) { right: 74px; bottom: 148px; }
+.actions .skills .act:nth-child(n+7) { display: none; }
+/* poções: pequenas, em cima do joystick */
+.act.pot { position: fixed !important; width: 50px; height: 50px; bottom: calc(166px + env(safe-area-inset-bottom)); }
+#btn-pot-hp { left: calc(16px + env(safe-area-inset-left)); }
+#btn-pot-mp { left: calc(74px + env(safe-area-inset-left)); }
+.act.pot canvas { width: 26px !important; height: 26px !important; }
+.act.pot small { position: absolute; right: -2px; bottom: -2px; background: #0b0a12; border: 1px solid #8a6a2a; border-radius: 8px; padding: 0 4px; font-size: 9px; }
+/* menu ☰ (as telas do jogo ficam aqui; a tela fica livre) */
+.menu-btn { position: fixed; z-index: 6; left: calc(132px + env(safe-area-inset-left)); bottom: calc(166px + env(safe-area-inset-bottom)); width: 52px; height: 50px; border-radius: 12px;
+  display: grid; place-items: center; align-content: center; background: rgba(16, 18, 36, .9); border: 3px solid rgba(255, 224, 138, .55); color: #fff3c4; font: 700 20px/1 var(--display); box-shadow: 0 4px 12px rgba(0, 0, 0, .5); }
+.menu-btn small { font-size: 8px; letter-spacing: .08em; }
+.menu-btn .badge { position: absolute; top: -5px; right: -5px; }
+.menu-btn[aria-expanded="true"] { border-color: #ffd36b; color: #ffd36b; }
+.bottom .menu { position: fixed; z-index: 8; left: 50%; bottom: calc(230px + env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(94vw, 420px);
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px; background: rgba(12, 14, 28, .96); border: 2px solid #8a6a2a; border-radius: 12px; box-shadow: 0 12px 30px rgba(0, 0, 0, .6); }
+.bottom .menu[hidden] { display: none; }
+.bottom .menu button { padding: 12px 4px; font-size: 14px; border-radius: 8px; }
+/* deitado: menu mais largo e botões um pouco menores */
+@media (orientation: landscape) and (max-height: 500px) {
+  .vjoy { width: 116px; height: 116px; bottom: calc(14px + env(safe-area-inset-bottom)); }
+  .actions { bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .act.pot, .menu-btn { bottom: calc(140px + env(safe-area-inset-bottom)); }
+  .bottom .menu { grid-template-columns: repeat(6, 1fr); width: min(70vw, 640px); bottom: auto; top: 50%; transform: translate(-50%, -50%); }
+}
+/* deitado: o canto de cima direito vira uma fileira compacta (não encosta no AUTO/PvP) */
+@media (orientation: landscape) and (max-height: 500px) {
+  .hud-map { flex-direction: row !important; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px; max-width: 52vw; }
+  .hud-map #minimap, .hud-map .invite-chip, .hud-map .mode-tag { display: none !important; }
+  .hud-map .chat-toggle, .hud-map .inv-timer { margin: 0 !important; font-size: 10px; }
+}
+/* modo blocos: o centro da tela fica livre para o herói */
+body.blocks #training-hud, body.blocks #target-hud { display: none !important; }
