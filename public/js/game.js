@@ -1514,7 +1514,15 @@
       if (is3d && idleActive() && me && me.rx != null) {
         // 3D na tela idle: câmera baixa de lado, herói à esquerda e os inimigos em fila à direita (cenário 3D do mapa)
         const lane = idleLane3d(now, dt, me);
-        W3().setView(me.rx + (cv.width * 0.17) / (zoom * 1.15), me.ry, zoom * 1.15, cv.width, cv.height, 0.3, 2.2);
+        const LY3 = idleLayout(cv.width, cv.height), z3 = zoom * 1.15 * Math.min(1, (LY3.ctl - LY3.hudBottom) / (cv.height * 0.45));
+        let lift3 = IDL.lift3 || 2.2;
+        W3().setView(me.rx + (cv.width * 0.17) / z3, me.ry, z3, cv.width, cv.height, 0.3, lift3);
+        const feet = W3().project(me.rx, me.ry, 0)[1], want = LY3.laneY;
+        if (Number.isFinite(feet) && Math.abs(feet - want) > 2) {
+          lift3 = Math.max(0, Math.min(8, lift3 + (want - feet) / (z3 * W3().K * Math.cos(0.3))));
+          IDL.lift3 = lift3;
+          W3().setView(me.rx + (cv.width * 0.17) / z3, me.ry, z3, cv.width, cv.height, 0.3, lift3);
+        }
         W3().setActors(lane.actors);
         W3().render(now);
         drawIdle3dOverlay(now, lane);
@@ -2127,7 +2135,23 @@
   // ruído simples e estável para espalhar árvores, pedras e morros
   const hash = (i, k = 0) => { const s = Math.sin(i * 127.1 + k * 311.7 + IDL.seed) * 43758.5453; return s - Math.floor(s); };
 
-  function idleBackground(now, W, H, groundY) {
+  // espaço livre da cena idle: abaixo dos quadros de cima e acima dos botões de baixo (muda com a altura da tela)
+  function idleLayout(W, H) {
+    const edge = (sel, side) => { const el = $(sel); if (!el || el.hidden) return 0; const r = el.getBoundingClientRect(); return r.height ? r[side] * dpr : 0; };
+    const ctl = edge('#btn-auto', 'top') || H * 0.78;
+    const top = Math.max(edge('.hud-me', 'bottom'), edge('.hud-map', 'bottom'), 40 * dpr) + 6 * dpr;
+    const compact = (ctl - top) < 380 * dpr;
+    const R = (compact ? 12 : 15) * dpr;
+    const cy = top + R + 4 * dpr, by = cy + R + 7 * dpr, bh = (compact ? 11 : 13) * dpr;
+    const statsY = by + bh + 6 * dpr, statsH = compact ? 18 * dpr : 50 * dpr;
+    const hudBottom = statsY + statsH;
+    const groundY = Math.min(ctl - 70 * dpr, hudBottom + 10 * dpr);
+    const pathH = Math.max(34 * dpr, (ctl - groundY) * 0.5), pathTop = ctl - 2 * dpr - pathH;
+    const laneY = pathTop + pathH * 0.72;
+    const heroH = Math.max(34 * dpr, Math.min(H * 0.11, laneY - hudBottom - 22 * dpr));
+    return { ctl, top, compact, R, cy, by, bh, statsY, hudBottom, groundY, pathTop, pathH, laneY, sc: Math.max(1, Math.min(4.2, heroH / HERO_H)) };
+  }
+  function idleBackground(now, W, H, groundY, pathTop0, pathH0) {
     const P = idlePal(), px = Math.max(2, Math.round(2 * dpr));
     // céu
     const sky = ctx.createLinearGradient(0, 0, 0, groundY);
@@ -2153,7 +2177,7 @@
     }
     // chão e trilha
     ctx.fillStyle = P[4]; ctx.fillRect(0, groundY, W, H - groundY);
-    const pathTop = groundY + (H - groundY) * 0.18, pathH = (H - groundY) * 0.34;
+    const pathTop = pathTop0 != null ? pathTop0 : groundY + (H - groundY) * 0.18, pathH = pathH0 != null ? pathH0 : (H - groundY) * 0.34;
     ctx.fillStyle = P[5]; ctx.fillRect(0, Math.round(pathTop), W, Math.round(pathH));
     ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(0, Math.round(pathTop), W, px);
     ctx.fillStyle = 'rgba(255,255,255,.10)'; ctx.fillRect(0, Math.round(pathTop + pathH - px), W, px);
@@ -2245,8 +2269,7 @@
   function drawIdleStage(now, dt, me) {
     const W = cv.width, H = cv.height;
     // área útil: entre o HUD de cima e os botões de baixo
-    const groundY = Math.round(H * 0.5);
-    const sc = Math.max(1.2, Math.min(4.2, (H * 0.11) / HERO_H)) ;
+    const LY = idleLayout(W, H), groundY = Math.round(LY.groundY), sc = LY.sc;
     // inimigos: monstros vivos mais perto do herói (e quem morreu agora há pouco) + jogadores inimigos (PvP)
     const myT = S.me && S.me.target;
     const list = [];
@@ -2266,8 +2289,8 @@
     // o grupo anda enquanto não tem ninguém para bater
     const walking = !fighting && !!(me && !me.dead) && !!(S.me && S.me.auto);
     if (walking) IDL.scroll += dt * 90 * dpr;
-    const bg = idleBackground(now, W, H, groundY);
-    const laneY = bg.pathTop + bg.pathH * 0.62;
+    const bg = idleBackground(now, W, H, groundY, LY.pathTop, LY.pathH);
+    const laneY = LY.laneY;
     // grupo: você na frente, a party atrás em formação
     const heroX = Math.round(W * 0.34);
     const party = [];
@@ -2336,7 +2359,7 @@
     }
     // golpes: projéteis simples e números de dano
     drawIdleFloats(now);
-    drawIdleHud(now, W, H, groundY, walking, fighting);
+    drawIdleHud(now, W, H, LY, walking, fighting);
   }
 
   function drawIdleFloats(now) {
@@ -2376,14 +2399,14 @@
     if (sub) { ctx.font = `600 ${Math.round(9 * dpr)}px "Exo 2", system-ui, sans-serif`; ctx.fillStyle = '#9be27a'; ctx.fillText(sub, x + 7 * dpr, y + 37 * dpr); }
   }
 
-  function drawIdleHud(now, W, H, groundY, walking, fighting) {
+  function drawIdleHud(now, W, H, LY, walking, fighting) {
     const c = S.char; if (!c) return;
     // faixa de níveis (como fases): o atual no meio, os próximos à direita e o cadeado no fim
-    const L = c.level, R = 15 * dpr, gap = 8 * dpr;
+    const L = c.level, R = LY.R, gap = (LY.compact ? 6 : 8) * dpr;
     const lv = [L - 1, L, L + 1, L + 2].filter((v) => v >= 1 && v <= 1000);
     const n = lv.length + 1, total = n * R * 2 + (n - 1) * gap;
     let x0 = Math.round(W / 2 - total / 2) + R;
-    const cy = Math.round(Math.max(H * 0.3, 230 * dpr) + R);   // abaixo das caixas do topo (alvo, área de treino)
+    const cy = Math.round(LY.cy);
     ctx.fillStyle = 'rgba(10,8,16,.6)'; ctx.fillRect(x0 - R - 8 * dpr, cy - R - 6 * dpr, total + 16 * dpr, R * 2 + 12 * dpr);
     ctx.strokeStyle = '#6aa84f'; ctx.lineWidth = 3 * dpr; ctx.beginPath(); ctx.moveTo(x0, cy); ctx.lineTo(x0 + (n - 1) * (R * 2 + gap), cy); ctx.stroke();
     lv.forEach((v, i) => {
@@ -2405,7 +2428,7 @@
     const me2 = S.me || {}, next = Number(me2.next) || Math.floor(100 * Math.pow(L, 2.1) + 200), have = Number(me2.exp) || 0, frac = Math.max(0, Math.min(1, have / next));
     const per = idleKillExp(L);
     const left = per > 0 ? Math.max(0, Math.ceil((next - have) / per)) : 0;
-    const bw = Math.min(W * 0.7, 300 * dpr), bx = Math.round(W / 2 - bw / 2), by = cy + R + 10 * dpr, bh = 13 * dpr;
+    const bw = Math.min(W * 0.86, 330 * dpr), bx = Math.round(W / 2 - bw / 2), by = Math.round(LY.by), bh = Math.round(LY.bh);
     ctx.fillStyle = '#0b0a12'; ctx.fillRect(bx - dpr, by - dpr, bw + 2 * dpr, bh + 2 * dpr);
     const g = ctx.createLinearGradient(0, by, 0, by + bh); g.addColorStop(0, '#ffd36b'); g.addColorStop(1, '#d08a1a');
     ctx.fillStyle = g; ctx.fillRect(bx, by, bw * frac, bh);
@@ -2415,16 +2438,25 @@
     ctx.strokeText(txt, W / 2, by + bh / 2 + dpr); ctx.fillText(txt, W / 2, by + bh / 2 + dpr);
     // números grandes: Zen, dano por segundo e abates
     const dps = idleDps(now);
-    const cw = Math.min(118 * dpr, (W - 24 * dpr) / 3 - 6 * dpr), ch = 50 * dpr, cyy = by + bh + 10 * dpr;
+    if (LY.compact) {
+      // tela baixa: os números numa linha só (não cobrem o herói)
+      const t = `● ${bigNum(S.me && S.me.zen != null ? S.me.zen : c.zen)} Zen   ⚔ ${bigNum(dps)}/s   ☠ ${bigNum(IDL.kills)} abates`;
+      ctx.font = `700 ${Math.round(10.5 * dpr)}px "Exo 2", system-ui, sans-serif`;
+      const tw = ctx.measureText(t).width + 16 * dpr;
+      ctx.fillStyle = 'rgba(10,8,16,.66)'; ctx.fillRect(Math.round(W / 2 - tw / 2), Math.round(LY.statsY), Math.round(tw), Math.round(18 * dpr));
+      label(t, W / 2, LY.statsY + 15 * dpr, '#ffe6a0', 10.5);
+    } else {
+    const cw = Math.min(118 * dpr, (W - 24 * dpr) / 3 - 6 * dpr), ch = 50 * dpr, cyy = Math.round(LY.statsY);
     const cx0 = Math.round(W / 2 - (cw * 3 + 12 * dpr) / 2);
     const vipT = (c.vip && c.vip.tier) || 0;
     idleChip(cx0, cyy, cw, ch, 'ZEN', bigNum(S.me && S.me.zen != null ? S.me.zen : c.zen), vipT ? `+${vipT === 2 ? 100 : 50}% VIP` : null, '#ffd36b', '●');
     idleChip(cx0 + cw + 6 * dpr, cyy, cw, ch, 'DANO/SEG', bigNum(dps), null, '#ff9a6a', '⚔');
     idleChip(cx0 + (cw + 6 * dpr) * 2, cyy, cw, ch, 'ABATES', bigNum(IDL.kills), 'nesta sessão', '#9ad0ff', '☠');
+    }
     // estado do grupo
     const status = !(S.me && S.me.auto) ? 'AUTO desligado · toque em AUTO para o herói caçar sozinho'
       : fighting ? 'Em combate' : walking ? (IDL.enemies.size ? 'Indo até o monstro…' : 'Procurando monstros…') : '';
-    if (status) label(status, W / 2, groundY - 8 * dpr, !(S.me && S.me.auto) ? '#ffb02e' : '#f0e6cc', 11);
+    if (status) label(status, W / 2, LY.hudBottom + 16 * dpr, !(S.me && S.me.auto) ? '#ffb02e' : '#f0e6cc', LY.compact ? 10 : 11);
   }
   // EXP de um monstro comum do nível (a mesma conta do servidor: % da barra × VIP × corte por nível ÷ resets)
   function idleKillExp(L) {
@@ -2518,7 +2550,7 @@
       }
     }
     drawIdleFloats(now);
-    drawIdleHud(now, cv.width, cv.height, Math.round(cv.height * 0.5), lane.walking, lane.fighting);
+    drawIdleHud(now, cv.width, cv.height, idleLayout(cv.width, cv.height), lane.walking, lane.fighting);
   }
   // toque na tela idle: tocar num monstro (ou jogador inimigo) escolhe o alvo
   function idleTap(ev) {
@@ -5409,6 +5441,8 @@
     $('#ic-fill').style.width = full ? '100%' : `${Math.min(100, c.prog / c.need * 100)}%`;
     $('#ic-sub').textContent = full ? 'CHEIO: abra para voltar a encher' : c.ready ? `toque para abrir · ${c.prog}/${c.need}` : `${c.prog}/${c.need} monstros`;
     b.classList.toggle('ready', c.ready > 0); b.classList.toggle('full', full);
+    b.dataset.count = c.ready || '';
+    b.title = full ? 'Baú de caça CHEIO: toque para abrir' : c.ready ? `Baú de caça: ${c.ready} pronto(s), toque para abrir` : `Baú de caça: ${c.prog}/${c.need} monstros`;
     placeChest();
   }
   // fica logo acima do botão AUTO (não cobre as mensagens nem as caixas do topo)
