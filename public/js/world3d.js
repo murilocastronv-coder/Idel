@@ -460,11 +460,15 @@
     const rim = new THREE.DirectionalLight(0x6a8cff, th.night ? 0.35 : 0.25); rim.position.set(-20, 18, -30); group.add(rim);
     const out = { torches: [], braziers: [], glows: [], waterMats: [], spray: null };
     const lightsList = [];
-    const g = buildGround(group, m, built, th);
+    // modo blocos (world3d-blocks.js): terreno e objetos feitos de cubos
+    const blocks = W3.blocks && W3.buildBlocks;
+    const g = blocks ? W3.buildBlocks(group, m, built, theme, th, out) : buildGround(group, m, built, th);
     const waters = [];
-    buildWaters(group, built, theme, waters);
-    buildProps(group, built, theme, out);
-    buildStructs(group, m, built, theme, out, lightsList);
+    if (!blocks) {
+      buildWaters(group, built, theme, waters);
+      buildProps(group, built, theme, out);
+      buildStructs(group, m, built, theme, out, lightsList);
+    }
     const flames = buildFires(group, out, lightsList);
     // luzes do mapa 2D (cristais, lava, janelas...) também entram no pool, com menos força
     for (const l of built.lights || []) {
@@ -491,6 +495,7 @@
     const pxPerM = zoomPx * K, P = pitch || PITCH;
     const dist = cvH / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * pxPerM);
     focus.set(fx / K, lift || 0, fy / K);
+    W3.fx = focus.x; W3.fz = focus.z;
     camera.position.set(focus.x, (lift || 0) + Math.sin(P) * dist, focus.z + Math.cos(P) * dist);
     camera.lookAt(focus);
     camera.updateMatrixWorld();

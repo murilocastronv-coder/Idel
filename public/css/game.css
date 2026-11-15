@@ -832,3 +832,6 @@ body.idle-stage .hud-map .inv-timer { flex-basis: 100%; }
   background: #e0473a; color: #fff; font: 800 11px/18px var(--display, sans-serif); text-align: center; box-shadow: 0 0 0 2px #0b0a12; }
 /* tela idle: o nome/vida do monstro já aparecem em cima dele, então as caixas de alvo e de área de treino saem (não cobrem os níveis) */
 body.idle-stage #training-hud, body.idle-stage #target-hud { display: none !important; }
+
+/* modo blocos é o padrão: a troca de gráfico fica só nas Opções */
+#gfx-switch { display: none !important; }

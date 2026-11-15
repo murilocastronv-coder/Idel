@@ -2459,5 +2459,9 @@ window.I18N_EN = {
 "⚔ Online e PvP": "⚔ Online and PvP",
 "Os jogadores se veem nos mapas, formam party e guildas. Quer briga? Ligue o PvP e toque em": "Players see each other on the maps and form parties and guilds. Want a fight? Turn on PvP and tap",
 "Volte para abrir os baús": "Come back to open the chests",
-"O baú de caça enche com os monstros que o herói mata, até 3 baús. Cheio, ele para: volte para abrir. A cada 10 níveis tem prêmio.": "The hunting chest fills with the monsters your hero kills, up to 3 chests. When full it stops: come back to open them. Every 10 levels there's a reward."
+"O baú de caça enche com os monstros que o herói mata, até 3 baús. Cheio, ele para: volte para abrir. A cada 10 níveis tem prêmio.": "The hunting chest fills with the monsters your hero kills, up to 3 chests. When full it stops: come back to open them. Every 10 levels there's a reward.",
+"MMORPG idle · mundo de blocos em 3D": "Idle MMORPG · 3D block world",
+"Blocos (3D de cubos)": "Blocks (3D cubes)",
+"2D (pixel art, aparelho fraco)": "2D (pixel art, low-end devices)",
+"3D antigo": "Old 3D"
 };

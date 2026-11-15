@@ -214,10 +214,10 @@
         <span>${esc(mapName)} · ${fmt.format(c.zen)} Zen</span>`;
       const play = document.createElement('a');
       play.className = 'btn small btn-gold'; play.textContent = 'Jogar 2D';
-      play.href = `/game.html?c=${encodeURIComponent(c.id)}&gfx=2d`;
+      play.href = `/game.html?c=${encodeURIComponent(c.id)}&gfx=blocks`;
       play.title = 'Gráfico em pixel art';
       const play3 = document.createElement('a');
-      play3.className = 'btn small btn-gold play-3d'; play3.textContent = 'Jogar 3D';
+      play3.className = 'btn small btn-gold play-3d'; play3.textContent = 'Jogar 3D'; play3.hidden = true;
       play3.href = `/game.html?c=${encodeURIComponent(c.id)}&gfx=3d`;
       play3.title = 'Gráfico 3D realista (mesmo servidor)';
       const del = document.createElement('button');
@@ -617,7 +617,7 @@
   try { const q = new URLSearchParams(location.search).get('gfx'); if (q === '2d' || q === '3d') setGfxPref(q); } catch (_) { /* nada */ }
   $('#btn-play-3d').onclick = () => { setGfxPref('3d'); $('#btn-play').dataset.keep = '1'; $('#btn-play').click(); };
   $('#btn-play').onclick = () => {
-    if ($('#btn-play').dataset.keep) delete $('#btn-play').dataset.keep; else setGfxPref('2d');
+    if ($('#btn-play').dataset.keep) delete $('#btn-play').dataset.keep; else setGfxPref('blocks');
     if (!state.me) return openAuth('login', 'Entre na sua conta para jogar. Ainda não tem? Use “Criar conta”.');
     // sempre abre a seleção de heróis (dá para escolher ou criar outro)
     openAccount();

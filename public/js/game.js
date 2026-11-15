@@ -821,15 +821,17 @@
   // ---- gráfico 2D ou 3D (escolha do jogador; o servidor e as regras são os mesmos) ----
   const GFX = (() => {
     let q = null; try { q = new URLSearchParams(location.search).get('gfx'); } catch (_) { /* nada */ }
-    if (q === '2d' || q === '3d') { try { localStorage.setItem('mui_gfx', q); } catch (_) { /* nada */ } return q; }
-    try { return localStorage.getItem('mui_gfx') || '2d'; } catch (_) { return '2d'; }
+    if (q === '2d' || q === '3d' || q === 'blocks') { try { localStorage.setItem('mui_gfx', q); } catch (_) { /* nada */ } return q; }
+    try { return localStorage.getItem('mui_gfx') || 'blocks'; } catch (_) { return 'blocks'; }
   })();
   let is3d = false; // vira true quando o motor 3D carregou e iniciou
   const W3 = () => window.World3D;
   function load3D() {
     const files = ['vendor/three/three.min.js', 'vendor/three/GLTFLoader.js', 'vendor/three/SkeletonUtils.js', 'vendor/three/RoomEnvironment.js',
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
-      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=5', 'world3d-actors.js?v=9', 'world3d-fx.js?v=1'];
+      'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=7', 'world3d-actors.js?v=9', 'world3d-fx.js?v=1'];
+    // modo blocos: o mesmo motor 3D com terreno e personagens de cubos
+    if (GFX === 'blocks') { window.MUI_BLOCKS = true; files.push('world3d-blocks.js?v=3'); }
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();
@@ -1639,7 +1641,7 @@
       const info = p.info;
       const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : null;
       const tgt = p.atkT && now < (p.attackUntil || 0) ? p.atkT : null;
-      out.push({ key: 'p' + p.id, kind: 'hero', cls: info.cls, eq, x: p.rx, y: p.ry, vx: p.vx, vy: p.vy, speed: p.speed, act,
+      out.push({ key: 'p' + p.id, kind: 'hero', cls: info.cls, ap: info.ap, eq, x: p.rx, y: p.ry, vx: p.vx, vy: p.vy, speed: p.speed, act,
         atkAt: p.attackStart, atkDur: (p.attackUntil || 0) - (p.attackStart || 0), hitAt: p.hitAt, flip: p.flip, faceX: tgt ? tgt.rx : undefined, faceY: tgt ? tgt.ry : undefined, flash: false });
     });
     for (const n of S.map.npcs || []) out.push({ key: 'n' + n.kind + n.x + '_' + n.y, kind: 'npc', npc: n.kind, x: n.x, y: n.y, speed: 0, act: 'idle' });
@@ -2487,7 +2489,7 @@
     const eq = info.eq ? { ...info.eq, wg: info.eq.w && (['epic', 'legendary', 'ancestral'].includes(info.eq.wr) ? RAR[info.eq.wr] : info.eq.wp >= 7 ? '#7ad0ff' : null) } : null;
     let act = 'idle';
     if (p.dyingAt) act = 'death'; else if (now < (p.attackUntil || 0)) act = 'attack'; else if (now < (p.hurtUntil || 0) && now >= (p.hitAt || 0)) act = 'hit'; else if (walking) act = 'walk';
-    return { key: 'p' + p.id, kind: 'hero', cls: info.cls, eq, x, y, vx: walking ? 40 : 0, vy: 0, speed: walking ? 40 : 0, act,
+    return { key: 'p' + p.id, kind: 'hero', cls: info.cls, ap: info.ap, eq, x, y, vx: walking ? 40 : 0, vy: 0, speed: walking ? 40 : 0, act,
       atkAt: p.attackStart, atkDur: (p.attackUntil || 0) - (p.attackStart || 0), hitAt: p.hitAt, flip: faceX < x, faceX, faceY: y, flash: false };
   }
   function idleLane3d(now, dt, me) {
@@ -3989,7 +3991,7 @@
         <small class="muted">Itens abaixo disso viram Zen na hora.</small></div>
       <label class="cfg-check"><input type="checkbox" id="cfg-pvp" ${st.pvpAuto ? 'checked' : ''}> Atacar jogadores inimigos automaticamente (Vulcanus ou PvP ligado)</label>
       <div class="cfg-row"><label for="cfg-gfx">Gráfico do jogo</label>
-        <select id="cfg-gfx"><option value="2d">2D (pixel art)</option><option value="3d">3D (realista)</option></select></div>
+        <select id="cfg-gfx"><option value="blocks">Blocos (3D de cubos)</option><option value="2d">2D (pixel art, aparelho fraco)</option><option value="3d">3D antigo</option></select></div>
       <div class="cfg-row"><label for="cfg-quality">Qualidade gráfica</label>
         <select id="cfg-quality"><option value="baixa">Baixa (celular fraco)</option><option value="media">Média</option><option value="alta">Alta</option><option value="ultra">Ultra (mais efeitos)</option></select></div>
       <div class="cfg-row"><label for="cfg-vol">Volume <b id="cfg-vol-v"></b></label><input type="range" id="cfg-vol" min="0" max="100" step="5"></div>
@@ -4009,7 +4011,7 @@
     $$('#config-body [data-skill]').forEach((c) => { c.onchange = () => sendS({ skills: { [c.dataset.skill]: c.checked } }); });
     $('#cfg-pvp').onchange = (e) => sendS({ pvpAuto: e.target.checked });
     $('#cfg-quality').value = quality; $('#cfg-quality').onchange = (e) => setQuality(e.target.value);
-    $('#cfg-gfx').value = is3d ? '3d' : '2d'; $('#cfg-gfx').onchange = (e) => setGfx(e.target.value);
+    $('#cfg-gfx').value = is3d ? (window.MUI_BLOCKS ? 'blocks' : '3d') : '2d'; $('#cfg-gfx').onchange = (e) => setGfx(e.target.value);
     if (window.Sfx) {
       $('#cfg-vol').value = Math.round(Sfx.volume * 100); $('#cfg-vol-v').textContent = Math.round(Sfx.volume * 100) + '%';
       $('#cfg-vol').oninput = (e) => { Sfx.setVolume(Number(e.target.value) / 100); if (window.Music) Music.refresh(); $('#cfg-vol-v').textContent = e.target.value + '%'; };
@@ -5526,7 +5528,7 @@
       myChar = me && me.characters ? me.characters.find((x) => String(x.id) === String(charId)) : null;
     } catch (_) { centerMsg('Não foi possível carregar o jogo. Verifique a internet.', true); return; }
     const pre = preP;
-    if (GFX === '3d') { centerMsg('Carregando o gráfico 3D…'); await load3D(); if (is3d && myChar) await Promise.race([W3().preload([], [myChar.class]), new Promise((r) => setTimeout(r, 8000))]); centerMsg(null); }
+    if (GFX === '3d' || GFX === 'blocks') { centerMsg(GFX === 'blocks' ? 'Carregando o mundo de blocos…' : 'Carregando o gráfico 3D…'); await load3D(); if (is3d && myChar) await Promise.race([W3().preload([], [myChar.class]), new Promise((r) => setTimeout(r, 8000))]); centerMsg(null); }
     await pickRoom();
     await pre;
     connect();
