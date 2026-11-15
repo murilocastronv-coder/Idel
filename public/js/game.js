@@ -831,7 +831,7 @@
       'vendor/three/CopyShader.js', 'vendor/three/LuminosityHighPassShader.js', 'vendor/three/EffectComposer.js', 'vendor/three/RenderPass.js',
       'vendor/three/ShaderPass.js', 'vendor/three/MaskPass.js', 'vendor/three/UnrealBloomPass.js', 'world3d.js?v=7', 'world3d-actors.js?v=9', 'world3d-fx.js?v=1'];
     // modo blocos: o mesmo motor 3D com terreno e personagens de cubos
-    if (GFX === 'blocks') { window.MUI_BLOCKS = true; document.body.classList.add('blocks'); files.push('world3d-blocks.js?v=3'); }
+    if (GFX === 'blocks') { window.MUI_BLOCKS = true; document.body.classList.add('blocks'); files.push('world3d-blocks.js?v=4'); }
     return files.reduce((p, f) => p.then(() => new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = '/js/' + f; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); })), Promise.resolve())
       .then(() => {
         const w = W3();

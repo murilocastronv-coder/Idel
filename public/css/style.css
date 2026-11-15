@@ -428,3 +428,6 @@ details[open] > summary { margin-bottom: 14px; }
   .nav::-webkit-scrollbar { display: none; }
   .nav a { font-size: 15px; white-space: nowrap; }
 }
+
+/* botões escondidos ficam escondidos mesmo (Jogar 3D saiu: o jogo é em blocos) */
+.btn[hidden], .play-3d[hidden] { display: none !important; }

@@ -213,9 +213,9 @@
       info.innerHTML = `${li.classList.contains('last') ? '<em class="last-tag">Último jogado</em>' : ''}<b>${esc(c.name)}</b><span>${esc(state.data.classes[c.class].name)} · Nv. ${c.level}${c.resets ? ` · ${c.resets} resets` : ''}</span>
         <span>${esc(mapName)} · ${fmt.format(c.zen)} Zen</span>`;
       const play = document.createElement('a');
-      play.className = 'btn small btn-gold'; play.textContent = 'Jogar 2D';
+      play.className = 'btn small btn-gold'; play.textContent = '▶ Jogar';
       play.href = `/game.html?c=${encodeURIComponent(c.id)}&gfx=blocks`;
-      play.title = 'Gráfico em pixel art';
+      play.title = 'Mundo de blocos em 3D';
       const play3 = document.createElement('a');
       play3.className = 'btn small btn-gold play-3d'; play3.textContent = 'Jogar 3D'; play3.hidden = true;
       play3.href = `/game.html?c=${encodeURIComponent(c.id)}&gfx=3d`;
@@ -405,7 +405,8 @@
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, W, H);
       const lx = land.getContext('2d');
-      PA.drawLandscape(lx, 'town', 'lorencia-hero', land.width, land.height, reduceMotion ? 0 : t, scene.horizon);
+      if (window.BlockArt) BlockArt.landscape(lx, land.width, land.height, reduceMotion ? 0 : t, scene.horizon);
+      else PA.drawLandscape(lx, 'town', 'lorencia-hero', land.width, land.height, reduceMotion ? 0 : t, scene.horizon);
       ctx.drawImage(land, 0, 0, land.width * landK, land.height * landK);
       if (!reduceMotion && t > scene.nextAttack) {
         scene.nextAttack = t + 480;

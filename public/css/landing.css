@@ -156,3 +156,10 @@ body {
   .idle-grid { grid-template-columns: minmax(0, 1fr); gap: 22px; }
   .idle-phone { position: static; width: min(64%, 280px); margin: 0 auto; }
 }
+
+/* visual de blocos: as seções são separadas por uma faixa de grama e terra em blocos */
+.block + .block::before { height: 14px; margin: 0 0 30px; background:
+  linear-gradient(#5aa83a 0 5px, transparent 5px),
+  repeating-linear-gradient(90deg, #8a5a34 0 13px, #7a4e2c 13px 14px),
+  #8a5a34; border-radius: 2px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.25); opacity: .9; }
+.btn { border-radius: 3px; }

@@ -322,7 +322,7 @@
     const weapon = /staff|cajado|stick|scepter|cetro|book/.test(w) || d.cls === 'dark_wizard' || d.cls === 'summoner' ? 'staff' : /bow|arco|crossbow/.test(w) || d.cls === 'fairy_elf' ? 'bow' : 'sword';
     const wingBase = eq.wings || null;
     return humanoid({
-      skin: SKIN[ap.skin || 0] || SKIN[0], hair: d.cls === 'dark_knight' && !helm ? null : HAIR[ap.hair || 0] || HAIR[0],
+      skin: ((window.Sprites && Sprites.SKIN) || SKIN)[ap.skin || 0] || SKIN[0], hair: d.cls === 'dark_knight' && !helm ? null : ((window.Sprites && Sprites.HAIR) || HAIR)[ap.hair || 0] || HAIR[0],
       shirt: armor || cc[0], sleeve: armor || cc[0], pants: armor ? C(armor).multiplyScalar(0.75).getStyle() : cc[1], boots: boots || '#3a2a1a',
       hand: gloves || null, helm: helm || (d.cls === 'dark_knight' ? '#6a7080' : null), belt: '#3a2a1a',
       weapon, wcol: eq.wg || '#d0d4e0', wglow: eq.wg || null,
