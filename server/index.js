@@ -686,6 +686,15 @@ route('POST', '/api/admin/vip-prices', async (req) => {
   return { ok: true, message: 'Preços dos VIPs salvos.', plans };
 });
 
+route('GET', '/api/events', async () => {
+  if (!world) return { events: [] };
+  try {
+    const ghost = { charId: '-', level: 1, resets: 0, masterResets: 0, items: [], zen: 0, map: null, arena: null, quests: {}, send() {} };
+    const list = require('./journey').calendar(ghost).map((e) => ({ id: e.id, name: e.name, state: e.state, at: e.at || 0, endsAt: e.endsAt || 0, where: e.where || '' }));
+    return { now: Date.now(), events: list.slice(0, 12) };
+  } catch (e) { console.error('[eventos]', e.message); return { events: [] }; }
+});
+
 route('GET', '/api/news', async () => {
   const { rows } = await db.query('SELECT id, kind, title, body, published_at FROM news ORDER BY published_at DESC LIMIT 10');
   return { news: rows };

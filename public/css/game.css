@@ -834,7 +834,7 @@ body.idle-stage .hud-map .inv-timer { flex-basis: 100%; }
 body.idle-stage #training-hud, body.idle-stage #target-hud { display: none !important; }
 
 /* modo blocos é o padrão: a troca de gráfico fica só nas Opções */
-#gfx-switch { display: none !important; }
+#gfx-switch, #idle-view { display: none !important; }
 
 /* ================= controle de celular: joystick, botões redondos e menu ☰ (de pé ou deitado) ================= */
 .bottom { display: block; padding: 0; height: 0; }

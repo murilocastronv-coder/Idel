@@ -213,9 +213,9 @@
       info.innerHTML = `${li.classList.contains('last') ? '<em class="last-tag">Último jogado</em>' : ''}<b>${esc(c.name)}</b><span>${esc(state.data.classes[c.class].name)} · Nv. ${c.level}${c.resets ? ` · ${c.resets} resets` : ''}</span>
         <span>${esc(mapName)} · ${fmt.format(c.zen)} Zen</span>`;
       const play = document.createElement('a');
-      play.className = 'btn small btn-gold'; play.textContent = '▶ Jogar';
-      play.href = `/game.html?c=${encodeURIComponent(c.id)}&gfx=blocks`;
-      play.title = 'Mundo de blocos em 3D';
+      play.className = 'btn small btn-gold'; play.textContent = '▶ ENTRAR NO MUNDO';
+      play.href = `/game.html?c=${encodeURIComponent(c.id)}&gfx=2d`;
+      play.title = 'Entrar no mundo';
       const play3 = document.createElement('a');
       play3.className = 'btn small btn-gold play-3d'; play3.textContent = 'Jogar 3D'; play3.hidden = true;
       play3.href = `/game.html?c=${encodeURIComponent(c.id)}&gfx=3d`;
@@ -598,6 +598,24 @@
         <h3>${esc(n.title)}</h3><p>${esc(n.body)}</p></li>`).join('') : '<li class="muted">Nenhuma notícia por enquanto.</li>';
     } catch (e) { ul.innerHTML = `<li class="muted">Não foi possível carregar as notícias. ${esc(e.message)}</li>`; }
   }
+  // eventos ao vivo e próximos (a cada minuto, com contagem regressiva)
+  async function loadEvents() {
+    const box = $('#ev-board'); if (!box) return;
+    try {
+      const r = await api('GET', '/api/events');
+      const now = Date.now(), skew = r.now ? now - r.now : 0;
+      const left = (ms) => { const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}min` : `${m} min`; };
+      const ev = r.events || [];
+      box.innerHTML = ev.length ? ev.map((e) => {
+        const live = e.state === 'live', open = e.state === 'open';
+        const when = live ? (e.endsAt ? `termina em ${left(e.endsAt + skew - now)}` : 'acontecendo agora') : e.at ? `começa em ${left(e.at + skew - now)}` : '';
+        return `<li class="ev-item ${live ? 'live' : open ? 'open' : ''}"><b>${esc(e.name)}</b><span class="ev-tag">${live ? 'AO VIVO' : open ? 'INSCRIÇÕES ABERTAS' : 'EM BREVE'}</span>
+          <small>${esc(when)}${e.where ? ' · ' + esc(e.where) : ''}</small></li>`;
+      }).join('') : '<li class="muted">Nenhum evento agendado agora.</li>';
+    } catch (_) { box.innerHTML = '<li class="muted">Não foi possível carregar os eventos.</li>'; }
+  }
+  loadEvents(); setInterval(loadEvents, 60000);
+
   async function loadRanking(by = state.rankBy) {
     state.rankBy = by;
     $$('#ranking .tab').forEach((t) => { const on = t.dataset.by === by; t.classList.toggle('is-on', on); t.setAttribute('aria-selected', on); });
@@ -618,7 +636,7 @@
   try { const q = new URLSearchParams(location.search).get('gfx'); if (q === '2d' || q === '3d') setGfxPref(q); } catch (_) { /* nada */ }
   $('#btn-play-3d').onclick = () => { setGfxPref('3d'); $('#btn-play').dataset.keep = '1'; $('#btn-play').click(); };
   $('#btn-play').onclick = () => {
-    if ($('#btn-play').dataset.keep) delete $('#btn-play').dataset.keep; else setGfxPref('blocks');
+    if ($('#btn-play').dataset.keep) delete $('#btn-play').dataset.keep; else setGfxPref('2d');
     if (!state.me) return openAuth('login', 'Entre na sua conta para jogar. Ainda não tem? Use “Criar conta”.');
     // sempre abre a seleção de heróis (dá para escolher ou criar outro)
     openAccount();

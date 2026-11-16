@@ -821,8 +821,9 @@
   // ---- gráfico 2D ou 3D (escolha do jogador; o servidor e as regras são os mesmos) ----
   const GFX = (() => {
     let q = null; try { q = new URLSearchParams(location.search).get('gfx'); } catch (_) { /* nada */ }
-    if (q === '2d' || q === '3d' || q === 'blocks') { try { localStorage.setItem('mui_gfx', q); } catch (_) { /* nada */ } return q; }
-    try { return localStorage.getItem('mui_gfx') || 'blocks'; } catch (_) { return 'blocks'; }
+    if (q === '3d' || q === 'blocks') return q;   // só por link de teste
+    try { localStorage.setItem('mui_gfx', '2d'); } catch (_) { /* nada */ }
+    return '2d';
   })();
   let is3d = false; // vira true quando o motor 3D carregou e iniciou
   const W3 = () => window.World3D;
@@ -1603,6 +1604,45 @@
   }
 
   // Poeira pixelada sincronizada com o passo, sem adicionar spritesheets ou pesar o celular.
+  // brilho do equipamento pelo +nível (conjunto médio ou arma, o maior):
+  // +4–6 brilho suave · +7–8 aura no chão · +9 brilho forte e faíscas · +10–11 energia pulsando · +12–13 aura intensa
+  // +14 partículas contínuas · +15 aura lendária com raios de luz. Poucas partículas (não atrapalha a visão nem o celular).
+  const AURA_COL = (L) => L >= 15 ? [255, 196, 70] : L >= 14 ? [255, 214, 107] : L >= 12 ? [196, 130, 255] : L >= 9 ? [110, 220, 255] : [160, 205, 255];
+  function plusAura(eq, x, y, h, now, e) {
+    const L = Math.max(Number(eq.ap) || 0, Number(eq.wp) || 0);
+    if (L < 4) return;
+    const [r, g, b] = AURA_COL(L), cy = y - h * 0.45;
+    const pulse = L >= 10 ? 0.75 + 0.25 * Math.sin(now / (L >= 12 ? 160 : 240) + (e.phase || 0)) : 1;
+    const k = (L >= 15 ? 0.6 : L >= 12 ? 0.48 : L >= 9 ? 0.38 : L >= 7 ? 0.26 : 0.16) * pulse;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const rad = h * (L >= 12 ? 0.75 : 0.6);
+    const gr = ctx.createRadialGradient(x, cy, 0, x, cy, rad);
+    gr.addColorStop(0, `rgba(${r},${g},${b},${k})`); gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = gr; ctx.fillRect(x - rad, cy - rad, rad * 2, rad * 2);
+    if (L >= 7) {   // aura no chão
+      ctx.strokeStyle = `rgba(${r},${g},${b},${0.35 * pulse + (L >= 12 ? 0.2 : 0)})`; ctx.lineWidth = Math.max(1, dpr * (L >= 12 ? 2 : 1.4));
+      ctx.beginPath(); ctx.ellipse(x, y, h * 0.36, h * 0.12, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+    if (L >= 9) {   // faíscas subindo (mais no +14/+15)
+      const n = L >= 14 ? 8 : L >= 12 ? 6 : 4;
+      for (let i = 0; i < n; i++) {
+        const ph = ((now / (L >= 14 ? 900 : 1300)) + i / n + (e.phase || 0) / 1000) % 1;
+        const px = x + Math.sin(i * 2.4 + now / 500) * h * 0.3, py = y - ph * h * 1.1;
+        ctx.globalAlpha = (1 - ph) * 0.9; ctx.fillStyle = `rgb(${Math.min(255, r + 60)},${Math.min(255, g + 40)},${b})`;
+        const s2 = Math.max(1, Math.round(dpr * (L >= 14 ? 2 : 1.5))); ctx.fillRect(Math.round(px), Math.round(py), s2, s2);
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (L >= 15) {   // raios de luz lendários
+      for (let i = 0; i < 4; i++) {
+        const a = now / 1400 + i * Math.PI / 2, len = h * (0.7 + 0.15 * Math.sin(now / 300 + i));
+        const gl = ctx.createLinearGradient(x, cy, x + Math.cos(a) * len, cy + Math.sin(a) * len * 0.6);
+        gl.addColorStop(0, 'rgba(255,230,150,.35)'); gl.addColorStop(1, 'rgba(255,230,150,0)');
+        ctx.strokeStyle = gl; ctx.lineWidth = dpr * 3; ctx.beginPath(); ctx.moveTo(x, cy); ctx.lineTo(x + Math.cos(a) * len, cy + Math.sin(a) * len * 0.6); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
   function drawRunPuff(x, y, now, phase, flip, color) {
     const step = (now / 105 + (phase || 0) / 170) % 1;
     if (step > 0.42) return;
@@ -1923,6 +1963,7 @@
         }
         // montado: quem anda é o Fenrir; o cavaleiro fica sentado (pose parada) e só ataca/usa poder normalmente
         const riderAct = mounted ? act.replace(/^(run|walk)/, 'idle') : act;  // montado: sentado, olhando para o mesmo lado
+        if (!e.dead && eq) plusAura(eq, riderX, y - lift, dim.h * sc, now, e);
         const pxDrawn = !!(window.PX && PX.draw(ctx, e, info.cls, riderAct, now, riderX, y - lift, HERO_H * sc, dpr));
         if (!pxDrawn) Sprites.hero(ctx, info.cls, info.ap, riderAct, t, riderX, y - lift - (mounted ? 0 : runBob) - (mounted ? 0 : idleBob), sc, heroFlip, { once, equip: eq });
         if (mounted) {
@@ -2093,7 +2134,7 @@
   const IDL = { scroll: 0, seed: Math.random() * 1000, dmg: [], kills: 0, lastLv: 0, lvKills: 0, hpPrev: new Map(), enemies: new Map(), walk: 0, zoneT: 0 };
   function idlePref() { try { return localStorage.getItem(IDLE_KEY) !== 'map'; } catch (_) { return true; } }
   const idleMapOk = () => !!(S.map && !S.map.arena);   // em todo lugar, menos dentro das arenas e eventos
-  function idleActive() { return !window.MUI_BLOCKS && idleMapOk() && idlePref(); }
+  function idleActive() { return false; }   // jogo em visão de cima (top-down 2.5D); a tela lateral saiu
   function setIdlePref(on) {
     try { localStorage.setItem(IDLE_KEY, on ? 'idle' : 'map'); } catch (_) { /* sem armazenamento */ }
     paintIdleBtn();
@@ -2104,7 +2145,7 @@
     const can = idleMapOk() && !window.MUI_BLOCKS;
     b.hidden = !can;
     b.textContent = idlePref() ? '🗺 Ver mapa' : '⚔ Tela idle';
-    document.body.classList.toggle('idle-stage', can && idlePref());
+    document.body.classList.toggle('idle-stage', idleActive());
   }
   // paletas de cada tema (céu, morros ao fundo, árvores, chão, trilha, detalhe)
   const IDLE_PAL = {
@@ -3996,7 +4037,7 @@
         <small class="muted">Itens abaixo disso viram Zen na hora.</small></div>
       <label class="cfg-check"><input type="checkbox" id="cfg-pvp" ${st.pvpAuto ? 'checked' : ''}> Atacar jogadores inimigos automaticamente (Vulcanus ou PvP ligado)</label>
       <div class="cfg-row"><label for="cfg-gfx">Gráfico do jogo</label>
-        <select id="cfg-gfx"><option value="blocks">Blocos (3D de cubos)</option><option value="2d">2D (pixel art, aparelho fraco)</option><option value="3d">3D antigo</option></select></div>
+        <select id="cfg-gfx" disabled><option value="2d">2D pixel art</option></select></div>
       <div class="cfg-row"><label for="cfg-quality">Qualidade gráfica</label>
         <select id="cfg-quality"><option value="baixa">Baixa (celular fraco)</option><option value="media">Média</option><option value="alta">Alta</option><option value="ultra">Ultra (mais efeitos)</option></select></div>
       <div class="cfg-row"><label for="cfg-vol">Volume <b id="cfg-vol-v"></b></label><input type="range" id="cfg-vol" min="0" max="100" step="5"></div>

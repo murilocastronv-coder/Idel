@@ -336,4 +336,10 @@ EN_EXTRA = {
     "O baú de caça enche com os monstros que o herói mata, até 3 baús. Cheio, ele para: volte para abrir. A cada 10 níveis tem prêmio.": "The hunting chest fills with the monsters your hero kills, up to 3 chests. When full it stops: come back to open them. Every 10 levels there's a reward.",
     "MMORPG idle · mundo de blocos em 3D": "Idle MMORPG · 3D block world", "Blocos (3D de cubos)": "Blocks (3D cubes)",
     "2D (pixel art, aparelho fraco)": "2D (pixel art, low-end devices)", "3D antigo": "Old 3D",
+    "MMORPG idle · pixel art HD": "Idle MMORPG · HD pixel art", "▶ JOGAR AGORA": "▶ PLAY NOW", "▶ ENTRAR NO MUNDO": "▶ ENTER THE WORLD",
+    "O jogo no celular: joystick, botões de ataque e o AUTO caçando sozinho.": "The game on a phone: joystick, attack buttons and AUTO hunting on its own.",
+    "2D pixel art": "2D pixel art",
+    "Ao vivo no servidor": "Live on the server", "Eventos ativos e próximos": "Active and upcoming events", "Eventos": "Events",
+    "Carregando eventos…": "Loading events…", "AO VIVO": "LIVE", "INSCRIÇÕES ABERTAS": "REGISTRATION OPEN", "EM BREVE": "SOON",
+    "Nenhum evento agendado agora.": "No events scheduled right now.", "Não foi possível carregar os eventos.": "Could not load the events.",
 }
