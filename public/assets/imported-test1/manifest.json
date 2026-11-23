@@ -1,0 +1,1295 @@
+{
+  "source": "murilocastronv-coder/Test1",
+  "characters": [
+    {
+      "id": "a186e0b5-46cf-4259-b791-d06d5dece872",
+      "name": "Cavaleiro Carmesim",
+      "role": "hero",
+      "sheet": "characters/a186e0b5-46cf-4259-b791-d06d5dece872.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "e15cb620-66b4-457e-af22-7357de16bbef",
+      "name": "Mago Arcano",
+      "role": "hero",
+      "sheet": "characters/e15cb620-66b4-457e-af22-7357de16bbef.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        }
+      }
+    },
+    {
+      "id": "d3c19f60-17ec-49ef-8b75-586ace0a2413",
+      "name": "Elfa Esmeralda",
+      "role": "hero",
+      "sheet": "characters/d3c19f60-17ec-49ef-8b75-586ace0a2413.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        }
+      }
+    },
+    {
+      "id": "9af51a54-5b5a-4c0f-af85-e60403f64df9",
+      "name": "Gladiador Violeta",
+      "role": "hero",
+      "sheet": "characters/9af51a54-5b5a-4c0f-af85-e60403f64df9.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "3a46a0b9-fba0-476d-9085-06ad60a89811",
+      "name": "Lorde Sombrio",
+      "role": "hero",
+      "sheet": "characters/3a46a0b9-fba0-476d-9085-06ad60a89811.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        }
+      }
+    },
+    {
+      "id": "765a1ab1-0538-4101-9520-bae405d3cbd4",
+      "name": "Goblin Saqueador",
+      "role": "monster",
+      "sheet": "characters/765a1ab1-0538-4101-9520-bae405d3cbd4.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "298c63d1-7fe8-4b3a-b9ec-dc7b3650aa30",
+      "name": "Guerreiro Esqueleto",
+      "role": "monster",
+      "sheet": "characters/298c63d1-7fe8-4b3a-b9ec-dc7b3650aa30.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        }
+      }
+    },
+    {
+      "id": "6446a239-4e41-4526-89f2-763f6ea9c9a6",
+      "name": "Demônio das Brasas",
+      "role": "monster",
+      "sheet": "characters/6446a239-4e41-4526-89f2-763f6ea9c9a6.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        }
+      }
+    },
+    {
+      "id": "88f0a8e6-a227-4ff3-af68-6d70d10fe862",
+      "name": "Bull Fighter",
+      "role": "monster",
+      "sheet": "characters/88f0a8e6-a227-4ff3-af68-6d70d10fe862.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "b45625d2-31b9-473e-bff4-95f39090aa44",
+      "name": "Hound",
+      "role": "monster",
+      "sheet": "characters/b45625d2-31b9-473e-bff4-95f39090aa44.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "05f6621d-3a21-4b64-891f-ea07544ab4df",
+      "name": "Lich",
+      "role": "monster",
+      "sheet": "characters/05f6621d-3a21-4b64-891f-ea07544ab4df.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "4b0feb8e-8958-4902-b1eb-749c3b15c4a3",
+      "name": "Giant",
+      "role": "monster",
+      "sheet": "characters/4b0feb8e-8958-4902-b1eb-749c3b15c4a3.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "32411b98-4eb5-43cc-b8bd-c9b6ed3732bf",
+      "name": "Hunter",
+      "role": "monster",
+      "sheet": "characters/32411b98-4eb5-43cc-b8bd-c9b6ed3732bf.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "5d23b8c8-d1bd-4e0e-94a9-facecd8f23c9",
+      "name": "Forest Monster",
+      "role": "monster",
+      "sheet": "characters/5d23b8c8-d1bd-4e0e-94a9-facecd8f23c9.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "e517606d-a1ba-4e77-9da6-2ba5af387ad1",
+      "name": "Agon",
+      "role": "monster",
+      "sheet": "characters/e517606d-a1ba-4e77-9da6-2ba5af387ad1.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "5da2797c-f831-489c-ad9b-344b39cd74ea",
+      "name": "Ice Monster",
+      "role": "monster",
+      "sheet": "characters/5da2797c-f831-489c-ad9b-344b39cd74ea.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "399d4689-9706-4f1f-9a48-bedddb261866",
+      "name": "Assassin",
+      "role": "monster",
+      "sheet": "characters/399d4689-9706-4f1f-9a48-bedddb261866.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "b636b0c1-bf91-40ab-9ad8-f89feef13a08",
+      "name": "Yeti",
+      "role": "monster",
+      "sheet": "characters/b636b0c1-bf91-40ab-9ad8-f89feef13a08.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    },
+    {
+      "id": "dfbd2cd2-035e-4d98-97f1-7b64305ff6fe",
+      "name": "Elite Yeti",
+      "role": "monster",
+      "sheet": "characters/dfbd2cd2-035e-4d98-97f1-7b64305ff6fe.png",
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "animations": {
+        "idle": {
+          "fps": 7,
+          "frames": 4,
+          "rows": {
+            "south": 0,
+            "east": 1,
+            "north": 2,
+            "west": 3,
+            "south-east": 4,
+            "north-east": 5,
+            "north-west": 6,
+            "south-west": 7
+          }
+        },
+        "walk": {
+          "fps": 10,
+          "frames": 6,
+          "rows": {
+            "south": 8,
+            "east": 9,
+            "north": 10,
+            "west": 11,
+            "south-east": 12,
+            "north-east": 13,
+            "north-west": 14,
+            "south-west": 15
+          }
+        },
+        "attack": {
+          "fps": 12,
+          "frames": 8,
+          "rows": {
+            "south": 16,
+            "east": 17,
+            "north": 18,
+            "west": 19,
+            "south-east": 20,
+            "north-east": 21,
+            "north-west": 22,
+            "south-west": 23
+          }
+        }
+      }
+    }
+  ],
+  "wings": [
+    {
+      "id": "aa6d7ac6-7445-472d-983f-457e56c5b3dc",
+      "family": "Angelical",
+      "level": 1,
+      "file": "wings/aa6d7ac6-7445-472d-983f-457e56c5b3dc.png"
+    },
+    {
+      "id": "d5d76595-749f-45ec-bdca-9757e385c483",
+      "family": "Angelical",
+      "level": 2,
+      "file": "wings/d5d76595-749f-45ec-bdca-9757e385c483.png"
+    },
+    {
+      "id": "8b398fbe-7a2f-45fd-b3f0-77b790905f9d",
+      "family": "Angelical",
+      "level": 3,
+      "file": "wings/8b398fbe-7a2f-45fd-b3f0-77b790905f9d.png"
+    },
+    {
+      "id": "52712e2c-f2e1-49e0-aa40-40cf7933ee3f",
+      "family": "Angelical",
+      "level": 4,
+      "file": "wings/52712e2c-f2e1-49e0-aa40-40cf7933ee3f.png"
+    },
+    {
+      "id": "10c71833-716f-488d-b801-2840d0489f46",
+      "family": "Angelical",
+      "level": 5,
+      "file": "wings/10c71833-716f-488d-b801-2840d0489f46.png"
+    },
+    {
+      "id": "c418a26f-0b60-4460-806a-1f9b8f8df53c",
+      "family": "Demoníaca",
+      "level": 1,
+      "file": "wings/c418a26f-0b60-4460-806a-1f9b8f8df53c.png"
+    },
+    {
+      "id": "343d1475-f4d7-479a-9c37-7af3b9021e2d",
+      "family": "Demoníaca",
+      "level": 2,
+      "file": "wings/343d1475-f4d7-479a-9c37-7af3b9021e2d.png"
+    },
+    {
+      "id": "81e8ac4e-eb25-4289-aa2a-14e2ef199272",
+      "family": "Demoníaca",
+      "level": 3,
+      "file": "wings/81e8ac4e-eb25-4289-aa2a-14e2ef199272.png"
+    },
+    {
+      "id": "88ed7c17-f63f-4d9f-a409-533b782cec76",
+      "family": "Demoníaca",
+      "level": 4,
+      "file": "wings/88ed7c17-f63f-4d9f-a409-533b782cec76.png"
+    },
+    {
+      "id": "523801e7-93e6-4fa3-8ca0-884166d8ada2",
+      "family": "Demoníaca",
+      "level": 5,
+      "file": "wings/523801e7-93e6-4fa3-8ca0-884166d8ada2.png"
+    },
+    {
+      "id": "c09812c4-60e1-4b5b-b303-499e7d2c6b7c",
+      "family": "Dragônica",
+      "level": 1,
+      "file": "wings/c09812c4-60e1-4b5b-b303-499e7d2c6b7c.png"
+    },
+    {
+      "id": "5e468b5d-ec29-4e38-88dc-51bc8335ed80",
+      "family": "Dragônica",
+      "level": 2,
+      "file": "wings/5e468b5d-ec29-4e38-88dc-51bc8335ed80.png"
+    },
+    {
+      "id": "9eb644ec-d086-48a2-befe-962d7282c3dc",
+      "family": "Dragônica",
+      "level": 3,
+      "file": "wings/9eb644ec-d086-48a2-befe-962d7282c3dc.png"
+    },
+    {
+      "id": "c2ea9ec8-1718-4e7a-9c00-e096e32d34b1",
+      "family": "Dragônica",
+      "level": 4,
+      "file": "wings/c2ea9ec8-1718-4e7a-9c00-e096e32d34b1.png"
+    },
+    {
+      "id": "b125fc05-548f-4006-8a80-3d22fe964fa8",
+      "family": "Dragônica",
+      "level": 5,
+      "file": "wings/b125fc05-548f-4006-8a80-3d22fe964fa8.png"
+    },
+    {
+      "id": "34a836a4-d245-47e0-8979-ff3c6030cbad",
+      "family": "Cristalina",
+      "level": 1,
+      "file": "wings/34a836a4-d245-47e0-8979-ff3c6030cbad.png"
+    },
+    {
+      "id": "aee40f41-3fce-45bc-9ee5-c1f023773f66",
+      "family": "Cristalina",
+      "level": 2,
+      "file": "wings/aee40f41-3fce-45bc-9ee5-c1f023773f66.png"
+    },
+    {
+      "id": "cc87e56f-caa1-42e1-8360-9e0e52f877d9",
+      "family": "Cristalina",
+      "level": 3,
+      "file": "wings/cc87e56f-caa1-42e1-8360-9e0e52f877d9.png"
+    },
+    {
+      "id": "916a5fac-9984-41ac-9cf9-ce458d4a16e9",
+      "family": "Cristalina",
+      "level": 4,
+      "file": "wings/916a5fac-9984-41ac-9cf9-ce458d4a16e9.png"
+    },
+    {
+      "id": "db31cf54-3006-4ed2-a4ea-7b477711c200",
+      "family": "Cristalina",
+      "level": 5,
+      "file": "wings/db31cf54-3006-4ed2-a4ea-7b477711c200.png"
+    },
+    {
+      "id": "c217f23d-a2b5-4b18-894c-40782e1dfca5",
+      "family": "Elemental",
+      "level": 1,
+      "file": "wings/c217f23d-a2b5-4b18-894c-40782e1dfca5.png"
+    },
+    {
+      "id": "9dc7aab1-341b-49b5-94c5-8b8de1ba0da2",
+      "family": "Elemental",
+      "level": 2,
+      "file": "wings/9dc7aab1-341b-49b5-94c5-8b8de1ba0da2.png"
+    },
+    {
+      "id": "e0a60502-7609-4e04-823d-51670fadb69f",
+      "family": "Elemental",
+      "level": 3,
+      "file": "wings/e0a60502-7609-4e04-823d-51670fadb69f.png"
+    },
+    {
+      "id": "65b7179c-5978-4d6b-88cc-0ad2f7ac83b2",
+      "family": "Elemental",
+      "level": 4,
+      "file": "wings/65b7179c-5978-4d6b-88cc-0ad2f7ac83b2.png"
+    },
+    {
+      "id": "e4dac244-ce82-43d6-8cb5-65ef46d0b763",
+      "family": "Elemental",
+      "level": 5,
+      "file": "wings/e4dac244-ce82-43d6-8cb5-65ef46d0b763.png"
+    },
+    {
+      "id": "a1437254-3c5e-4037-9e30-1cd36c453bdf",
+      "family": "Sombria",
+      "level": 1,
+      "file": "wings/a1437254-3c5e-4037-9e30-1cd36c453bdf.png"
+    },
+    {
+      "id": "90ccb4db-5c08-4a9b-a1ee-9f2616d59d7f",
+      "family": "Sombria",
+      "level": 2,
+      "file": "wings/90ccb4db-5c08-4a9b-a1ee-9f2616d59d7f.png"
+    },
+    {
+      "id": "a072fddd-5576-4f8f-83a7-ff32da5bd624",
+      "family": "Sombria",
+      "level": 3,
+      "file": "wings/a072fddd-5576-4f8f-83a7-ff32da5bd624.png"
+    },
+    {
+      "id": "3d2759e9-ecba-4c02-b169-d464af85b28e",
+      "family": "Sombria",
+      "level": 4,
+      "file": "wings/3d2759e9-ecba-4c02-b169-d464af85b28e.png"
+    },
+    {
+      "id": "e3b0c3dc-5cf9-47e5-896b-10de59556e53",
+      "family": "Sombria",
+      "level": 5,
+      "file": "wings/e3b0c3dc-5cf9-47e5-896b-10de59556e53.png"
+    }
+  ]
+}
