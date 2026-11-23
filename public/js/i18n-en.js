@@ -2477,5 +2477,9 @@ window.I18N_EN = {
 "INSCRIÇÕES ABERTAS": "REGISTRATION OPEN",
 "EM BREVE": "SOON",
 "Nenhum evento agendado agora.": "No events scheduled right now.",
-"Não foi possível carregar os eventos.": "Could not load the events."
+"Não foi possível carregar os eventos.": "Could not load the events.",
+"Este nome de usuário é reservado.": "This username is reserved.",
+"Servidor novo · crie sua conta": "New server · create your account",
+"Servidor novo: todas as contas foram apagadas e o ranking começou do zero. Crie sua conta e chegue primeiro nos bosses, no PvP e na temporada!": "New server: every account was wiped and the ranking started from zero. Create your account and be first in bosses, PvP and the season!",
+"Servidor idle novo: contas e ranking zerados, todo mundo começa do nível 1. Monstros mais fortes dão mais experiência.": "New idle server: accounts and ranking wiped, everyone starts at level 1. Stronger monsters give more experience."
 };

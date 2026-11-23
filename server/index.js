@@ -749,6 +749,8 @@ route('POST', '/api/register', async (req, url, res) => {
   const pwErr = sec.validatePassword(password);
   if (pwErr) throw new HttpError(400, pwErr);
   if (password.toLowerCase().includes(username.toLowerCase())) throw new HttpError(400, 'A senha não pode conter o nome de usuário.');
+  // depois do wipe o nome do dono do jogo fica livre: só o e-mail do dono pode criar a conta com ele
+  if (ADMIN.USERS.includes(username.toLowerCase()) && ADMIN.EMAIL !== '*' && email !== ADMIN.EMAIL) throw new HttpError(409, 'Este nome de usuário é reservado.');
 
   const code = sec.recoveryCode();
   const [pwHash, codeHash] = await Promise.all([sec.hashPassword(password), sec.hashPassword(code)]);

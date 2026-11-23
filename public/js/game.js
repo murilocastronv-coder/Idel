@@ -1097,7 +1097,8 @@
       if (p.drag) { const d = Math.max(0, 1 - p.drag * dt); p.vx *= d; p.vy *= d; }
       p.vy += p.g * dt; p.x += (p.vx + (p.wob ? Math.sin(p.t * 6 + p.ph) * p.wob : 0)) * dt; p.y += p.vy * dt;
       keep.push(p);
-      const sx = Math.round((p.x - camX) * zoom), sy = Math.round((p.y - camY) * zoom);
+      let sx, sy;
+      if (IDL.map) [sx, sy] = IDL.map(p.x, p.y); else { sx = Math.round((p.x - camX) * zoom); sy = Math.round((p.y - camY) * zoom); }
       if (sx < -30 || sy < -30 || sx > cv.width + 30 || sy > cv.height + 30) continue;
       const m = p.add ? 'lighter' : 'source-over'; if (m !== mode) { ctx.globalCompositeOperation = m; mode = m; }
       const k = p.t / p.life;
@@ -1574,7 +1575,7 @@
   }
   requestAnimationFrame(frame);
 
-  const toScreen = (x, y) => { if (is3d) { const p = W3().project(x, y, 0); return [Math.round(p[0]), Math.round(p[1])]; } return [Math.round((x - camX) * zoom), Math.round((y - camY) * zoom)]; };
+  const toScreen = (x, y) => { if (IDL.map) return IDL.map(x, y); if (is3d) { const p = W3().project(x, y, 0); return [Math.round(p[0]), Math.round(p[1])]; } return [Math.round((x - camX) * zoom), Math.round((y - camY) * zoom)]; };
   const spr = () => zoom / 2; // pixels de tela por pixel de sprite (sprites têm o dobro da resolução do mundo)
   function shake(mag, dur = 350) { S.shake = { mag, dur, until: performance.now() + dur }; }
 
@@ -2129,12 +2130,13 @@
   // ================= TELA IDLE (visão lateral) =================
   // Nos mapas de caça o jogo mostra o grupo andando sozinho pela trilha, da esquerda para a direita, e os monstros
   // chegando pela direita. É só a apresentação: o combate, o EXP e os drops continuam vindo do servidor (AUTO).
-  // Na cidade, nas arenas e em eventos volta o mapa de cima. O jogador troca a qualquer momento (botão Idle / Mapa).
-  const IDLE_KEY = 'mui_idle_view';
+  // É o formato padrão do jogo (servidor novo); nas arenas e em eventos volta o mapa de cima. O jogador troca a
+  // qualquer momento (botão Ver mapa / Tela idle). O cenário (céu, montanhas, casas, trilha, dia e noite) vem de idle-scene.js.
+  const IDLE_KEY = 'mui_idle_view2';
   const IDL = { scroll: 0, seed: Math.random() * 1000, dmg: [], kills: 0, lastLv: 0, lvKills: 0, hpPrev: new Map(), enemies: new Map(), walk: 0, zoneT: 0 };
   function idlePref() { try { return localStorage.getItem(IDLE_KEY) !== 'map'; } catch (_) { return true; } }
   const idleMapOk = () => !!(S.map && !S.map.arena);   // em todo lugar, menos dentro das arenas e eventos
-  function idleActive() { return false; }   // jogo em visão de cima (top-down 2.5D); a tela lateral saiu
+  function idleActive() { return !window.MUI_BLOCKS && idleMapOk() && idlePref(); }
   function setIdlePref(on) {
     try { localStorage.setItem(IDLE_KEY, on ? 'idle' : 'map'); } catch (_) { /* sem armazenamento */ }
     paintIdleBtn();
@@ -2179,10 +2181,26 @@
   // ruído simples e estável para espalhar árvores, pedras e morros
   const hash = (i, k = 0) => { const s = Math.sin(i * 127.1 + k * 311.7 + IDL.seed) * 43758.5453; return s - Math.floor(s); };
 
+  // onde começam os botões de baixo que ficam no meio da tela (onde o grupo e os monstros aparecem); os dos cantos não contam
+  function idleCtl(W, H) {
+    const t = performance.now(), C = IDL.ctlC;
+    if (C && C.W === W && C.H === H && t - C.t < 700) return C.v;
+    const x0 = W * 0.2, x1 = W * 0.8;
+    let v = H * 0.8;
+    for (const el of document.querySelectorAll('#btn-auto, #btn-pvp, #btn-pot-hp, #btn-pot-mp, #btn-menu, #btn-attack, #skills > *')) {
+      if (el.hidden) continue;
+      const r = el.getBoundingClientRect(); if (!r.width || !r.height) continue;
+      const cx = (r.left + r.right) / 2 * dpr;
+      if (cx < x0 || cx > x1 || r.top * dpr < H * 0.35) continue;
+      v = Math.min(v, r.top * dpr);
+    }
+    IDL.ctlC = { W, H, t, v };
+    return v;
+  }
   // espaço livre da cena idle: abaixo dos quadros de cima e acima dos botões de baixo (muda com a altura da tela)
   function idleLayout(W, H) {
     const edge = (sel, side) => { const el = $(sel); if (!el || el.hidden) return 0; const r = el.getBoundingClientRect(); return r.height ? r[side] * dpr : 0; };
-    const ctl = Math.min(edge('#btn-auto', 'top') || H, edge('#vjoy', 'top') || H, edge('#btn-pot-hp', 'top') || H) || H * 0.78;
+    const ctl = idleCtl(W, H);
     const top = Math.max(edge('.hud-me', 'bottom'), edge('.hud-map', 'bottom'), 40 * dpr) + 6 * dpr;
     const compact = (ctl - top) < 380 * dpr;
     const R = (compact ? 12 : 15) * dpr;
@@ -2190,12 +2208,22 @@
     const statsY = by + bh + 6 * dpr, statsH = compact ? 18 * dpr : 50 * dpr;
     const hudBottom = statsY + statsH;
     const groundY = Math.min(ctl - 70 * dpr, hudBottom + 10 * dpr);
-    const pathH = Math.max(34 * dpr, (ctl - groundY) * 0.5), pathTop = ctl - 2 * dpr - pathH;
+    const pathH = Math.max(34 * dpr, Math.min((ctl - groundY) * 0.42, 110 * dpr)), pathTop = ctl - 2 * dpr - pathH;
     const laneY = pathTop + pathH * 0.72;
     const heroH = Math.max(34 * dpr, Math.min(H * 0.11, laneY - hudBottom - 22 * dpr));
-    return { ctl, top, compact, R, cy, by, bh, statsY, hudBottom, groundY, pathTop, pathH, laneY, sc: Math.max(1, Math.min(4.2, heroH / HERO_H)) };
+    // horizonte (onde as montanhas encostam no campo): entre o HUD e a trilha
+    const horizonY = pathTop - Math.max(24 * dpr, Math.min((pathTop - groundY) * 0.45, 150 * dpr));
+    return { ctl, top, compact, R, cy, by, bh, statsY, hudBottom, groundY, pathTop, pathH, laneY, horizonY, sc: Math.max(1, Math.min(4.2, heroH / HERO_H)) };
   }
-  function idleBackground(now, W, H, groundY, pathTop0, pathH0) {
+  // dados do cenário para idle-scene.js
+  function sceneOpts(now, W, H, LY) {
+    return { W, H, dpr, now, theme: S.map && S.map.theme, map: S.map && S.map.map, scroll: IDL.scroll, groundY: LY.groundY, pathTop: LY.pathTop, pathH: LY.pathH,
+      horizonY: LY.horizonY, quality, lights: QUALITY[quality].lights };
+  }
+  function idleBackground(now, W, H, groundY, pathTop0, pathH0, LY) {
+    if (window.IdleScene && LY) {
+      try { return IdleScene.draw(ctx, sceneOpts(now, W, H, LY)); } catch (e) { if (!IDL.sceneErr) { IDL.sceneErr = true; console.error('[cenário idle]', e); } }
+    }
     const P = idlePal(), px = Math.max(2, Math.round(2 * dpr));
     // céu
     const sky = ctx.createLinearGradient(0, 0, 0, groundY);
@@ -2307,7 +2335,7 @@
       if (eq && eq.pet && window.Fenrir && Fenrir.isPet(eq.pet)) Fenrir.drawPet(ctx, eq.pet, x + (flip ? 1 : -1) * 27 * sc, y, sc * 2.2, t, dim.h * sc * 0.55);
       Sprites.hero(ctx, info.cls, info.ap, act, t, x, y - bob, sc, flip, { once, equip: eq });
     }
-    e.ix = x; e.iy = y - lift - dim.h * sc * 0.5; e.itop = y - lift - dim.h * sc;
+    e.ix = x; e.iy = y - lift - dim.h * sc * 0.5; e.itop = y - lift - dim.h * sc; e.ify = y; e.iseen = now;
   }
 
   function drawIdleStage(now, dt, me) {
@@ -2333,7 +2361,7 @@
     // o grupo anda enquanto não tem ninguém para bater
     const walking = !fighting && !!(me && !me.dead) && !!(S.me && S.me.auto);
     if (walking) IDL.scroll += dt * 90 * dpr;
-    const bg = idleBackground(now, W, H, groundY, LY.pathTop, LY.pathH);
+    const bg = idleBackground(now, W, H, groundY, LY.pathTop, LY.pathH, LY);
     const laneY = LY.laneY;
     // grupo: você na frente, a party atrás em formação
     const heroX = Math.round(W * 0.34);
@@ -2387,12 +2415,19 @@
       const mTint = m.tint && m.tint[0] === '#' ? m.tint : null;
       Sprites.monster(ctx, name, act, t, a.x + recoil, a.y, sc * (m.scale || 1), false, { once, tint: mTint });
       if (now < (m.hurtUntil || 0) && now >= (m.hitAt || 0) && !m.dyingAt) Sprites.monster(ctx, name, act, t, a.x + recoil, a.y, sc * (m.scale || 1), false, { once, white: true, alpha: 0.6, tint: mTint });
-      m.ix = a.x; m.iy = a.y - h * 0.5; m.itop = a.y - h;
+      m.ix = a.x; m.iy = a.y - h * 0.5; m.itop = a.y - h; m.ify = a.y; m.iseen = now;
       if (m.dead) continue;
       m.hpShow = m.hpShow === undefined ? m.hp : m.hpShow + (m.hp - m.hpShow) * 0.25;
       hpBar(a.x, a.y - h - 6 * dpr, Math.max(30 * dpr, w * 1.6), m.hpShow / m.maxHp, m.boss ? '#c06bff' : m.elite ? '#ffb02e' : '#e0473a');
       if (m.boss || m.golden || m.elite || m === (shown[0] && shown[0].e)) label(`${m.golden ? '♛ ' : ''}${m.name} Nv.${m.level}`, a.x, a.y - h - 9 * dpr, m.boss ? '#e0b0ff' : m.golden ? '#ffd36b' : m.elite ? '#ffd36b' : '#f0e6cc', 10);
     }
+    // primeiro plano do cenário, luz do grupo à noite e vinheta
+    if (window.IdleScene) {
+      try { IdleScene.front(ctx, { ...sceneOpts(now, W, H, LY), hero: me && me.ix != null ? { x: me.ix, y: me.ify, h: Math.max(10, me.ify - me.itop) } : null }); } catch (e) { if (!IDL.sceneErr) { IDL.sceneErr = true; console.error('[cenário idle]', e); } }
+    }
+    // golpes, magias, curas e partículas: os mesmos efeitos do mapa, levados para as posições da cena lateral
+    const z0 = zoom; zoom = 2 * sc; IDL.map = idleMapFn(now);
+    try { drawFx(now); drawVfx(dt); drawHitParticles(now, dt); } finally { IDL.map = null; zoom = z0; }
     // nomes do grupo
     for (const a of actors) if (a.kind !== 'm' && a.e.info && !a.e.dead) {
       const e = a.e;
@@ -2406,6 +2441,19 @@
     drawIdleHud(now, W, H, LY, walking, fighting);
   }
 
+  // ponto do mundo → tela idle: perto de quem está mais próximo no mundo (cada um tem lugar fixo na cena lateral)
+  function idleMapFn(now) {
+    const ents = [];
+    const add = (e) => { if (e && e.ix != null && e.rx != null && now - (e.iseen || 0) < 300) ents.push(e); };
+    S.monsters.forEach(add); S.players.forEach(add);
+    const Z = zoom;
+    return (x, y) => {
+      let best = null, bd = Infinity;
+      for (const e of ents) { const d = (e.rx - x) * (e.rx - x) + (e.ry - y) * (e.ry - y); if (d < bd) { bd = d; best = e; } }
+      if (!best || bd > 90 * 90) return [-9999, -9999];   // longe de quem aparece na cena: fica fora da tela
+      return [Math.round(best.ix + (x - best.rx) * Z), Math.round(best.ify + (y - best.ry) * Z)];
+    };
+  }
   function drawIdleFloats(now) {
     S.floats = S.floats.filter((f) => {
       const age = now - f.t0;
@@ -2432,9 +2480,20 @@
     return IDL.dmg.reduce((a, d) => a + d[1], 0) / (span / 1000);
   }
 
+  // quadro do HUD idle: fundo escuro em degradê, borda dourada e brilho em cima (mesma identidade dos botões do jogo)
+  function hudFrame(x, y, w, h, r = 6, glow) {
+    const rr = r * dpr;
+    ctx.save();
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, rr); else ctx.rect(x, y, w, h);
+    const g = ctx.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, 'rgba(34,26,40,.86)'); g.addColorStop(1, 'rgba(10,8,16,.86)');
+    ctx.fillStyle = g; ctx.fill();
+    ctx.lineWidth = Math.max(1, 1.5 * dpr); ctx.strokeStyle = glow || 'rgba(214,170,84,.75)'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + rr, y + 1.5 * dpr); ctx.lineTo(x + w - rr, y + 1.5 * dpr); ctx.lineWidth = dpr; ctx.strokeStyle = 'rgba(255,240,200,.14)'; ctx.stroke();
+    ctx.restore();
+  }
   function idleChip(x, y, w, h, title, value, sub, col, icon) {
-    ctx.fillStyle = 'rgba(10,8,16,.72)'; ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = 'rgba(255,211,107,.35)'; ctx.lineWidth = dpr; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    hudFrame(x, y, w, h, 6);
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.font = `700 ${Math.round(9.5 * dpr)}px "Exo 2", system-ui, sans-serif`; ctx.fillStyle = '#c9b88a';
     ctx.fillText(`${icon} ${title}`, x + 7 * dpr, y + 5 * dpr);
@@ -2451,7 +2510,7 @@
     const n = lv.length + 1, total = n * R * 2 + (n - 1) * gap;
     let x0 = Math.round(W / 2 - total / 2) + R;
     const cy = Math.round(LY.cy);
-    ctx.fillStyle = 'rgba(10,8,16,.6)'; ctx.fillRect(x0 - R - 8 * dpr, cy - R - 6 * dpr, total + 16 * dpr, R * 2 + 12 * dpr);
+    hudFrame(x0 - R - 8 * dpr, cy - R - 6 * dpr, total + 16 * dpr, R * 2 + 12 * dpr, 10);
     ctx.strokeStyle = '#6aa84f'; ctx.lineWidth = 3 * dpr; ctx.beginPath(); ctx.moveTo(x0, cy); ctx.lineTo(x0 + (n - 1) * (R * 2 + gap), cy); ctx.stroke();
     lv.forEach((v, i) => {
       const x = x0 + i * (R * 2 + gap), cur = v === L, done = v < L;
@@ -2473,9 +2532,20 @@
     const per = idleKillExp(L);
     const left = per > 0 ? Math.max(0, Math.ceil((next - have) / per)) : 0;
     const bw = Math.min(W * 0.86, 330 * dpr), bx = Math.round(W / 2 - bw / 2), by = Math.round(LY.by), bh = Math.round(LY.bh);
-    ctx.fillStyle = '#0b0a12'; ctx.fillRect(bx - dpr, by - dpr, bw + 2 * dpr, bh + 2 * dpr);
-    const g = ctx.createLinearGradient(0, by, 0, by + bh); g.addColorStop(0, '#ffd36b'); g.addColorStop(1, '#d08a1a');
+    ctx.save();
+    ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(bx - 2 * dpr, by - 2 * dpr, bw + 4 * dpr, bh + 4 * dpr, (bh / 2) + 2 * dpr); else ctx.rect(bx - 2 * dpr, by - 2 * dpr, bw + 4 * dpr, bh + 4 * dpr);
+    ctx.fillStyle = '#0b0a12'; ctx.fill(); ctx.lineWidth = Math.max(1, 1.5 * dpr); ctx.strokeStyle = 'rgba(214,170,84,.8)'; ctx.stroke();
+    ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, bh / 2); else ctx.rect(bx, by, bw, bh); ctx.clip();
+    const g = ctx.createLinearGradient(0, by, 0, by + bh); g.addColorStop(0, '#ffe08a'); g.addColorStop(0.5, '#f0b030'); g.addColorStop(1, '#b8700e');
     ctx.fillStyle = g; ctx.fillRect(bx, by, bw * frac, bh);
+    ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.fillRect(bx, by + dpr, bw * frac, Math.max(1, Math.round(bh * 0.25)));
+    if (frac > 0 && frac < 1) {   // brilho que corre pela barra
+      const sx = bx + ((now / 1600) % 1) * bw * frac, sg = ctx.createLinearGradient(sx - 20 * dpr, 0, sx + 20 * dpr, 0);
+      sg.addColorStop(0, 'rgba(255,255,255,0)'); sg.addColorStop(0.5, 'rgba(255,255,255,.35)'); sg.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = sg; ctx.fillRect(Math.max(bx, sx - 20 * dpr), by, Math.min(40 * dpr, bx + bw * frac - (sx - 20 * dpr)), bh);
+    }
+    for (let k = 1; k < 10; k++) { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(Math.round(bx + bw * k / 10), by, Math.max(1, dpr), bh); }
+    ctx.restore();
     ctx.font = `700 ${Math.round(9.5 * dpr)}px "Exo 2", system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
     ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.lineWidth = 3 * dpr;
     const txt = `${(frac * 100).toFixed(1).replace('.', ',')}% · faltam ~${fmt.format(left)} monstros para o nível ${L + 1}${S.chest && S.chest.nextMilestone ? ` · 🏅 prêmio no ${S.chest.nextMilestone}` : ''}`;
@@ -2487,7 +2557,7 @@
       const t = `● ${bigNum(S.me && S.me.zen != null ? S.me.zen : c.zen)} Zen   ⚔ ${bigNum(dps)}/s   ☠ ${bigNum(IDL.kills)} abates`;
       ctx.font = `700 ${Math.round(10.5 * dpr)}px "Exo 2", system-ui, sans-serif`;
       const tw = ctx.measureText(t).width + 16 * dpr;
-      ctx.fillStyle = 'rgba(10,8,16,.66)'; ctx.fillRect(Math.round(W / 2 - tw / 2), Math.round(LY.statsY), Math.round(tw), Math.round(18 * dpr));
+      hudFrame(Math.round(W / 2 - tw / 2), Math.round(LY.statsY), Math.round(tw), Math.round(18 * dpr), 9);
       label(t, W / 2, LY.statsY + 15 * dpr, '#ffe6a0', 10.5);
     } else {
     const cw = Math.min(118 * dpr, (W - 24 * dpr) / 3 - 6 * dpr), ch = 50 * dpr, cyy = Math.round(LY.statsY);

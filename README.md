@@ -15,6 +15,12 @@ Primeira etapa do MMORPG Idle 2D em pixel art: a página inicial completa, com c
 - **Minha conta**: criar até 5 heróis (nome único, classe, cor de cabelo e tom de pele com prévia animada), excluir herói (digitando o nome), trocar senha e gerar novo código de recuperação.
 - Tudo é salvo no PostgreSQL e continua lá depois que o servidor reinicia.
 
+## Servidor novo (wipe total) e tela idle
+
+- **Wipe total:** ao ligar o servidor, `server/wipe.js` apaga uma única vez todas as contas, sessões, personagens, itens, guildas, mercado e rankings (todo mundo cria conta de novo). Antes, as tabelas das contas são copiadas para o schema `<PG_SCHEMA>_bkp_wipe2` no mesmo banco; se a cópia falhar, nada é apagado. Configurações do jogo, notícias, pagamentos e auditoria ficam. A marca fica em `game_settings` (`wipe_total_2`), então não roda de novo.
+- O nome de usuário do dono do jogo (`ADMIN_USERS`) só pode ser criado com o e-mail do dono (`ADMIN_EMAIL`).
+- **Tela idle (padrão):** o grupo anda pela trilha e os monstros chegam pela direita. O cenário é desenhado por código em `public/js/idle-scene.js`: cada tipo de mapa tem céu, montanhas, mata, campo com casas e props, trilha e primeiro plano em camadas com paralaxe, ciclo de dia e noite de 24 minutos (janelas e postes acendem), tochas, fumaça e partículas do clima. `game.html?tod=0.7` fixa a hora para testar (0 manhã, 0,55 pôr do sol, 0,7 noite). O botão **Ver mapa** volta à visão de cima.
+
 ## O mundo jogável
 
 No painel **Minha conta**, cada herói tem o botão **Entrar no mundo** (`/game.html?c=ID`).

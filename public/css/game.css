@@ -833,8 +833,10 @@ body.idle-stage .hud-map .inv-timer { flex-basis: 100%; }
 /* tela idle: o nome/vida do monstro já aparecem em cima dele, então as caixas de alvo e de área de treino saem (não cobrem os níveis) */
 body.idle-stage #training-hud, body.idle-stage #target-hud { display: none !important; }
 
-/* modo blocos é o padrão: a troca de gráfico fica só nas Opções */
-#gfx-switch, #idle-view { display: none !important; }
+/* a troca de gráfico fica só nas Opções; o botão Ver mapa / Tela idle fica visível */
+#gfx-switch { display: none !important; }
+/* tela idle: o grupo anda sozinho, então o joystick sai e o cenário aparece inteiro */
+body.idle-stage #vjoy { display: none !important; }
 
 /* ================= controle de celular: joystick, botões redondos e menu ☰ (de pé ou deitado) ================= */
 .bottom { display: block; padding: 0; height: 0; }
