@@ -8,7 +8,7 @@ const zlib = require('zlib');
 const { WSServer } = require('./ws');
 const sec = require('./security');
 const crypto = require('crypto');
-const { wingShop } = require('../scripts/game-data');
+const { wingShop, premium, expandItem } = require('../scripts/game-data');
 
 const PORT = Number(process.env.PORT || 3000);
 const ROOT = path.join(__dirname, '..', 'game', 'website', 'out');
@@ -145,14 +145,25 @@ async function auth(req) {
   return rows[0];
 }
 // VIP do banco antigo: vip2 = Diamante, vip1 = Ouro (o maior vale). No modo HARD o EXP é baixo para os dois.
-async function vipOf(accountId) {
-  const { rows } = await db.query(`SELECT vip1_until > now() AS ouro, vip2_until > now() AS diamante FROM accounts WHERE id = $1`, [accountId]);
-  const r = rows[0] || {};
-  return r.diamante ? 'diamante' : r.ouro ? 'ouro' : null;
+async function vipInfo(accountId) {
+  const { rows } = await db.query(`SELECT vip1_until, vip2_until FROM accounts WHERE id = $1`, [accountId]);
+  const r = rows[0] || {}, now = Date.now();
+  const d = r.vip2_until && new Date(r.vip2_until).getTime() > now ? r.vip2_until : null;
+  const o = r.vip1_until && new Date(r.vip1_until).getTime() > now ? r.vip1_until : null;
+  return { vip: d ? 'diamante' : o ? 'ouro' : null, vipUntil: d || o || null, ouroUntil: o, diamanteUntil: d };
+}
+async function vipOf(accountId) { return (await vipInfo(accountId)).vip; }
+async function purchasedItems(accountId) {
+  const { rows } = await db.query(`SELECT DISTINCT item FROM aether_purchases WHERE account_id = $1 AND item NOT LIKE 'vip:%'`, [accountId]);
+  return rows.map((r) => r.item);
 }
 async function purchasedWings(accountId) {
-  const { rows } = await db.query(`SELECT DISTINCT item FROM aether_purchases WHERE account_id = $1 AND item LIKE 'wing:%'`, [accountId]);
-  return rows.map((r) => r.item.slice(5));
+  return (await purchasedItems(accountId)).filter((i) => i.startsWith('wing:')).map((i) => i.slice(5));
+}
+/** O que a conta comprou + VIP, para mandar ao jogo. */
+async function premiumState(accountId) {
+  const items = await purchasedItems(accountId);
+  return { ...(await vipInfo(accountId)), items, wings: items.filter((i) => i.startsWith('wing:')).map((i) => i.slice(5)) };
 }
 
 // ---------------- Loja de asas com dinheiro real (Stripe Checkout) ----------------
@@ -162,6 +173,20 @@ const STRIPE_KEY = () => process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WHSEC = () => process.env.STRIPE_WEBHOOK_SECRET || '';
 const payEnabled = () => !!STRIPE_KEY() && !!STRIPE_WHSEC();
 const SHOP = wingShop();
+const PREMIUM = premium();
+/** Produto pelo código: asa, conjunto ou VIP. O preço sempre vem daqui (nunca do navegador). */
+function productFor(item) {
+  if (typeof item !== 'string') return null;
+  if (item.startsWith('wing:')) {
+    const w = SHOP.find((x) => x.id === item.slice(5) && !x.free);
+    return w && { item, cents: w.cents, name: `Asa ${w.family} Nv.${w.level}`, desc: 'asa cosmética permanente', once: true };
+  }
+  const pack = PREMIUM.packs.find((x) => x.id === item);
+  if (pack) return { item, cents: pack.cents, name: pack.name, desc: pack.desc, once: true };
+  const vip = PREMIUM.vip.find((x) => x.id === item);
+  if (vip) return { item, cents: vip.cents, name: `${vip.name} — ${vip.days} dias`, desc: (PREMIUM.perks[vip.plan] || []).join(', '), once: false, vip };
+  return null;
+}
 function publicUrl(req) {
   if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, '');
   const host = String(req.headers['x-forwarded-host'] || req.headers.host || 'localhost');
@@ -227,7 +252,7 @@ async function handleApi(req, res, url) {
     if (!(await sec.verifyPassword(password, acc.password_hash))) throw fail(401, 'Usuário ou senha incorretos.');
     await db.query('UPDATE accounts SET last_login_at = now() WHERE id = $1', [acc.id]);
     const save = await db.query('SELECT data FROM aether_saves WHERE account_id = $1', [acc.id]);
-    return json(res, 200, { ok: true, username: acc.username, token: await issueToken(acc.id), save: save.rows[0]?.data ?? null, vip: await vipOf(acc.id), wings: await purchasedWings(acc.id) });
+    return json(res, 200, { ok: true, username: acc.username, token: await issueToken(acc.id), save: save.rows[0]?.data ?? null, ...(await premiumState(acc.id)) });
   }
 
   if (p === '/api/logout' && req.method === 'POST') {
@@ -240,7 +265,7 @@ async function handleApi(req, res, url) {
     const acc = await auth(req);
     if (req.method === 'GET') {
       const { rows } = await db.query('SELECT data FROM aether_saves WHERE account_id = $1', [acc.id]);
-      return json(res, 200, { ok: true, username: acc.username, save: rows[0]?.data ?? null, vip: await vipOf(acc.id), wings: await purchasedWings(acc.id) });
+      return json(res, 200, { ok: true, username: acc.username, save: rows[0]?.data ?? null, ...(await premiumState(acc.id)) });
     }
     if (req.method === 'PUT' || req.method === 'POST') {
       limit(req, 'save', 40, 60 * 1000, String(acc.id));
@@ -248,8 +273,12 @@ async function handleApi(req, res, url) {
       const save = body && typeof body.save === 'object' && !Array.isArray(body.save) ? body.save : null;
       if (!save) throw fail(400, 'Save inválido.');
       // Asas pagas com dinheiro real nunca somem, mesmo que o aparelho mande um save antigo.
-      const paid = await purchasedWings(acc.id);
-      if (paid.length) save.wingsOwned = [...new Set([...(Array.isArray(save.wingsOwned) ? save.wingsOwned.filter((x) => typeof x === 'string').slice(0, 64) : []), ...paid])];
+      for (const it of await purchasedItems(acc.id)) {
+        for (const [key, ids] of Object.entries(expandItem(it))) {
+          const cur = Array.isArray(save[key]) ? save[key].filter((x) => typeof x === 'string').slice(0, 128) : [];
+          save[key] = [...new Set([...cur, ...ids])];
+        }
+      }
       const level = Number(save.level);
       if (!Number.isInteger(level) || level < 1 || level > 100000) throw fail(400, 'Nível inválido.');
       await db.query(`INSERT INTO aether_saves (account_id, data, level, updated_at) VALUES ($1,$2,$3, now())
@@ -260,7 +289,7 @@ async function handleApi(req, res, url) {
   }
 
   if (p === '/api/shop/wings' && req.method === 'GET') {
-    return json(res, 200, { ok: true, enabled: payEnabled(), currency: 'brl', wings: SHOP.filter((w) => !w.free).map((w) => ({ id: w.id, cents: w.cents })) });
+    return json(res, 200, { ok: true, enabled: payEnabled(), currency: 'brl', wings: SHOP.filter((w) => !w.free).map((w) => ({ id: w.id, cents: w.cents })), vip: PREMIUM.vip, packs: PREMIUM.packs });
   }
 
   if (p === '/api/shop/checkout' && req.method === 'POST') {
@@ -268,28 +297,28 @@ async function handleApi(req, res, url) {
     limit(req, 'checkout', 10, 10 * 60 * 1000, String(acc.id));
     if (!payEnabled()) throw fail(503, 'Pagamento com dinheiro real ainda não está ativado no servidor.');
     const body = await readJson(req);
-    const wing = SHOP.find((w) => w.id === body.wingId && !w.free);
-    if (!wing) throw fail(400, 'Asa inválida.');
-    if ((await purchasedWings(acc.id)).includes(wing.id)) throw fail(409, 'Você já comprou esta asa.');
+    const product = productFor(typeof body.item === 'string' ? body.item : body.wingId ? `wing:${body.wingId}` : null);
+    if (!product) throw fail(400, 'Produto inválido.');
+    if (product.once && (await purchasedItems(acc.id)).includes(product.item)) throw fail(409, 'Você já comprou este item.');
     const { rows } = await db.query('SELECT email FROM accounts WHERE id = $1', [acc.id]);
     const base = publicUrl(req);
     const f = new URLSearchParams();
     f.set('mode', 'payment');
-    f.set('success_url', `${base}/jogar/?asa=ok`);
-    f.set('cancel_url', `${base}/jogar/?asa=cancelado`);
+    f.set('success_url', `${base}/jogar/?compra=ok`);
+    f.set('cancel_url', `${base}/jogar/?compra=cancelado`);
     f.set('client_reference_id', String(acc.id));
     if (rows[0]?.email) f.set('customer_email', rows[0].email);
     f.set('locale', 'pt-BR');
     f.set('line_items[0][quantity]', '1');
     f.set('line_items[0][price_data][currency]', 'brl');
-    f.set('line_items[0][price_data][unit_amount]', String(wing.cents)); // preço sempre calculado aqui
-    f.set('line_items[0][price_data][product_data][name]', `Asa ${wing.family} Nv.${wing.level}`);
-    f.set('line_items[0][price_data][product_data][description]', `MU Online Claude · conta ${acc.username} · asa cosmética permanente`);
+    f.set('line_items[0][price_data][unit_amount]', String(product.cents)); // preço sempre calculado aqui
+    f.set('line_items[0][price_data][product_data][name]', product.name);
+    f.set('line_items[0][price_data][product_data][description]', `MU Online Claude · conta ${acc.username} · ${product.desc}`.slice(0, 480));
     for (const pre of ['metadata', 'payment_intent_data[metadata]']) {
-      f.set(`${pre}[game]`, 'aether-wing');
+      f.set(`${pre}[game]`, 'aether-shop');
       f.set(`${pre}[acc]`, String(acc.id));
-      f.set(`${pre}[wing]`, wing.id);
-      f.set(`${pre}[amt]`, String(wing.cents));
+      f.set(`${pre}[item]`, product.item);
+      f.set(`${pre}[amt]`, String(product.cents));
     }
     const r = await fetch((process.env.STRIPE_API || 'https://api.stripe.com') + '/v1/checkout/sessions', {
       method: 'POST',
@@ -308,20 +337,29 @@ async function handleApi(req, res, url) {
     const o = ev.data && ev.data.object;
     if ((ev.type === 'checkout.session.completed' || ev.type === 'checkout.session.async_payment_succeeded') && o && o.payment_status === 'paid') {
       const md = o.metadata || {};
-      if (md.game !== 'aether-wing') return json(res, 200, { received: true, result: 'outro-produto' });
-      const wing = SHOP.find((w) => w.id === md.wing && !w.free);
+      if (md.game !== 'aether-shop' && md.game !== 'aether-wing') return json(res, 200, { received: true, result: 'outro-produto' });
+      const product = productFor(md.game === 'aether-wing' ? `wing:${md.wing}` : md.item);
       const accId = Number(md.acc);
-      if (!wing || !accId) return json(res, 200, { received: true, result: 'metadados-invalidos' });
-      if (String(o.currency).toLowerCase() !== 'brl' || o.amount_total !== wing.cents) {
+      if (!product || !accId) return json(res, 200, { received: true, result: 'metadados-invalidos' });
+      if (String(o.currency).toLowerCase() !== 'brl' || o.amount_total !== product.cents) {
         console.error(`[loja] valor diferente na sessão ${o.id}: ${o.amount_total} ${o.currency}. Nada entregue.`);
         return json(res, 200, { received: true, result: 'valor-diferente' });
       }
       const exists = await db.query('SELECT 1 FROM accounts WHERE id = $1', [accId]);
       if (!exists.rows[0]) return json(res, 200, { received: true, result: 'conta-inexistente' });
-      const ins = await db.query(`INSERT INTO aether_purchases (account_id, item, ref, amount_cents, currency)
-        VALUES ($1, $2, $3, $4, 'brl') ON CONFLICT (ref) DO NOTHING RETURNING id`, [accId, `wing:${wing.id}`, o.id, o.amount_total]);
-      if (ins.rows[0]) console.log(`[loja] asa ${wing.family} Nv.${wing.level} entregue para a conta #${accId} (sessão ${o.id})`);
-      return json(res, 200, { received: true, result: ins.rows[0] ? 'entregue' : 'ja-entregue' });
+      const delivered = await db.tx(async (q) => {
+        const ins = await q(`INSERT INTO aether_purchases (account_id, item, ref, amount_cents, currency)
+          VALUES ($1, $2, $3, $4, 'brl') ON CONFLICT (ref) DO NOTHING RETURNING id`, [accId, product.item, o.id, o.amount_total]);
+        if (!ins.rows[0]) return false;
+        if (product.vip) {
+          // VIP soma dias: começa do fim do VIP atual (se ainda ativo) ou de agora.
+          const col = product.vip.plan === 'diamante' ? 'vip2_until' : 'vip1_until';
+          await q(`UPDATE accounts SET ${col} = GREATEST(COALESCE(${col}, now()), now()) + ($2::int * interval '1 day') WHERE id = $1`, [accId, product.vip.days]);
+        }
+        return true;
+      });
+      if (delivered) console.log(`[loja] ${product.name} entregue para a conta #${accId} (sessão ${o.id})`);
+      return json(res, 200, { received: true, result: delivered ? 'entregue' : 'ja-entregue' });
     }
     return json(res, 200, { received: true });
   }
@@ -433,5 +471,8 @@ migrate()
   .catch((e) => console.error('[db] falha na migração (o jogo continua sem nuvem):', e.message))
   .finally(() => {
     if (!fs.existsSync(path.join(ROOT, 'index.html'))) console.error('[jogo] build não encontrado em', ROOT, '— rode npm run build');
-    server.listen(PORT, () => console.log(`[servidor] Aether Reborn na porta ${PORT}`));
+    server.listen(PORT, () => {
+      console.log(`[servidor] Aether Reborn na porta ${PORT}`);
+      console.log(`[loja] pagamento com dinheiro real: ${payEnabled() ? (/^(sk|rk)_test_/.test(STRIPE_KEY()) ? 'ATIVO (modo teste)' : 'ATIVO') : 'DESLIGADO — falta STRIPE_SECRET_KEY e/ou STRIPE_WEBHOOK_SECRET na Render'}`);
+    });
   });

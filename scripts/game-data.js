@@ -43,4 +43,25 @@ function wingShop() {
   }));
 }
 
-module.exports = { SRC, literal, stringConst, wingShop };
+function premium() {
+  return {
+    vip: literal('PremiumShop.ts', 'VIP_PLANS'),
+    perks: literal('PremiumShop.ts', 'VIP_PERKS'),
+    packs: literal('PremiumShop.ts', 'PREMIUM_PACKS'),
+  };
+}
+
+/** Peças que cada item comprado entrega no herói. */
+function expandItem(item) {
+  if (item.startsWith('wing:')) return { wingsOwned: [item.slice(5)] };
+  if (item.startsWith('set:')) return { gearOwned: [0, 1, 2, 3, 4].map((i) => `armor:${item.slice(4)}:${i}`) };
+  if (item === 'glacial:all') {
+    const ids = [];
+    for (let c = 0; c < 5; c++) for (let i = 0; i < 6; i++) ids.push(`glacial:${c}:${i}`);
+    for (let i = 0; i < 3; i++) ids.push(`glacial:jewel:${i}`);
+    return { glacialOwned: ids };
+  }
+  return {};
+}
+
+module.exports = { SRC, literal, stringConst, wingShop, premium, expandItem };

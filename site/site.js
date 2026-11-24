@@ -65,6 +65,18 @@
   });
   drawWings();
 
+  // Loja Premium
+  var P = D.premium || { vip: [], perks: {}, packs: [] };
+  var brl = function (c) { return 'R$ ' + (c / 100).toFixed(2).replace('.', ','); };
+  var vipCard = function (plan, name) {
+    var plans = P.vip.filter(function (v) { return v.plan === plan; });
+    return '<article class="prem vip ' + plan + '"><h3>★ ' + name + '</h3><ul>' + (P.perks[plan] || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><div class="prices">' +
+      plans.map(function (v) { return '<span>' + v.days + ' dias · <b>' + brl(v.cents) + '</b></span>'; }).join('') + '</div></article>';
+  };
+  $('premium-grid').innerHTML = vipCard('ouro', 'VIP Ouro') + vipCard('diamante', 'VIP Diamante') +
+    P.packs.map(function (p) { return '<article class="prem" style="border-color:' + esc(p.color) + '"><h3 style="color:' + esc(p.color) + '">' + esc(p.name) + '</h3><p>' + esc(p.rarity) + ' · ' + esc(p.desc) + '</p><div class="prices"><span><b>' + brl(p.cents) + '</b></span></div></article>'; }).join('') +
+    '<article class="prem"><h3>🪽 Asas</h3><p>29 asas pagas: com ouro do jogo ou de R$ 4,90 a R$ 49,90. A Angelical Nv.1 é grátis.</p><div class="prices"><a href="#asas">Ver asas</a></div></article>';
+
   // Tabela do modo HARD (mesma fórmula do jogo)
   var need = function (n) { return Math.round(100 * n * (1 + 0.12 * n)); };
   var expAt = function (lv) {

@@ -164,3 +164,14 @@ footer{text-align:center;padding:26px 20px 40px;color:#6f7775;font-size:12px;bor
 .players .pl.online{position:relative}
 .players .pl.online .dot{position:absolute;top:12px;left:12px;margin:0}
 .wing .price .real{color:#8ff0a0;font-weight:600}
+.premium{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.prem{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.prem h3{font-size:17px;color:var(--gold)}
+.prem p,.prem ul{margin:0;color:var(--muted);font-size:14px}
+.prem ul{padding-left:18px}
+.prem .prices{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:6px}
+.prem .prices span,.prem .prices a{padding:6px 12px;border-radius:20px;background:#12261a;border:1px solid #3f7d4b;color:#d8ffe0;font-size:13px;text-decoration:none}
+.prem.vip.ouro{border-color:#c49b55;background:linear-gradient(160deg,#3a2e17,#14120c)}
+.prem.vip.ouro h3{color:#ffd36b}
+.prem.vip.diamante{border-color:#6cc1f1;background:linear-gradient(160deg,#173041,#0c1419)}
+.prem.vip.diamante h3{color:#9fe0ff}

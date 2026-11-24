@@ -9,7 +9,7 @@ const VIP_KEY = "aether-cloud-vip";
 export type VipPlan = "ouro" | "diamante" | null;
 
 export interface CloudResult<T> { ok: boolean; error?: string; data?: T; }
-interface AuthReply { ok: boolean; username: string; token: string; save: Record<string, unknown> | null; vip?: VipPlan; wings?: string[]; error?: string; }
+interface AuthReply { ok: boolean; username: string; token: string; save: Record<string, unknown> | null; vip?: VipPlan; vipUntil?: string | null; wings?: string[]; items?: string[]; error?: string; }
 
 function read(key: string): string | null { try { return localStorage.getItem(key); } catch { return null; } }
 function write(key: string, value: string | null): void {
@@ -23,6 +23,9 @@ export class CloudSave {
   status: string = "";
   /** Asas pagas com dinheiro real (vêm do servidor, nunca se perdem). */
   paidWings: string[] = [];
+  /** Tudo que a conta comprou com dinheiro real (wing:..., set:..., glacial:all). */
+  items: string[] = [];
+  vipUntil: string | null = null;
   payEnabled: boolean = false;
   private pending: object | null = null;
   private timer: number | null = null;
@@ -48,12 +51,14 @@ export class CloudSave {
     write(TOKEN_KEY, reply.token); write(USER_KEY, reply.username);
     this.setVip(reply.vip ?? null);
     this.paidWings = Array.isArray(reply.wings) ? reply.wings : [];
+    this.items = Array.isArray(reply.items) ? reply.items : [];
+    this.vipUntil = reply.vipUntil ?? null;
   }
 
   private setVip(vip: VipPlan): void { this.vip = vip === "ouro" || vip === "diamante" ? vip : null; write(VIP_KEY, this.vip); }
 
   private forget(): void {
-    this.token = null; this.username = null; this.paidWings = [];
+    this.token = null; this.username = null; this.paidWings = []; this.items = []; this.vipUntil = null;
     write(TOKEN_KEY, null); write(USER_KEY, null); this.setVip(null);
   }
 
@@ -71,8 +76,8 @@ export class CloudSave {
 
   async load(): Promise<Record<string, unknown> | null> {
     if (!this.loggedIn) return null;
-    const r = await this.call<{ save: Record<string, unknown> | null; vip?: VipPlan; wings?: string[] }>("/api/save");
-    if (r.ok) { this.setVip(r.data?.vip ?? null); this.paidWings = Array.isArray(r.data?.wings) ? r.data!.wings! : []; }
+    const r = await this.call<{ save: Record<string, unknown> | null; vip?: VipPlan; vipUntil?: string | null; wings?: string[]; items?: string[] }>("/api/save");
+    if (r.ok) { this.setVip(r.data?.vip ?? null); this.paidWings = Array.isArray(r.data?.wings) ? r.data!.wings! : []; this.items = Array.isArray(r.data?.items) ? r.data!.items! : []; this.vipUntil = r.data?.vipUntil ?? null; }
     return r.ok ? r.data?.save ?? null : null;
   }
 
@@ -83,9 +88,9 @@ export class CloudSave {
   }
 
   /** Abre o pagamento (Stripe) de uma asa e devolve o endereço da página de pagamento. */
-  async checkout(wingId: string): Promise<CloudResult<{ url: string }>> {
+  async checkout(item: string): Promise<CloudResult<{ url: string }>> {
     await this.flush();
-    return this.call<{ url: string }>("/api/shop/checkout", { method: "POST", body: JSON.stringify({ wingId }) });
+    return this.call<{ url: string }>("/api/shop/checkout", { method: "POST", body: JSON.stringify({ item }) });
   }
 
   async logout(): Promise<void> {

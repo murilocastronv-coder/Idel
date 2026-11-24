@@ -20,6 +20,7 @@ export interface HudState {
 
 const MENU: [action: string, icon: string, label: string][] = [
   ["B", "🛒", "Loja"],
+  ["premium", "💎", "Premium"],
   ["maps", "🌍", "Mapas"],
   ["I", "🎒", "Mochila"],
   ["C", "🧝", "Herói"],

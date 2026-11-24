@@ -130,3 +130,8 @@ body:has(.rpg-overlay) .mount-preview{display:none}
   .mount-preview{top:118px!important;font-size:10px!important}
 }
 .rpg-ui .rpg-item .rpg-pay{margin-left:4px;border-color:#5fb36e;background:linear-gradient(#22472b,#12261a);color:#d8ffe0}
+.rpg-ui .rpg-vip.ouro{border-color:#c49b55;background:linear-gradient(160deg,#3a2e17,#14120c)}
+.rpg-ui .rpg-vip.diamante{border-color:#6cc1f1;background:linear-gradient(160deg,#173041,#0c1419)}
+.rpg-ui .rpg-vip strong{font-size:14px}
+.rpg-ui .rpg-vip .rpg-pay{margin:6px 4px 0 0}
+.rpg-ui .rpg-window>.rpg-primary{display:block;width:100%;margin:6px 0 4px}

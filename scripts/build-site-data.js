@@ -8,7 +8,7 @@ const SRC = path.join(__dirname, '..', 'game', 'website', 'src', 'gameplay');
 const ASSETS = path.join(__dirname, '..', 'game', 'assets');
 const GAME_URL = '/jogar/assets';
 
-const { literal, wingShop } = require('./game-data');
+const { literal, wingShop, premium } = require('./game-data');
 
 function southImage(characterId) {
   const dir = path.join(ASSETS, 'characters', characterId);
@@ -28,7 +28,9 @@ const monsters = literal('ClassicMonsterRoster.ts', 'CLASSIC_MONSTERS');
 const wings = literal('WingCatalog.ts', 'WING_CATALOG');
 const shop = wingShop();
 
+const prem = premium();
 const data = {
+  premium: prem,
   heroes: heroes.map((h) => ({
     name: h.name, description: h.description,
     image: southImage(h.id) || southImage(unarmed[h.name]),
