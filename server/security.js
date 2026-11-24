@@ -76,7 +76,8 @@ setInterval(() => {
 }, 60_000).unref();
 
 // ---- Validação ----
-const USERNAME_RE = /^[A-Za-z0-9_]{4,16}$/;
+// Usuário: qualquer letra (com acento, ç, ñ...), números, espaço, _ . - (2 a 20).
+const USERNAME_RE = /^[\p{L}\p{M}\p{N}_.\- ]{2,20}$/u;
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
 const CHARNAME_RE = /^[A-Za-z0-9]{3,12}$/;
 
@@ -84,7 +85,7 @@ function validatePassword(pw) {
   if (typeof pw !== 'string') return 'Senha inválida.';
   if (pw.length < 8) return 'A senha precisa ter pelo menos 8 caracteres.';
   if (pw.length > 128) return 'A senha pode ter no máximo 128 caracteres.';
-  if (!/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) return 'Use letras e números na senha.';
+  if (!/\p{L}/u.test(pw) || !/\p{N}/u.test(pw)) return 'Use letras e números na senha.';
   return null;
 }
 

@@ -252,8 +252,8 @@ async function handleApi(req, res, url) {
   if (p === '/api/register' && req.method === 'POST') {
     limit(req, 'register', 6, 60 * 60 * 1000);
     const body = await readJson(req);
-    const username = str(body.username, 32), email = str(body.email, 254).toLowerCase(), password = typeof body.password === 'string' ? body.password : '';
-    if (!sec.USERNAME_RE.test(username)) throw fail(400, 'Usuário: 4 a 16 letras, números ou _.');
+    const username = str(body.username, 40).normalize('NFC').replace(/\s+/g, ' '), email = str(body.email, 254).toLowerCase(), password = typeof body.password === 'string' ? body.password : '';
+    if (!sec.USERNAME_RE.test(username)) throw fail(400, 'Usuário: 2 a 20 caracteres (letras, números, espaço, _ . -).');
     if (!sec.EMAIL_RE.test(email)) throw fail(400, 'Informe um e-mail válido.');
     const pwErr = sec.validatePassword(password); if (pwErr) throw fail(400, pwErr);
     let acc;
@@ -271,7 +271,7 @@ async function handleApi(req, res, url) {
   if (p === '/api/login' && req.method === 'POST') {
     limit(req, 'login', 15, 15 * 60 * 1000);
     const body = await readJson(req);
-    const login = str(body.login, 254), password = typeof body.password === 'string' ? body.password.slice(0, 200) : '';
+    const login = str(body.login, 254).normalize('NFC').replace(/\s+/g, ' '), password = typeof body.password === 'string' ? body.password.slice(0, 200) : '';
     if (!login || !password) throw fail(400, 'Informe usuário/e-mail e senha.');
     limit(req, 'login-acc', 8, 15 * 60 * 1000, login.toLowerCase());
     const { rows } = await db.query(`SELECT id, username, password_hash FROM accounts
