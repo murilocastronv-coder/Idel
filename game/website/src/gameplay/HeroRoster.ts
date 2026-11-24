@@ -1,6 +1,6 @@
 import type Phaser from "phaser";
 import { UNARMED_HEROES } from "./UnarmedHeroes";
-import { preloadCharacterAtlas, characterAssetUrl, characterManifest, characterRotationFrameName, selectCharacterState } from "../shared/animation";
+import { preloadCharacterAtlas, preloadCharacterManifest, characterAssetUrl, characterManifest, characterRotationFrameName, selectCharacterState } from "../shared/animation";
 
 export const HEROES = [
   { name: "Cavaleiro", id: "a186e0b5-46cf-4259-b791-d06d5dece872", description: "Armadura carmesim · resistência e combate próximo" },
@@ -10,9 +10,24 @@ export const HEROES = [
   { name: "Lorde Sombrio", id: "3a46a0b9-fba0-476d-9085-06ad60a89811", description: "Armadura negra e dourada · presença imponente" },
 ] as const;
 export type HeroClass = typeof HEROES[number]["name"];
-export function preloadHeroes(scene: Phaser.Scene): void {
-  for (const hero of HEROES) preloadCharacterAtlas(scene, hero.id);
-  for (const id of Object.values(UNARMED_HEROES)) preloadCharacterAtlas(scene, id);
+/** Texturas de uma classe: com armadura e iniciante. */
+export function heroAtlasIds(name: string): string[] {
+  const hero = HEROES.find(h => h.name === name) ?? HEROES[0];
+  return [hero.id, UNARMED_HEROES[hero.name]].filter(Boolean);
+}
+/** No início só a classe do personagem salvo neste aparelho (as outras carregam quando precisar). */
+export function preloadHeroes(scene: Phaser.Scene, heroName: string): void {
+  for (const hero of HEROES) for (const id of heroAtlasIds(hero.name)) preloadCharacterManifest(scene, id);
+  for (const id of heroAtlasIds(heroName)) preloadCharacterAtlas(scene, id);
+}
+/** Classe do personagem escolhido neste aparelho (para carregar só ela no início). */
+export function savedHeroName(): string {
+  try {
+    const slot = Number(localStorage.getItem("aether-slot")) || 0;
+    const key = slot === 0 ? "aether-reborn-save-v2" : `aether-reborn-save-v2-s${slot}`;
+    const hero = (JSON.parse(localStorage.getItem(key) || "null") as { hero?: string } | null)?.hero;
+    return HEROES.some(h => h.name === hero) ? hero! : "Cavaleiro";
+  } catch { return "Cavaleiro"; }
 }
 export function heroPreview(scene: Phaser.Scene, hero: typeof HEROES[number]): string {
   const id = UNARMED_HEROES[hero.name] ?? hero.id;

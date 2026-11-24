@@ -12,7 +12,7 @@ import { WING_MASTER, MONSTERS } from "./WorldRoster";
 import { CLASSIC_MONSTERS, type ClassicMonster } from "./ClassicMonsterRoster";
 import { MonsterCombat } from "./MonsterCombat";
 import { WING_CATALOG, wingCatalogHtml, FREE_WING_ID, wingPrice, ownedWings } from "./WingCatalog";
-import { characterAtlasKey, characterManifest } from "../shared/animation";
+import { characterAtlasKey, characterManifest, ensureCharacterAtlases } from "../shared/animation";
 import { nearestWalkable, findPath, type Point } from "../shared/navigation";
 import { moveWithCollision } from "../shared/collision";
 import { setYDepth } from "../shared/depth";
@@ -25,7 +25,7 @@ import { HeroWings } from "./HeroWings";
 import { HeroPowers, HERO_POWERS } from "./HeroPowers";
 import { TouchMovement } from "./TouchMovement";
 import { WeaponProjectiles } from "./WeaponProjectiles";
-import { HEROES, heroPreview, type HeroClass } from "./HeroRoster";
+import { HEROES, heroPreview, heroAtlasIds, type HeroClass } from "./HeroRoster";
 import { UNARMED_HEROES } from "./UnarmedHeroes";
 import { MobileHud } from "./MobileHud";
 import { HeroLook } from "./HeroLook";
@@ -146,7 +146,13 @@ export class RealmRpg {
   private get armoredLook(): boolean { return Object.keys(this.gear.equipped).length>0 || Object.keys(this.glacial.equipped).some(k=>["Elmo","Armadura","Calça","Luvas","Botas"].includes(k)); }
   private get heroCharacterId(): string { return this.unarmed && !this.armoredLook ? UNARMED_HEROES[this.save.hero] : HEROES.find(h=>h.name===this.save.hero)!.id; }
   private visualId: string = "";
-  private syncHero(): void { this.visualId=this.heroCharacterId; this.player.setCharacter(this.visualId, this.unarmed && !this.armoredLook); }
+  /** Troca o desenho do herói; carrega a textura da classe na hora, se ainda não estiver na memória. */
+  private syncHero(): void {
+    const id=this.heroCharacterId; this.visualId=id;
+    const apply=()=>{ if(this.visualId!==id)return; this.player.setCharacter(id, this.unarmed && !this.armoredLook); this.lookKey=""; };
+    if(this.scene.textures.exists(characterAtlasKey(id)))apply();
+    else void ensureCharacterAtlases(this.scene, heroAtlasIds(this.save.hero)).then(apply);
+  }
   /** Asa equipada: só vale se for da coleção do jogador; senão, a Angelical Nv.1 grátis. */
   private get equippedWing(): string { const owned=ownedWings(this.save.wingsOwned);return this.save.wingId&&owned.includes(this.save.wingId)?this.save.wingId:FREE_WING_ID; }
   private get glacial() { return glacialState(this.save); }

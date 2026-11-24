@@ -266,6 +266,45 @@ export function preloadCharacterAtlas(scene: Phaser.Scene, characterId: string):
   );
 }
 
+/**
+ * Carrega sob demanda (depois do início do jogo) as texturas de personagens que faltam.
+ * O jogo não carrega mais tudo de uma vez: no iPhone isso estourava a memória e o Safari
+ * fechava a página. Os pedidos são feitos em fila, um carregamento por vez.
+ */
+let atlasQueue: Promise<void> = Promise.resolve();
+export function ensureCharacterAtlases(scene: Phaser.Scene, ids: readonly string[]): Promise<void> {
+  atlasQueue = atlasQueue.then(() => new Promise<void>((resolve) => {
+    const missing = [...new Set(ids)].filter((id) => !scene.textures.exists(characterAtlasKey(id)) || !scene.cache.json.exists(characterManifestKey(id)));
+    if (!missing.length) { resolve(); return; }
+    for (const id of missing) {
+      if (!scene.textures.exists(characterAtlasKey(id))) preloadCharacterAtlas(scene, id);
+      else scene.load.json(characterManifestKey(id), assetUrl("characters", id, "manifest.json"));
+    }
+    scene.load.once("complete", () => resolve());
+    scene.load.start();
+  }));
+  return atlasQueue;
+}
+
+/** Libera da memória texturas de personagens que não estão mais em uso (ex.: monstros do mapa anterior). */
+export function releaseCharacterAtlases(scene: Phaser.Scene, ids: readonly string[]): void {
+  for (const id of ids) {
+    const key = characterAtlasKey(id);
+    if (scene.textures.exists(key) && !textureInUse(scene, key)) scene.textures.remove(key);
+  }
+}
+
+/** Algum objeto na tela ainda usa esta textura? (liberar nesse caso quebra o desenho) */
+export function textureInUse(scene: Phaser.Scene, key: string): boolean {
+  return scene.children.list.some((o) => (o as unknown as { texture?: { key?: string } }).texture?.key === key);
+}
+
+/** Só o manifest (arquivo pequeno), sem a textura — para telas que listam personagens. */
+export function preloadCharacterManifest(scene: Phaser.Scene, characterId: string): void {
+  if (scene.cache.json.exists(characterManifestKey(characterId))) return;
+  scene.load.json(characterManifestKey(characterId), assetUrl("characters", characterId, "manifest.json"));
+}
+
 /** Load and validate the character manifest from the Phaser cache. */
 export function characterManifest(scene: Phaser.Scene, characterId: string): CharacterManifest {
   const manifest = scene.cache.json.get(

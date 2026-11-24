@@ -12,7 +12,7 @@ import "./styles.css";
   const original = factory.text;
   factory.text = function (this: unknown, ...args: unknown[]) {
     const t = original.apply(this, args);
-    t.setResolution(Math.min(8, Math.max(4, Math.ceil((window.devicePixelRatio || 1) * 2.5))));
+    t.setResolution(Math.min(5, Math.max(3, Math.ceil((window.devicePixelRatio || 1) * 2))));
     t.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
     return t;
   };

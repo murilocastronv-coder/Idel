@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import type { PlayerController } from "../player/PlayerController";
-import { characterAtlasKey } from "../shared/animation";
+import { characterAtlasKey, textureInUse } from "../shared/animation";
 import { HEROES, type HeroClass } from "./HeroRoster";
 import { UNARMED_HEROES } from "./UnarmedHeroes";
 
@@ -31,7 +31,7 @@ const ARMOR_BANDS: Record<HeroClass, { hues: [number, number][]; grays?: boolean
   "Lorde Sombrio": { hues: [[290, 360]], grays: true },
 };
 
-interface Original { data: ImageData; canvas: HTMLCanvasElement; hero: HeroClass; applied: string; }
+interface Original { img: CanvasImageSource; canvas: HTMLCanvasElement; hero: HeroClass; applied: string; }
 const originals = new Map<string, Original>();
 
 function hexToHsl(hex: string): [number, number, number] {
@@ -53,13 +53,21 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
 }
 const inBand = (h: number, bands: [number, number][]) => bands.some(([a, b]) => h >= a && h <= b);
 
-/** Troca as texturas dos heróis por texturas de canvas (uma vez), guardando o desenho original. */
-export function prepareHeroLooks(scene: Phaser.Scene): void {
+/**
+ * Troca SÓ as texturas da classe atual por texturas de canvas, guardando a imagem original
+ * (sem cópias de pixels extras). Texturas de outras classes que tinham sido convertidas são
+ * liberadas da memória (no iPhone a memória é curta).
+ */
+export function prepareHeroLooks(scene: Phaser.Scene, current?: HeroClass): void {
   const all: [string, HeroClass][] = [
     ...HEROES.map((h) => [h.id, h.name] as [string, HeroClass]),
     ...Object.entries(UNARMED_HEROES).map(([name, id]) => [id, name as HeroClass] as [string, HeroClass]),
   ];
+  for (const [key, o] of originals) {
+    if (current && o.hero !== current && !textureInUse(scene, key)) { if (scene.textures.exists(key)) scene.textures.remove(key); originals.delete(key); }
+  }
   for (const [id, hero] of all) {
+    if (current && hero !== current) continue;
     const key = characterAtlasKey(id);
     if (originals.has(key) || !scene.textures.exists(key)) continue;
     const tex = scene.textures.get(key);
@@ -68,14 +76,16 @@ export function prepareHeroLooks(scene: Phaser.Scene): void {
     const frames = tex.getFrameNames().map((name) => { const f = tex.get(name); return { name, x: f.cutX, y: f.cutY, w: f.cutWidth, h: f.cutHeight }; });
     const canvas = document.createElement("canvas");
     canvas.width = img.width; canvas.height = img.height;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
-    ctx.drawImage(img, 0, 0);
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    canvas.getContext("2d", { willReadFrequently: true })!.drawImage(img, 0, 0);
+    // Quem já usa a textura (o próprio herói) é reapontado para a versão de canvas.
+    const users = scene.children.list.filter((o) => (o as unknown as { texture?: { key?: string } }).texture?.key === key) as unknown as Phaser.GameObjects.Sprite[];
+    const userFrames = users.map((u) => u.frame?.name);
     scene.textures.remove(key);
     const ct = scene.textures.addCanvas(key, canvas);
     if (!ct) continue;
     for (const f of frames) ct.add(f.name, 0, f.x, f.y, f.w, f.h);
-    originals.set(key, { data, canvas, hero, applied: "" });
+    users.forEach((u, i) => { try { u.setTexture(key, userFrames[i]); } catch { /* objeto já destruído */ } });
+    originals.set(key, { img, canvas, hero, applied: "" });
   }
 }
 
@@ -84,12 +94,12 @@ function paint(scene: Phaser.Scene, key: string, color: string | null): void {
   const o = originals.get(key);
   if (!o || o.applied === (color ?? "")) return;
   const ctx = o.canvas.getContext("2d", { willReadFrequently: true })!;
-  if (!color) {
-    ctx.putImageData(o.data, 0, 0);
-  } else {
+  ctx.clearRect(0, 0, o.canvas.width, o.canvas.height);
+  ctx.drawImage(o.img, 0, 0);
+  if (color) {
     const [th, ts, tl] = hexToHsl(color);
     const band = ARMOR_BANDS[o.hero];
-    const out = new ImageData(new Uint8ClampedArray(o.data.data), o.data.width, o.data.height);
+    const out = ctx.getImageData(0, 0, o.canvas.width, o.canvas.height);
     const px = out.data;
     for (let i = 0; i < px.length; i += 4) {
       if (px[i + 3] < 8) continue;
@@ -115,7 +125,6 @@ export class HeroLook {
   private state: HeroLookState = { armorColor: null, glowColor: null, weaponColor: null };
 
   constructor(private scene: Phaser.Scene, private player: PlayerController) {
-    prepareHeroLooks(scene);
     const s = player.sprite;
     this.glow = scene.add.sprite(s.x, s.y, s.texture.key, s.frame.name).setVisible(false).setAlpha(0.45);
     this.glow.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
@@ -125,6 +134,7 @@ export class HeroLook {
   /** Aplica o visual do equipamento atual em todas as texturas do herói desta classe. */
   set(hero: HeroClass, look: HeroLookState): void {
     this.state = look;
+    prepareHeroLooks(this.scene, hero);
     for (const [key, o] of originals) if (o.hero === hero) paint(this.scene, key, look.armorColor);
     if (look.glowColor) this.glow.setTint(parseInt(look.glowColor.slice(1), 16));
     for (const s of this.sparks) if (look.weaponColor) s.setFillStyle(parseInt(look.weaponColor.slice(1), 16), 1);

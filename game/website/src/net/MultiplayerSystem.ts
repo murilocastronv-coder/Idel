@@ -1,5 +1,6 @@
 import Phaser from "phaser";
-import { characterAtlasKey, characterManifest, characterRotationFrameName, selectCharacterState } from "../shared/animation";
+import { characterAtlasKey, characterManifest, characterRotationFrameName, ensureCharacterAtlases, selectCharacterState } from "../shared/animation";
+import { PLAYER_CHARACTER_ID } from "../pixellab/templateAssetPaths";
 import { setYDepth } from "../shared/depth";
 import { directionFromVector, type Direction } from "../shared/direction";
 import { HEROES } from "../gameplay/HeroRoster";
@@ -46,8 +47,14 @@ export class MultiplayerSystem {
     }
   }
 
+  private loading = new Set<string>();
   private heroFrame(hero: string, facing: Direction): { key: string; frame: string } {
-    const id = (HEROES.find((h) => h.name === hero) ?? HEROES[0]).id;
+    let id: string = (HEROES.find((h) => h.name === hero) ?? HEROES[0]).id;
+    // Classe ainda não carregada neste aparelho: carrega e, enquanto isso, mostra o desenho padrão.
+    if (!this.scene.textures.exists(characterAtlasKey(id))) {
+      if (!this.loading.has(id)) { this.loading.add(id); void ensureCharacterAtlases(this.scene, [id]).finally(() => this.loading.delete(id)); }
+      id = PLAYER_CHARACTER_ID;
+    }
     const state = selectCharacterState(characterManifest(this.scene, id));
     return { key: characterAtlasKey(id), frame: characterRotationFrameName(state.stateFolder, facing) };
   }
