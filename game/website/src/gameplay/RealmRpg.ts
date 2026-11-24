@@ -29,6 +29,8 @@ import { HEROES, heroPreview, type HeroClass } from "./HeroRoster";
 import { UNARMED_HEROES } from "./UnarmedHeroes";
 import { MobileHud } from "./MobileHud";
 import { HeroLook } from "./HeroLook";
+import type { MultiplayerSystem, RemotePlayer } from "../net/MultiplayerSystem";
+import type { LocalState } from "../net/multiplayer";
 import { VIP_PLANS, VIP_PERKS, PREMIUM_PACKS, SERVICES, brlPrice } from "./PremiumShop";
 import { xpToNext, hardKillXp, hardLabel } from "./HardMode";
 import { CloudSave } from "../net/CloudSave";
@@ -79,6 +81,9 @@ export class RealmRpg {
   private masterButton!: HTMLButtonElement;
   private hud: MobileHud;
   private look: HeroLook;
+  private net?: MultiplayerSystem;
+  private pvp: boolean = false;
+  private pvpHitAt = new Map<string, number>();
   private lookKey: string = "";
   private cloud = new CloudSave();
   private auto: boolean = false;
@@ -110,7 +115,7 @@ export class RealmRpg {
     this.checkPaymentReturn();
     this.keyboard = scene.input.keyboard;
     for (const key of ["Q", "E", "I", "C", "B", "R", "ONE", "TWO", "THREE", "FOUR"]) if (this.keyboard) this.keys[key] = this.keyboard.addKey(key);
-    this.heroLabel = scene.add.text(player.sprite.x, player.sprite.y - 40, "", { fontFamily: "Arial", fontSize: "9px", color: "#ead398", stroke: "#11171c", strokeThickness: 3 }).setOrigin(.5).setDepth(200000);
+    this.heroLabel = scene.add.text(player.sprite.x, player.sprite.y - 40, "", { fontFamily: "Arial, sans-serif", fontSize: "10px", fontStyle: "bold", color: "#fff4d6", stroke: "#0b0e12", strokeThickness: 3 }).setOrigin(.5).setDepth(200000);
     this.createMobs(); this.createWingMaster(); this.startScreen(); this.render();
     const hooks = window as unknown as Record<string, unknown>;
     hooks.rpgState = () => ({ auto: this.auto, account: this.cloud.username, elemental: elementalState(this.save), elementalCatalog: ELEMENTAL_WEAPONS, glacial: this.glacial, glacialCatalog: GLACIAL_ITEMS, kundunOpening: this.kundunOpening.state(), map: this.map.map.name, mapFolder: this.map.folder, destinations: WORLD_DESTINATIONS, attack: this.player.attackState, weaponProjectiles: {active:this.weaponShots.count,released:this.weaponShots.released,hits:this.weaponShots.hits}, powers: this.powers.state(this.save.hero,this.elapsed), gear: this.gear, gearCatalog: ARMOR_ITEMS, kundunCatalog: KUNDUN_BOXES, effectiveDamage:this.damage, started: this.running, modal: !!this.modal.innerHTML, ...this.save, wingsVisible: this.wings.visible, unarmed: this.unarmed, characterId: this.heroCharacterId, texture: this.player.sprite.texture.key, frame: this.player.sprite.frame.name, scale: this.player.sprite.scaleX, displayHeight: this.player.sprite.displayHeight, facing: this.player.facing, safeZone:this.inSafeZone(this.player.worldPosition), safeCenter:this.home, safeRadius:townName(this.map.folder)?null:64, safePolygon:townName(this.map.folder)?SAFE_POLYGON:null, health: Math.ceil(this.health), maxHealth: this.maxHealth, mana: Math.floor(this.mana), x: this.player.sprite.x, y: this.player.sprite.y, wingCount: WING_CATALOG.length, wingTexture: this.wings.texture, master: {x:this.wingMaster.sprite.x,y:this.wingMaster.sprite.y,near:this.nearMaster,frame:this.wingMaster.sprite.frame.name}, enemies: this.mobs.map((m,i) => ({ id:i, x:m.sprite.x, y:m.sprite.y, health:m.health, name:m.label.text, frame:m.sprite.frame.name, boss:m.boss, classic:!!m.classic, stats:m.classic, state:m.dead?"death":m.hurtMs>0?"hurt":m.attackMs>0?"attack":"move", attackMs:m.attackMs, strikeAt:m.strikeAt, struck:m.struck, respawnRemaining:m.dead, dead:m.dead > 0 })) });
@@ -260,6 +265,7 @@ export class RealmRpg {
   }
   slash(origin: Point,direction: Direction): void {
     if (!this.active || this.inSafeZone(origin)) return;
+    this.pvpStrike(origin,direction);
     if (this.weaponRanged(origin,direction)) return;
     const vec = vectorFromDirection(direction);
     this.spellHit=false;
@@ -291,7 +297,7 @@ export class RealmRpg {
     this.look.update(this.running);
     this.masterButton.hidden = !this.running || !!this.modal.innerHTML || !this.nearMaster;
     if(this.active) this.wingMaster.update(delta);
-    this.heroLabel.setPosition(this.player.sprite.x,this.player.sprite.y-24).setText(`${this.cloud.vip?"★ ":""}${this.save.name} · Nv.${this.save.level}`).setColor(this.cloud.vip==="diamante"?"#9fe0ff":this.cloud.vip==="ouro"?"#ffd36b":"#ead398");
+    this.heroLabel.setPosition(this.player.sprite.x,this.player.sprite.y-24).setText(`${this.pvp?"⚔ ":""}${this.cloud.vip?"★ ":""}${this.save.name} · Nv.${this.save.level}`).setColor(this.cloud.vip==="diamante"?"#9fe0ff":this.cloud.vip==="ouro"?"#ffd36b":"#ead398");
     if (!this.active) return;
     const safeNow=this.inSafeZone(this.player.worldPosition);if(safeNow!==this.wasSafe){this.wasSafe=safeNow;this.banner(safeNow?"Você entrou em uma zona segura.":"Você saiu da zona segura.");this.log(safeNow?"Você entrou em uma zona segura.":"Você saiu da zona segura.");}
     this.monsterCombat.update(delta,this.player.worldPosition,p=>this.inSafeZone(p),damage=>this.receiveMonsterDamage(damage));
@@ -369,6 +375,7 @@ export class RealmRpg {
     }
     if(action==="catalog"){this.showWindow("W");return;}
     if(action.startsWith("equip-wing:")){const wing=WING_CATALOG.find(w=>w.id===action.slice(11));if(wing&&ownedWings(this.save.wingsOwned).includes(wing.id)){this.save.wingId=wing.id;this.save.wings=true;this.persist();}else if(wing)this.banner("Compre esta asa na loja primeiro.");this.showWindow(this.modal.dataset.view==="B"?"B":"W");return;}
+    if(action==="pvp"){this.pvp=!this.pvp;this.banner(this.pvp?"⚔ PvP LIGADO":"PvP desligado");this.log(this.pvp?"PvP ligado: fora da cidade você pode atacar e ser atacado por quem também está com PvP.":"PvP desligado: ninguém pode te atacar.");this.render();return;}
     if(action==="premium"){this.showWindow("P");return;}
     if(action==="classmenu"){this.showWindow("K2");return;}
     if(action==="renamemenu"){this.showWindow("N");return;}
@@ -416,6 +423,7 @@ export class RealmRpg {
     this.powers.cast(this.save.hero,slot,{...this.player.worldPosition},vectorFromDirection(this.player.facing),this.targets,this.elapsed,(point,radius,multiplier)=>{
       if(!this.active)return;
       this.powerMultiplier=multiplier;
+      this.pvpArea(point,radius,multiplier);
       for(const mob of this.targets){if(Phaser.Math.Distance.Between(point.x,point.y,mob.sprite.x,mob.sprite.y)<=radius+mob.hitRadius && this.elapsed-(hitTimes.get(mob)??-10000)>=180){if(mob.hit(point.x,point.y,100))hitTimes.set(mob,this.elapsed);}}
       this.powerMultiplier=1;
     });
@@ -579,6 +587,47 @@ export class RealmRpg {
     else{s.name=newName;if(free)s.freeRenameUsed=true;this.banner(`Agora você é ${newName}!`);}
     this.persist();await this.cloud.flush();this.showWindow("C");this.render();
   }
+  // ---------------- PvP ----------------
+  setNet(net: MultiplayerSystem): void {
+    this.net = net;
+    net.onHit = (from, name, d) => this.receivePvp(from, name, d);
+    net.onKill = (killer, victim) => { this.log(`⚔ ${killer} derrotou ${victim} no PvP`); if (killer === this.save.name) this.banner(`Você derrotou ${victim}!`); this.render(); };
+  }
+  /** Estado público enviado aos outros jogadores. */
+  netState(): LocalState {
+    const p = this.player.sprite;
+    return { x: p.x, y: p.y, n: this.save.name, h: this.save.hero, l: this.save.level, p: this.pvpActive ? 1 : 0, hp: Math.round(Math.max(0, this.health) / this.maxHealth * 100) };
+  }
+  /** PvP vale só ligado, jogando e fora da cidade. */
+  private get pvpActive(): boolean { return this.pvp && this.running && this.health > 0 && !this.inSafeZone(this.player.worldPosition); }
+  private pvpTargets(): RemotePlayer[] { return this.pvpActive && this.net ? this.net.pvpTargets().filter(r => !this.inSafeZone({ x: r.sprite.x, y: r.sprite.y })) : []; }
+  private get pvpDamage(): number { return Math.max(1, Math.round(this.damage * 0.5 * this.powerMultiplier)); }
+  private pvpSend(r: RemotePlayer, dmg: number, gap = 300): void {
+    const now = this.scene.time.now; if (now - (this.pvpHitAt.get(r.id) ?? -1e9) < gap) return;
+    this.pvpHitAt.set(r.id, now); this.net!.hit(r.id, dmg); this.float(r.sprite.x, r.sprite.y - 18, `${dmg}`, "#ffb39a");
+    r.sprite.setTint(0xff9c8c); this.scene.time.delayedCall(120, () => r.sprite.clearTint());
+  }
+  /** Golpe normal: corpo a corpo na frente; arqueiro/feiticeiro armados acertam de longe. */
+  private pvpStrike(origin: Point, direction: Direction): void {
+    const vec = vectorFromDirection(direction);
+    const ranged = !this.unarmed && (this.save.hero === "Arqueiro" || this.save.hero === "Feiticeiro");
+    for (const r of this.pvpTargets()) {
+      const dx = r.sprite.x - origin.x, dy = r.sprite.y - origin.y, fwd = dx * vec.x + dy * vec.y, side = Math.abs(dx * vec.y - dy * vec.x);
+      if (ranged ? fwd > 0 && fwd < 230 && side < 34 : fwd >= -8 && fwd < 52 && side < 29) this.pvpSend(r, this.pvpDamage);
+    }
+  }
+  /** Skills: acertam quem estiver dentro da área. */
+  private pvpArea(point: Point, radius: number, multiplier: number): void {
+    for (const r of this.pvpTargets()) if (Math.hypot(r.sprite.x - point.x, r.sprite.y - point.y) <= radius + 12) this.pvpSend(r, Math.max(1, Math.round(this.damage * 0.5 * multiplier)), 400);
+  }
+  private receivePvp(fromId: string, fromName: string, d: number): void {
+    if (!this.pvpActive || !this.active) return;
+    const value = Math.max(1, Math.round(d - this.save.armor * 3 - this.gear.defense - this.glacial.defense));
+    this.health -= value;
+    this.float(this.player.sprite.x, this.player.sprite.y - 18, `−${value}`, "#ff6b5b");
+    this.player.sprite.setTint(0xf89c99); this.scene.time.delayedCall(120, () => this.player.sprite.clearTint());
+    if (this.health <= 0) { this.net?.dead(fromId); this.log(`Você foi derrotado por ${fromName} no PvP.`); this.defeat(); }
+  }
   private premiumHtml():string{
     const owned=this.cloud.items, vip=this.cloud.vip, until=this.cloud.vipUntil?new Date(this.cloud.vipUntil).toLocaleDateString("pt-BR"):"";
     const pay=(item:string,label:string,disabled=false)=>`<button class="rpg-pay" data-action="pay:${item}" ${disabled?"disabled":""}>${label}</button>`;
@@ -617,7 +666,7 @@ export class RealmRpg {
   }
   private updateHud():void{
     const st=this.powers.state(this.save.hero,this.elapsed).skills;
-    this.hud.update({skills:st.map((p,i)=>({name:p.name,cost:p.cost,remaining:p.remaining,color:HERO_POWERS[this.save.hero][i].color})),mana:this.mana,potions:this.save.potions,auto:this.auto,unarmed:this.unarmed,safe:this.inSafeZone(this.player.worldPosition),account:this.cloud.username,nearMaster:this.running&&this.nearMaster});
+    this.hud.update({skills:st.map((p,i)=>({name:p.name,cost:p.cost,remaining:p.remaining,color:HERO_POWERS[this.save.hero][i].color})),mana:this.mana,potions:this.save.potions,auto:this.auto,unarmed:this.unarmed,safe:this.inSafeZone(this.player.worldPosition),account:this.cloud.username,nearMaster:this.running&&this.nearMaster,pvp:this.pvp});
   }
   destroy():void {window.removeEventListener("pagehide",this.onPageHide);void this.cloud.flush();this.hud.destroy();this.look.destroy();this.kundunOpening.destroy();this.monsterCombat.destroy();this.weaponShots.destroy();this.powers.destroy();this.touchMovement.destroy();this.wings.destroy();this.persist();this.root.remove();this.heroLabel.destroy();this.wingMaster.destroy();this.masterLabel.destroy();for(const m of this.mobs){m.agent.destroy();m.label.destroy();m.bar.destroy();}const hooks=window as unknown as Record<string,unknown>;delete hooks.rpgState;delete hooks.rpgAction;delete hooks.rpgApproach;delete hooks.rpgVisitMaster;}
 }

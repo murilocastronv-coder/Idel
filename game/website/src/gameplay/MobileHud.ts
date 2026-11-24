@@ -16,6 +16,7 @@ export interface HudState {
   safe: boolean;
   account: string | null;
   nearMaster: boolean;
+  pvp: boolean;
 }
 
 const MENU: [action: string, icon: string, label: string][] = [
@@ -30,6 +31,7 @@ const MENU: [action: string, icon: string, label: string][] = [
   ["glacial", "❄️", "Glacial"],
   ["kundun", "📦", "Kundun"],
   ["R", "🏰", "Refúgio"],
+  ["pvp", "⚔️", "PvP"],
   ["account", "👤", "Conta"],
   ["site", "🏠", "Site"],
 ];
@@ -124,6 +126,8 @@ export class MobileHud {
     this.accountButton.querySelector("span")!.textContent = s.account ? s.account.slice(0, 9) : "Conta";
     this.accountButton.classList.toggle("on", !!s.account);
     this.masterButton.hidden = !s.nearMaster;
+    const pvpButton = this.menu.querySelector<HTMLButtonElement>('[data-hud="pvp"]');
+    if (pvpButton) { pvpButton.classList.toggle("pvp-on", s.pvp); pvpButton.querySelector("span")!.textContent = s.pvp ? "PvP ON" : "PvP"; }
   }
 
   setVisible(visible: boolean): void {

@@ -446,18 +446,29 @@ async function accountStats() {
   return statsCache.data;
 }
 
-// ---------------- Multiplayer: uma sala por mapa ----------------
+// ---------------- Multiplayer: uma sala por mapa (+ PvP) ----------------
 const rooms = new Map(); // roomId -> Set<client>
 const players = () => { let n = 0; for (const r of rooms.values()) n += r.size; return n; };
-function parsePosition(text) {
-  if (typeof text !== 'string' || text.length > 128) return null;
-  let raw; try { raw = JSON.parse(text); } catch { return null; }
+const HEROES_OK = new Set(['Cavaleiro', 'Feiticeiro', 'Arqueiro', 'Gladiador', 'Lorde Sombrio']);
+const clean = (v, max) => (typeof v === 'string' ? v.replace(/[<>&"]/g, '').trim().slice(0, max) : '');
+/** Estado público de um jogador (validado): posição, nome, classe, nível, PvP e % de vida. */
+function parseState(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const { x, y } = raw;
   if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) return null;
   const c = (v) => Math.max(-1e6, Math.min(1e6, Math.round(v)));
-  return { x: c(x), y: c(y) };
+  const lvl = Number(raw.l);
+  const hp = Number(raw.hp);
+  return {
+    x: c(x), y: c(y),
+    n: clean(raw.n, 18) || 'Viajante',
+    h: HEROES_OK.has(raw.h) ? raw.h : 'Cavaleiro',
+    l: Number.isInteger(lvl) && lvl > 0 && lvl < 100000 ? lvl : 1,
+    p: raw.p === 1 || raw.p === true ? 1 : 0,
+    hp: Number.isFinite(hp) ? Math.max(0, Math.min(100, Math.round(hp))) : 100,
+  };
 }
+const publicOf = (c) => ({ id: c.meta.id, pos: { x: c.meta.pos.x, y: c.meta.pos.y }, n: c.meta.pos.n, h: c.meta.pos.h, l: c.meta.pos.l, p: c.meta.pos.p, hp: c.meta.pos.hp });
 
 const server = http.createServer(async (req, res) => {
   let url;
@@ -505,20 +516,46 @@ const wss = new WSServer(server, {
 });
 wss.on('connection', (client) => {
   const meta = client.meta;
+  meta.hits = { start: 0, n: 0 };
   let room = rooms.get(meta.room);
   if (!room) rooms.set(meta.room, (room = new Set()));
-  const others = [...room].filter((c) => c.meta.pos).map((c) => ({ id: c.meta.id, pos: c.meta.pos }));
+  const others = [...room].filter((c) => c.meta.pos).map(publicOf);
   room.add(client);
   client.send({ type: 'snapshot', you: meta.id, players: others });
+  const sendTo = (peer, obj) => peer._send(0x1, Buffer.from(JSON.stringify(obj)));
+  const everyone = (obj, except) => { const out = Buffer.from(JSON.stringify(obj)); for (const peer of room) if (peer !== except) peer._send(0x1, out); };
   client.on('message', (text) => {
     const now = Date.now();
     if (now - meta.win.start >= 1000) { meta.win.start = now; meta.win.n = 0; }
     if (++meta.win.n > 30) return;
-    const pos = parsePosition(text);
-    if (!pos) return;
-    meta.pos = pos;
-    const out = Buffer.from(JSON.stringify({ type: 'move', id: meta.id, pos }));
-    for (const peer of room) if (peer !== client) peer._send(0x1, out);
+    if (typeof text !== 'string' || text.length > 400) return;
+    let msg; try { msg = JSON.parse(text); } catch { return; }
+    if (!msg || typeof msg !== 'object') return;
+
+    // Golpe de PvP: os dois com PvP ligado, perto, no máximo 5 golpes/s e dano limitado.
+    if (msg.t === 'hit') {
+      if (!meta.pos || meta.pos.p !== 1) return;
+      const target = [...room].find((c) => c.meta.id === msg.to);
+      if (!target || target === client || !target.meta.pos || target.meta.pos.p !== 1) return;
+      if (Math.hypot(target.meta.pos.x - meta.pos.x, target.meta.pos.y - meta.pos.y) > 320) return;
+      if (now - meta.hits.start >= 1000) { meta.hits.start = now; meta.hits.n = 0; }
+      if (++meta.hits.n > 5) return;
+      const d = Math.round(Number(msg.d));
+      const cap = 40 + meta.pos.l * 30; // dano máximo aceito para o nível de quem bate
+      if (!Number.isFinite(d) || d < 1) return;
+      sendTo(target, { type: 'hit', from: meta.id, name: meta.pos.n, d: Math.min(d, cap) });
+      return;
+    }
+    // Morreu em PvP: avisa a sala quem matou quem.
+    if (msg.t === 'dead') {
+      const killer = [...room].find((c) => c.meta.id === msg.by);
+      if (killer && killer.meta.pos && meta.pos) everyone({ type: 'kill', killer: killer.meta.pos.n, victim: meta.pos.n });
+      return;
+    }
+    const st = parseState(msg);
+    if (!st) return;
+    meta.pos = st;
+    everyone({ type: 'move', ...publicOf(client) }, client);
   });
   client.on('close', () => {
     room.delete(client);

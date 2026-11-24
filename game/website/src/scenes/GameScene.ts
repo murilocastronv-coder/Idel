@@ -71,7 +71,8 @@ export class GameScene extends Phaser.Scene {
       this.fireProjectiles.destroy();this.fireProjectiles=new FireProjectileSystem(this);
       this.rpg.setMapData(this.mapData);this.clickTravel.setMap(this.mapData);this.towns.setMap(this.mapData);
       this.multiplayer.destroy();
-      this.multiplayer=new MultiplayerSystem(this,()=>({...this.player.worldPosition}),this.mapData.map.name);
+      this.multiplayer=new MultiplayerSystem(this,()=>this.rpg.netState(),this.mapData.map.name);
+      this.rpg.setNet(this.multiplayer);
       this.startGameplayCamera();
     });
     (window as unknown as Record<string,unknown>).travelTo = (name: string) => {
@@ -81,11 +82,8 @@ export class GameScene extends Phaser.Scene {
 
     // Real-time multiplayer: stream this player's position to the project worker and
     // render other connected players. Room = the current map name (one room per map).
-    this.multiplayer = new MultiplayerSystem(
-      this,
-      () => ({ x: this.player.sprite.x, y: this.player.sprite.y }),
-      this.mapData.map.name,
-    );
+    this.multiplayer = new MultiplayerSystem(this, () => this.rpg.netState(), this.mapData.map.name);
+    this.rpg.setNet(this.multiplayer);
 
     // EXAMPLE of persistent SERVER state (delete to remove): a global jump counter
     // shared by all players, stored in a Durable Object via /api/jumps.

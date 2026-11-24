@@ -5,6 +5,19 @@ import { mapObjectsAtlasKey } from "./pixellab/renderMap";
 import type { LoadedMap } from "./pixellab/types";
 import "./styles.css";
 
+// Textos nítidos: com pixelArt o texto era desenhado pequeno e esticado pelo zoom da câmera
+// (ficava borrado/serrilhado). Todo texto do jogo passa a ser desenhado na resolução da tela.
+{
+  const factory = Phaser.GameObjects.GameObjectFactory.prototype as unknown as Record<string, (...args: unknown[]) => Phaser.GameObjects.Text>;
+  const original = factory.text;
+  factory.text = function (this: unknown, ...args: unknown[]) {
+    const t = original.apply(this, args);
+    t.setResolution(Math.min(8, Math.max(4, Math.ceil((window.devicePixelRatio || 1) * 2.5))));
+    t.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+    return t;
+  };
+}
+
 // Global error handler: surfaces ALL runtime errors visibly on-screen
 // so the agent's smoke test (screenshot + console check) always catches them.
 // Also exposes window.gameErrors API for programmatic error retrieval.

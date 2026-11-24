@@ -145,3 +145,4 @@ body:has(.rpg-overlay) .mount-preview{display:none}
 .rpg-slot span{font-size:9px;color:#a7acaa}
 .rpg-ui .rpg-danger{border-color:#e05a4a!important;background:linear-gradient(#5a1d17,#2a0d0a)!important;color:#ffd6cf!important}
 @media(max-width:520px){.rpg-slots{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.rpg-ui .rpg-quickmenu button.pvp-on{border-color:#ff6b5b;background:linear-gradient(#5a1d17f0,#2a0d0af0);color:#ffd6cf;box-shadow:0 0 10px #ff6b5b88}
