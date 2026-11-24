@@ -30,6 +30,7 @@ const MENU: [action: string, icon: string, label: string][] = [
   ["kundun", "📦", "Kundun"],
   ["R", "🏰", "Refúgio"],
   ["account", "👤", "Conta"],
+  ["site", "🏠", "Site"],
 ];
 
 export class MobileHud {

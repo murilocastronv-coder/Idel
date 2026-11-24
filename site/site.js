@@ -1,0 +1,91 @@
+(function () {
+  'use strict';
+  var D = window.SITE_DATA || { heroes: [], maps: [], monsters: [], wings: [] };
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var fmt = function (n) { return Number(n).toLocaleString('pt-BR'); };
+
+  // Menu do celular
+  var toggle = document.querySelector('.menu-toggle'), menu = $('menu');
+  toggle.addEventListener('click', function () { var o = menu.classList.toggle('open'); toggle.setAttribute('aria-expanded', o); });
+  menu.addEventListener('click', function (e) { if (e.target.tagName === 'A') { menu.classList.remove('open'); toggle.setAttribute('aria-expanded', 'false'); } });
+
+  // Números
+  $('n-classes').textContent = D.heroes.length || 5;
+  $('n-maps').textContent = D.maps.length || 20;
+  $('n-monsters').textContent = D.monsters.length || 16;
+  $('n-wings').textContent = D.wings.length || 30;
+
+  // Fundo do topo: Lorencia (ou o primeiro mapa com imagem)
+  var bg = D.maps.find(function (m) { return m.image; });
+  if (bg) $('hero-bg').style.backgroundImage = 'url("' + bg.image + '")';
+  $('hero-party').innerHTML = D.heroes.filter(function (h) { return h.image; }).map(function (h) {
+    return '<img src="' + esc(h.image) + '" alt="' + esc(h.name) + '" width="96" height="96">';
+  }).join('');
+
+  // Classes
+  $('classes-grid').innerHTML = D.heroes.map(function (h) {
+    return '<article class="class">' + (h.image ? '<img src="' + esc(h.image) + '" alt="" loading="lazy">' : '') +
+      '<h3>' + esc(h.name) + '</h3><p>' + esc(h.description) + '</p><div class="skills">' +
+      h.skills.map(function (s, i) {
+        return '<div class="skill" style="--c:' + esc(s.color) + '"><span>' + (i + 1) + ' · ' + esc(s.name) + '</span><small>' + s.cost + ' MP · ' + (s.cooldown / 1000) + 's</small></div>';
+      }).join('') + '</div></article>';
+  }).join('');
+
+  // Mapas
+  $('maps-grid').innerHTML = D.maps.map(function (m) {
+    return '<article class="map">' + (m.image ? '<img src="' + esc(m.image) + '" alt="" loading="lazy">' : '') +
+      (m.levels ? '<span class="lv">Nv. ' + m.levels[0] + (m.levels[1] !== m.levels[0] ? '–' + m.levels[1] : '') + '</span>' : '') +
+      '<div class="info"><h3>' + esc(m.name) + '</h3><p>' + esc(m.theme) + (m.monsters ? ' · ' + m.monsters + ' tipos de monstro' : '') + '</p></div></article>';
+  }).join('');
+
+  // Monstros (bosses primeiro)
+  var mons = D.monsters.slice().sort(function (a, b) { return (b.boss - a.boss) || (a.level - b.level); });
+  $('monsters-grid').innerHTML = mons.map(function (m) {
+    return '<article class="monster' + (m.boss ? ' boss' : '') + '">' + (m.image ? '<img src="' + esc(m.image) + '" alt="" loading="lazy">' : '') +
+      (m.boss ? '<div><span class="tag">BOSS</span></div>' : '') +
+      '<h3>' + esc(m.name) + '</h3><p>Nv. ' + m.level + ' · ' + esc(m.map) + '</p><p>' + fmt(m.hp) + ' vida' + (m.ranged ? ' · à distância' : '') + '</p></article>';
+  }).join('');
+
+  // Asas com filtro por família (batendo como no jogo)
+  var families = ['Todas'].concat(D.wings.map(function (w) { return w.family; }).filter(function (f, i, a) { return a.indexOf(f) === i; }));
+  var current = 'Todas';
+  function drawWings() {
+    $('wings-grid').innerHTML = D.wings.filter(function (w) { return current === 'Todas' || w.family === current; }).map(function (w, i) {
+      var u = 'url(' + encodeURI(w.image) + ')', d = 'animation-delay:-' + (i % 5) * 0.3 + 's;';
+      return '<article class="wing"><div class="pair"><div class="half l" style="background-image:' + u + ';' + d + '"></div><div class="half r" style="background-image:' + u + ';' + d + '"></div></div><h3>' + esc(w.family) + '</h3><p>Nível ' + w.level + '</p></article>';
+    }).join('');
+  }
+  $('wing-filters').innerHTML = families.map(function (f) { return '<button type="button" data-f="' + esc(f) + '"' + (f === current ? ' class="on"' : '') + '>' + esc(f) + '</button>'; }).join('');
+  $('wing-filters').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    current = b.dataset.f;
+    Array.prototype.forEach.call(this.children, function (c) { c.classList.toggle('on', c === b); });
+    drawWings();
+  });
+  drawWings();
+
+  // Tabela do modo HARD (mesma fórmula do jogo)
+  var need = function (n) { return Math.round(100 * n * (1 + 0.12 * n)); };
+  var expAt = function (lv) {
+    var near = D.monsters.filter(function (m) { return !m.boss; }).sort(function (a, b) { return Math.abs(a.level - lv) - Math.abs(b.level - lv); })[0];
+    return near ? near.exp : 20;
+  };
+  $('hard-table').innerHTML = [1, 5, 10, 20, 30, 40, 50].map(function (n) {
+    var e = expAt(n);
+    return '<tr><td>' + n + ' → ' + (n + 1) + '</td><td class="num">' + fmt(need(n)) + '</td><td class="num">~' + fmt(Math.ceil(need(n) / Math.max(1, Math.round(e * 0.3)))) + '</td><td class="num">~' + fmt(Math.ceil(need(n) / Math.max(1, Math.round(e * 0.4)))) + '</td></tr>';
+  }).join('');
+
+  // Servidor ao vivo + ranking
+  fetch('/api/health').then(function (r) { return r.json(); }).then(function (h) {
+    $('live-dot').className = 'dot on';
+    $('live-text').textContent = 'Servidor online · ' + (h.online || 0) + ' jogando agora';
+  }).catch(function () { $('live-dot').className = 'dot off'; $('live-text').textContent = 'Servidor indisponível no momento'; });
+
+  fetch('/api/ranking').then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (d) {
+    var rows = (d.ranking || []);
+    $('ranking-body').innerHTML = rows.length ? rows.map(function (r, i) {
+      return '<tr><td>' + (i + 1) + '</td><td>' + esc(r.username) + '</td><td>' + esc(r.hero || '—') + '</td><td class="num">' + fmt(r.level) + '</td></tr>';
+    }).join('') : '<tr><td colspan="4">Ninguém no ranking ainda. Seja o primeiro!</td></tr>';
+  }).catch(function () { $('ranking-body').innerHTML = '<tr><td colspan="4">Ranking indisponível no momento.</td></tr>'; });
+})();

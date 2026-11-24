@@ -11,6 +11,7 @@ const sec = require('./security');
 const PORT = Number(process.env.PORT || 3000);
 const ROOT = path.join(__dirname, '..', 'game', 'website', 'out');
 const DOWNLOADS = path.join(__dirname, '..', 'public', 'download');
+const SITE = path.join(__dirname, '..', 'site');
 const db = process.env.DATABASE_URL ? require('./db') : null;
 if (!db) console.warn('[db] DATABASE_URL ausente: contas e salvamento na nuvem desativados.');
 
@@ -223,16 +224,25 @@ const server = http.createServer(async (req, res) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'method not allowed');
     if (p === '/health') return json(res, 200, { ok: true });
     // Links antigos (app Android abre /app) caem no jogo novo.
-    if (p === '/app' || p === '/game.html' || p === '/app.html' || p === '/jogar') return send(res, 302, null, { Location: '/' + url.search });
+    if (p === '/app' || p === '/game.html' || p === '/app.html' || p === '/jogar' || p === '/jogo') return send(res, 302, null, { Location: '/jogar/' + url.search });
     if (p.startsWith('/download/')) {
       const f = safeJoin(DOWNLOADS, p.slice('/download'.length));
       return f ? serveFile(req, res, f, 'public, max-age=3600') : send(res, 404, 'not found');
     }
-    if (p === '/' || p === '/index.html') return serveFile(req, res, path.join(ROOT, 'index.html'), 'no-cache');
-    const f = safeJoin(ROOT, p);
+    // Jogo em /jogar/
+    if (p === '/jogar/' || p === '/jogar/index.html') return serveFile(req, res, path.join(ROOT, 'index.html'), 'no-cache');
+    if (p.startsWith('/jogar/')) {
+      const sub = p.slice('/jogar'.length);
+      const f = safeJoin(ROOT, sub);
+      if (!f) return send(res, 404, 'not found');
+      const hashed = /^\/assets\/index-[A-Za-z0-9_-]+\.(js|css)$/.test(sub);
+      return serveFile(req, res, f, hashed ? 'public, max-age=31536000, immutable' : 'public, max-age=3600');
+    }
+    // Site em /
+    if (p === '/' || p === '/index.html') return serveFile(req, res, path.join(SITE, 'index.html'), 'no-cache');
+    const f = safeJoin(SITE, p);
     if (!f) return send(res, 404, 'not found');
-    const hashed = /^\/assets\/index-[A-Za-z0-9_-]+\.(js|css)$/.test(p);
-    return serveFile(req, res, f, hashed ? 'public, max-age=31536000, immutable' : 'public, max-age=3600');
+    return serveFile(req, res, f, 'no-cache');
   } catch (e) {
     const status = e.status || 500;
     if (status >= 500) console.error('[erro]', req.method, p, e);

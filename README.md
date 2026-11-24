@@ -5,7 +5,7 @@ Jogo 2D pixel art em Phaser (código em `game/`, vindo do branch `pixellab` de
 
 - **Build na Render**: `npm install --omit=dev` roda o `postinstall`, que instala as dependências
   do jogo em `game/website` e executa `game/build.sh` (saída em `game/website/out`).
-- **Start**: `npm start` → `server/index.js` (porta `PORT`).
+- **Start**: `npm start` → `server/index.js` (porta `PORT`). Site em `/`, jogo em `/jogar/`.
 - **Banco**: usa o mesmo PostgreSQL (`DATABASE_URL`, `PG_SCHEMA`). Reaproveita a tabela `accounts`
   (mesmo login do jogo antigo) e cria `aether_tokens` e `aether_saves` para o salvamento na nuvem.
 - **Multiplayer**: WebSocket em `/room/<mapa>` — jogadores do mesmo mapa se veem em tempo real.
@@ -23,3 +23,8 @@ Teclado: WASD/Shift, J ataque, L magia, 1–4 skills, Q poção, R refúgio, I/C
 npm install            # compila o jogo
 DATABASE_URL=postgres://... npm start   # sem DATABASE_URL o jogo roda, mas sem conta/nuvem
 ```
+
+## Site
+O site fica em `/` (pasta `site/`) e o jogo em `/jogar/`. `site/data.js` é gerado no build por
+`scripts/build-site-data.js` a partir dos dados do jogo (classes, skills, mapas, monstros, asas).
+As imagens dos mapas em `site/img/maps/` são prints tirados dentro do jogo.

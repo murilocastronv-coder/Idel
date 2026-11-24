@@ -21,3 +21,4 @@ fs.writeFileSync(path.join(site, 'node_modules', '.lock-hash'),
   crypto.createHash('md5').update(fs.readFileSync(path.join(site, 'package-lock.json'))).digest('hex') + '\n');
 run('bash build.sh', game);
 console.log('[build] jogo pronto em game/website/out');
+require('./build-site-data.js');

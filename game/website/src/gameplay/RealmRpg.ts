@@ -291,6 +291,7 @@ export class RealmRpg {
     if(action==="start") {const input=this.modal.querySelector<HTMLInputElement>("input");this.save.hero=this.selected;if(!this.stored){this.save.name=(input?.value.trim()||"Viajante").slice(0,18);this.save.wings=false;delete this.save.wingId;}this.syncHero();this.health=this.maxHealth;this.mana=80;this.running=true;this.modal.innerHTML="";this.log("Bem-vindo! Clique no chão para andar ou abra Mapas para viajar.");this.persist();this.render();return;}
     if(action==="heroes"){this.startScreen();return;}
     if(action==="account"){this.showAccount();return;}
+    if(action==="site"){this.persist();void this.cloud.flush().finally(()=>{location.href="/";});return;}
     if(action==="login"||action==="register"){void this.accountSubmit(action);return;}
     if(action==="logout"){void this.cloud.logout().then(()=>{this.accountMessage="Você saiu da conta. O progresso continua salvo neste aparelho.";this.showAccount();this.render();});return;}
     if(action==="cloud-save"){this.cloud.push(this.save);void this.cloud.flush().then(()=>{this.accountMessage=this.cloud.status;this.showAccount();});return;}

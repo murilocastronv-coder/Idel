@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MU Online Claude · Aether Reborn</title>
+<meta name="description" content="RPG online 2D em pixel art no navegador e no celular: 5 classes, 20 mapas, bosses, 30 asas, AUTO caça, multiplayer em tempo real e modo HARD.">
+<meta name="theme-color" content="#0d1013">
+<link rel="icon" href="/jogar/assets/objects/b02a85e2-8a92-4b70-8d4b-8dcb9f3eb4f7/base/rotations/unknown.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="#topo"><img src="/jogar/assets/objects/b02a85e2-8a92-4b70-8d4b-8dcb9f3eb4f7/base/rotations/unknown.png" alt=""><span>MU ONLINE <b>CLAUDE</b></span></a>
+  <nav id="menu">
+    <a href="#classes">Classes</a>
+    <a href="#mapas">Mapas</a>
+    <a href="#monstros">Monstros</a>
+    <a href="#asas">Asas</a>
+    <a href="#hard">Modo Hard</a>
+    <a href="#ranking">Ranking</a>
+    <a href="#controles">Controles</a>
+  </nav>
+  <a class="btn btn-gold small" href="/jogar/">Jogar</a>
+  <button class="menu-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button>
+</header>
+
+<main id="topo">
+  <section class="hero">
+    <div class="hero-bg" id="hero-bg"></div>
+    <div class="hero-inner">
+      <p class="eyebrow">AETHER REBORN · RPG ONLINE 2D</p>
+      <h1>MU Online <span>Claude</span></h1>
+      <p class="lead">Escolha seu herói, coloque as asas nas costas e cace monstros com seus amigos em tempo real, no navegador ou no celular. Sem instalar nada.</p>
+      <div class="cta">
+        <a class="btn btn-gold" href="/jogar/">⚔ Jogar agora</a>
+        <a class="btn" href="/download/mu-idle-legends.apk">📱 Baixar app Android</a>
+      </div>
+      <div class="live">
+        <span class="dot" id="live-dot"></span><span id="live-text">Verificando servidor…</span>
+        <span class="sep">·</span><span class="hard-tag">⚠ Servidor HARD · EXP baixo</span>
+      </div>
+      <div class="hero-party" id="hero-party"></div>
+    </div>
+  </section>
+
+  <section class="stats" aria-label="Números do jogo">
+    <div><b id="n-classes">5</b><span>classes</span></div>
+    <div><b id="n-maps">20</b><span>mapas</span></div>
+    <div><b id="n-monsters">16</b><span>monstros e bosses</span></div>
+    <div><b id="n-wings">30</b><span>asas</span></div>
+    <div><b>20</b><span>skills</span></div>
+  </section>
+
+  <section class="section" id="sistemas">
+    <h2>Tudo que tem no jogo</h2>
+    <div class="features">
+      <article><i>🌍</i><h3>Multiplayer em tempo real</h3><p>Cada mapa é uma sala: você vê os outros jogadores andando ao seu lado na hora.</p></article>
+      <article><i>🤖</i><h3>AUTO caça</h3><p>Liga o AUTO e o herói vai sozinho até o monstro, usa as skills, ataca e toma poção.</p></article>
+      <article><i>🕹️</i><h3>Feito para celular</h3><p>Joystick analógico, botão de ataque (segure para repetir), 4 skills, magia e poção na mão.</p></article>
+      <article><i>🪽</i><h3>Asas nas costas</h3><p>30 modelos em 6 famílias. As asas ficam presas nas costas, seguem o herói e batem abrindo e fechando.</p></article>
+      <article><i>📦</i><h3>Boxes de Kundun</h3><p>Sete caixas, do +1 ao +7, que caem dos monstros e dos bosses. Abra e veja o prêmio.</p></article>
+      <article><i>❄️</i><h3>Dragão Glacial</h3><p>Armas, pendente e anéis especiais para as cinco classes.</p></article>
+      <article><i>🗡️</i><h3>Arsenal Elemental</h3><p>Armas animadas com efeitos de fogo, gelo, raio e sombra para cada classe.</p></article>
+      <article><i>🛡️</i><h3>Conjuntos equipáveis</h3><p>20 peças em 4 raridades: Raro, Lendário, Excelente e Mítico.</p></article>
+      <article><i>🐂</i><h3>Montaria Áurea</h3><p>A Montaria Taurina Áurea já pode ser vista em todas as poses.</p></article>
+      <article><i>☁️</i><h3>Salvo na nuvem</h3><p>Entre com sua conta e continue o mesmo herói em qualquer aparelho. As contas antigas funcionam.</p></article>
+      <article><i>⚒️</i><h3>Ferreiro e loja</h3><p>Aprimore a arma e a armadura, compre poções e venda os fragmentos que caírem.</p></article>
+      <article><i>🔥</i><h3>Modo HARD</h3><p>Subir de nível é difícil para todos, VIP ou não. Cada nível conquistado vale mais.</p></article>
+    </div>
+  </section>
+
+  <section class="section" id="classes">
+    <h2>Classes</h2>
+    <p class="sub">Cinco heróis, cada um com quatro poderes exclusivos.</p>
+    <div class="classes" id="classes-grid"></div>
+  </section>
+
+  <section class="section" id="mapas">
+    <h2>Mapas</h2>
+    <p class="sub">Viagem livre por 20 destinos, das cidades às masmorras.</p>
+    <div class="maps" id="maps-grid"></div>
+  </section>
+
+  <section class="section" id="monstros">
+    <h2>Monstros e bosses</h2>
+    <p class="sub">Os bosses voltam depois de alguns minutos e sempre deixam um prêmio.</p>
+    <div class="monsters" id="monsters-grid"></div>
+  </section>
+
+  <section class="section" id="asas">
+    <h2>Coleção de asas</h2>
+    <p class="sub">Seis famílias, cinco níveis cada. Fale com o Mestre das Asas no refúgio.</p>
+    <div class="wing-filters" id="wing-filters"></div>
+    <div class="wings" id="wings-grid"></div>
+  </section>
+
+  <section class="section hard" id="hard">
+    <h2>Modo HARD</h2>
+    <p class="sub">O EXP é baixo para todos. O VIP ajuda um pouco, mas também é difícil.</p>
+    <div class="hard-grid">
+      <article><h3>Normal</h3><b>×0,30</b><span>EXP por monstro</span></article>
+      <article class="gold"><h3>VIP Ouro</h3><b>×0,36</b><span>EXP por monstro</span></article>
+      <article class="diamond"><h3>VIP Diamante</h3><b>×0,40</b><span>EXP por monstro</span></article>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nível</th><th>EXP para subir</th><th>Monstros (Normal)*</th><th>Monstros (VIP Diamante)*</th></tr></thead>
+        <tbody id="hard-table"></tbody>
+      </table>
+    </div>
+    <p class="note">* Conta aproximada, caçando monstros do próprio nível. A barra de EXP cresce a cada nível: 100 × nível × (1 + 0,12 × nível).</p>
+  </section>
+
+  <section class="section" id="ranking">
+    <h2>Ranking</h2>
+    <p class="sub">Os 20 heróis de maior nível do servidor.</p>
+    <div class="table-wrap">
+      <table class="ranking">
+        <thead><tr><th>#</th><th>Jogador</th><th>Classe</th><th>Nível</th></tr></thead>
+        <tbody id="ranking-body"><tr><td colspan="4">Carregando…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section" id="controles">
+    <h2>Controles</h2>
+    <div class="controls">
+      <article>
+        <h3>📱 Celular</h3>
+        <ul>
+          <li><b>Joystick</b> (esquerda): mover. Empurre até a borda para correr.</li>
+          <li><b>ATACAR</b>: ataque normal. Segure para repetir.</li>
+          <li><b>1 a 4</b>: skills da classe.</li>
+          <li><b>Magia</b>, <b>Poção</b> e <b>AUTO</b>: acima das skills.</li>
+          <li>Menu do topo: Loja, Mapas, Mochila, Herói, Asas, Armas, Sets, Glacial, Kundun, Refúgio e Conta.</li>
+        </ul>
+      </article>
+      <article>
+        <h3>⌨️ Computador</h3>
+        <ul>
+          <li><b>WASD</b>: mover · <b>Shift</b>: correr · clique no chão para andar.</li>
+          <li><b>J</b>: golpe · <b>L</b>: magia · <b>1–4</b>: skills.</li>
+          <li><b>Q</b>: poção · <b>R</b>: voltar ao refúgio · <b>E</b>: falar com o Mestre.</li>
+          <li><b>I</b>: mochila · <b>C</b>: herói · <b>B</b>: loja.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section class="final">
+    <h2>O mundo está esperando</h2>
+    <p>Crie sua conta dentro do jogo, no botão <b>Conta</b>, e comece agora.</p>
+    <a class="btn btn-gold" href="/jogar/">⚔ Entrar no mundo</a>
+  </section>
+</main>
+
+<footer>
+  <p>MU Online Claude · Aether Reborn — jogo de fã, sem ligação com a Webzen.</p>
+  <p><a href="/jogar/">Jogar</a> · <a href="/download/mu-idle-legends.apk">App Android</a> · <a href="#ranking">Ranking</a></p>
+</footer>
+
+<script src="/data.js"></script>
+<script src="/site.js"></script>
+</body>
+</html>
