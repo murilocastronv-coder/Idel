@@ -31,4 +31,10 @@ export const PREMIUM_PACKS = [
   { id: "glacial:all", name: "Dragão Glacial Completo", rarity: "Especial", color: "#9fe0ff", cents: 4990, desc: "As 33 peças: 5 peças + arma de todas as classes, pendente e 2 anéis" },
 ];
 
+/** Serviços pagos por uso (1ª vez de cada personagem é grátis no jogo). Cada compra = 1 uso. */
+export const SERVICES = [
+  { id: "service:reset-points", name: "Redistribuir pontos", cents: 600 },
+  { id: "service:rename", name: "Alterar nick", cents: 600 },
+];
+
 export function brlPrice(cents: number): string { return `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`; }

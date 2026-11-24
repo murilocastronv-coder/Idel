@@ -10,7 +10,7 @@ export type VipPlan = "ouro" | "diamante" | null;
 export interface CharSummary { slot: number; name: string; hero: string; level: number; }
 
 export interface CloudResult<T> { ok: boolean; error?: string; data?: T; }
-interface AuthReply { chars?: CharSummary[]; ok: boolean; username: string; token: string; save: Record<string, unknown> | null; vip?: VipPlan; vipUntil?: string | null; wings?: string[]; items?: string[]; error?: string; }
+interface AuthReply { credits?: Record<string, number>; chars?: CharSummary[]; ok: boolean; username: string; token: string; save: Record<string, unknown> | null; vip?: VipPlan; vipUntil?: string | null; wings?: string[]; items?: string[]; error?: string; }
 
 function read(key: string): string | null { try { return localStorage.getItem(key); } catch { return null; } }
 function write(key: string, value: string | null): void {
@@ -26,6 +26,8 @@ export class CloudSave {
   slot: number = 0;
   /** Personagens da conta (vindos do servidor). */
   chars: CharSummary[] = [];
+  /** Usos pagos restantes: { "reset-points": n, rename: n }. */
+  credits: Record<string, number> = {};
   /** Asas pagas com dinheiro real (vêm do servidor, nunca se perdem). */
   paidWings: string[] = [];
   /** Tudo que a conta comprou com dinheiro real (wing:..., set:..., glacial:all). */
@@ -57,6 +59,7 @@ export class CloudSave {
     this.setVip(reply.vip ?? null);
     this.paidWings = Array.isArray(reply.wings) ? reply.wings : [];
     this.chars = Array.isArray(reply.chars) ? reply.chars : [];
+    this.credits = reply.credits ?? {};
     this.items = Array.isArray(reply.items) ? reply.items : [];
     this.vipUntil = reply.vipUntil ?? null;
   }
@@ -84,6 +87,7 @@ export class CloudSave {
     if (!this.loggedIn) return null;
     const r = await this.call<{ save: Record<string, unknown> | null; chars?: CharSummary[]; vip?: VipPlan; vipUntil?: string | null; wings?: string[]; items?: string[] }>(`/api/save?slot=${this.slot}`);
     if (r.ok && Array.isArray(r.data?.chars)) this.chars = r.data!.chars!;
+    if (r.ok && r.data && "credits" in r.data) this.credits = (r.data as { credits?: Record<string, number> }).credits ?? {};
     if (r.ok) { this.setVip(r.data?.vip ?? null); this.paidWings = Array.isArray(r.data?.wings) ? r.data!.wings! : []; this.items = Array.isArray(r.data?.items) ? r.data!.items! : []; this.vipUntil = r.data?.vipUntil ?? null; }
     return r.ok ? r.data?.save ?? null : null;
   }
@@ -98,6 +102,13 @@ export class CloudSave {
   async checkout(item: string): Promise<CloudResult<{ url: string }>> {
     await this.flush();
     return this.call<{ url: string }>("/api/shop/checkout", { method: "POST", body: JSON.stringify({ item }) });
+  }
+
+  /** Gasta 1 crédito pago de um serviço (o servidor confere). */
+  async useService(service: "reset-points" | "rename"): Promise<CloudResult<{ credits: Record<string, number> }>> {
+    const r = await this.call<{ credits: Record<string, number> }>("/api/service/use", { method: "POST", body: JSON.stringify({ service }) });
+    if (r.ok && r.data) this.credits = r.data.credits;
+    return r;
   }
 
   async deleteChar(slot: number): Promise<boolean> {

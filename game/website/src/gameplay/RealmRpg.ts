@@ -29,10 +29,10 @@ import { HEROES, heroPreview, type HeroClass } from "./HeroRoster";
 import { UNARMED_HEROES } from "./UnarmedHeroes";
 import { MobileHud } from "./MobileHud";
 import { HeroLook } from "./HeroLook";
-import { VIP_PLANS, VIP_PERKS, PREMIUM_PACKS, brlPrice } from "./PremiumShop";
+import { VIP_PLANS, VIP_PERKS, PREMIUM_PACKS, SERVICES, brlPrice } from "./PremiumShop";
 import { xpToNext, hardKillXp, hardLabel } from "./HardMode";
 import { CloudSave } from "../net/CloudSave";
-interface Save extends GearSave, GlacialSave, ElementalSave { kundunBoxes?: Record<string,number>; kundunWelcome?: boolean; kundunLastReward?: string; wingId?: string; wingsOwned?: string[]; wings: boolean; name: string; hero: HeroClass; level: number; xp: number; gold: number; kills: number; quest: number; weapon: number; armor: number; potions: number; points: number; strength: number; vitality: number; items: number; }
+interface Save extends GearSave, GlacialSave, ElementalSave { kundunBoxes?: Record<string,number>; kundunWelcome?: boolean; kundunLastReward?: string; wingId?: string; wingsOwned?: string[]; freeResetUsed?: boolean; freeRenameUsed?: boolean; wings: boolean; name: string; hero: HeroClass; level: number; xp: number; gold: number; kills: number; quest: number; weapon: number; armor: number; potions: number; points: number; strength: number; vitality: number; items: number; }
 interface Mob { classic?: ClassicMonster; attackMs: number; strikeAt: number; struck: boolean; hurtMs: number; facing: Direction; agent: CharacterAgent; health: number; max: number; boss: boolean; home: Point; path: Point[]; repath: number; cooldown: number; dead: number; label: Phaser.GameObjects.Text; bar: Phaser.GameObjects.Graphics; hitRadius: number; sprite: Phaser.GameObjects.Sprite; hit: (x: number,y: number,strength: number) => boolean; }
 const COLLIDER = { width: 8, height: 4, footOffsetY: 15 };
 /** v2: reset geral de 24/11/2026 — todo mundo começa do zero (o save v1 é ignorado). */
@@ -370,6 +370,10 @@ export class RealmRpg {
     if(action==="catalog"){this.showWindow("W");return;}
     if(action.startsWith("equip-wing:")){const wing=WING_CATALOG.find(w=>w.id===action.slice(11));if(wing&&ownedWings(this.save.wingsOwned).includes(wing.id)){this.save.wingId=wing.id;this.save.wings=true;this.persist();}else if(wing)this.banner("Compre esta asa na loja primeiro.");this.showWindow(this.modal.dataset.view==="B"?"B":"W");return;}
     if(action==="premium"){this.showWindow("P");return;}
+    if(action==="classmenu"){this.showWindow("K2");return;}
+    if(action==="renamemenu"){this.showWindow("N");return;}
+    if(action.startsWith("setclass:")){const hero=HEROES.find(h=>h.name===action.slice(9));if(hero&&hero.name!==this.save.hero){this.save.hero=hero.name;this.selected=hero.name;this.syncHero();this.lookKey="";this.health=Math.min(this.health,this.maxHealth);this.persist();this.banner(`Agora você é ${hero.name}!`);this.log(`Classe trocada para ${hero.name}. Quer redistribuir os pontos? Veja em Herói.`);this.showWindow("C");this.render();}return;}
+    if(action==="svc:reset-points"||action==="svc:rename"){void this.useService(action.slice(4) as "reset-points"|"rename");return;}
     if(action.startsWith("pay:")){const item=action.slice(4);
       if(!this.cloud.loggedIn){this.accountMessage="Para comprar com dinheiro real, entre ou crie sua conta (a compra fica guardada nela).";this.showAccount();return;}
       if(!this.cloud.payEnabled){this.banner("Pagamento com dinheiro real em breve.");return;}
@@ -446,13 +450,15 @@ export class RealmRpg {
     if(view==="I")body+=`<div class="rpg-items">${item("Boxes de Kundun · +1 a +7","Sete visuais · abrir, comprar e resgatar presente","kundun","Abrir caixas de Kundun")}</div>`;
     if(view==="S")body=gearHtml(s,s.level,s.gold);
     if(view==="P")body=this.premiumHtml();
+    if(view==="K2")body=`<p>Escolha a nova classe de <b>${s.name.replace(/[<>&"]/g,"")}</b>. Nível, EXP, ouro, itens e pontos continuam. Depois você pode redistribuir os pontos.</p><div class="rpg-classes">${HEROES.map(h=>`<button class="rpg-class ${s.hero===h.name?"selected":""}" data-action="setclass:${h.name}" ${s.hero===h.name?"disabled":""}><img class="rpg-hero-preview" src="${heroPreview(this.scene,h)}" alt=""><b>${h.name}</b><span>${h.description}</span></button>`).join("")}</div><button data-action="C">Voltar</button>`;
+    if(view==="N")body=`<p>Novo nick (até 18 letras). ${this.serviceLabel("rename",!!s.freeRenameUsed)}</p><input class="rpg-newname" maxlength="18" value="${s.name.replace(/[<>&"]/g,"")}" aria-label="Novo nick"> <button class="rpg-primary" data-action="svc:rename">Confirmar</button> <button data-action="C">Voltar</button>`;
     if(view==="W")body=wingCatalogHtml(this.equippedWing,s.wings,s.wingsOwned,s.gold,this.cloud.payEnabled);
-    if(view==="C")body=`<p>${s.hero} · Nível ${s.level} · ${s.xp}/${xpToNext(s.level)} EXP<br>${hardLabel(this.cloud.vip)}<br>Vida máxima ${this.maxHealth} · Dano ${this.damage}<br><b>${s.points} pontos disponíveis</b></p><div class="rpg-items">${item(`Força ${s.strength}`,"+3 dano por ponto","strength","Adicionar +1")}${item(`Vitalidade ${s.vitality}`,"+12 vida por ponto","vitality","Adicionar +1")}${item("Personagens","Até 5 personagens por conta","heroes","Trocar personagem")}</div>`;
+    if(view==="C")body=`<p>${s.hero} · Nível ${s.level} · ${s.xp}/${xpToNext(s.level)} EXP<br>${hardLabel(this.cloud.vip)}<br>Vida máxima ${this.maxHealth} · Dano ${this.damage}<br><b>${s.points} pontos disponíveis</b></p><div class="rpg-items">${item(`Força ${s.strength}`,"+3 dano por ponto","strength","Adicionar +1")}${item(`Vitalidade ${s.vitality}`,"+12 vida por ponto","vitality","Adicionar +1")}${item("Personagens","Até 5 personagens por conta","heroes","Trocar personagem")}${item("🔄 Trocar classe",`Hoje: ${s.hero}. Nível, itens e pontos continuam`,"classmenu","Trocar classe")}${item("♻ Redistribuir pontos",`Devolve os ${s.strength+s.vitality} pontos de Força/Vitalidade · ${this.serviceLabel("reset-points",!!s.freeResetUsed)}`,"svc:reset-points","Redistribuir")}${item("✏ Alterar nick",`Nick atual: ${s.name.replace(/[<>&"]/g,"")} · ${this.serviceLabel("rename",!!s.freeRenameUsed)}`,"renamemenu","Alterar nick")}</div>`;
     if(view==="B")body=`<p>Loja do refúgio · você tem <b>${s.gold} ouro</b>. Ferreiro, poções e asas.</p><button class="rpg-primary" data-action="premium">💎 Loja Premium · VIP, melhores sets e asas com dinheiro real</button><div class="rpg-items">${item(`Arma +${s.weapon} → +${s.weapon+1}`,"+9 dano. Sucesso garantido.","weapon",`${80+s.weapon*60} ouro`)}${item(`Armadura +${s.armor} → +${s.armor+1}`,"−3 dano recebido.","armor",`${80+s.armor*60} ouro`)}${item("3 poções","Recupere a vida durante a caçada.","buy","20 ouro")}</div><h3 style="font-family:Cinzel,serif;color:#e3c78f;margin:18px 0 6px">🪽 Asas</h3>${wingCatalogHtml(this.equippedWing,s.wings,s.wingsOwned,s.gold,this.cloud.payEnabled)}`;
     if(view==="I")body=`<button data-action="arsenal">⚔ Abrir coleção de armas animadas</button>`+body;
     const elemental=elementalState(s).equipped;
     if(elemental&&(view==="I"||view==="C"))body=`<section style="padding:12px;border:1px solid #82d3e6;border-radius:8px"><h3>Arma equipada</h3>${weaponImage(elemental,96)}<strong>${elemental.name}</strong><p>${elemental.effect} · Dano +${elemental.damage}</p><button data-action="arsenal">Ver arsenal</button></section>`+body;
-    this.modal.innerHTML=`<div class="rpg-overlay"><section class="rpg-window"><button class="rpg-close" data-action="close">Fechar ×</button><div class="rpg-caption">AETHER REBORN</div><h2>${view==="I"?"Inventário":view==="C"?"Personagem":view==="W"?"Mestre das Asas":view==="S"?"Conjuntos equipáveis":view==="K"?"Boxes de Kundun":view==="G"?"Dragão Glacial":view==="A"?"Arsenal Elemental":view==="P"?"💎 Loja Premium":"Loja"}</h2>${body}<p style="font-size:10px">O combate fica pausado enquanto este painel estiver aberto.</p></section></div>`;}
+    this.modal.innerHTML=`<div class="rpg-overlay"><section class="rpg-window"><button class="rpg-close" data-action="close">Fechar ×</button><div class="rpg-caption">AETHER REBORN</div><h2>${view==="I"?"Inventário":view==="C"?"Personagem":view==="W"?"Mestre das Asas":view==="S"?"Conjuntos equipáveis":view==="K"?"Boxes de Kundun":view==="G"?"Dragão Glacial":view==="A"?"Arsenal Elemental":view==="P"?"💎 Loja Premium":view==="K2"?"Trocar classe":view==="N"?"Alterar nick":"Loja"}</h2>${body}<p style="font-size:10px">O combate fica pausado enquanto este painel estiver aberto.</p></section></div>`;}
   private render():void {const s=this.save;this.panel.innerHTML=`<header class="rpg-brand"><h1>AETHER</h1><small>R E B O R N</small></header><div class="rpg-region"><strong>${this.map.map.name.toUpperCase()}</strong><div>${this.inSafeZone(this.player.worldPosition)?"🛡 Zona segura":"⚔ Área de combate"}</div><div class="rpg-hard">⚠ ${hardLabel(this.cloud.vip)}</div></div><nav class="rpg-menu"><button data-action="I">Mochila [I]</button><button data-action="C">Herói [C]</button><button data-action="B">Loja [B]</button></nav><div class="rpg-help">WASD · mover / Shift · correr<br>${this.unarmed?"J · socos / L · soco forte":"J · golpe / L · magia"}<br>1–4 · poderes exclusivos / E · mestre próximo / poder 2<br>R · retornar ao refúgio</div><div class="rpg-feed">${this.messages.map(m=>`<div>${m}</div>`).join("")}</div><footer class="rpg-bottom"><div class="rpg-orb"><b>${Math.max(0,Math.ceil(this.health))}</b><span>VIDA / ${this.maxHealth}</span></div><div class="rpg-bars"><div class="rpg-character-line"><span>Nv.${s.level} · ${s.hero}</span><span>${s.gold} OURO</span></div><div class="rpg-xp"><i style="width:${Math.min(100,s.xp/xpToNext(s.level)*100)}%"></i></div><div class="rpg-powers">${this.powers.state(s.hero,this.elapsed).skills.map((p,i)=>`<button data-action="power:${i}" style="--power:#${HERO_POWERS[s.hero][i].color.toString(16).padStart(6,"0")}" title="${p.name} · ${p.cost} mana" ${p.remaining||this.mana<p.cost?"disabled":""}><em>${i+1}</em><span>${p.name}</span><small>${p.remaining?`${p.remaining}s`:`${p.cost} MP`}</small></button>`).join("")}</div><div class="rpg-actions"><button data-action="maps">🌍 Mapas</button><button data-action="attack"><em>J</em> Golpe</button><button data-action="Q"><em>Q</em> Poção ×${s.potions}</button></div></div><div class="rpg-orb mana"><b>${Math.floor(this.mana)}</b><span>MANA / 80</span></div></footer>`;if(s.hero==="Arqueiro"&&this.active)this.mana=Math.min(80,this.mana+.5);}
   private float(x:number,y:number,text:string,color:string):void {const label=this.scene.add.text(x,y,text,{fontFamily:"Arial",fontSize:"14px",fontStyle:"bold",color,stroke:"#121318",strokeThickness:3}).setOrigin(.5).setDepth(200000);this.scene.tweens.add({targets:label,y:y-26,alpha:0,duration:800,onComplete:()=>label.destroy()});}
   private banner(text:string):void {const el=document.createElement("div");el.className="rpg-toast";el.textContent=text;this.root.append(el);this.scene.time.delayedCall(2500,()=>el.remove());}
@@ -543,6 +549,36 @@ export class RealmRpg {
     if(!this.running)this.startScreen();else this.showAccount();
     this.render();
   }
+  /** Texto do preço de um serviço: grátis na 1ª vez, crédito comprado, ou R$ 6,00. */
+  private serviceLabel(svc:"reset-points"|"rename",freeUsed:boolean):string{
+    if(!freeUsed)return "1ª vez GRÁTIS";
+    const n=this.cloud.credits[svc]??0;
+    const price=brlPrice(SERVICES.find(x=>x.id===`service:${svc}`)!.cents);
+    return n>0?`você tem ${n} uso(s) comprado(s)`:`${price} cada (Loja Premium)`;
+  }
+  /** Redistribuir pontos / alterar nick: 1ª vez grátis por personagem; depois usa crédito pago no servidor. */
+  private async useService(svc:"reset-points"|"rename"):Promise<void>{
+    const s=this.save;
+    let newName="";
+    if(svc==="rename"){
+      const input=this.modal.querySelector<HTMLInputElement>("input.rpg-newname");
+      if(!input){this.showWindow("N");return;}
+      newName=input.value.trim().replace(/[<>&"]/g,"").slice(0,18);
+      if(newName.length<2){this.banner("Nick muito curto.");return;}
+      if(newName===s.name){this.banner("Este já é o seu nick.");return;}
+    }
+    if(svc==="reset-points"&&s.strength+s.vitality===0){this.banner("Nenhum ponto para redistribuir.");return;}
+    const free=svc==="reset-points"?!s.freeResetUsed:!s.freeRenameUsed;
+    if(!free){
+      if(!this.cloud.loggedIn){this.accountMessage="Entre na conta para comprar este serviço (R$ 6,00).";this.showAccount();return;}
+      if(!(this.cloud.credits[svc]>0)){this.showWindow("P");this.banner("Compre o serviço na Loja Premium (R$ 6,00).");return;}
+      const r=await this.cloud.useService(svc);
+      if(!r.ok){this.banner(r.error||"Não foi possível usar o crédito.");return;}
+    }
+    if(svc==="reset-points"){s.points+=s.strength+s.vitality;s.strength=0;s.vitality=0;if(free)s.freeResetUsed=true;this.health=Math.min(this.health,this.maxHealth);this.banner("Pontos devolvidos! Distribua de novo.");this.log(`${s.points} pontos livres para distribuir.`);}
+    else{s.name=newName;if(free)s.freeRenameUsed=true;this.banner(`Agora você é ${newName}!`);}
+    this.persist();await this.cloud.flush();this.showWindow("C");this.render();
+  }
   private premiumHtml():string{
     const owned=this.cloud.items, vip=this.cloud.vip, until=this.cloud.vipUntil?new Date(this.cloud.vipUntil).toLocaleDateString("pt-BR"):"";
     const pay=(item:string,label:string,disabled=false)=>`<button class="rpg-pay" data-action="pay:${item}" ${disabled?"disabled":""}>${label}</button>`;
@@ -554,6 +590,8 @@ export class RealmRpg {
       <h3 style="font-family:Cinzel,serif;color:#e3c78f;margin:14px 0 4px">★ VIP</h3><p style="margin:0">${vip?`Seu VIP: <b>${vip==="ouro"?"Ouro":"Diamante"}</b> até ${until}.`:"Você ainda não é VIP."} No servidor HARD o EXP continua baixo para todos; o VIP ajuda um pouco.</p>
       <div class="rpg-items">${vipCard("ouro")}${vipCard("diamante")}</div>
       <h3 style="font-family:Cinzel,serif;color:#e3c78f;margin:14px 0 4px">🛡 Os 7 conjuntos mais fortes + Dragão Glacial</h3><div class="rpg-items">${packs}</div>
+      <h3 style="font-family:Cinzel,serif;color:#e3c78f;margin:14px 0 4px">♻ Serviços do personagem</h3><p style="margin:0">A 1ª vez de cada personagem é grátis (na janela Herói). Cada compra vale 1 uso.</p>
+      <div class="rpg-items">${SERVICES.map(x=>`<div class="rpg-item"><strong>${x.name}</strong><span>Você tem ${this.cloud.credits[x.id.slice(8)]??0} uso(s)</span><br>${pay(x.id,`💳 ${brlPrice(x.cents)}`)}</div>`).join("")}</div>
       <h3 style="font-family:Cinzel,serif;color:#e3c78f;margin:14px 0 4px">🪽 Asas</h3><p style="margin:0">As 29 asas pagas também saem por dinheiro real.</p><button data-action="catalog">Ver asas e preços</button>`;
   }
   /** Equipamento visível: cor do conjunto dominante no corpo, brilho de conjunto raro e faíscas da arma. */

@@ -48,6 +48,7 @@ function premium() {
     vip: literal('PremiumShop.ts', 'VIP_PLANS'),
     perks: literal('PremiumShop.ts', 'VIP_PERKS'),
     packs: literal('PremiumShop.ts', 'PREMIUM_PACKS'),
+    services: literal('PremiumShop.ts', 'SERVICES'),
   };
 }
 

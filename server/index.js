@@ -102,6 +102,9 @@ async function migrate() {
     item TEXT NOT NULL, ref TEXT UNIQUE NOT NULL, amount_cents INT NOT NULL, currency TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await db.query('CREATE INDEX IF NOT EXISTS aether_purchases_account ON aether_purchases (account_id)');
+  await db.query(`CREATE TABLE IF NOT EXISTS aether_service_uses (
+    id BIGSERIAL PRIMARY KEY, account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    item TEXT NOT NULL, used_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await db.query(`CREATE TABLE IF NOT EXISTS aether_meta (key TEXT PRIMARY KEY, at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await resetAccountsOnce();
   await db.query('DELETE FROM aether_tokens WHERE expires_at < now()');
@@ -163,16 +166,24 @@ async function vipInfo(accountId) {
 }
 async function vipOf(accountId) { return (await vipInfo(accountId)).vip; }
 async function purchasedItems(accountId) {
-  const { rows } = await db.query(`SELECT DISTINCT item FROM aether_purchases WHERE account_id = $1 AND item NOT LIKE 'vip:%'`, [accountId]);
+  const { rows } = await db.query(`SELECT DISTINCT item FROM aether_purchases WHERE account_id = $1 AND item NOT LIKE 'vip:%' AND item NOT LIKE 'service:%'`, [accountId]);
   return rows.map((r) => r.item);
 }
 async function purchasedWings(accountId) {
   return (await purchasedItems(accountId)).filter((i) => i.startsWith('wing:')).map((i) => i.slice(5));
 }
+/** Créditos de serviços pagos: compras menos usos. */
+async function serviceCredits(accountId, q = db.query) {
+  const { rows } = await q(`SELECT s.id AS item,
+      (SELECT count(*) FROM aether_purchases p WHERE p.account_id = $1 AND p.item = s.id)::int
+    - (SELECT count(*) FROM aether_service_uses u WHERE u.account_id = $1 AND u.item = s.id)::int AS n
+    FROM unnest($2::text[]) AS s(id)`, [accountId, PREMIUM.services.map((x) => x.id)]);
+  const out = {}; for (const r of rows) out[r.item.slice(8)] = Math.max(0, r.n); return out;
+}
 /** O que a conta comprou + VIP, para mandar ao jogo. */
 async function premiumState(accountId) {
   const items = await purchasedItems(accountId);
-  return { ...(await vipInfo(accountId)), items, wings: items.filter((i) => i.startsWith('wing:')).map((i) => i.slice(5)) };
+  return { ...(await vipInfo(accountId)), credits: await serviceCredits(accountId), items, wings: items.filter((i) => i.startsWith('wing:')).map((i) => i.slice(5)) };
 }
 
 // ---------------- Loja de asas com dinheiro real (Stripe Checkout) ----------------
@@ -192,6 +203,8 @@ function productFor(item) {
   }
   const pack = PREMIUM.packs.find((x) => x.id === item);
   if (pack) return { item, cents: pack.cents, name: pack.name, desc: pack.desc, once: true };
+  const svc = PREMIUM.services.find((x) => x.id === item);
+  if (svc) return { item, cents: svc.cents, name: svc.name, desc: 'serviço de personagem (1 uso)', once: false };
   const vip = PREMIUM.vip.find((x) => x.id === item);
   if (vip) return { item, cents: vip.cents, name: `${vip.name} — ${vip.days} dias`, desc: (PREMIUM.perks[vip.plan] || []).join(', '), once: false, vip };
   return null;
@@ -306,6 +319,23 @@ async function handleApi(req, res, url) {
         [acc.id, slot, name, hero, level, JSON.stringify(save)]);
       return json(res, 200, { ok: true, slot });
     }
+  }
+
+  if (p === '/api/service/use' && req.method === 'POST') {
+    const acc = await auth(req);
+    limit(req, 'service', 20, 60 * 1000, String(acc.id));
+    const body = await readJson(req);
+    const item = `service:${String(body.service || '')}`;
+    if (!PREMIUM.services.some((x) => x.id === item)) throw fail(400, 'Serviço inválido.');
+    const ok = await db.tx(async (q) => {
+      await q('SELECT pg_advisory_xact_lock($1)', [acc.id]); // evita gastar o mesmo crédito duas vezes
+      const credits = await serviceCredits(acc.id, q);
+      if (!(credits[item.slice(8)] > 0)) return false;
+      await q('INSERT INTO aether_service_uses (account_id, item) VALUES ($1, $2)', [acc.id, item]);
+      return true;
+    });
+    if (!ok) throw fail(402, 'Sem créditos. Compre na Loja Premium.');
+    return json(res, 200, { ok: true, credits: await serviceCredits(acc.id) });
   }
 
   if (p === '/api/chars') {
