@@ -126,8 +126,11 @@ export class RealmRpg {
   get active(): boolean { return this.running && !this.modal.innerHTML; }
   get targets(): Mob[] { return this.active && !this.inSafeZone(this.player.worldPosition) ? this.mobs.filter(m => !m.dead&&!this.inSafeZone(m.sprite)) : []; }
   private get unarmed(): boolean { return this.save.weapon === 0 && !this.glacial.weapon && !elementalState(this.save).equipped; }
-  private get heroCharacterId(): string { return this.unarmed ? UNARMED_HEROES[this.save.hero] : HEROES.find(h=>h.name===this.save.hero)!.id; }
-  private syncHero(): void { this.player.setCharacter(this.heroCharacterId, this.unarmed); }
+  /** Com qualquer peça de armadura equipada, o herói usa o desenho COM armadura (pintado na cor do conjunto). */
+  private get armoredLook(): boolean { return Object.keys(this.gear.equipped).length>0 || Object.keys(this.glacial.equipped).some(k=>["Elmo","Armadura","Calça","Luvas","Botas"].includes(k)); }
+  private get heroCharacterId(): string { return this.unarmed && !this.armoredLook ? UNARMED_HEROES[this.save.hero] : HEROES.find(h=>h.name===this.save.hero)!.id; }
+  private visualId: string = "";
+  private syncHero(): void { this.visualId=this.heroCharacterId; this.player.setCharacter(this.visualId, this.unarmed && !this.armoredLook); }
   /** Asa equipada: só vale se for da coleção do jogador; senão, a Angelical Nv.1 grátis. */
   private get equippedWing(): string { const owned=ownedWings(this.save.wingsOwned);return this.save.wingId&&owned.includes(this.save.wingId)?this.save.wingId:FREE_WING_ID; }
   private get glacial() { return glacialState(this.save); }
@@ -529,7 +532,9 @@ export class RealmRpg {
     for(const p of pieces){const c=count.get(p.color)??{n:0,rarity:p.rarity};c.n++;count.set(p.color,c);}
     const order=["Raro","Lendário","Excelente","Mítico","Especial"];
     const best=[...count.entries()].sort((a,b)=>b[1].n-a[1].n||order.indexOf(b[1].rarity)-order.indexOf(a[1].rarity))[0];
-    const armorColor=best?.[0]??null;
+    // No corpo, o Guardião de Aço aparece como aço prateado (o azul do ícone sumiria no Feiticeiro).
+    const armorColor=best?(best[0]==="#79baff"?"#b4c2d0":best[0]):null;
+    if(this.running&&this.heroCharacterId!==this.visualId)this.syncHero();
     const glowColor=best&&best[1].n>=3&&["Excelente","Mítico","Especial"].includes(best[1].rarity)?best[0]:null;
     const el=elementalState(this.save).equipped;
     const fx=el?.effect??"";
