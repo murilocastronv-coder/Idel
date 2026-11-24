@@ -131,6 +131,7 @@ function str(v, max) { return typeof v === 'string' ? v.trim().slice(0, max) : '
 async function handleApi(req, res, url) {
   const p = url.pathname;
   if (p === '/api/health') return json(res, 200, { ok: true, db: !!db, online: players() });
+  if (p === '/api/stats') return json(res, 200, { ok: true, online: players(), ...(await accountStats()) });
   if (!db) throw fail(503, 'Banco de dados indisponível.');
 
   if (p === '/api/register' && req.method === 'POST') {
@@ -200,6 +201,19 @@ async function handleApi(req, res, url) {
     return json(res, 200, { ok: true, ranking: rows });
   }
   throw fail(404, 'not found');
+}
+
+// Números do site (contas criadas / heróis salvos), com cache curto para não pesar no banco.
+let statsCache = { at: 0, data: { accounts: null, heroes: null } };
+async function accountStats() {
+  if (!db) return statsCache.data;
+  if (Date.now() - statsCache.at < 30_000) return statsCache.data;
+  try {
+    const { rows } = await db.query(`SELECT (SELECT count(*) FROM accounts)::int AS accounts,
+      (SELECT count(*) FROM aether_saves)::int AS heroes`);
+    statsCache = { at: Date.now(), data: rows[0] };
+  } catch (e) { console.error('[stats]', e.message); }
+  return statsCache.data;
 }
 
 // ---------------- Multiplayer: uma sala por mapa ----------------

@@ -77,10 +77,22 @@
   }).join('');
 
   // Servidor ao vivo + ranking
-  fetch('/api/health').then(function (r) { return r.json(); }).then(function (h) {
-    $('live-dot').className = 'dot on';
-    $('live-text').textContent = 'Servidor online · ' + (h.online || 0) + ' jogando agora';
-  }).catch(function () { $('live-dot').className = 'dot off'; $('live-text').textContent = 'Servidor indisponível no momento'; });
+  // Contas criadas e jogadores online, atualizando a cada 20 s
+  function loadStats() {
+    fetch('/api/stats', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (h) {
+      var on = h.online || 0;
+      $('live-dot').className = 'dot on'; $('pl-dot').className = 'dot on';
+      $('live-text').textContent = 'Servidor online · ' + fmt(on) + (on === 1 ? ' jogando agora' : ' jogando agora');
+      $('pl-online').textContent = fmt(on);
+      $('pl-accounts').textContent = h.accounts == null ? '–' : fmt(h.accounts);
+      $('pl-heroes').textContent = h.heroes == null ? '–' : fmt(h.heroes);
+    }).catch(function () {
+      $('live-dot').className = 'dot off'; $('pl-dot').className = 'dot off';
+      $('live-text').textContent = 'Servidor indisponível no momento';
+    });
+  }
+  loadStats();
+  setInterval(function () { if (!document.hidden) loadStats(); }, 20000);
 
   fetch('/api/ranking').then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (d) {
     var rows = (d.ranking || []);
