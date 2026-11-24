@@ -33,6 +33,7 @@ const MENU: [action: string, icon: string, label: string][] = [
   ["R", "🏰", "Refúgio"],
   ["pvp", "⚔️", "PvP"],
   ["account", "👤", "Conta"],
+  ["discord", "💬", "Discord"],
   ["site", "🏠", "Site"],
 ];
 

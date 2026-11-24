@@ -175,3 +175,7 @@ footer{text-align:center;padding:26px 20px 40px;color:#6f7775;font-size:12px;bor
 .prem.vip.ouro h3{color:#ffd36b}
 .prem.vip.diamante{border-color:#6cc1f1;background:linear-gradient(160deg,#173041,#0c1419)}
 .prem.vip.diamante h3{color:#9fe0ff}
+
+.btn.discord{background:linear-gradient(#6b74f5,#4752c4);border-color:#8c93ff;color:#fff}
+.final .btn{margin:6px}
+@media (max-width:860px){.nav .btn.discord{display:none}}
