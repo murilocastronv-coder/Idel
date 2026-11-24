@@ -37,6 +37,14 @@ interface Mob { classic?: ClassicMonster; attackMs: number; strikeAt: number; st
 const COLLIDER = { width: 8, height: 4, footOffsetY: 15 };
 /** v2: reset geral de 24/11/2026 — todo mundo começa do zero (o save v1 é ignorado). */
 const SAVE_KEY = "aether-reborn-save-v2";
+/** Até 5 personagens: cada espaço tem seu save (espaço 0 usa a chave antiga). */
+const MAX_CHARS = 5;
+const SLOT_KEY = "aether-slot";
+const slotKey = (n: number): string => n === 0 ? SAVE_KEY : `${SAVE_KEY}-s${n}`;
+function readSlot(): number { try { const n = Number(localStorage.getItem(SLOT_KEY)); return Number.isInteger(n) && n >= 0 && n < MAX_CHARS ? n : 0; } catch { return 0; } }
+function localChar(n: number): { slot: number; name: string; hero: string; level: number } | null {
+  try { const d = JSON.parse(localStorage.getItem(slotKey(n)) || "null"); return d && Number.isFinite(d.level) && typeof d.hero === "string" ? { slot: n, name: String(d.name ?? "Viajante"), hero: d.hero, level: d.level } : null; } catch { return null; }
+}
 export class RealmRpg {
   private root: HTMLDivElement;
   private panel: HTMLDivElement;
@@ -46,6 +54,8 @@ export class RealmRpg {
   private home: Point;
   private save: Save = { wings: false, name: "Viajante", hero: "Cavaleiro", level: 1, xp: 0, gold: 0, kills: 0, quest: 0, weapon: 0, armor: 0, potions: 5, points: 0, strength: 0, vitality: 0, items: 0 };
   private selected: HeroClass = "Cavaleiro";
+  private slot: number = readSlot();
+  private confirmDelete: boolean = false;
   private running: boolean = false;
   private kundunOpening = new KundunOpening();
   private wasSafe: boolean = true;
@@ -86,7 +96,8 @@ export class RealmRpg {
     this.touchMovement = new TouchMovement(player);
     this.touchMovement.setActive(false);
     this.home = { ...player.worldPosition };
-    try { const data = JSON.parse(localStorage.getItem(SAVE_KEY) || "null") as Save | null; if (data && Number.isFinite(data.level) && data.level >= 1 && HEROES.some(hero => hero.name === data.hero)) { this.save = { ...this.save, ...data }; this.selected = data.hero; this.stored = true; } } catch { /* a new adventure remains available */ }
+    this.cloud.slot = this.slot;
+    try { const data = JSON.parse(localStorage.getItem(slotKey(this.slot)) || "null") as Save | null; if (data && Number.isFinite(data.level) && data.level >= 1 && HEROES.some(hero => hero.name === data.hero)) { this.save = { ...this.save, ...data }; this.selected = data.hero; this.stored = true; } } catch { /* a new adventure remains available */ }
     this.root = document.createElement("div"); this.root.className = "rpg-ui";
     this.panel = document.createElement("div"); this.modal = document.createElement("div"); this.root.append(this.panel, this.modal); document.getElementById("hud-root")!.append(this.root);
     this.hud = new MobileHud(this.root, action => this.action(action));
@@ -95,7 +106,7 @@ export class RealmRpg {
     this.root.append(this.modal);
     window.addEventListener("pagehide", this.onPageHide);
     void this.cloud.shopInfo();
-    if (this.cloud.loggedIn) void this.cloud.load().then(save => { if (save) this.applyCloudSave(save, false); this.mergePaidWings(); });
+    if (this.cloud.loggedIn) void this.cloud.load().then(save => { if (save) this.applyCloudSave(save, false); this.mergePaidWings(); if (!this.running && this.modal.dataset.view === "start") this.startScreen(); });
     this.checkPaymentReturn();
     this.keyboard = scene.input.keyboard;
     for (const key of ["Q", "E", "I", "C", "B", "R", "ONE", "TWO", "THREE", "FOUR"]) if (this.keyboard) this.keys[key] = this.keyboard.addKey(key);
@@ -307,8 +318,12 @@ export class RealmRpg {
   private action(action: string): void {
     if(this.kundunOpening.busy)return;
     if(action.startsWith("class:")){const hero=HEROES.find(h=>h.name===action.slice(6));if(hero){this.selected=hero.name;this.startScreen();}return;}
-    if(action==="start") {const input=this.modal.querySelector<HTMLInputElement>("input");this.save.hero=this.selected;if(!this.stored){this.save.name=(input?.value.trim()||"Viajante").slice(0,18);this.save.wings=false;delete this.save.wingId;}this.syncHero();this.health=this.maxHealth;this.mana=80;this.running=true;this.modal.innerHTML="";this.log("Bem-vindo! Clique no chão para andar ou abra Mapas para viajar.");this.persist();this.render();return;}
-    if(action==="heroes"){this.startScreen();return;}
+    if(action==="start") {this.confirmDelete=false;const input=this.modal.querySelector<HTMLInputElement>("input.rpg-name");this.save.hero=this.selected;if(!this.stored){this.save.name=(input?.value.trim()||"Viajante").slice(0,18);this.save.wings=false;delete this.save.wingId;}this.stored=true;this.syncHero();this.health=this.maxHealth;this.mana=80;this.running=true;this.modal.innerHTML="";this.log("Bem-vindo! Clique no chão para andar ou abra Mapas para viajar.");this.persist();this.render();return;}
+    if(action==="heroes"){this.confirmDelete=false;this.startScreen();return;}
+    if(action.startsWith("slot:")){const n=Number(action.slice(5));if(!Number.isInteger(n)||n<0||n>=MAX_CHARS||n===this.slot)return;this.persistIfStored();void this.cloud.flush().finally(()=>{try{localStorage.setItem(SLOT_KEY,String(n));}catch{/* ignore */}location.reload();});return;}
+    if(action==="delchar"){if(!this.stored)return;if(!this.confirmDelete){this.confirmDelete=true;this.startScreen();return;}
+      const slot=this.slot;try{localStorage.removeItem(slotKey(slot));}catch{/* ignore */}
+      void (this.cloud.loggedIn?this.cloud.deleteChar(slot):Promise.resolve(true)).finally(()=>location.reload());return;}
     if(action==="account"){this.showAccount();return;}
     if(action==="site"){this.persist();void this.cloud.flush().finally(()=>{location.href="/";});return;}
     if(action==="login"||action==="register"){void this.accountSubmit(action);return;}
@@ -403,9 +418,24 @@ export class RealmRpg {
     this.log(power.name);this.render();
   }
   private defeat():void {this.health=0;this.modal.dataset.view="defeat";this.save.gold=Math.floor(this.save.gold*.95);this.persist();this.modal.innerHTML=`<div class="rpg-overlay"><div class="rpg-window"><div class="rpg-caption">A FENDA COBROU SEU PREÇO</div><h2>Você caiu em batalha</h2><p>Você perdeu 5% do ouro. Seu nível e seus equipamentos foram preservados.</p><button data-action="revive" class="rpg-primary">Renascer no refúgio</button></div></div>`;this.render();}
+  private persistIfStored():void{if(this.stored&&this.running)this.persist();}
+  /** Lista dos 5 espaços: o que está no servidor (conta) e neste aparelho. */
+  private charSlots(){
+    const list:({slot:number;name:string;hero:string;level:number}|null)[]=[];
+    for(let n=0;n<MAX_CHARS;n++){const c=this.cloud.loggedIn?this.cloud.chars.find(x=>x.slot===n):undefined;const l=localChar(n);list.push(c&&l?(c.level>=l.level?c:l):c??l);}
+    if(this.stored)list[this.slot]={slot:this.slot,name:this.save.name,hero:this.save.hero,level:this.save.level};
+    return list;
+  }
   private startScreen():void {
     this.modal.dataset.view="start";
-    this.modal.innerHTML=`<div class="rpg-overlay"><section class="rpg-window"><div class="rpg-caption">CINCO HERÓIS • FANTASIA SOMBRIA</div><h2>AETHER REBORN</h2><p>Escolha seu personagem. ${this.stored?`Seu progresso de nível ${this.save.level} será preservado.`:"Forje seu herói e enfrente o Guardião da Fenda."}</p><div class="rpg-classes">${HEROES.map(hero=>`<button class="rpg-class ${this.selected===hero.name?"selected":""}" data-action="class:${hero.name}"><img class="rpg-hero-preview" src="${heroPreview(this.scene,hero)}" alt="${hero.name}"><b>${hero.name}</b><span>${hero.description}</span></button>`).join("")}</div>${this.stored?"":'<input aria-label="Nome do herói" maxlength="18" placeholder="Nome do herói" value="Viajante">'}<button data-action="start" class="rpg-primary">${this.stored?"Continuar jornada":"Entrar no mundo"} →</button> <button data-action="account">${this.cloud.loggedIn?`👤 ${this.cloud.username}`:"👤 Entrar / criar conta"}</button><p style="font-size:10px;margin-bottom:0">WASD mover · J atacar · L magia · 1–4 poderes · E poder 2 · Q poção<br>30 asas disponíveis na mochila [I] ou com o Mestre [E]. ${this.cloud.loggedIn?"Progresso salvo na nuvem.":"Progresso salvo neste navegador (entre na conta para salvar na nuvem)."}</p></section></div>`;
+    const esc=(t:string)=>t.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
+    const slots=this.charSlots();const used=slots.filter(Boolean).length;
+    const cards=slots.map((c,n)=>{const hero=c?HEROES.find(h=>h.name===c.hero):undefined;const on=n===this.slot;
+      return `<button class="rpg-slot ${on?"selected":""} ${c?"":"empty"}" data-action="slot:${n}">${hero?`<img class="rpg-hero-preview" src="${heroPreview(this.scene,hero)}" alt="">`:`<i>＋</i>`}<b>${c?esc(c.name):"Vazio"}</b><span>${c?`${esc(c.hero)} · Nv.${c.level}`:"Criar personagem"}</span></button>`;}).join("");
+    const body=this.stored
+      ?`<p>Personagem selecionado: <b>${esc(this.save.name)}</b> · ${this.save.hero} · Nível ${this.save.level}</p><button data-action="start" class="rpg-primary">⚔ Jogar com ${esc(this.save.name)} →</button> <button data-action="delchar" class="${this.confirmDelete?"rpg-danger":""}">${this.confirmDelete?"Toque de novo para EXCLUIR para sempre":"🗑 Excluir personagem"}</button>`
+      :`<p><b>Espaço ${this.slot+1} vazio</b> · escolha a classe e o nome do novo personagem.</p><div class="rpg-classes">${HEROES.map(hero=>`<button class="rpg-class ${this.selected===hero.name?"selected":""}" data-action="class:${hero.name}"><img class="rpg-hero-preview" src="${heroPreview(this.scene,hero)}" alt="${hero.name}"><b>${hero.name}</b><span>${hero.description}</span></button>`).join("")}</div><input class="rpg-name" aria-label="Nome do herói" maxlength="18" placeholder="Nome do herói" value="Viajante"><button data-action="start" class="rpg-primary">Criar personagem →</button>`;
+    this.modal.innerHTML=`<div class="rpg-overlay"><section class="rpg-window"><div class="rpg-caption">PERSONAGENS · ${used}/${MAX_CHARS}</div><h2>AETHER REBORN</h2><div class="rpg-slots">${cards}</div>${body} <button data-action="account">${this.cloud.loggedIn?`👤 ${esc(this.cloud.username!)}`:"👤 Entrar / criar conta"}</button><p style="font-size:10px;margin-bottom:0">Até 5 personagens por conta. ${this.cloud.loggedIn?"Todos salvos na nuvem.":"Salvos neste aparelho — entre na conta para guardar na nuvem."}<br>WASD mover · J atacar · L magia · 1–4 poderes · Q poção</p></section></div>`;
   }
   private showWindow(view:string):void {this.modal.dataset.view=view;const s=this.save;const item=(name:string,desc:string,action:string,label:string)=>`<div class="rpg-item"><strong>${name}</strong><span>${desc}</span><br><button data-action="${action}">${label}</button></div>`;let body="";
     if(view==="I")body=`<p>${s.gold} ouro · Equipamentos ativos abaixo</p><div class="rpg-items">${item("Conjuntos equipáveis · 20 peças","Raro · Lendário · Excelente · Mítico","sets","Abrir arsenal")}${item(this.unarmed?"Mãos vazias · sem arma":`Arma +${s.weapon}`,`${this.damage} dano efetivo${this.unarmed?" · J socos alternados / L soco forte":""}`,"B",this.unarmed?"Obter arma":"Aprimorar")}${item(`Armadura +${s.armor}`,`Reduz ${s.armor*3} dano`,"B","Aprimorar")}${item(`Poções ×${s.potions}`,"Recuperam 85 vida", "close","Voltar · Q para usar")}${item(`Fragmentos ×${s.items}`,"12 ouro por fragmento","sell","Vender todos")}${item("Asas equipáveis",s.wings?"Equipadas · cosméticas, sem voo":"Cosméticas · todas as cinco classes","wings",s.wings?"Retirar asas":"Equipar asas")}${item(`Asas · ${ownedWings(s.wingsOwned).length}/30`,"Angelical Nv.1 grátis · as outras na loja","catalog","Loja de asas")}</div>`;
@@ -417,7 +447,7 @@ export class RealmRpg {
     if(view==="S")body=gearHtml(s,s.level,s.gold);
     if(view==="P")body=this.premiumHtml();
     if(view==="W")body=wingCatalogHtml(this.equippedWing,s.wings,s.wingsOwned,s.gold,this.cloud.payEnabled);
-    if(view==="C")body=`<p>${s.hero} · Nível ${s.level} · ${s.xp}/${xpToNext(s.level)} EXP<br>${hardLabel(this.cloud.vip)}<br>Vida máxima ${this.maxHealth} · Dano ${this.damage}<br><b>${s.points} pontos disponíveis</b></p><div class="rpg-items">${item(`Força ${s.strength}`,"+3 dano por ponto","strength","Adicionar +1")}${item(`Vitalidade ${s.vitality}`,"+12 vida por ponto","vitality","Adicionar +1")}${item("Cinco heróis","Troque a aparência sem perder seu progresso","heroes","Escolher herói")}</div>`;
+    if(view==="C")body=`<p>${s.hero} · Nível ${s.level} · ${s.xp}/${xpToNext(s.level)} EXP<br>${hardLabel(this.cloud.vip)}<br>Vida máxima ${this.maxHealth} · Dano ${this.damage}<br><b>${s.points} pontos disponíveis</b></p><div class="rpg-items">${item(`Força ${s.strength}`,"+3 dano por ponto","strength","Adicionar +1")}${item(`Vitalidade ${s.vitality}`,"+12 vida por ponto","vitality","Adicionar +1")}${item("Personagens","Até 5 personagens por conta","heroes","Trocar personagem")}</div>`;
     if(view==="B")body=`<p>Loja do refúgio · você tem <b>${s.gold} ouro</b>. Ferreiro, poções e asas.</p><button class="rpg-primary" data-action="premium">💎 Loja Premium · VIP, melhores sets e asas com dinheiro real</button><div class="rpg-items">${item(`Arma +${s.weapon} → +${s.weapon+1}`,"+9 dano. Sucesso garantido.","weapon",`${80+s.weapon*60} ouro`)}${item(`Armadura +${s.armor} → +${s.armor+1}`,"−3 dano recebido.","armor",`${80+s.armor*60} ouro`)}${item("3 poções","Recupere a vida durante a caçada.","buy","20 ouro")}</div><h3 style="font-family:Cinzel,serif;color:#e3c78f;margin:18px 0 6px">🪽 Asas</h3>${wingCatalogHtml(this.equippedWing,s.wings,s.wingsOwned,s.gold,this.cloud.payEnabled)}`;
     if(view==="I")body=`<button data-action="arsenal">⚔ Abrir coleção de armas animadas</button>`+body;
     const elemental=elementalState(s).equipped;
@@ -427,7 +457,7 @@ export class RealmRpg {
   private float(x:number,y:number,text:string,color:string):void {const label=this.scene.add.text(x,y,text,{fontFamily:"Arial",fontSize:"14px",fontStyle:"bold",color,stroke:"#121318",strokeThickness:3}).setOrigin(.5).setDepth(200000);this.scene.tweens.add({targets:label,y:y-26,alpha:0,duration:800,onComplete:()=>label.destroy()});}
   private banner(text:string):void {const el=document.createElement("div");el.className="rpg-toast";el.textContent=text;this.root.append(el);this.scene.time.delayedCall(2500,()=>el.remove());}
   private log(text:string):void {this.messages.unshift(text);this.messages=this.messages.slice(0,4);}
-  private persist():void {try{localStorage.setItem(SAVE_KEY,JSON.stringify(this.save));}catch{/* Storage disabled by the browser. */}this.cloud.push(this.save);}
+  private persist():void {if(!this.stored)return;try{localStorage.setItem(slotKey(this.slot),JSON.stringify(this.save));}catch{/* Storage disabled by the browser. */}this.cloud.push(this.save);}
   private onPageHide = (): void => { if(this.running) this.cloud.beacon(this.save); };
   private nearestTarget(range:number):Mob|undefined{const p=this.player.sprite;return this.targets.filter(m=>Phaser.Math.Distance.Between(m.sprite.x,m.sprite.y,p.x,p.y)<range).sort((a,b)=>Phaser.Math.Distance.Between(a.sprite.x,a.sprite.y,p.x,p.y)-Phaser.Math.Distance.Between(b.sprite.x,b.sprite.y,p.x,p.y))[0];}
   /** AUTO: walk to the nearest monster, use ready skills, then normal attacks; drink a potion at low life. */
@@ -461,10 +491,10 @@ export class RealmRpg {
       if(it.startsWith("set:")){const ids=ARMOR_ITEMS.filter(i=>i.setId===it.slice(4)).map(i=>i.id);const cur=this.save.gearOwned??[];const add=ids.filter(id=>!cur.includes(id));if(add.length){this.save.gearOwned=[...cur,...add];gotGear=true;}}
       if(it==="glacial:all"){const cur=this.save.glacialOwned??[];const add=GLACIAL_ITEMS.map(i=>i.id).filter(id=>!cur.includes(id));if(add.length){this.save.glacialOwned=[...cur,...add];gotGear=true;}}
     }
-    if(gotGear){try{localStorage.setItem(SAVE_KEY,JSON.stringify(this.save));}catch{/* ignore */}this.banner("Compra entregue! Veja em Sets / Glacial.");this.render();}
+    if(gotGear){try{localStorage.setItem(slotKey(this.slot),JSON.stringify(this.save));}catch{/* ignore */}this.banner("Compra entregue! Veja em Sets / Glacial.");this.render();}
     const paid=this.cloud.paidWings.filter(id=>WING_CATALOG.some(w=>w.id===id));
     const owned=ownedWings(this.save.wingsOwned);const fresh=paid.filter(id=>!owned.includes(id));
-    if(fresh.length){this.save.wingsOwned=[...owned,...fresh];this.save.wingId=fresh[fresh.length-1];this.save.wings=true;try{localStorage.setItem(SAVE_KEY,JSON.stringify(this.save));}catch{/* ignore */}this.banner("Asa comprada entregue!");this.render();}
+    if(fresh.length){this.save.wingsOwned=[...owned,...fresh];this.save.wingId=fresh[fresh.length-1];this.save.wings=true;try{localStorage.setItem(slotKey(this.slot),JSON.stringify(this.save));}catch{/* ignore */}this.banner("Asa comprada entregue!");this.render();}
     return;
   }
   /** Volta do pagamento (?asa=ok): espera o servidor confirmar e entrega a asa. */
@@ -483,7 +513,7 @@ export class RealmRpg {
     const better=force||save.level>this.save.level||(save.level===this.save.level&&(save.xp??0)>=(this.save.xp??0))||!this.stored;
     if(!better){this.cloud.push(this.save);return;}
     this.save={...this.save,...save};this.selected=save.hero;this.stored=true;
-    try{localStorage.setItem(SAVE_KEY,JSON.stringify(this.save));}catch{/* ignore */}
+    try{localStorage.setItem(slotKey(this.slot),JSON.stringify(this.save));}catch{/* ignore */}
     if(this.running){this.syncHero();this.health=this.maxHealth;this.mana=80;this.render();}
     else if(this.modal.dataset.view==="start")this.startScreen();
   }
@@ -507,7 +537,7 @@ export class RealmRpg {
     this.accountMessage="Conectando…";this.showAccount();
     const r=kind==="login"?await this.cloud.login(v("login"),password):await this.cloud.register(v("username"),v("email"),password);
     if(!r.ok){this.accountMessage=r.error||"Não foi possível entrar.";this.showAccount();return;}
-    this.accountMessage=kind==="login"?"Bem-vindo de volta!":"Conta criada!";if(kind==="register"){this.save.wings=false;delete this.save.wingId;this.persist();}
+    this.accountMessage=kind==="login"?"Bem-vindo de volta!":"Conta criada!";if(kind==="register"){this.save.wings=false;delete this.save.wingId;if(this.stored)this.persist();}
     if(r.data?.save)this.applyCloudSave(r.data.save,false);else if(this.stored){this.cloud.push(this.save);await this.cloud.flush();}
     this.mergePaidWings();
     if(!this.running)this.startScreen();else this.showAccount();

@@ -86,6 +86,15 @@ async function migrate() {
   await db.query(`CREATE TABLE IF NOT EXISTS aether_saves (
     account_id BIGINT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
     data JSONB NOT NULL, level INT NOT NULL DEFAULT 1, updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  // Até 5 personagens por conta (espaços 0 a 4). O herói antigo (um por conta) vira o espaço 0.
+  await db.query(`CREATE TABLE IF NOT EXISTS aether_chars (
+    account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, slot SMALLINT NOT NULL CHECK (slot BETWEEN 0 AND 4),
+    name TEXT NOT NULL, hero TEXT NOT NULL, level INT NOT NULL DEFAULT 1, data JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (account_id, slot))`);
+  await db.query(`INSERT INTO aether_chars (account_id, slot, name, hero, level, data, updated_at)
+    SELECT account_id, 0, COALESCE(data->>'name', 'Viajante'), COALESCE(data->>'hero', 'Cavaleiro'), level, data, updated_at FROM aether_saves
+    ON CONFLICT DO NOTHING`);
+  await db.query('DELETE FROM aether_saves'); // já migrados: não voltam se o personagem for excluído
   await db.query('ALTER TABLE accounts ADD COLUMN IF NOT EXISTS vip1_until TIMESTAMPTZ');
   await db.query('ALTER TABLE accounts ADD COLUMN IF NOT EXISTS vip2_until TIMESTAMPTZ');
   await db.query(`CREATE TABLE IF NOT EXISTS aether_purchases (
@@ -212,6 +221,13 @@ function readRaw(req, max = 512 * 1024) {
   });
 }
 
+const MAX_CHARS = 5;
+function slotOf(v) { const n = Number(v); return Number.isInteger(n) && n >= 0 && n < MAX_CHARS ? n : 0; }
+async function charList(accountId) {
+  const { rows } = await db.query('SELECT slot, name, hero, level FROM aether_chars WHERE account_id = $1 ORDER BY slot', [accountId]);
+  return rows;
+}
+
 function str(v, max) { return typeof v === 'string' ? v.trim().slice(0, max) : ''; }
 
 async function handleApi(req, res, url) {
@@ -236,7 +252,7 @@ async function handleApi(req, res, url) {
       if (e.code === '23505') throw fail(409, /email/.test(e.constraint || e.message) ? 'Este e-mail já está em uso.' : 'Este nome de usuário já existe.');
       throw e;
     }
-    return json(res, 200, { ok: true, username: acc.username, token: await issueToken(acc.id), save: null, vip: null });
+    return json(res, 200, { ok: true, username: acc.username, token: await issueToken(acc.id), save: null, chars: [], vip: null });
   }
 
   if (p === '/api/login' && req.method === 'POST') {
@@ -251,8 +267,9 @@ async function handleApi(req, res, url) {
     if (!acc) { await sec.burnTime(password); throw fail(401, 'Usuário ou senha incorretos.'); }
     if (!(await sec.verifyPassword(password, acc.password_hash))) throw fail(401, 'Usuário ou senha incorretos.');
     await db.query('UPDATE accounts SET last_login_at = now() WHERE id = $1', [acc.id]);
-    const save = await db.query('SELECT data FROM aether_saves WHERE account_id = $1', [acc.id]);
-    return json(res, 200, { ok: true, username: acc.username, token: await issueToken(acc.id), save: save.rows[0]?.data ?? null, ...(await premiumState(acc.id)) });
+    const slot = slotOf(body.slot);
+    const save = await db.query('SELECT data FROM aether_chars WHERE account_id = $1 AND slot = $2', [acc.id, slot]);
+    return json(res, 200, { ok: true, username: acc.username, token: await issueToken(acc.id), save: save.rows[0]?.data ?? null, chars: await charList(acc.id), ...(await premiumState(acc.id)) });
   }
 
   if (p === '/api/logout' && req.method === 'POST') {
@@ -264,8 +281,9 @@ async function handleApi(req, res, url) {
   if (p === '/api/save') {
     const acc = await auth(req);
     if (req.method === 'GET') {
-      const { rows } = await db.query('SELECT data FROM aether_saves WHERE account_id = $1', [acc.id]);
-      return json(res, 200, { ok: true, username: acc.username, save: rows[0]?.data ?? null, ...(await premiumState(acc.id)) });
+      const slot = slotOf(url.searchParams.get('slot'));
+      const { rows } = await db.query('SELECT data FROM aether_chars WHERE account_id = $1 AND slot = $2', [acc.id, slot]);
+      return json(res, 200, { ok: true, username: acc.username, slot, save: rows[0]?.data ?? null, chars: await charList(acc.id), ...(await premiumState(acc.id)) });
     }
     if (req.method === 'PUT' || req.method === 'POST') {
       limit(req, 'save', 40, 60 * 1000, String(acc.id));
@@ -281,10 +299,23 @@ async function handleApi(req, res, url) {
       }
       const level = Number(save.level);
       if (!Number.isInteger(level) || level < 1 || level > 100000) throw fail(400, 'Nível inválido.');
-      await db.query(`INSERT INTO aether_saves (account_id, data, level, updated_at) VALUES ($1,$2,$3, now())
-        ON CONFLICT (account_id) DO UPDATE SET data = EXCLUDED.data, level = EXCLUDED.level, updated_at = now()`,
-        [acc.id, JSON.stringify(save), level]);
-      return json(res, 200, { ok: true });
+      const slot = slotOf(body.slot);
+      const name = str(save.name, 18) || 'Viajante', hero = str(save.hero, 20) || 'Cavaleiro';
+      await db.query(`INSERT INTO aether_chars (account_id, slot, name, hero, level, data, updated_at) VALUES ($1,$2,$3,$4,$5,$6, now())
+        ON CONFLICT (account_id, slot) DO UPDATE SET name = EXCLUDED.name, hero = EXCLUDED.hero, level = EXCLUDED.level, data = EXCLUDED.data, updated_at = now()`,
+        [acc.id, slot, name, hero, level, JSON.stringify(save)]);
+      return json(res, 200, { ok: true, slot });
+    }
+  }
+
+  if (p === '/api/chars') {
+    const acc = await auth(req);
+    if (req.method === 'GET') return json(res, 200, { ok: true, max: MAX_CHARS, chars: await charList(acc.id) });
+    if (req.method === 'DELETE') {
+      limit(req, 'delchar', 10, 60 * 60 * 1000, String(acc.id));
+      const slot = slotOf(url.searchParams.get('slot'));
+      await db.query('DELETE FROM aether_chars WHERE account_id = $1 AND slot = $2', [acc.id, slot]);
+      return json(res, 200, { ok: true, chars: await charList(acc.id) });
     }
   }
 
@@ -365,8 +396,8 @@ async function handleApi(req, res, url) {
   }
 
   if (p === '/api/ranking' && req.method === 'GET') {
-    const { rows } = await db.query(`SELECT a.username, s.level, s.data->>'hero' AS hero FROM aether_saves s
-      JOIN accounts a ON a.id = s.account_id ORDER BY s.level DESC, s.updated_at ASC LIMIT 20`);
+    const { rows } = await db.query(`SELECT c.name AS username, a.username AS account, c.level, c.hero FROM aether_chars c
+      JOIN accounts a ON a.id = c.account_id ORDER BY c.level DESC, c.updated_at ASC LIMIT 20`);
     return json(res, 200, { ok: true, ranking: rows });
   }
   throw fail(404, 'not found');
@@ -379,7 +410,7 @@ async function accountStats() {
   if (Date.now() - statsCache.at < 30_000) return statsCache.data;
   try {
     const { rows } = await db.query(`SELECT (SELECT count(*) FROM accounts)::int AS accounts,
-      (SELECT count(*) FROM aether_saves)::int AS heroes`);
+      (SELECT count(*) FROM aether_chars)::int AS heroes`);
     statsCache = { at: Date.now(), data: rows[0] };
   } catch (e) { console.error('[stats]', e.message); }
   return statsCache.data;

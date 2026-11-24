@@ -441,6 +441,12 @@ export class PlayerController {
   }
 
   private playRole(roles: PlayerAnimationRole[]): void {
+    // Parado = pose fixa, sem animação de respiração, em todos os heróis (com ou sem conjunto),
+    // igual ao herói iniciante.
+    if (roles[0] === "idle") {
+      this.animator.setPose(this.direction, this.poseState.stateFolder, this.stateDirections(this.poseState));
+      return;
+    }
     const resolved = this.resolveAnimation(roles);
     if (resolved) {
       this.animator.setAnimationMap(

@@ -7,9 +7,10 @@ const TOKEN_KEY = "aether-cloud-token";
 const USER_KEY = "aether-cloud-user";
 const VIP_KEY = "aether-cloud-vip";
 export type VipPlan = "ouro" | "diamante" | null;
+export interface CharSummary { slot: number; name: string; hero: string; level: number; }
 
 export interface CloudResult<T> { ok: boolean; error?: string; data?: T; }
-interface AuthReply { ok: boolean; username: string; token: string; save: Record<string, unknown> | null; vip?: VipPlan; vipUntil?: string | null; wings?: string[]; items?: string[]; error?: string; }
+interface AuthReply { chars?: CharSummary[]; ok: boolean; username: string; token: string; save: Record<string, unknown> | null; vip?: VipPlan; vipUntil?: string | null; wings?: string[]; items?: string[]; error?: string; }
 
 function read(key: string): string | null { try { return localStorage.getItem(key); } catch { return null; } }
 function write(key: string, value: string | null): void {
@@ -21,6 +22,10 @@ export class CloudSave {
   username: string | null = read(USER_KEY);
   vip: VipPlan = (read(VIP_KEY) === "ouro" || read(VIP_KEY) === "diamante") ? read(VIP_KEY) as VipPlan : null;
   status: string = "";
+  /** Espaço de personagem em uso (0 a 4). */
+  slot: number = 0;
+  /** Personagens da conta (vindos do servidor). */
+  chars: CharSummary[] = [];
   /** Asas pagas com dinheiro real (vêm do servidor, nunca se perdem). */
   paidWings: string[] = [];
   /** Tudo que a conta comprou com dinheiro real (wing:..., set:..., glacial:all). */
@@ -51,6 +56,7 @@ export class CloudSave {
     write(TOKEN_KEY, reply.token); write(USER_KEY, reply.username);
     this.setVip(reply.vip ?? null);
     this.paidWings = Array.isArray(reply.wings) ? reply.wings : [];
+    this.chars = Array.isArray(reply.chars) ? reply.chars : [];
     this.items = Array.isArray(reply.items) ? reply.items : [];
     this.vipUntil = reply.vipUntil ?? null;
   }
@@ -58,7 +64,7 @@ export class CloudSave {
   private setVip(vip: VipPlan): void { this.vip = vip === "ouro" || vip === "diamante" ? vip : null; write(VIP_KEY, this.vip); }
 
   private forget(): void {
-    this.token = null; this.username = null; this.paidWings = []; this.items = []; this.vipUntil = null;
+    this.token = null; this.username = null; this.paidWings = []; this.items = []; this.vipUntil = null; this.chars = [];
     write(TOKEN_KEY, null); write(USER_KEY, null); this.setVip(null);
   }
 
@@ -76,7 +82,8 @@ export class CloudSave {
 
   async load(): Promise<Record<string, unknown> | null> {
     if (!this.loggedIn) return null;
-    const r = await this.call<{ save: Record<string, unknown> | null; vip?: VipPlan; vipUntil?: string | null; wings?: string[]; items?: string[] }>("/api/save");
+    const r = await this.call<{ save: Record<string, unknown> | null; chars?: CharSummary[]; vip?: VipPlan; vipUntil?: string | null; wings?: string[]; items?: string[] }>(`/api/save?slot=${this.slot}`);
+    if (r.ok && Array.isArray(r.data?.chars)) this.chars = r.data!.chars!;
     if (r.ok) { this.setVip(r.data?.vip ?? null); this.paidWings = Array.isArray(r.data?.wings) ? r.data!.wings! : []; this.items = Array.isArray(r.data?.items) ? r.data!.items! : []; this.vipUntil = r.data?.vipUntil ?? null; }
     return r.ok ? r.data?.save ?? null : null;
   }
@@ -91,6 +98,12 @@ export class CloudSave {
   async checkout(item: string): Promise<CloudResult<{ url: string }>> {
     await this.flush();
     return this.call<{ url: string }>("/api/shop/checkout", { method: "POST", body: JSON.stringify({ item }) });
+  }
+
+  async deleteChar(slot: number): Promise<boolean> {
+    const r = await this.call<{ chars: CharSummary[] }>(`/api/chars?slot=${slot}`, { method: "DELETE" });
+    if (r.ok && r.data) this.chars = r.data.chars;
+    return r.ok;
   }
 
   async logout(): Promise<void> {
@@ -110,7 +123,7 @@ export class CloudSave {
     if (this.timer !== null) { window.clearTimeout(this.timer); this.timer = null; }
     const save = this.pending; this.pending = null;
     if (!save || !this.loggedIn) return;
-    const r = await this.call("/api/save", { method: "PUT", body: JSON.stringify({ save }) });
+    const r = await this.call("/api/save", { method: "PUT", body: JSON.stringify({ slot: this.slot, save }) });
     this.status = r.ok ? "Salvo na nuvem" : `Falha ao salvar: ${r.error}`;
   }
 
@@ -118,7 +131,7 @@ export class CloudSave {
   beacon(save: object): void {
     if (!this.loggedIn) return;
     try {
-      void fetch("/api/save", { method: "PUT", keepalive: true, headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.token}` }, body: JSON.stringify({ save }) });
+      void fetch("/api/save", { method: "PUT", keepalive: true, headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.token}` }, body: JSON.stringify({ slot: this.slot, save }) });
     } catch { /* ignore */ }
   }
 }
