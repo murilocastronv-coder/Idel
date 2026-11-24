@@ -83,6 +83,8 @@ async function migrate() {
   await db.query(`CREATE TABLE IF NOT EXISTS aether_saves (
     account_id BIGINT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
     data JSONB NOT NULL, level INT NOT NULL DEFAULT 1, updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  await db.query('ALTER TABLE accounts ADD COLUMN IF NOT EXISTS vip1_until TIMESTAMPTZ');
+  await db.query('ALTER TABLE accounts ADD COLUMN IF NOT EXISTS vip2_until TIMESTAMPTZ');
   await db.query('DELETE FROM aether_tokens WHERE expires_at < now()');
   console.log(`[db] pronto (schema "${schema}")`);
 }
@@ -117,6 +119,12 @@ async function auth(req) {
   if (!rows[0]) throw fail(401, 'Sessão expirada. Entre novamente.');
   return rows[0];
 }
+// VIP do banco antigo: vip2 = Diamante, vip1 = Ouro (o maior vale). No modo HARD o EXP é baixo para os dois.
+async function vipOf(accountId) {
+  const { rows } = await db.query(`SELECT vip1_until > now() AS ouro, vip2_until > now() AS diamante FROM accounts WHERE id = $1`, [accountId]);
+  const r = rows[0] || {};
+  return r.diamante ? 'diamante' : r.ouro ? 'ouro' : null;
+}
 function str(v, max) { return typeof v === 'string' ? v.trim().slice(0, max) : ''; }
 
 async function handleApi(req, res, url) {
@@ -140,7 +148,7 @@ async function handleApi(req, res, url) {
       if (e.code === '23505') throw fail(409, /email/.test(e.constraint || e.message) ? 'Este e-mail já está em uso.' : 'Este nome de usuário já existe.');
       throw e;
     }
-    return json(res, 200, { ok: true, username: acc.username, token: await issueToken(acc.id), save: null });
+    return json(res, 200, { ok: true, username: acc.username, token: await issueToken(acc.id), save: null, vip: null });
   }
 
   if (p === '/api/login' && req.method === 'POST') {
@@ -156,7 +164,7 @@ async function handleApi(req, res, url) {
     if (!(await sec.verifyPassword(password, acc.password_hash))) throw fail(401, 'Usuário ou senha incorretos.');
     await db.query('UPDATE accounts SET last_login_at = now() WHERE id = $1', [acc.id]);
     const save = await db.query('SELECT data FROM aether_saves WHERE account_id = $1', [acc.id]);
-    return json(res, 200, { ok: true, username: acc.username, token: await issueToken(acc.id), save: save.rows[0]?.data ?? null });
+    return json(res, 200, { ok: true, username: acc.username, token: await issueToken(acc.id), save: save.rows[0]?.data ?? null, vip: await vipOf(acc.id) });
   }
 
   if (p === '/api/logout' && req.method === 'POST') {
@@ -169,7 +177,7 @@ async function handleApi(req, res, url) {
     const acc = await auth(req);
     if (req.method === 'GET') {
       const { rows } = await db.query('SELECT data FROM aether_saves WHERE account_id = $1', [acc.id]);
-      return json(res, 200, { ok: true, username: acc.username, save: rows[0]?.data ?? null });
+      return json(res, 200, { ok: true, username: acc.username, save: rows[0]?.data ?? null, vip: await vipOf(acc.id) });
     }
     if (req.method === 'PUT' || req.method === 'POST') {
       limit(req, 'save', 40, 60 * 1000, String(acc.id));

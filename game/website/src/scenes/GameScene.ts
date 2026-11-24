@@ -105,6 +105,9 @@ export class GameScene extends Phaser.Scene {
     const camera = this.cameras.main;
     camera.setZoom(GAME_CONFIG.camera.zoom);
     camera.startFollow(this.player.sprite, true, GAME_CONFIG.camera.followLerp, GAME_CONFIG.camera.followLerp);
+    // Celular em pé: os controles ficam embaixo, então o herói aparece mais para cima.
+    const portrait = this.scale.height > this.scale.width * 1.2;
+    camera.setFollowOffset(0, portrait ? -this.scale.height * 0.12 / camera.zoom : 0);
   }
 
   private checkSlashHits(origin: { x: number; y: number }, direction: Direction): void {

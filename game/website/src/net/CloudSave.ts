@@ -5,9 +5,11 @@
  */
 const TOKEN_KEY = "aether-cloud-token";
 const USER_KEY = "aether-cloud-user";
+const VIP_KEY = "aether-cloud-vip";
+export type VipPlan = "ouro" | "diamante" | null;
 
 export interface CloudResult<T> { ok: boolean; error?: string; data?: T; }
-interface AuthReply { ok: boolean; username: string; token: string; save: Record<string, unknown> | null; error?: string; }
+interface AuthReply { ok: boolean; username: string; token: string; save: Record<string, unknown> | null; vip?: VipPlan; error?: string; }
 
 function read(key: string): string | null { try { return localStorage.getItem(key); } catch { return null; } }
 function write(key: string, value: string | null): void {
@@ -17,6 +19,7 @@ function write(key: string, value: string | null): void {
 export class CloudSave {
   token: string | null = read(TOKEN_KEY);
   username: string | null = read(USER_KEY);
+  vip: VipPlan = (read(VIP_KEY) === "ouro" || read(VIP_KEY) === "diamante") ? read(VIP_KEY) as VipPlan : null;
   status: string = "";
   private pending: object | null = null;
   private timer: number | null = null;
@@ -40,11 +43,14 @@ export class CloudSave {
   private remember(reply: AuthReply): void {
     this.token = reply.token; this.username = reply.username;
     write(TOKEN_KEY, reply.token); write(USER_KEY, reply.username);
+    this.setVip(reply.vip ?? null);
   }
+
+  private setVip(vip: VipPlan): void { this.vip = vip === "ouro" || vip === "diamante" ? vip : null; write(VIP_KEY, this.vip); }
 
   private forget(): void {
     this.token = null; this.username = null;
-    write(TOKEN_KEY, null); write(USER_KEY, null);
+    write(TOKEN_KEY, null); write(USER_KEY, null); this.setVip(null);
   }
 
   async login(login: string, password: string): Promise<CloudResult<AuthReply>> {
@@ -61,7 +67,8 @@ export class CloudSave {
 
   async load(): Promise<Record<string, unknown> | null> {
     if (!this.loggedIn) return null;
-    const r = await this.call<{ save: Record<string, unknown> | null }>("/api/save");
+    const r = await this.call<{ save: Record<string, unknown> | null; vip?: VipPlan }>("/api/save");
+    if (r.ok) this.setVip(r.data?.vip ?? null);
     return r.ok ? r.data?.save ?? null : null;
   }
 
