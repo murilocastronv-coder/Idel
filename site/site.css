@@ -154,7 +154,7 @@ footer{text-align:center;padding:26px 20px 40px;color:#6f7775;font-size:12px;bor
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .wing .price{margin-top:4px;font-weight:700;color:#f1cd7c}
 .wing .price.free{color:#6be07c}
-.players{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:760px;margin:8px auto 0;padding:0 16px;position:relative;z-index:2}
+.players{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;max-width:760px;margin:8px auto 0;padding:0 16px;position:relative;z-index:2}
 .players .pl{display:flex;flex-direction:column;align-items:center;gap:2px;padding:14px 8px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(160deg,#1f2529,#12171a)}
 .players .pl b{font:900 clamp(24px,6vw,34px) Cinzel,serif;color:var(--gold);font-variant-numeric:tabular-nums}
 .players .pl span{font-size:12px;color:var(--muted);text-align:center}

@@ -107,6 +107,9 @@ async function migrate() {
     item TEXT NOT NULL, used_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await db.query(`CREATE TABLE IF NOT EXISTS aether_meta (key TEXT PRIMARY KEY, at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await resetAccountsOnce();
+  await pinAdmin();
+  const host = (() => { try { return new URL(process.env.DATABASE_URL).hostname.split('.')[0]; } catch { return '?'; } })();
+  console.log(`[db] banco em uso: ${host}`);
   await db.query('DELETE FROM aether_tokens WHERE expires_at < now()');
   console.log(`[db] pronto (schema "${schema}")`);
 }
@@ -124,6 +127,90 @@ async function resetAccountsOnce() {
     await q('INSERT INTO aether_meta (key) VALUES ($1)', [RESET_KEY]);
     console.log(`[reset] ${r.rowCount} contas apagadas (backup em accounts_backup_20261124). Todos criam conta de novo.`);
   });
+}
+
+// ---------------- Painel de ADM (/status) ----------------
+// Só a conta do dono (ADMIN_USERNAME, padrão "murilonv"). Na primeira vez que essa conta existir,
+// o ID dela fica gravado: outra conta nunca vira ADM, nem se trocar o nome depois.
+const ADMIN_USERNAME = (process.env.ADMIN_USERNAME || 'murilonv').toLowerCase();
+let adminId = null;
+async function pinAdmin() {
+  const pinned = await db.query("SELECT key FROM aether_meta WHERE key LIKE 'admin-id:%' LIMIT 1");
+  if (pinned.rows[0]) { adminId = Number(pinned.rows[0].key.slice(9)); console.log(`[adm] painel liberado só para a conta #${adminId}`); return; }
+  const { rows } = await db.query('SELECT id FROM accounts WHERE lower(username) = $1', [ADMIN_USERNAME]);
+  if (!rows[0]) { console.log(`[adm] conta "${ADMIN_USERNAME}" ainda não existe: crie-a para usar o painel /status`); return; }
+  await db.query('INSERT INTO aether_meta (key) VALUES ($1) ON CONFLICT DO NOTHING', [`admin-id:${rows[0].id}`]);
+  adminId = rows[0].id;
+  console.log(`[adm] painel liberado só para a conta #${adminId} (${ADMIN_USERNAME})`);
+}
+async function requireAdmin(req) {
+  const acc = await auth(req);
+  if (adminId === null) await pinAdmin();
+  if (adminId === null || Number(acc.id) !== Number(adminId)) throw fail(403, 'Acesso restrito ao administrador.');
+  return acc;
+}
+async function handleAdmin(req, res, url) {
+  const p = url.pathname;
+  limit(req, 'admin', 120, 60 * 1000);
+  const admin = await requireAdmin(req);
+  const q = (t, a) => db.query(t, a).then((r) => r.rows);
+  if (p === '/api/admin/overview' && req.method === 'GET') {
+    const [n] = await q(`SELECT
+      (SELECT count(*) FROM accounts)::int AS accounts,
+      (SELECT count(*) FROM accounts WHERE created_at > now() - interval '1 day')::int AS accounts_today,
+      (SELECT count(*) FROM accounts WHERE created_at > now() - interval '7 days')::int AS accounts_week,
+      (SELECT count(*) FROM aether_chars)::int AS chars,
+      (SELECT count(*) FROM accounts WHERE vip1_until > now() OR vip2_until > now())::int AS vips,
+      (SELECT COALESCE(sum(amount_cents),0) FROM aether_purchases WHERE ref NOT LIKE 'admin:%')::bigint AS revenue,
+      (SELECT COALESCE(sum(amount_cents),0) FROM aether_purchases WHERE ref NOT LIKE 'admin:%' AND created_at > now() - interval '1 day')::bigint AS revenue_today,
+      (SELECT count(*) FROM aether_purchases WHERE ref NOT LIKE 'admin:%')::int AS sales`);
+    const maps = [...rooms.entries()].map(([room, set]) => ({ room, players: [...set].filter((c) => c.meta.pos).map((c) => ({ name: c.meta.pos.n, hero: c.meta.pos.h, level: c.meta.pos.l, pvp: !!c.meta.pos.p })) }));
+    const accounts = await q(`SELECT a.id, a.username, a.email, a.created_at, a.last_login_at,
+        (SELECT count(*) FROM aether_chars c WHERE c.account_id = a.id)::int AS chars,
+        CASE WHEN a.vip2_until > now() THEN 'Diamante' WHEN a.vip1_until > now() THEN 'Ouro' END AS vip
+      FROM accounts a ORDER BY a.created_at DESC LIMIT 40`);
+    const sales = await q(`SELECT p.created_at, p.item, p.amount_cents, p.ref LIKE 'admin:%' AS gift, a.username
+      FROM aether_purchases p LEFT JOIN accounts a ON a.id = p.account_id ORDER BY p.created_at DESC LIMIT 40`);
+    const top = await q(`SELECT c.name, c.hero, c.level, a.username FROM aether_chars c JOIN accounts a ON a.id = c.account_id ORDER BY c.level DESC LIMIT 10`);
+    return json(res, 200, { ok: true, admin: admin.username, totals: { ...n, online: players(), revenue: Number(n.revenue), revenue_today: Number(n.revenue_today) }, maps, accounts, sales, top, payments: payEnabled() });
+  }
+  if (p === '/api/admin/account' && req.method === 'GET') {
+    const name = str(url.searchParams.get('q'), 60).normalize('NFC');
+    const [acc] = await q(`SELECT id, username, email, created_at, last_login_at, vip1_until, vip2_until FROM accounts
+      WHERE lower(username) = lower($1) OR lower(email) = lower($1) OR id::text = $1 LIMIT 1`, [name]);
+    if (!acc) throw fail(404, 'Conta não encontrada.');
+    const chars = await q('SELECT slot, name, hero, level, updated_at FROM aether_chars WHERE account_id = $1 ORDER BY slot', [acc.id]);
+    const buys = await q('SELECT created_at, item, amount_cents, ref LIKE $2 AS gift FROM aether_purchases WHERE account_id = $1 ORDER BY created_at DESC LIMIT 50', [acc.id, 'admin:%']);
+    return json(res, 200, { ok: true, account: acc, chars, purchases: buys, credits: await serviceCredits(acc.id) });
+  }
+  // Dar VIP / item de presente (sem pagamento). Tudo fica registrado como "admin:".
+  if (p === '/api/admin/give' && req.method === 'POST') {
+    const body = await readJson(req);
+    const accountId = Number(body.accountId);
+    const product = productFor(String(body.item || ''));
+    if (!Number.isInteger(accountId) || !product) throw fail(400, 'Conta ou item inválido.');
+    const days = product.vip ? Math.max(1, Math.min(365, Number(body.days) || product.vip.days)) : 0;
+    await db.tx(async (t) => {
+      await t(`INSERT INTO aether_purchases (account_id, item, ref, amount_cents, currency) VALUES ($1, $2, $3, 0, 'brl')`,
+        [accountId, product.item, `admin:${crypto.randomUUID()}`]);
+      if (product.vip) {
+        const col = product.vip.plan === 'diamante' ? 'vip2_until' : 'vip1_until';
+        await t(`UPDATE accounts SET ${col} = GREATEST(COALESCE(${col}, now()), now()) + ($2::int * interval '1 day') WHERE id = $1`, [accountId, days]);
+      }
+    });
+    console.log(`[adm] ${admin.username} deu ${product.name}${days ? ` (${days} dias)` : ''} para a conta #${accountId}`);
+    return json(res, 200, { ok: true });
+  }
+  if (p === '/api/admin/remove-vip' && req.method === 'POST') {
+    const body = await readJson(req);
+    await db.query('UPDATE accounts SET vip1_until = NULL, vip2_until = NULL WHERE id = $1', [Number(body.accountId)]);
+    return json(res, 200, { ok: true });
+  }
+  if (p === '/api/admin/products' && req.method === 'GET') {
+    return json(res, 200, { ok: true, vip: PREMIUM.vip, packs: PREMIUM.packs.filter((x) => !x.hidden), services: PREMIUM.services,
+      wings: SHOP.filter((w) => !w.free).map((w) => ({ id: `wing:${w.id}`, name: `Asa ${w.family} Nv.${w.level}` })) });
+  }
+  throw fail(404, 'not found');
 }
 
 function clientIp(req) {
@@ -246,7 +333,8 @@ function str(v, max) { return typeof v === 'string' ? v.trim().slice(0, max) : '
 async function handleApi(req, res, url) {
   const p = url.pathname;
   if (p === '/api/health') return json(res, 200, { ok: true, db: !!db, online: players() });
-  if (p === '/api/stats') return json(res, 200, { ok: true, online: players(), ...(await accountStats()) });
+  if (p === '/api/stats') { const st = await accountStats(); return json(res, 200, { ok: true, online: players(), heroes: st.heroes }); }
+  if (p.startsWith('/api/admin/')) return await handleAdmin(req, res, url);
   if (!db) throw fail(503, 'Banco de dados indisponível.');
 
   if (p === '/api/register' && req.method === 'POST') {
@@ -494,6 +582,7 @@ const server = http.createServer(async (req, res) => {
       return serveFile(req, res, f, hashed ? 'public, max-age=31536000, immutable' : 'public, max-age=3600');
     }
     // Site em /
+    if (p === '/status' || p === '/status/' || p === '/adm') return serveFile(req, res, path.join(SITE, 'status.html'), 'no-store');
     if (p === '/' || p === '/index.html') return serveFile(req, res, path.join(SITE, 'index.html'), 'no-cache');
     const f = safeJoin(SITE, p);
     if (!f) return send(res, 404, 'not found');

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Painel ADM · MU Online Claude</title>
+<link rel="icon" href="/jogar/assets/objects/b02a85e2-8a92-4b70-8d4b-8dcb9f3eb4f7/base/rotations/unknown.png">
+<style>
+  :root{--bg:#0d1013;--panel:#161c20;--line:#33302a;--gold:#e1c58b;--muted:#9aa3a3;--text:#ece7da;--green:#6be07c;--red:#ff7a6a;--blue:#7fc8ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#0d1013f2;z-index:5}
+  header h1{font-size:16px;margin:0;color:var(--gold);letter-spacing:.08em}
+  header .who{margin-left:auto;color:var(--muted);font-size:12px}
+  main{max-width:1200px;margin:0 auto;padding:16px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .card b{display:block;font-size:24px;color:var(--gold);font-variant-numeric:tabular-nums}
+  .card span{color:var(--muted);font-size:12px}
+  .card.green b{color:var(--green)}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:16px}
+  section h2{margin:0 0 10px;font-size:15px;color:var(--gold)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid #26251f;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .wrap{overflow-x:auto}
+  .tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700}
+  .tag.ouro{background:#4a3a14;color:#ffd36b}.tag.diamante{background:#123247;color:#9fe0ff}.tag.pvp{background:#4a1712;color:#ffb3a8}.tag.gift{background:#24331f;color:#b6f0a8}
+  input,select,button{font:inherit;color:var(--text);background:#0f1417;border:1px solid #3d3a32;border-radius:8px;padding:9px 11px}
+  button{cursor:pointer;background:linear-gradient(#3a3122,#1d1b17);border-color:#7a6440}
+  button.gold{background:linear-gradient(#c49b55,#7a5728);color:#fff3d4;border-color:#e6c27a}
+  button.danger{border-color:#a8463a;background:linear-gradient(#4a1712,#2a0d0a)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .muted{color:var(--muted)}
+  .msg{margin:8px 0;color:var(--gold)}
+  .login{max-width:360px;margin:12vh auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px}
+  .login h2{margin-top:0;color:var(--gold)}
+  .login input{width:100%;margin-bottom:10px}
+  .login button{width:100%}
+  [hidden]{display:none!important}
+  @media(max-width:800px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>⚙ PAINEL ADM · MU ONLINE CLAUDE</h1><span class="who" id="who"></span><button id="logout" hidden>Sair</button></header>
+
+<div class="login" id="login" hidden>
+  <h2>Entrar no painel</h2>
+  <p class="muted">Acesso exclusivo do administrador.</p>
+  <form id="loginForm">
+    <input name="login" autocomplete="username" placeholder="Usuário ou e-mail" required>
+    <input name="password" type="password" autocomplete="current-password" placeholder="Senha" required>
+    <button class="gold">Entrar</button>
+  </form>
+  <p class="msg" id="loginMsg"></p>
+</div>
+
+<main id="app" hidden>
+  <div class="cards" id="cards"></div>
+  <div class="grid2">
+    <section><h2>🟢 Jogando agora (por mapa)</h2><div id="maps" class="muted">—</div></section>
+    <section><h2>🏆 Maiores níveis</h2><div class="wrap"><table id="top"></table></div></section>
+  </div>
+  <section>
+    <h2>🔎 Buscar conta</h2>
+    <form class="row" id="searchForm"><input name="q" placeholder="Usuário, e-mail ou ID" required style="flex:1;min-width:200px"><button class="gold">Buscar</button></form>
+    <div id="acc"></div>
+  </section>
+  <section><h2>👤 Contas criadas (últimas 40)</h2><div class="wrap"><table id="accounts"></table></div></section>
+  <section><h2>💳 Compras (últimas 40)</h2><div class="wrap"><table id="sales"></table></div></section>
+  <p class="muted">Atualiza sozinho a cada 15 segundos.</p>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var TOKEN = 'aether-cloud-token', USER = 'aether-cloud-user';
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var brl = function (c) { return 'R$ ' + (Number(c) / 100).toFixed(2).replace('.', ','); };
+  var dt = function (d) { return d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'; };
+  var token = function () { try { return localStorage.getItem(TOKEN); } catch (e) { return null; } };
+  var products = null, timer = null;
+
+  function api(path, opts) {
+    opts = opts || {};
+    var h = { 'Content-Type': 'application/json' }; var t = token(); if (t) h.Authorization = 'Bearer ' + t;
+    return fetch(path, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('Erro ' + r.status)); e.status = r.status; throw e; } return j; }); });
+  }
+  function showLogin(msg) { $('app').hidden = true; $('login').hidden = false; $('logout').hidden = true; $('who').textContent = ''; $('loginMsg').textContent = msg || ''; if (timer) clearInterval(timer); }
+
+  $('loginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = e.target; $('loginMsg').textContent = 'Entrando…';
+    api('/api/login', { method: 'POST', body: { login: f.login.value.trim(), password: f.password.value } }).then(function (r) {
+      try { localStorage.setItem(TOKEN, r.token); localStorage.setItem(USER, r.username); } catch (x) {}
+      start();
+    }).catch(function (err) { $('loginMsg').textContent = err.message; });
+  });
+  $('logout').addEventListener('click', function () { api('/api/logout', { method: 'POST' }).finally(function () { try { localStorage.removeItem(TOKEN); localStorage.removeItem(USER); } catch (x) {} showLogin('Você saiu.'); }); });
+
+  function load() {
+    return api('/api/admin/overview').then(function (d) {
+      $('login').hidden = true; $('app').hidden = false; $('logout').hidden = false; $('who').textContent = 'ADM: ' + d.admin;
+      var t = d.totals;
+      $('cards').innerHTML = [
+        ['green', t.online, 'jogando agora'], ['', t.accounts, 'contas criadas'], ['', t.accounts_today, 'contas hoje'], ['', t.accounts_week, 'contas em 7 dias'],
+        ['', t.chars, 'personagens'], ['', t.vips, 'VIPs ativos'], ['', brl(t.revenue), 'vendas (total)'], ['', brl(t.revenue_today), 'vendas hoje'],
+        ['', t.sales, 'compras pagas'], ['', d.payments ? 'ATIVO' : 'DESLIGADO', 'pagamento real'],
+      ].map(function (c) { return '<div class="card ' + c[0] + '"><b>' + esc(c[1]) + '</b><span>' + c[2] + '</span></div>'; }).join('');
+      $('maps').innerHTML = d.maps.length ? d.maps.map(function (m) {
+        return '<p><b>' + esc(m.room) + '</b> · ' + m.players.length + '<br>' + m.players.map(function (p) { return esc(p.name) + ' <span class="muted">(' + esc(p.hero) + ' Nv.' + p.level + ')</span>' + (p.pvp ? ' <span class="tag pvp">PvP</span>' : ''); }).join(', ') + '</p>';
+      }).join('') : 'Ninguém online agora.';
+      $('top').innerHTML = '<tr><th>#</th><th>Personagem</th><th>Classe</th><th>Nível</th><th>Conta</th></tr>' + d.top.map(function (c, i) { return '<tr><td>' + (i + 1) + '</td><td>' + esc(c.name) + '</td><td>' + esc(c.hero) + '</td><td class="num">' + c.level + '</td><td>' + esc(c.username) + '</td></tr>'; }).join('');
+      $('accounts').innerHTML = '<tr><th>ID</th><th>Usuário</th><th>E-mail</th><th>Criada</th><th>Último login</th><th>Pers.</th><th>VIP</th></tr>' + d.accounts.map(function (a) {
+        return '<tr><td class="num">' + a.id + '</td><td><a href="#" data-acc="' + a.id + '" style="color:var(--gold)">' + esc(a.username) + '</a></td><td>' + esc(a.email) + '</td><td class="num">' + dt(a.created_at) + '</td><td class="num">' + dt(a.last_login_at) + '</td><td class="num">' + a.chars + '</td><td>' + (a.vip ? '<span class="tag ' + (a.vip === 'Ouro' ? 'ouro' : 'diamante') + '">' + a.vip + '</span>' : '') + '</td></tr>';
+      }).join('');
+      $('sales').innerHTML = '<tr><th>Quando</th><th>Conta</th><th>Item</th><th>Valor</th></tr>' + (d.sales.length ? d.sales.map(function (s) {
+        return '<tr><td class="num">' + dt(s.created_at) + '</td><td>' + esc(s.username || '—') + '</td><td>' + esc(s.item) + '</td><td class="num">' + (s.gift ? '<span class="tag gift">presente ADM</span>' : brl(s.amount_cents)) + '</td></tr>';
+      }).join('') : '<tr><td colspan="4" class="muted">Nenhuma compra ainda.</td></tr>');
+    }).catch(function (err) {
+      if (err.status === 401) showLogin('Entre com a conta de administrador.');
+      else if (err.status === 403) showLogin('Esta conta não é de administrador.');
+      else $('who').textContent = 'Erro: ' + err.message;
+    });
+  }
+
+  function productOptions() {
+    if (!products) return '';
+    var o = function (id, name) { return '<option value="' + esc(id) + '">' + esc(name) + '</option>'; };
+    return '<optgroup label="VIP">' + products.vip.map(function (v) { return o(v.id, v.name + ' ' + v.days + ' dias'); }).join('') + '</optgroup>' +
+      '<optgroup label="Conjuntos">' + products.packs.map(function (p) { return o(p.id, p.name); }).join('') + '</optgroup>' +
+      '<optgroup label="Serviços (1 uso)">' + products.services.map(function (s) { return o(s.id, s.name); }).join('') + '</optgroup>' +
+      '<optgroup label="Asas">' + products.wings.map(function (w) { return o(w.id, w.name); }).join('') + '</optgroup>';
+  }
+
+  function showAccount(q) {
+    $('acc').innerHTML = '<p class="muted">Buscando…</p>';
+    api('/api/admin/account?q=' + encodeURIComponent(q)).then(function (d) {
+      var a = d.account, now = Date.now();
+      var vip = a.vip2_until && new Date(a.vip2_until) > now ? 'Diamante até ' + dt(a.vip2_until) : a.vip1_until && new Date(a.vip1_until) > now ? 'Ouro até ' + dt(a.vip1_until) : 'sem VIP';
+      $('acc').innerHTML = '<h3 style="margin:14px 0 6px">#' + a.id + ' · ' + esc(a.username) + ' <span class="muted" style="font-weight:400">' + esc(a.email) + '</span></h3>' +
+        '<p class="muted">Criada ' + dt(a.created_at) + ' · último login ' + dt(a.last_login_at) + ' · <b style="color:var(--text)">' + vip + '</b> · créditos: redistribuir ' + (d.credits['reset-points'] || 0) + ', nick ' + (d.credits.rename || 0) + '</p>' +
+        '<div class="wrap"><table><tr><th>Espaço</th><th>Personagem</th><th>Classe</th><th>Nível</th><th>Salvo</th></tr>' + (d.chars.length ? d.chars.map(function (c) { return '<tr><td>' + (c.slot + 1) + '</td><td>' + esc(c.name) + '</td><td>' + esc(c.hero) + '</td><td class="num">' + c.level + '</td><td class="num">' + dt(c.updated_at) + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="muted">Sem personagens na nuvem.</td></tr>') + '</table></div>' +
+        '<h3 style="margin:14px 0 6px">🎁 Dar de presente</h3><div class="row"><select id="giveItem" style="flex:1;min-width:220px">' + productOptions() + '</select><input id="giveDays" type="number" min="1" max="365" placeholder="dias (VIP)" style="width:120px"><button class="gold" id="giveBtn">Dar</button><button class="danger" id="rmVip">Tirar VIP</button></div><p class="msg" id="accMsg"></p>' +
+        '<div class="wrap"><table><tr><th>Quando</th><th>Item</th><th>Valor</th></tr>' + (d.purchases.length ? d.purchases.map(function (p) { return '<tr><td class="num">' + dt(p.created_at) + '</td><td>' + esc(p.item) + '</td><td class="num">' + (p.gift ? '<span class="tag gift">presente ADM</span>' : brl(p.amount_cents)) + '</td></tr>'; }).join('') : '<tr><td colspan="3" class="muted">Nenhuma compra.</td></tr>') + '</table></div>';
+      $('giveBtn').onclick = function () {
+        var item = $('giveItem').value, days = Number($('giveDays').value) || undefined;
+        if (!confirm('Dar "' + $('giveItem').selectedOptions[0].textContent + '" para ' + a.username + '?')) return;
+        api('/api/admin/give', { method: 'POST', body: { accountId: a.id, item: item, days: days } }).then(function () { showAccount(String(a.id)); load(); }).catch(function (e) { $('accMsg').textContent = e.message; });
+      };
+      $('rmVip').onclick = function () {
+        if (!confirm('Tirar o VIP de ' + a.username + '?')) return;
+        api('/api/admin/remove-vip', { method: 'POST', body: { accountId: a.id } }).then(function () { showAccount(String(a.id)); load(); }).catch(function (e) { $('accMsg').textContent = e.message; });
+      };
+    }).catch(function (e) { $('acc').innerHTML = '<p class="msg">' + esc(e.message) + '</p>'; });
+  }
+  $('searchForm').addEventListener('submit', function (e) { e.preventDefault(); showAccount(e.target.q.value.trim()); });
+  $('accounts').addEventListener('click', function (e) { var a = e.target.closest('[data-acc]'); if (!a) return; e.preventDefault(); showAccount(a.dataset.acc); $('acc').scrollIntoView({ behavior: 'smooth' }); });
+
+  function start() {
+    load().then(function () {
+      if (!$('app').hidden) {
+        if (!products) api('/api/admin/products').then(function (p) { products = p; }).catch(function () {});
+        if (timer) clearInterval(timer);
+        timer = setInterval(function () { if (!document.hidden) load(); }, 15000);
+      }
+    });
+  }
+  if (token()) start(); else showLogin();
+})();
+</script>
+</body>
+</html>

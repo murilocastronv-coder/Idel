@@ -96,7 +96,6 @@
       $('live-dot').className = 'dot on'; $('pl-dot').className = 'dot on';
       $('live-text').textContent = 'Servidor online · ' + fmt(on) + (on === 1 ? ' jogando agora' : ' jogando agora');
       $('pl-online').textContent = fmt(on);
-      $('pl-accounts').textContent = h.accounts == null ? '–' : fmt(h.accounts);
       $('pl-heroes').textContent = h.heroes == null ? '–' : fmt(h.heroes);
     }).catch(function () {
       $('live-dot').className = 'dot off'; $('pl-dot').className = 'dot off';
