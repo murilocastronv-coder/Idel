@@ -44,6 +44,11 @@ const powers = literal('HeroPowers.ts', 'HERO_POWERS');
 const maps = literal('WorldDestinations.ts', 'WORLD_DESTINATIONS');
 const monsters = literal('ClassicMonsterRoster.ts', 'CLASSIC_MONSTERS');
 const wings = literal('WingCatalog.ts', 'WING_CATALOG');
+const levelPrice = literal('WingCatalog.ts', 'WING_LEVEL_PRICE');
+const familyPrice = literal('WingCatalog.ts', 'WING_FAMILY_PRICE');
+const FREE_WING = (/FREE_WING_ID\s*=\s*"([^"]+)"/.exec(fs.readFileSync(path.join(SRC, 'WingCatalog.ts'), 'utf8')) || [])[1];
+// Mesmo cálculo de wingPrice() do jogo.
+const wingPrice = (w) => (w.id === FREE_WING ? 0 : Math.round(levelPrice[w.level] * (familyPrice[w.family] || 1) / 50) * 50);
 
 const data = {
   heroes: heroes.map((h) => ({
@@ -64,7 +69,7 @@ const data = {
     };
   }),
   monsters: monsters.map((m) => ({ name: m.name, map: m.map, level: m.level, hp: m.hp, exp: m.exp, boss: !!m.boss, ranged: !!m.ranged, image: southImage(m.id) })),
-  wings: wings.map((w) => ({ family: w.family, level: w.level, image: `${GAME_URL}/${w.file}` })),
+  wings: wings.map((w) => ({ family: w.family, level: w.level, price: wingPrice(w), image: `${GAME_URL}/${w.file}` })),
 };
 const out = path.join(__dirname, '..', 'site', 'data.js');
 fs.writeFileSync(out, `// Gerado por scripts/build-site-data.js — não edite à mão.\nwindow.SITE_DATA = ${JSON.stringify(data)};\n`);

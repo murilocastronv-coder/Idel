@@ -152,3 +152,5 @@ footer{text-align:center;padding:26px 20px 40px;color:#6f7775;font-size:12px;bor
   th,td{padding:8px 10px;font-size:13px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.wing .price{margin-top:4px;font-weight:700;color:#f1cd7c}
+.wing .price.free{color:#6be07c}

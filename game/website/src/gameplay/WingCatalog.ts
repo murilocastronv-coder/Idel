@@ -181,6 +181,27 @@ export const WING_CATALOG = [
     "file": "objects/e3b0c3dc-5cf9-47e5-896b-10de59556e53/base/rotations/unknown.png"
   }
 ] as const;
-export function wingCatalogHtml(selected: string | undefined, equipped: boolean): string {
-  return `<p>30 modelos · 6 famílias · níveis 1–5. Todos gratuitos e cosméticos, compatíveis com as cinco classes. Sem voo ou bônus de combate.</p><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${["Todas","Angelical","Demoníaca","Dragônica","Cristalina","Elemental","Sombria"].map(f=>`<button type="button" data-wing-filter="${f}">${f}</button>`).join("")}</div><div class="rpg-items">${WING_CATALOG.map(w=>`<div class="rpg-item" data-wing-family="${w.family}"><img src="${assetUrl(w.file)}" alt="Asa ${w.family} nível ${w.level}" style="width:80px;height:80px;image-rendering:pixelated;object-fit:contain;max-width:100%"><br><strong>${w.family} · Nv.${w.level}</strong><br><button data-action="equip-wing:${w.id}" ${selected===w.id&&equipped?"disabled":""}>${selected===w.id&&equipped?"Equipada":"Equipar"}</button></div>`).join("")}</div>`;
+/** Única asa grátis: Angelical nível 1. Todas as outras são compradas com ouro na loja. */
+export const FREE_WING_ID = "aa6d7ac6-7445-472d-983f-457e56c5b3dc";
+/** Preço base por nível (1 a 5) e multiplicador por família. */
+export const WING_LEVEL_PRICE = [0, 800, 2500, 7000, 18000, 45000];
+export const WING_FAMILY_PRICE = { "Angelical": 1, "Demoníaca": 1.25, "Dragônica": 1.5, "Cristalina": 1.8, "Elemental": 2.2, "Sombria": 2.6 };
+type Wing = typeof WING_CATALOG[number];
+export function wingPrice(w: Wing): number {
+  if (w.id === FREE_WING_ID) return 0;
+  return Math.round(WING_LEVEL_PRICE[w.level] * ((WING_FAMILY_PRICE as Record<string, number>)[w.family] ?? 1) / 50) * 50;
+}
+export function ownedWings(owned: readonly string[] | undefined): string[] {
+  return [...new Set([FREE_WING_ID, ...(owned ?? []).filter(id => WING_CATALOG.some(w => w.id === id))])];
+}
+export function wingCatalogHtml(selected: string | undefined, equipped: boolean, owned: readonly string[] = [], gold: number = 0): string {
+  const mine = ownedWings(owned);
+  const sel = selected && mine.includes(selected) ? selected : FREE_WING_ID;
+  return `<p>Loja de asas · você tem <b>${gold} ouro</b>. A <b>Angelical Nv.1</b> é grátis; as outras 29 são compradas aqui. Cosméticas, para as cinco classes.</p><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${["Todas","Angelical","Demoníaca","Dragônica","Cristalina","Elemental","Sombria"].map(f=>`<button type="button" data-wing-filter="${f}">${f}</button>`).join("")}</div><div class="rpg-items">${WING_CATALOG.map(w=>{
+    const has = mine.includes(w.id), price = wingPrice(w), on = has && sel===w.id && equipped;
+    const button = has
+      ? `<button data-action="equip-wing:${w.id}" ${on?"disabled":""}>${on?"Equipada":"Equipar"}</button>`
+      : `<button data-action="buy-wing:${w.id}" ${gold<price?"disabled":""}>Comprar · ${price} ouro</button>`;
+    return `<div class="rpg-item" data-wing-family="${w.family}"><img src="${assetUrl(w.file)}" alt="Asa ${w.family} nível ${w.level}" style="width:80px;height:80px;image-rendering:pixelated;object-fit:contain;max-width:100%;${has?"":"filter:grayscale(.6) brightness(.7)"}"><br><strong>${w.family} · Nv.${w.level}</strong><br><span>${price?(has?"Comprada":`${price} ouro`):"Grátis"}</span><br>${button}</div>`;
+  }).join("")}</div>`;
 }
