@@ -74,7 +74,7 @@
       plans.map(function (v) { return '<span>' + v.days + ' dias · <b>' + brl(v.cents) + '</b></span>'; }).join('') + '</div></article>';
   };
   $('premium-grid').innerHTML = vipCard('ouro', 'VIP Ouro') + vipCard('diamante', 'VIP Diamante') +
-    P.packs.map(function (p) { return '<article class="prem" style="border-color:' + esc(p.color) + '"><h3 style="color:' + esc(p.color) + '">' + esc(p.name) + '</h3><p>' + esc(p.rarity) + ' · ' + esc(p.desc) + '</p><div class="prices"><span><b>' + brl(p.cents) + '</b></span></div></article>'; }).join('') +
+    P.packs.filter(function (p) { return !p.hidden; }).map(function (p) { return '<article class="prem" style="border-color:' + esc(p.color) + '"><h3 style="color:' + esc(p.color) + '">' + esc(p.name) + '</h3><p>' + esc(p.rarity) + ' · ' + esc(p.desc) + '</p><div class="prices"><span><b>' + brl(p.cents) + '</b></span></div></article>'; }).join('') +
     '<article class="prem"><h3>🪽 Asas</h3><p>29 asas pagas: com ouro do jogo ou de R$ 4,90 a R$ 49,90. A Angelical Nv.1 é grátis.</p><div class="prices"><a href="#asas">Ver asas</a></div></article>';
 
   // Tabela do modo HARD (mesma fórmula do jogo)

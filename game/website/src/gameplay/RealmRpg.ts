@@ -2,7 +2,7 @@ import { ELEMENTAL_WEAPONS, elementalState, elementalAction, elementalHtml, weap
 import { GLACIAL_ITEMS, glacialState, glacialHtml, glacialAction, type GlacialSave } from './GlacialSets';
 import { KUNDUN_BOXES, grantBox, kundunAction, kundunHtml } from './KundunBoxes';
 import { KundunOpening } from './KundunOpening';
-import { ARMOR_ITEMS, gearState, gearHtml, type GearSave } from './ArmorSets';
+import { ARMOR_ITEMS, gearState, gearHtml, dropArmorFor, type GearSave } from './ArmorSets';
 import { insideTown, townName, monsterHomes, SAFE_POLYGON } from './TownLayout';
 import Phaser from "phaser";
 import type { LoadedMap } from "../pixellab/types";
@@ -235,7 +235,10 @@ export class RealmRpg {
       if(mob.classic){mob.sprite.clearTint();mob.agent.playControlled("death",mob.facing,true);}else mob.sprite.setVisible(false); mob.label.setVisible(false); mob.bar.clear();
       const xp = hardKillXp(mob.classic?.exp ?? (mob.boss ? 120 : 35), this.cloud.vip); const gold = Math.round((mob.classic?.zen ?? (mob.boss ? 100 : 20)) * (this.cloud.vip==="diamante"?1.5:this.cloud.vip==="ouro"?1.25:1));
       const drop=!mob.classic||Math.random()<mob.classic.dropChance;
-      if(mob.boss){const eligible=ARMOR_ITEMS.filter(i=>i.level<=this.save.level&&!this.gear.owned.includes(i.id));if(eligible.length){const item=Phaser.Utils.Array.GetRandom(eligible);this.save.gearOwned=[...this.gear.owned,item.id];this.log(`Encontrou: ${item.name}`);}}
+      if(mob.boss){const eligible=ARMOR_ITEMS.filter(i=>i.source!=="premium"&&i.level<=this.save.level&&!this.gear.owned.includes(i.id));if(eligible.length){const item=Phaser.Utils.Array.GetRandom(eligible);this.save.gearOwned=[...this.gear.owned,item.id];this.log(`Encontrou: ${item.name}`);}}
+      // Conjuntos de queda: 1,5% por monstro (VIP Ouro 2%, Diamante 2,5%), 25% nos bosses.
+      const setChance=mob.boss?.25:this.cloud.vip==="diamante"?.025:this.cloud.vip==="ouro"?.02:.015;
+      if(Math.random()<setChance){const piece=dropArmorFor(this.save,this.save.level);if(piece){this.save.gearOwned=[...this.gear.owned,piece.id];this.log(`Caiu: ${piece.name}!`);this.banner(`Caiu: ${piece.name}`);}}
       if(mob.boss||Math.random()<.12){const level=1+Math.floor(Math.random()*Math.min(7,1+Math.floor(this.save.level/3)));this.log(`Encontrou: ${grantBox(this.save,level)}`);}
       this.save.xp += xp; this.save.gold += gold; this.save.kills++; if(drop)this.save.items++;
       this.log(`${mob.boss?"Guardião derrotado":"Fera derrotada"} · +${xp} EXP · +${gold} ouro${drop?" · 1 fragmento":""}`);
@@ -344,7 +347,7 @@ export class RealmRpg {
       const [,_verb,...parts]=action.split(":"), id=parts.join(":"), item=ARMOR_ITEMS.find(i=>i.id===id);
       if(!item)return;
       const state=this.gear;
-      if(_verb==="buy"&&!state.owned.includes(id)&&this.save.gold>=item.price){this.save.gold-=item.price;this.save.gearOwned=[...state.owned,id];}
+      if(_verb==="buy"&&item.source==="loja"&&!state.owned.includes(id)&&this.save.gold>=item.price){this.save.gold-=item.price;this.save.gearOwned=[...state.owned,id];}
       if(_verb==="equip"&&state.owned.includes(id)&&this.save.level>=item.level){this.save.gearEquipped={...state.equipped,[item.slot]:id};if(this.save.glacialEquipped)delete this.save.glacialEquipped[item.slot];}
       if(_verb==="remove"&&state.equipped[item.slot]===id){delete state.equipped[item.slot];this.save.gearEquipped=state.equipped;}
       this.health=Math.min(this.health,this.maxHealth);this.persist();this.showWindow("S");this.render();return;
@@ -516,11 +519,11 @@ export class RealmRpg {
     const note=!this.cloud.loggedIn?`<p class="rpg-account-msg">Entre na sua conta para comprar: a compra fica guardada nela, em qualquer aparelho. <button data-action="account">👤 Entrar / criar conta</button></p>`:!this.cloud.payEnabled?`<p class="rpg-account-msg">Pagamento com dinheiro real em breve.</p>`:"";
     const vipCard=(plan:"ouro"|"diamante")=>{const name=plan==="ouro"?"VIP Ouro":"VIP Diamante";const plans=VIP_PLANS.filter(p=>p.plan===plan);
       return `<div class="rpg-item rpg-vip ${plan}"><strong>★ ${name}</strong><span>${VIP_PERKS[plan].join("<br>")}</span><br>${plans.map(p=>pay(p.id,`💳 ${p.days} dias · ${brlPrice(p.cents)}`)).join(" ")}</div>`;};
-    const packs=PREMIUM_PACKS.map(p=>{const has=owned.includes(p.id);return `<div class="rpg-item" style="border-color:${p.color}"><strong style="color:${p.color}">${p.name}</strong><span>${p.rarity} · ${p.desc}</span><br>${has?`<button disabled>Comprado ✓</button>`:pay(p.id,`💳 ${brlPrice(p.cents)}`)}</div>`;}).join("");
+    const packs=PREMIUM_PACKS.filter(p=>!("hidden" in p&&p.hidden)).map(p=>{const has=owned.includes(p.id);return `<div class="rpg-item" style="border-color:${p.color}"><strong style="color:${p.color}">${p.name}</strong><span>${p.rarity} · ${p.desc}</span><br>${has?`<button disabled>Comprado ✓</button>`:pay(p.id,`💳 ${brlPrice(p.cents)}`)}</div>`;}).join("");
     return `<p>Compras com dinheiro real (cartão, pelo Stripe). Tudo fica na sua conta para sempre — o VIP vale pelos dias comprados e soma se você comprar de novo.</p>${note}
       <h3 style="font-family:Cinzel,serif;color:#e3c78f;margin:14px 0 4px">★ VIP</h3><p style="margin:0">${vip?`Seu VIP: <b>${vip==="ouro"?"Ouro":"Diamante"}</b> até ${until}.`:"Você ainda não é VIP."} No servidor HARD o EXP continua baixo para todos; o VIP ajuda um pouco.</p>
       <div class="rpg-items">${vipCard("ouro")}${vipCard("diamante")}</div>
-      <h3 style="font-family:Cinzel,serif;color:#e3c78f;margin:14px 0 4px">🛡 Melhores conjuntos</h3><div class="rpg-items">${packs}</div>
+      <h3 style="font-family:Cinzel,serif;color:#e3c78f;margin:14px 0 4px">🛡 Os 7 conjuntos mais fortes + Dragão Glacial</h3><div class="rpg-items">${packs}</div>
       <h3 style="font-family:Cinzel,serif;color:#e3c78f;margin:14px 0 4px">🪽 Asas</h3><p style="margin:0">As 29 asas pagas também saem por dinheiro real.</p><button data-action="catalog">Ver asas e preços</button>`;
   }
   /** Equipamento visível: cor do conjunto dominante no corpo, brilho de conjunto raro e faíscas da arma. */
@@ -530,12 +533,12 @@ export class RealmRpg {
     for(const [slot,id] of Object.entries(this.glacial.equipped)){if(["Elmo","Armadura","Calça","Luvas","Botas"].includes(slot)&&id)pieces.push({color:"#9fe0ff",rarity:"Especial"});}
     const count=new Map<string,{n:number;rarity:string}>();
     for(const p of pieces){const c=count.get(p.color)??{n:0,rarity:p.rarity};c.n++;count.set(p.color,c);}
-    const order=["Raro","Lendário","Excelente","Mítico","Especial"];
+    const order=["Comum","Incomum","Raro","Lendário","Excelente","Mítico","Especial","Premium"];
     const best=[...count.entries()].sort((a,b)=>b[1].n-a[1].n||order.indexOf(b[1].rarity)-order.indexOf(a[1].rarity))[0];
     // No corpo, o Guardião de Aço aparece como aço prateado (o azul do ícone sumiria no Feiticeiro).
     const armorColor=best?(best[0]==="#79baff"?"#b4c2d0":best[0]):null;
     if(this.running&&this.heroCharacterId!==this.visualId)this.syncHero();
-    const glowColor=best&&best[1].n>=3&&["Excelente","Mítico","Especial"].includes(best[1].rarity)?best[0]:null;
+    const glowColor=best&&best[1].n>=3&&["Excelente","Mítico","Especial","Premium"].includes(best[1].rarity)?best[0]:null;
     const el=elementalState(this.save).equipped;
     const fx=el?.effect??"";
     const weaponColor=this.glacial.weapon?"#9fe0ff":el?(/gelo|ciano/i.test(fx)?"#8fe8ff":/chama|brasa|rubra/i.test(fx)?"#ff7a3a":/violeta/i.test(fx)?"#c79bff":/verde|natureza|folha/i.test(fx)?"#7dff8a":/prata/i.test(fx)?"#e8eef5":"#ffd36b"):null;
