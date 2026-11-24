@@ -163,3 +163,4 @@ footer{text-align:center;padding:26px 20px 40px;color:#6f7775;font-size:12px;bor
 .players .pl .dot{position:absolute;margin:-4px 0 0 -60px}
 .players .pl.online{position:relative}
 .players .pl.online .dot{position:absolute;top:12px;left:12px;margin:0}
+.wing .price .real{color:#8ff0a0;font-weight:600}

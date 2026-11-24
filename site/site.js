@@ -53,7 +53,7 @@
   function drawWings() {
     $('wings-grid').innerHTML = D.wings.filter(function (w) { return current === 'Todas' || w.family === current; }).map(function (w, i) {
       var u = 'url(' + encodeURI(w.image) + ')', d = 'animation-delay:-' + (i % 5) * 0.3 + 's;';
-      return '<article class="wing"><div class="pair"><div class="half l" style="background-image:' + u + ';' + d + '"></div><div class="half r" style="background-image:' + u + ';' + d + '"></div></div><h3>' + esc(w.family) + '</h3><p>Nível ' + w.level + '</p><p class="price' + (w.price ? '' : ' free') + '">' + (w.price ? fmt(w.price) + ' ouro' : 'GRÁTIS') + '</p></article>';
+      return '<article class="wing"><div class="pair"><div class="half l" style="background-image:' + u + ';' + d + '"></div><div class="half r" style="background-image:' + u + ';' + d + '"></div></div><h3>' + esc(w.family) + '</h3><p>Nível ' + w.level + '</p><p class="price' + (w.price ? '' : ' free') + '">' + (w.price ? fmt(w.price) + ' ouro' + (w.cents ? '<br><span class="real">ou R$ ' + (w.cents / 100).toFixed(2).replace('.', ',') + '</span>' : '') : 'GRÁTIS') + '</p></article>';
     }).join('');
   }
   $('wing-filters').innerHTML = families.map(function (f) { return '<button type="button" data-f="' + esc(f) + '"' + (f === current ? ' class="on"' : '') + '>' + esc(f) + '</button>'; }).join('');

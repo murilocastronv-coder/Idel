@@ -28,3 +28,15 @@ DATABASE_URL=postgres://... npm start   # sem DATABASE_URL o jogo roda, mas sem 
 O site fica em `/` (pasta `site/`) e o jogo em `/jogar/`. `site/data.js` é gerado no build por
 `scripts/build-site-data.js` a partir dos dados do jogo (classes, skills, mapas, monstros, asas).
 As imagens dos mapas em `site/img/maps/` são prints tirados dentro do jogo.
+
+## Loja com dinheiro real (asas)
+Usa o Stripe Checkout com as mesmas variáveis do jogo antigo, no painel da Render:
+`STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET`. O webhook do Stripe deve apontar para
+`https://muonlineclaude.com/api/stripe-webhook` (evento `checkout.session.completed`).
+Sem essas variáveis o botão 💳 aparece como "em breve". Preços em `WING_REAL_PRICE_CENTS`
+(`game/website/src/gameplay/WingCatalog.ts`). Compras ficam na tabela `aether_purchases`.
+
+## Reset de contas (24/11/2026)
+Na primeira subida desta versão o servidor copia `accounts` e `aether_saves` para
+`accounts_backup_20261124` / `aether_saves_backup_20261124` e apaga todas as contas (uma vez só,
+marcado em `aether_meta`). O progresso salvo nos aparelhos também recomeça (save `v2`).

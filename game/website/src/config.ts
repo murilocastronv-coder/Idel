@@ -1,7 +1,7 @@
 export const GAME_CONFIG = {
   player: {
-    walkSpeed: 150,
-    runSpeed: 280,
+    walkSpeed: 95,
+    runSpeed: 165,
     jumpHeight: 20,
     jumpDurationMs: 500,
     footOffsetY: 10,

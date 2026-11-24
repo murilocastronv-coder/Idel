@@ -7,6 +7,8 @@ const path = require('path');
 const zlib = require('zlib');
 const { WSServer } = require('./ws');
 const sec = require('./security');
+const crypto = require('crypto');
+const { wingShop } = require('../scripts/game-data');
 
 const PORT = Number(process.env.PORT || 3000);
 const ROOT = path.join(__dirname, '..', 'game', 'website', 'out');
@@ -86,8 +88,30 @@ async function migrate() {
     data JSONB NOT NULL, level INT NOT NULL DEFAULT 1, updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await db.query('ALTER TABLE accounts ADD COLUMN IF NOT EXISTS vip1_until TIMESTAMPTZ');
   await db.query('ALTER TABLE accounts ADD COLUMN IF NOT EXISTS vip2_until TIMESTAMPTZ');
+  await db.query(`CREATE TABLE IF NOT EXISTS aether_purchases (
+    id BIGSERIAL PRIMARY KEY, account_id BIGINT REFERENCES accounts(id) ON DELETE CASCADE,
+    item TEXT NOT NULL, ref TEXT UNIQUE NOT NULL, amount_cents INT NOT NULL, currency TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  await db.query('CREATE INDEX IF NOT EXISTS aether_purchases_account ON aether_purchases (account_id)');
+  await db.query(`CREATE TABLE IF NOT EXISTS aether_meta (key TEXT PRIMARY KEY, at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  await resetAccountsOnce();
   await db.query('DELETE FROM aether_tokens WHERE expires_at < now()');
   console.log(`[db] pronto (schema "${schema}")`);
+}
+
+// RESET DE CONTAS (pedido do dono do jogo, 24/11/2026): todo mundo cria conta de novo.
+// Roda uma única vez. Antes de apagar, copia contas e heróis para tabelas *_backup_20261124.
+const RESET_KEY = 'reset-contas-20261124';
+async function resetAccountsOnce() {
+  const done = await db.query('SELECT 1 FROM aether_meta WHERE key = $1', [RESET_KEY]);
+  if (done.rows[0]) return;
+  await db.tx(async (q) => {
+    await q('CREATE TABLE IF NOT EXISTS accounts_backup_20261124 AS SELECT * FROM accounts');
+    await q('CREATE TABLE IF NOT EXISTS aether_saves_backup_20261124 AS SELECT * FROM aether_saves');
+    const r = await q('DELETE FROM accounts');
+    await q('INSERT INTO aether_meta (key) VALUES ($1)', [RESET_KEY]);
+    console.log(`[reset] ${r.rowCount} contas apagadas (backup em accounts_backup_20261124). Todos criam conta de novo.`);
+  });
 }
 
 function clientIp(req) {
@@ -126,6 +150,43 @@ async function vipOf(accountId) {
   const r = rows[0] || {};
   return r.diamante ? 'diamante' : r.ouro ? 'ouro' : null;
 }
+async function purchasedWings(accountId) {
+  const { rows } = await db.query(`SELECT DISTINCT item FROM aether_purchases WHERE account_id = $1 AND item LIKE 'wing:%'`, [accountId]);
+  return rows.map((r) => r.item.slice(5));
+}
+
+// ---------------- Loja de asas com dinheiro real (Stripe Checkout) ----------------
+// Mesmas variáveis do jogo antigo, no painel da Render: STRIPE_SECRET_KEY e STRIPE_WEBHOOK_SECRET.
+// Webhook no Stripe: https://muonlineclaude.com/api/stripe-webhook (evento checkout.session.completed).
+const STRIPE_KEY = () => process.env.STRIPE_SECRET_KEY || '';
+const STRIPE_WHSEC = () => process.env.STRIPE_WEBHOOK_SECRET || '';
+const payEnabled = () => !!STRIPE_KEY() && !!STRIPE_WHSEC();
+const SHOP = wingShop();
+function publicUrl(req) {
+  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, '');
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || 'localhost');
+  const proto = String(req.headers['x-forwarded-proto'] || (req.socket.encrypted ? 'https' : 'http')).split(',')[0];
+  return `${proto}://${host}`;
+}
+function verifyStripeSig(raw, header) {
+  const secret = STRIPE_WHSEC();
+  if (!secret || typeof header !== 'string') return false;
+  const parts = header.split(',').map((x) => x.trim().split('='));
+  const t = (parts.find((x) => x[0] === 't') || [])[1];
+  const v1 = parts.filter((x) => x[0] === 'v1').map((x) => x[1]);
+  if (!t || !v1.length || Math.abs(Date.now() / 1000 - Number(t)) > 300) return false;
+  const exp = crypto.createHmac('sha256', secret).update(Buffer.concat([Buffer.from(`${t}.`), raw])).digest('hex');
+  return v1.some((x) => x.length === exp.length && crypto.timingSafeEqual(Buffer.from(x), Buffer.from(exp)));
+}
+function readRaw(req, max = 512 * 1024) {
+  return new Promise((resolve, reject) => {
+    let size = 0; const chunks = [];
+    req.on('data', (c) => { size += c.length; if (size > max) { reject(fail(413, 'grande demais')); req.destroy(); } else chunks.push(c); });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
 function str(v, max) { return typeof v === 'string' ? v.trim().slice(0, max) : ''; }
 
 async function handleApi(req, res, url) {
@@ -166,7 +227,7 @@ async function handleApi(req, res, url) {
     if (!(await sec.verifyPassword(password, acc.password_hash))) throw fail(401, 'Usuário ou senha incorretos.');
     await db.query('UPDATE accounts SET last_login_at = now() WHERE id = $1', [acc.id]);
     const save = await db.query('SELECT data FROM aether_saves WHERE account_id = $1', [acc.id]);
-    return json(res, 200, { ok: true, username: acc.username, token: await issueToken(acc.id), save: save.rows[0]?.data ?? null, vip: await vipOf(acc.id) });
+    return json(res, 200, { ok: true, username: acc.username, token: await issueToken(acc.id), save: save.rows[0]?.data ?? null, vip: await vipOf(acc.id), wings: await purchasedWings(acc.id) });
   }
 
   if (p === '/api/logout' && req.method === 'POST') {
@@ -179,13 +240,16 @@ async function handleApi(req, res, url) {
     const acc = await auth(req);
     if (req.method === 'GET') {
       const { rows } = await db.query('SELECT data FROM aether_saves WHERE account_id = $1', [acc.id]);
-      return json(res, 200, { ok: true, username: acc.username, save: rows[0]?.data ?? null, vip: await vipOf(acc.id) });
+      return json(res, 200, { ok: true, username: acc.username, save: rows[0]?.data ?? null, vip: await vipOf(acc.id), wings: await purchasedWings(acc.id) });
     }
     if (req.method === 'PUT' || req.method === 'POST') {
       limit(req, 'save', 40, 60 * 1000, String(acc.id));
       const body = await readJson(req, 48 * 1024);
       const save = body && typeof body.save === 'object' && !Array.isArray(body.save) ? body.save : null;
       if (!save) throw fail(400, 'Save inválido.');
+      // Asas pagas com dinheiro real nunca somem, mesmo que o aparelho mande um save antigo.
+      const paid = await purchasedWings(acc.id);
+      if (paid.length) save.wingsOwned = [...new Set([...(Array.isArray(save.wingsOwned) ? save.wingsOwned.filter((x) => typeof x === 'string').slice(0, 64) : []), ...paid])];
       const level = Number(save.level);
       if (!Number.isInteger(level) || level < 1 || level > 100000) throw fail(400, 'Nível inválido.');
       await db.query(`INSERT INTO aether_saves (account_id, data, level, updated_at) VALUES ($1,$2,$3, now())
@@ -193,6 +257,73 @@ async function handleApi(req, res, url) {
         [acc.id, JSON.stringify(save), level]);
       return json(res, 200, { ok: true });
     }
+  }
+
+  if (p === '/api/shop/wings' && req.method === 'GET') {
+    return json(res, 200, { ok: true, enabled: payEnabled(), currency: 'brl', wings: SHOP.filter((w) => !w.free).map((w) => ({ id: w.id, cents: w.cents })) });
+  }
+
+  if (p === '/api/shop/checkout' && req.method === 'POST') {
+    const acc = await auth(req);
+    limit(req, 'checkout', 10, 10 * 60 * 1000, String(acc.id));
+    if (!payEnabled()) throw fail(503, 'Pagamento com dinheiro real ainda não está ativado no servidor.');
+    const body = await readJson(req);
+    const wing = SHOP.find((w) => w.id === body.wingId && !w.free);
+    if (!wing) throw fail(400, 'Asa inválida.');
+    if ((await purchasedWings(acc.id)).includes(wing.id)) throw fail(409, 'Você já comprou esta asa.');
+    const { rows } = await db.query('SELECT email FROM accounts WHERE id = $1', [acc.id]);
+    const base = publicUrl(req);
+    const f = new URLSearchParams();
+    f.set('mode', 'payment');
+    f.set('success_url', `${base}/jogar/?asa=ok`);
+    f.set('cancel_url', `${base}/jogar/?asa=cancelado`);
+    f.set('client_reference_id', String(acc.id));
+    if (rows[0]?.email) f.set('customer_email', rows[0].email);
+    f.set('locale', 'pt-BR');
+    f.set('line_items[0][quantity]', '1');
+    f.set('line_items[0][price_data][currency]', 'brl');
+    f.set('line_items[0][price_data][unit_amount]', String(wing.cents)); // preço sempre calculado aqui
+    f.set('line_items[0][price_data][product_data][name]', `Asa ${wing.family} Nv.${wing.level}`);
+    f.set('line_items[0][price_data][product_data][description]', `MU Online Claude · conta ${acc.username} · asa cosmética permanente`);
+    for (const pre of ['metadata', 'payment_intent_data[metadata]']) {
+      f.set(`${pre}[game]`, 'aether-wing');
+      f.set(`${pre}[acc]`, String(acc.id));
+      f.set(`${pre}[wing]`, wing.id);
+      f.set(`${pre}[amt]`, String(wing.cents));
+    }
+    const r = await fetch((process.env.STRIPE_API || 'https://api.stripe.com') + '/v1/checkout/sessions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${STRIPE_KEY()}`, 'Content-Type': 'application/x-www-form-urlencoded', 'Idempotency-Key': crypto.randomUUID() },
+      body: f,
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.url) { console.error('[loja] stripe checkout', r.status, j && j.error && j.error.message); throw fail(502, 'Não foi possível abrir o pagamento. Tente de novo.'); }
+    return json(res, 200, { ok: true, url: j.url });
+  }
+
+  if (p === '/api/stripe-webhook' && req.method === 'POST') {
+    const raw = await readRaw(req);
+    if (!verifyStripeSig(raw, req.headers['stripe-signature'])) return json(res, 400, { error: 'assinatura inválida' });
+    let ev; try { ev = JSON.parse(raw.toString('utf8')); } catch { return json(res, 400, { error: 'json' }); }
+    const o = ev.data && ev.data.object;
+    if ((ev.type === 'checkout.session.completed' || ev.type === 'checkout.session.async_payment_succeeded') && o && o.payment_status === 'paid') {
+      const md = o.metadata || {};
+      if (md.game !== 'aether-wing') return json(res, 200, { received: true, result: 'outro-produto' });
+      const wing = SHOP.find((w) => w.id === md.wing && !w.free);
+      const accId = Number(md.acc);
+      if (!wing || !accId) return json(res, 200, { received: true, result: 'metadados-invalidos' });
+      if (String(o.currency).toLowerCase() !== 'brl' || o.amount_total !== wing.cents) {
+        console.error(`[loja] valor diferente na sessão ${o.id}: ${o.amount_total} ${o.currency}. Nada entregue.`);
+        return json(res, 200, { received: true, result: 'valor-diferente' });
+      }
+      const exists = await db.query('SELECT 1 FROM accounts WHERE id = $1', [accId]);
+      if (!exists.rows[0]) return json(res, 200, { received: true, result: 'conta-inexistente' });
+      const ins = await db.query(`INSERT INTO aether_purchases (account_id, item, ref, amount_cents, currency)
+        VALUES ($1, $2, $3, $4, 'brl') ON CONFLICT (ref) DO NOTHING RETURNING id`, [accId, `wing:${wing.id}`, o.id, o.amount_total]);
+      if (ins.rows[0]) console.log(`[loja] asa ${wing.family} Nv.${wing.level} entregue para a conta #${accId} (sessão ${o.id})`);
+      return json(res, 200, { received: true, result: ins.rows[0] ? 'entregue' : 'ja-entregue' });
+    }
+    return json(res, 200, { received: true });
   }
 
   if (p === '/api/ranking' && req.method === 'GET') {

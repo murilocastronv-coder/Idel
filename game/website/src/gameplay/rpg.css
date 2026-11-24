@@ -129,3 +129,4 @@ body:has(.rpg-overlay) .mount-preview{display:none}
   .town-minimap{width:92px;top:100px}
   .mount-preview{top:118px!important;font-size:10px!important}
 }
+.rpg-ui .rpg-item .rpg-pay{margin-left:4px;border-color:#5fb36e;background:linear-gradient(#22472b,#12261a);color:#d8ffe0}

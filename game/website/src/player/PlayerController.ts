@@ -226,7 +226,7 @@ export class PlayerController {
     } else if (isMoving) {
       this.direction = stair
         ? movement.x < 0 ? "west" : "east"
-        : directionFromVector(movement.x, movement.y);
+        : this.steadyDirection(movement.x, movement.y);
       const speed = isRunning ? GAME_CONFIG.player.runSpeed : GAME_CONFIG.player.walkSpeed;
       const moved = moveWithCollision(
         this.mapData,
@@ -394,6 +394,19 @@ export class PlayerController {
       this.jumping = false;
       this.visualYOffset = 0;
     }
+  }
+
+  /**
+   * Direção com tolerância: só vira quando o movimento se afasta mais de ~32° da direção atual.
+   * Sem isso, numa rota em diagonal o herói piscava entre duas direções (ex.: noroeste/oeste).
+   */
+  private steadyDirection(x: number, y: number): Direction {
+    const len = Math.hypot(x, y);
+    if (!len) return this.direction;
+    const cur = vectorFromDirection(this.direction);
+    const curLen = Math.hypot(cur.x, cur.y) || 1;
+    if ((cur.x * x + cur.y * y) / (len * curLen) > 0.85) return this.direction;
+    return directionFromVector(x, y);
   }
 
   setTouchMovement(x: number, y: number, run: boolean = false): void {
