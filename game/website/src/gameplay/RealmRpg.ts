@@ -28,6 +28,7 @@ import { WeaponProjectiles } from "./WeaponProjectiles";
 import { HEROES, heroPreview, type HeroClass } from "./HeroRoster";
 import { UNARMED_HEROES } from "./UnarmedHeroes";
 import { MobileHud } from "./MobileHud";
+import { HeroLook } from "./HeroLook";
 import { VIP_PLANS, VIP_PERKS, PREMIUM_PACKS, brlPrice } from "./PremiumShop";
 import { xpToNext, hardKillXp, hardLabel } from "./HardMode";
 import { CloudSave } from "../net/CloudSave";
@@ -67,6 +68,8 @@ export class RealmRpg {
   private masterLabel!: Phaser.GameObjects.Text;
   private masterButton!: HTMLButtonElement;
   private hud: MobileHud;
+  private look: HeroLook;
+  private lookKey: string = "";
   private cloud = new CloudSave();
   private auto: boolean = false;
   private autoMs: number = 0;
@@ -79,6 +82,7 @@ export class RealmRpg {
     this.monsterCombat=new MonsterCombat(scene,map);
     this.powers = new HeroPowers(scene);
     this.wings = new HeroWings(scene, player);
+    this.look = new HeroLook(scene, player);
     this.touchMovement = new TouchMovement(player);
     this.touchMovement.setActive(false);
     this.home = { ...player.worldPosition };
@@ -266,6 +270,8 @@ export class RealmRpg {
     if(this.touchMovement.engaged)(window as unknown as {stopWalk?:()=>void}).stopWalk?.();
     this.hudMs+=delta; if(this.hudMs>150){this.hudMs=0;this.updateHud();}
     this.wings.update(this.save.wings, this.running, this.equippedWing);
+    this.refreshLook();
+    this.look.update(this.running);
     this.masterButton.hidden = !this.running || !!this.modal.innerHTML || !this.nearMaster;
     if(this.active) this.wingMaster.update(delta);
     this.heroLabel.setPosition(this.player.sprite.x,this.player.sprite.y-24).setText(`${this.cloud.vip?"★ ":""}${this.save.name} · Nv.${this.save.level}`).setColor(this.cloud.vip==="diamante"?"#9fe0ff":this.cloud.vip==="ouro"?"#ffd36b":"#ead398");
@@ -514,9 +520,28 @@ export class RealmRpg {
       <h3 style="font-family:Cinzel,serif;color:#e3c78f;margin:14px 0 4px">🛡 Melhores conjuntos</h3><div class="rpg-items">${packs}</div>
       <h3 style="font-family:Cinzel,serif;color:#e3c78f;margin:14px 0 4px">🪽 Asas</h3><p style="margin:0">As 29 asas pagas também saem por dinheiro real.</p><button data-action="catalog">Ver asas e preços</button>`;
   }
+  /** Equipamento visível: cor do conjunto dominante no corpo, brilho de conjunto raro e faíscas da arma. */
+  private refreshLook():void{
+    const pieces:{color:string;rarity:string}[]=[];
+    for(const id of Object.values(this.gear.equipped)){const it=ARMOR_ITEMS.find(i=>i.id===id);if(it)pieces.push({color:it.color,rarity:it.rarity});}
+    for(const [slot,id] of Object.entries(this.glacial.equipped)){if(["Elmo","Armadura","Calça","Luvas","Botas"].includes(slot)&&id)pieces.push({color:"#9fe0ff",rarity:"Especial"});}
+    const count=new Map<string,{n:number;rarity:string}>();
+    for(const p of pieces){const c=count.get(p.color)??{n:0,rarity:p.rarity};c.n++;count.set(p.color,c);}
+    const order=["Raro","Lendário","Excelente","Mítico","Especial"];
+    const best=[...count.entries()].sort((a,b)=>b[1].n-a[1].n||order.indexOf(b[1].rarity)-order.indexOf(a[1].rarity))[0];
+    const armorColor=best?.[0]??null;
+    const glowColor=best&&best[1].n>=3&&["Excelente","Mítico","Especial"].includes(best[1].rarity)?best[0]:null;
+    const el=elementalState(this.save).equipped;
+    const fx=el?.effect??"";
+    const weaponColor=this.glacial.weapon?"#9fe0ff":el?(/gelo|ciano/i.test(fx)?"#8fe8ff":/chama|brasa|rubra/i.test(fx)?"#ff7a3a":/violeta/i.test(fx)?"#c79bff":/verde|natureza|folha/i.test(fx)?"#7dff8a":/prata/i.test(fx)?"#e8eef5":"#ffd36b"):null;
+    const key=`${this.save.hero}|${armorColor}|${glowColor}|${weaponColor}`;
+    if(key===this.lookKey)return;
+    this.lookKey=key;
+    this.look.set(this.save.hero,{armorColor,glowColor,weaponColor});
+  }
   private updateHud():void{
     const st=this.powers.state(this.save.hero,this.elapsed).skills;
     this.hud.update({skills:st.map((p,i)=>({name:p.name,cost:p.cost,remaining:p.remaining,color:HERO_POWERS[this.save.hero][i].color})),mana:this.mana,potions:this.save.potions,auto:this.auto,unarmed:this.unarmed,safe:this.inSafeZone(this.player.worldPosition),account:this.cloud.username,nearMaster:this.running&&this.nearMaster});
   }
-  destroy():void {window.removeEventListener("pagehide",this.onPageHide);void this.cloud.flush();this.hud.destroy();this.kundunOpening.destroy();this.monsterCombat.destroy();this.weaponShots.destroy();this.powers.destroy();this.touchMovement.destroy();this.wings.destroy();this.persist();this.root.remove();this.heroLabel.destroy();this.wingMaster.destroy();this.masterLabel.destroy();for(const m of this.mobs){m.agent.destroy();m.label.destroy();m.bar.destroy();}const hooks=window as unknown as Record<string,unknown>;delete hooks.rpgState;delete hooks.rpgAction;delete hooks.rpgApproach;delete hooks.rpgVisitMaster;}
+  destroy():void {window.removeEventListener("pagehide",this.onPageHide);void this.cloud.flush();this.hud.destroy();this.look.destroy();this.kundunOpening.destroy();this.monsterCombat.destroy();this.weaponShots.destroy();this.powers.destroy();this.touchMovement.destroy();this.wings.destroy();this.persist();this.root.remove();this.heroLabel.destroy();this.wingMaster.destroy();this.masterLabel.destroy();for(const m of this.mobs){m.agent.destroy();m.label.destroy();m.bar.destroy();}const hooks=window as unknown as Record<string,unknown>;delete hooks.rpgState;delete hooks.rpgAction;delete hooks.rpgApproach;delete hooks.rpgVisitMaster;}
 }
