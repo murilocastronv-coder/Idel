@@ -1,0 +1,22 @@
+{
+  "group_id": "6c50e6da-4a82-4b11-95ea-6fd03f886109",
+  "states": [
+    {
+      "id": "dd00f0ba-e6b1-4e86-9b9f-2e696358a06f",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-wizard-staff-stationary-cyan": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

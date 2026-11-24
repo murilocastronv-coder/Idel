@@ -1,0 +1,11 @@
+{
+  "id": "19bc3bbd-f4d6-5fb2-89b8-f862ab99ce28",
+  "name": "Replace the item with a complete pair of heavy knight armore",
+  "prompt": "Replace the item with a complete pair of heavy knight armored trousers: visible waist belt, pelvis, two full thighs and knees. Cyan ice crystal plates and gold trim. This is leg armor pants, not boots or gloves. Same detailed pixel art style. Transparent background.",
+  "width": 48,
+  "height": 48,
+  "model": "edit_image_pixen",
+  "no_background": true,
+  "image": "image.png",
+  "spritesheet": null
+}

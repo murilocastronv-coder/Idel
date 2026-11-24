@@ -1,0 +1,22 @@
+{
+  "group_id": "c3baf4d5-2fc3-497e-bcfb-586b4ff4d8ed",
+  "states": [
+    {
+      "id": "f6a3012d-7b75-4410-be1a-740218845571",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "chest-opening-once-lid-raises-fully-violet-shado": {
+          "frame_count": 9,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

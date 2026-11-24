@@ -1,0 +1,22 @@
+{
+  "group_id": "8bccd047-75dc-44cb-a40b-e74d02d72115",
+  "states": [
+    {
+      "id": "ab68f8e7-c5bb-494d-bf1a-4dac01dfec37",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-red-and-gold-battle-bow-statio": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

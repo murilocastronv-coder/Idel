@@ -1,0 +1,196 @@
+{
+  "id": "05f6621d-3a21-4b64-891f-ea07544ab4df",
+  "name": "Lich",
+  "group_id": "30f08f8e-e0f9-4ce5-996d-8ab9f77263e7",
+  "atlas_key": "char-05f6621d-3a21-4b64-891f-ea07544ab4df",
+  "runtime_helper": "website/src/shared/animation.ts",
+  "usage": [
+    "Read this file before choosing character states or animation clip names.",
+    "Animation name is the exact physical clip key. display_name and source_name describe it; aliases are semantic role hints only.",
+    "Resolve the exact stateFolder and clipName with the resolver this file exports \u2014 resolveCharacterAnimation(manifest, candidates, { state?, direction? }), or selectCharacterState(...) where that is what it exports.",
+    "Prefer an exact user-requested display name or clip name before generic roles such as idle, walk, run, jump, or attack.",
+    "CharacterAgent resolves idle, movement, and attack clips across the full manifest and switches state folders automatically.",
+    "Rotations are static poses only. Use animator.setPose(...) or characterRotationFrameName(...) for a deliberate static pose; setClip('idle', ...) always means a real animated idle clip.",
+    "resolveCharacterAnimation(...) and chooseClip(...) return undefined when no clip matches. Handle that explicitly; never silently replace a missing animation with rotations.",
+    "For simple roaming/walking NPCs, use CharacterAgent instead of custom straight-line movement. Its built-in roaming picks walkable targets and follows A* paths around blockers.",
+    "For autonomous movement, update movement/pathing before choosing the animation direction. Direction should come from actual movement after collision/sliding, not only the intended path target. Do not cache a facing direction before followPath/collision movement and reuse it for setClip.",
+    "If using setDirection as a temporary facing lock, do not call it again after releasing movement/facing control in the same update branch.",
+    "CharacterAgent owns the visible sprite as agent.sprite. Do not create a separate scene.add.sprite for the same character.",
+    "Keep each character controller or agent in the scene update loop for any movement or animation changes.",
+    "When adding behavior to a specific NPC, use explicit references or agent.role/agent.id. Do not infer identity from array position or agent.atlasKey.includes(name); atlas keys are UUID-based.",
+    "For dialogue portraits, use states[].portrait.path when present. Build the URL with characterAssetUrl(characterId, path) from the runtime helper.",
+    "For portrait lip-sync/vocal animation, use states[].vocal_animation.path when present. It is a grid with moods as rows and visemes as columns.",
+    "Use SpriteAnimator(sprite, atlasKey, animations, stateFolder) and animator.setClip(clipName, direction, stateFolder) for resolved clips."
+  ],
+  "states": [
+    {
+      "id": "05f6621d-3a21-4b64-891f-ea07544ab4df",
+      "name": "Idle",
+      "folder": "idle",
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "rotation_path_pattern": "idle/rotations/{direction}.png",
+      "idle_atlas_frame_pattern": "idle/rotations/{direction}",
+      "animations": [
+        {
+          "name": "attack",
+          "id": "826b7601-76dc-4c8f-a856-1c665533029d",
+          "source_name": "custom-raise staff then thrust forwar",
+          "display_name": "attack",
+          "description": "raise staff then thrust forward releasing violet magic. Clearly prepare, strike midway, and recover to starting stance. Preserve identity and weapon.",
+          "generation_model": "v3",
+          "frame_count": 8,
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west",
+            "south-east",
+            "north-east",
+            "north-west",
+            "south-west"
+          ],
+          "loop": false,
+          "aliases": [
+            "attack"
+          ],
+          "path_pattern": "idle/animations/attack/{direction}/frame_{frame}.png",
+          "atlas_frame_pattern": "idle/animations/attack/{direction}/frame_{frame}"
+        },
+        {
+          "name": "death",
+          "id": "023ffac0-6daa-4ff3-8f38-776fd74e5e0f",
+          "source_name": "falling-back-death",
+          "display_name": "death",
+          "description": "falling backward",
+          "generation_model": "template",
+          "frame_count": 7,
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west",
+            "south-east",
+            "north-east",
+            "north-west",
+            "south-west"
+          ],
+          "loop": false,
+          "aliases": [
+            "death"
+          ],
+          "path_pattern": "idle/animations/death/{direction}/frame_{frame}.png",
+          "atlas_frame_pattern": "idle/animations/death/{direction}/frame_{frame}"
+        },
+        {
+          "name": "hurt",
+          "id": "3b1c79b5-0b16-4794-8ac4-d06c2134b90e",
+          "source_name": "taking-punch",
+          "display_name": "hurt",
+          "description": "taking a punch",
+          "generation_model": "template",
+          "frame_count": 6,
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west",
+            "south-east",
+            "north-east",
+            "north-west",
+            "south-west"
+          ],
+          "loop": false,
+          "aliases": [
+            "hurt"
+          ],
+          "path_pattern": "idle/animations/hurt/{direction}/frame_{frame}.png",
+          "atlas_frame_pattern": "idle/animations/hurt/{direction}/frame_{frame}"
+        },
+        {
+          "name": "idle",
+          "id": "2fd19137-3e96-4db6-93a7-672256bb425f",
+          "source_name": "breathing-idle",
+          "display_name": "idle",
+          "description": "breathing idle",
+          "generation_model": "template",
+          "frame_count": 4,
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west",
+            "south-east",
+            "north-east",
+            "north-west",
+            "south-west"
+          ],
+          "loop": true,
+          "aliases": [
+            "idle"
+          ],
+          "path_pattern": "idle/animations/idle/{direction}/frame_{frame}.png",
+          "atlas_frame_pattern": "idle/animations/idle/{direction}/frame_{frame}"
+        },
+        {
+          "name": "run",
+          "id": "585fc183-f5d4-447e-9117-c861cfe49285",
+          "source_name": "running-6-frames",
+          "display_name": "run",
+          "description": "running",
+          "generation_model": "template",
+          "frame_count": 6,
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west",
+            "south-east",
+            "north-east",
+            "north-west",
+            "south-west"
+          ],
+          "loop": true,
+          "aliases": [
+            "run"
+          ],
+          "path_pattern": "idle/animations/run/{direction}/frame_{frame}.png",
+          "atlas_frame_pattern": "idle/animations/run/{direction}/frame_{frame}"
+        },
+        {
+          "name": "walk",
+          "id": "323df607-34cc-41c6-bf1e-df6a088f82c0",
+          "source_name": "walking-6-frames",
+          "display_name": "walk",
+          "description": "walking",
+          "generation_model": "template",
+          "frame_count": 6,
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west",
+            "south-east",
+            "north-east",
+            "north-west",
+            "south-west"
+          ],
+          "loop": true,
+          "aliases": [
+            "walk"
+          ],
+          "path_pattern": "idle/animations/walk/{direction}/frame_{frame}.png",
+          "atlas_frame_pattern": "idle/animations/walk/{direction}/frame_{frame}"
+        }
+      ]
+    }
+  ]
+}

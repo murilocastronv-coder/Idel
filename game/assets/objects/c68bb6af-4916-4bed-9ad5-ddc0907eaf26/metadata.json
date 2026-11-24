@@ -1,0 +1,22 @@
+{
+  "group_id": "3535015b-1f29-430d-9b28-8084053ec200",
+  "states": [
+    {
+      "id": "c68bb6af-4916-4bed-9ad5-ddc0907eaf26",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-royal-scepter-stationary-viol": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

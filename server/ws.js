@@ -83,7 +83,7 @@ class WSServer extends EventEmitter {
       try {
         const url = new URL(req.url, 'http://x');
         const key = req.headers['sec-websocket-key'];
-        if (url.pathname !== path || !key || (req.headers.upgrade || '').toLowerCase() !== 'websocket') {
+        if ((path && url.pathname !== path) || !key || (req.headers.upgrade || '').toLowerCase() !== 'websocket') {
           socket.destroy(); return;
         }
         if (allowedOrigin && req.headers.origin && !allowedOrigin(req.headers.origin, req)) {

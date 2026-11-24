@@ -1,0 +1,22 @@
+{
+  "group_id": "4633444d-4622-436a-8777-453949401526",
+  "states": [
+    {
+      "id": "a486541c-f037-4052-9077-3f7d59cab641",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-white-and-gold-wind-bow-statio": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

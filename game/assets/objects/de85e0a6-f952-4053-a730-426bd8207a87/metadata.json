@@ -1,0 +1,22 @@
+{
+  "group_id": "1a3340da-09e7-4133-be21-39d2bb5dfa10",
+  "states": [
+    {
+      "id": "de85e0a6-f952-4053-a730-426bd8207a87",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-golden-battle-axe-stays-fixed": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

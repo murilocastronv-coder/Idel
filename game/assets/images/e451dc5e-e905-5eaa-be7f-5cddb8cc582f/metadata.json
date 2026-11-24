@@ -1,0 +1,11 @@
+{
+  "id": "e451dc5e-e905-5eaa-be7f-5cddb8cc582f",
+  "name": "Replace the pearl with a small angular white ice gem. Make t",
+  "prompt": "Replace the pearl with a small angular white ice gem. Make the ring band clearly covered in overlapping teal dragon scales, a glacial dragon scale ring. Preserve the circular ring shape, detailed pixel art, transparent background.",
+  "width": 48,
+  "height": 48,
+  "model": "edit_image_pixen",
+  "no_background": true,
+  "image": "image.png",
+  "spritesheet": null
+}

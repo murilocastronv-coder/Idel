@@ -1,0 +1,22 @@
+{
+  "group_id": "3f2b9f3a-23cb-481b-908e-22ab4e4ca2d6",
+  "states": [
+    {
+      "id": "0cea0475-ea23-4a07-938e-71d026ba63ee",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-violet-astral-bow-stays-still": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

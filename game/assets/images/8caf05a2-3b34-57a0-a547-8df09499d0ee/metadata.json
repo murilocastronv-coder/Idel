@@ -1,0 +1,11 @@
+{
+  "id": "8caf05a2-3b34-57a0-a547-8df09499d0ee",
+  "name": "Change this into a full pair of imperial armored pants, wais",
+  "prompt": "Change this into a full pair of imperial armored pants, waist belt, pelvis and two complete thigh and knee guards all visible, NOT a pair of boots. Dark teal ice crystal with gold trim, same pixel art, transparent background.",
+  "width": 48,
+  "height": 48,
+  "model": "edit_image_pixen",
+  "no_background": true,
+  "image": "image.png",
+  "spritesheet": null
+}

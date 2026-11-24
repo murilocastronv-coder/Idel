@@ -1,0 +1,22 @@
+{
+  "group_id": "167fc94d-2ba7-4d94-8b8a-ee9e6dd9283e",
+  "states": [
+    {
+      "id": "e97d0331-04e9-49d6-ac16-28fde1e05a8f",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-golden-spear-stationary-golde": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

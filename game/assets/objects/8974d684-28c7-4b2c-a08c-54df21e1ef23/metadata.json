@@ -1,0 +1,22 @@
+{
+  "group_id": "b486b839-c5bf-4111-b595-a74515d1d14e",
+  "states": [
+    {
+      "id": "8974d684-28c7-4b2c-a08c-54df21e1ef23",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "chest-opening-once-lid-raises-fully-sapphire-icy": {
+          "frame_count": 9,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

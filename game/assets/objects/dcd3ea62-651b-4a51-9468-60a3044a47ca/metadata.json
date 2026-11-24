@@ -1,0 +1,22 @@
+{
+  "group_id": "98531aac-966b-4a9e-ac20-a8f6fcfcbc4f",
+  "states": [
+    {
+      "id": "dcd3ea62-651b-4a51-9468-60a3044a47ca",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-bronze-tiger-bow-stationary-b": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

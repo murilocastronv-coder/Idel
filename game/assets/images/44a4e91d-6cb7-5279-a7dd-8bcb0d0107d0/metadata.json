@@ -1,0 +1,11 @@
+{
+  "id": "44a4e91d-6cb7-5279-a7dd-8bcb0d0107d0",
+  "name": "Make this an unmistakable humanoid gladiator CHEST armor ite",
+  "prompt": "Make this an unmistakable humanoid gladiator CHEST armor item: torso breastplate with one dragon wing pauldron and leather straps, empty neck opening at top, waist at bottom, cyan ice crystal and gold trim. No horse head, no animal head. Same pixel art, transparent.",
+  "width": 48,
+  "height": 48,
+  "model": "edit_image_pixen",
+  "no_background": true,
+  "image": "image.png",
+  "spritesheet": null
+}

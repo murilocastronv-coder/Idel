@@ -1,0 +1,171 @@
+{
+  "id": "52291cdd-57c4-497c-879e-8e9d6ca4152a",
+  "name": "Montaria Taurina \u00c1urea",
+  "group_id": "8d0a1cc8-937a-46e7-be5e-fa248e95c582",
+  "atlas_key": "char-52291cdd-57c4-497c-879e-8e9d6ca4152a",
+  "runtime_helper": "website/src/shared/animation.ts",
+  "usage": [
+    "Read this file before choosing character states or animation clip names.",
+    "Animation name is the exact physical clip key. display_name and source_name describe it; aliases are semantic role hints only.",
+    "Resolve the exact stateFolder and clipName with the resolver this file exports \u2014 resolveCharacterAnimation(manifest, candidates, { state?, direction? }), or selectCharacterState(...) where that is what it exports.",
+    "Prefer an exact user-requested display name or clip name before generic roles such as idle, walk, run, jump, or attack.",
+    "CharacterAgent resolves idle, movement, and attack clips across the full manifest and switches state folders automatically.",
+    "Rotations are static poses only. Use animator.setPose(...) or characterRotationFrameName(...) for a deliberate static pose; setClip('idle', ...) always means a real animated idle clip.",
+    "resolveCharacterAnimation(...) and chooseClip(...) return undefined when no clip matches. Handle that explicitly; never silently replace a missing animation with rotations.",
+    "For simple roaming/walking NPCs, use CharacterAgent instead of custom straight-line movement. Its built-in roaming picks walkable targets and follows A* paths around blockers.",
+    "For autonomous movement, update movement/pathing before choosing the animation direction. Direction should come from actual movement after collision/sliding, not only the intended path target. Do not cache a facing direction before followPath/collision movement and reuse it for setClip.",
+    "If using setDirection as a temporary facing lock, do not call it again after releasing movement/facing control in the same update branch.",
+    "CharacterAgent owns the visible sprite as agent.sprite. Do not create a separate scene.add.sprite for the same character.",
+    "Keep each character controller or agent in the scene update loop for any movement or animation changes.",
+    "When adding behavior to a specific NPC, use explicit references or agent.role/agent.id. Do not infer identity from array position or agent.atlasKey.includes(name); atlas keys are UUID-based.",
+    "For dialogue portraits, use states[].portrait.path when present. Build the URL with characterAssetUrl(characterId, path) from the runtime helper.",
+    "For portrait lip-sync/vocal animation, use states[].vocal_animation.path when present. It is a grid with moods as rows and visemes as columns.",
+    "Use SpriteAnimator(sprite, atlasKey, animations, stateFolder) and animator.setClip(clipName, direction, stateFolder) for resolved clips."
+  ],
+  "states": [
+    {
+      "id": "52291cdd-57c4-497c-879e-8e9d6ca4152a",
+      "name": "Idle",
+      "folder": "idle",
+      "directions": [
+        "south",
+        "east",
+        "north",
+        "west",
+        "south-east",
+        "north-east",
+        "north-west",
+        "south-west"
+      ],
+      "rotation_path_pattern": "idle/rotations/{direction}.png",
+      "idle_atlas_frame_pattern": "idle/rotations/{direction}",
+      "animations": [
+        {
+          "name": "hurt",
+          "id": "206d751e-53a1-4bec-b71f-460d36bbb723",
+          "source_name": "custom-Short recoil from receiving im",
+          "display_name": "hurt",
+          "description": "Short recoil from receiving impact, brace all four hooves then recover original stance. Preserve empty saddle, ornate gold armor and quadruped anatomy. No falling or dying.",
+          "generation_model": "v3",
+          "frame_count": 8,
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west",
+            "south-east",
+            "north-east",
+            "north-west",
+            "south-west"
+          ],
+          "loop": false,
+          "aliases": [
+            "hurt"
+          ],
+          "path_pattern": "idle/animations/hurt/{direction}/frame_{frame}.png",
+          "atlas_frame_pattern": "idle/animations/hurt/{direction}/frame_{frame}"
+        },
+        {
+          "name": "idle",
+          "id": "3f6c63f7-b859-44ff-ae55-d0318c3b99a8",
+          "source_name": "custom-Breathe gently standing on all",
+          "display_name": "idle",
+          "description": "Breathe gently standing on all four legs, move mane and tail subtly. Keep empty saddle stable and free. Seamless idle loop.",
+          "generation_model": "v3",
+          "frame_count": 8,
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west",
+            "south-east",
+            "north-east",
+            "north-west",
+            "south-west"
+          ],
+          "loop": true,
+          "aliases": [
+            "idle"
+          ],
+          "path_pattern": "idle/animations/idle/{direction}/frame_{frame}.png",
+          "atlas_frame_pattern": "idle/animations/idle/{direction}/frame_{frame}"
+        },
+        {
+          "name": "jump",
+          "id": "e4829e0a-0b1f-4750-abf3-2b622c32be7e",
+          "source_name": "custom-Prepare and jump in place, tuc",
+          "display_name": "jump",
+          "description": "Prepare and jump in place, tuck all four legs during leap then land with recovery. Keep identity, golden armor and empty saddle attached to back. Clear anticipation, lift, landing.",
+          "generation_model": "v3",
+          "frame_count": 8,
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west",
+            "south-east",
+            "north-east",
+            "north-west",
+            "south-west"
+          ],
+          "loop": false,
+          "aliases": [
+            "jump"
+          ],
+          "path_pattern": "idle/animations/jump/{direction}/frame_{frame}.png",
+          "atlas_frame_pattern": "idle/animations/jump/{direction}/frame_{frame}"
+        },
+        {
+          "name": "run",
+          "id": "03cd12da-885b-4738-b335-2518defdcb6f",
+          "source_name": "custom-Run in place in a powerful qua",
+          "display_name": "run",
+          "description": "Run in place in a powerful quadruped gallop seamless cycle. Mane and tail follow movement, empty saddle consistent and attached to back. Preserve four-legged anatomy and golden armor.",
+          "generation_model": "v3",
+          "frame_count": 8,
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west",
+            "south-east",
+            "north-east",
+            "north-west",
+            "south-west"
+          ],
+          "loop": true,
+          "aliases": [
+            "run"
+          ],
+          "path_pattern": "idle/animations/run/{direction}/frame_{frame}.png",
+          "atlas_frame_pattern": "idle/animations/run/{direction}/frame_{frame}"
+        },
+        {
+          "name": "walk",
+          "id": "7a47563f-5f4e-4b5c-8c98-9b65169ecedc",
+          "source_name": "custom-Walk in place in seamless natu",
+          "display_name": "walk",
+          "description": "Walk in place in seamless natural quadruped gait cycle, alternating hooves and moderate saddle sway, preserving armor and anatomy. Empty saddle remains fixed to back.",
+          "generation_model": "v3",
+          "frame_count": 8,
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west",
+            "south-east",
+            "north-east",
+            "north-west",
+            "south-west"
+          ],
+          "loop": true,
+          "aliases": [
+            "walk"
+          ],
+          "path_pattern": "idle/animations/walk/{direction}/frame_{frame}.png",
+          "atlas_frame_pattern": "idle/animations/walk/{direction}/frame_{frame}"
+        }
+      ]
+    }
+  ]
+}

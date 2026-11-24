@@ -1,0 +1,22 @@
+{
+  "group_id": "05c1a3e4-e433-46fe-a649-c0e268b20387",
+  "states": [
+    {
+      "id": "1d388d62-fbd6-451d-aeac-c6006c84c646",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "chest-opening-once-lid-raises-fully-celestial-wh": {
+          "frame_count": 9,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

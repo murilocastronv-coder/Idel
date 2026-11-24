@@ -1,0 +1,22 @@
+{
+  "group_id": "e0514b8d-6723-4d15-b834-d619a8516607",
+  "states": [
+    {
+      "id": "5e2f3c12-e231-4a6a-b72e-266944089625",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "chest-opening-once-lid-raises-fully-golden-sunli": {
+          "frame_count": 9,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

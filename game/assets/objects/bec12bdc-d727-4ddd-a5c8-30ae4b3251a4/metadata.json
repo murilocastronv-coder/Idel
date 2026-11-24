@@ -1,0 +1,22 @@
+{
+  "group_id": "0640da4a-c562-410f-a0b3-b1f4b6fea42c",
+  "states": [
+    {
+      "id": "bec12bdc-d727-4ddd-a5c8-30ae4b3251a4",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "treasure-chest-opening-once-lid-hinges-upward-to": {
+          "frame_count": 9,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

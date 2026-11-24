@@ -1,0 +1,22 @@
+{
+  "group_id": "d5dd2da4-c8f9-4008-9bad-0a728c32cd9f",
+  "states": [
+    {
+      "id": "1051d7f0-bbac-4085-b9fe-d702b6cc1a93",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-golden-solar-greatsword-statio": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

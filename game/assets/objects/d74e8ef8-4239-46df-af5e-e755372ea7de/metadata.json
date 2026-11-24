@@ -1,0 +1,22 @@
+{
+  "group_id": "c5cd36a8-cfe2-4e6a-82e5-7438b144ae75",
+  "states": [
+    {
+      "id": "d74e8ef8-4239-46df-af5e-e755372ea7de",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-bow-remains-still-in-its-origi": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

@@ -1,0 +1,22 @@
+{
+  "group_id": "5a60d61b-cedd-4839-8aa1-0465312efd55",
+  "states": [
+    {
+      "id": "472e0773-7101-488c-a5ca-127c4b6b07a1",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "chest-opening-once-lid-raises-fully-ruby-fire-ma": {
+          "frame_count": 9,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

@@ -1,0 +1,22 @@
+{
+  "group_id": "73996659-45eb-4b34-8696-c39ceaca9c19",
+  "states": [
+    {
+      "id": "f03813ff-5751-4985-84d8-1569abc753bb",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-silver-and-gold-bow-stationary": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

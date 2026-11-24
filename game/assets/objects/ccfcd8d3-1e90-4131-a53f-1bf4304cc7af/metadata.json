@@ -1,0 +1,15 @@
+{
+  "group_id": "67eeb0f1-33e6-4a1f-b397-2e1294e3afd5",
+  "states": [
+    {
+      "id": "ccfcd8d3-1e90-4131-a53f-1bf4304cc7af",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {}
+    }
+  ],
+  "export_version": "3.0"
+}

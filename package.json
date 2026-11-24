@@ -1,12 +1,13 @@
 {
-  "name": "mu-idle-legends",
-  "version": "0.1.0",
-  "description": "MU Idle Legends - MMORPG Idle 2D Pixel Art (portal, contas e personagens)",
+  "name": "aether-reborn",
+  "version": "2.0.0",
+  "description": "Aether Reborn / MU - RPG online 2D pixel art (Phaser) com multiplayer e salvamento na nuvem",
   "main": "server/index.js",
   "private": true,
   "scripts": {
-    "start": "node server/index.js",
-    "migrate": "node server/migrate-cli.js"
+    "postinstall": "node scripts/build-game.js",
+    "build": "node scripts/build-game.js --force",
+    "start": "node server/index.js"
   },
   "engines": {
     "node": ">=20"

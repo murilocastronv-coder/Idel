@@ -1,0 +1,3199 @@
+{
+  "audio": {},
+  "characters": {
+    "076e6c4e-15ff-4c08-8172-cb49481ab5c8": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "animation_ids": [
+        "288faef8-97d3-4e1a-b356-003143b372ec",
+        "3fa8f3c3-9f5b-4655-a5fb-22343d1e0984",
+        "4373f6fc-2b35-46cf-b6fb-498bceb76d37",
+        "456bcc63-000d-4a79-8087-3cdb43082230",
+        "56b88508-6bad-4d3e-87de-d2f627fa91c0",
+        "62175a25-5278-4f09-bee8-46cec6b65ba7",
+        "6c4bcedc-924f-49a7-b345-19be2229d4d4",
+        "8035a402-605a-4360-8490-ba2a927a6577",
+        "92752d61-e9a4-489c-8e40-ce29c58feec3",
+        "9fba4535-3512-4ede-bf38-ca6f110c00d2",
+        "b7f538a9-8e3f-489c-b5ad-305c3375ecb4",
+        "c777731a-4b2a-4cc6-ad2f-894547dd13f6",
+        "c7c2ddb5-e75e-4882-853e-cf4b8a49d053",
+        "cafb7df8-c0c4-49fe-94d3-8c63b0e65661",
+        "e471ed8f-6dc5-48c8-9b6f-35d4ebbe68bf",
+        "fed3483e-59e9-489b-8912-b1a3d669e69c"
+      ],
+      "animation_fingerprint": "43dbd9e4bca092e408ce4c73ec2c555a01b072c9beca207e3d456589aac49b73",
+      "name": "blonde farmer with long hair and a dress",
+      "member_ids": [
+        "076e6c4e-15ff-4c08-8172-cb49481ab5c8"
+      ],
+      "sync_version": 16
+    },
+    "9580506c-a5b6-49af-983d-07b7dcc87b0b": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "animation_ids": [
+        "05943ef9-db8f-41e3-94b5-a997959262f4",
+        "11b7f605-1851-45c9-8646-d94b16e66fe5",
+        "1749c92b-8db3-491f-8b81-104203bbdc38",
+        "1d89cbbf-3e1b-497d-aac9-7e3be4605305",
+        "20ece6a9-c061-4486-84b6-c8db186e63e5",
+        "2767e5b2-4011-4d5d-8aa9-9030cc0553f0",
+        "278886cc-e509-4b57-acb0-30b82bd66d62",
+        "2d16f822-ece5-4a3b-b0f0-ffe1fb828b83",
+        "36a12459-9955-4307-b234-a6905d57e1fc",
+        "3c59e32b-a990-4ba4-b5f6-11e180457fcd",
+        "41e69b1b-cecb-4d8f-a70f-ea94fafbe8b5",
+        "59371e6c-b632-4079-92b8-f20c61ae1341",
+        "5daacd59-a9fa-457d-baa8-69c548b9b8cc",
+        "5f4c4953-92a9-46d8-adec-cca07fe64ee6",
+        "5fa650e2-c93c-4a06-906d-d6b75c13d668",
+        "6998e1c0-9fed-4896-8ebb-dac737e493d9",
+        "6af30c78-168e-47da-8c9f-a8aaa6359e60",
+        "6f64a53d-a9f8-4a32-af32-4bf91063cf9b",
+        "8c8829c7-a080-4948-973a-4fd491997bfe",
+        "9faa9701-15ce-406a-a6be-54334bccde85",
+        "acd6e760-0bbc-4bb0-a6c7-62645b849b79",
+        "b4d07bd2-c0fd-424d-b276-1255311698e1",
+        "c46c3108-e947-4022-8b9a-bbfd89202b44",
+        "c4c5e359-57f8-45a3-b7ac-8e106f683dd2",
+        "cb7b9817-9a7a-4282-b195-fed7d5231543",
+        "cc68f33a-96b9-435e-a66a-6eea02a09143",
+        "d04ca16e-5705-4185-96bd-68575b5e9038",
+        "d3bf57f0-8244-49b7-a2c7-305c1371079a",
+        "d843b3c7-68a3-4502-ac00-44abc3592ec9",
+        "db7f00c1-354c-4b37-a3d9-2ab16c40886c",
+        "df8a7455-116d-4962-a975-52dd706df2fb",
+        "ec903752-f807-4bf2-8649-ab1476ca8616"
+      ],
+      "animation_fingerprint": "4f599b451e27f6e4c46e18cbeca7e09f7b0f3f2c36d9015e3e957b9c1fea9866",
+      "name": "flat shaded light brown bear",
+      "member_ids": [
+        "9580506c-a5b6-49af-983d-07b7dcc87b0b"
+      ],
+      "sync_version": 16
+    },
+    "e60c571b-2e75-4810-bca9-eb8527b8b767": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00|2026-11-05T14:26:29.129502+00:00|2026-11-05T14:26:29.129502+00:00",
+      "animation_ids": [
+        "0a9288b0-7da2-4d23-a7da-060b37c57830",
+        "12e58786-5e5f-4e81-8f2c-ab1b62f53558",
+        "1391832d-0c24-4d0b-814b-a6f6cffdb600",
+        "15573325-730d-456f-ad51-bd9b04621d31",
+        "158068a3-a486-4542-b6f2-cb6d494ff91e",
+        "190da319-fc5f-48c0-9a5e-328b62ff2187",
+        "26c91d0f-de27-4e6a-9868-a0fafb643054",
+        "2ac80162-e10d-4854-8e57-980a5e68689e",
+        "2b727ce7-4fc5-40fc-a90e-76e89c5d0e97",
+        "33500f36-4a28-46e8-b186-94c8335d8293",
+        "3659147d-f692-4711-8191-0d16613e4c67",
+        "3c38f95f-7385-4f50-a31b-0e9aafe06407",
+        "5cfc9150-bd53-4762-a42f-41ba6c2513ac",
+        "67299106-dc52-4d72-bf79-554b8e74ea01",
+        "6a64d6dc-b14c-4462-832a-141a0d81a99f",
+        "6c666d4e-f9ec-40e3-ab77-3d6bd2b60ca9",
+        "6c997dd0-627f-4d3e-b0bf-677d07a4f328",
+        "70104bab-648c-47d7-a822-0b33f50ca50f",
+        "731ea448-a316-43f3-931f-ff027037e885",
+        "7628c3ce-4148-45ab-89c8-8f7998d9938f",
+        "7e76dd2f-0c1c-4a90-86ed-e1db34302822",
+        "800b7a1b-a8d5-4e6e-9ae9-9dc05b51c671",
+        "83a494de-ad99-4081-8e29-3e3dfc64311b",
+        "85b25ad4-c280-4a07-b0c1-6e436d4786cd",
+        "87dfd91c-4732-4511-b2b5-ebb9d73e76ab",
+        "886b9f69-3637-4d9b-a86c-137dd1628cdb",
+        "8ad745a0-f0ac-40d5-802e-61f5b40d3da1",
+        "93584d25-e70d-4d4a-9865-5dbc49b36814",
+        "97b142b9-86d1-4bcc-9f5d-64249d7399a5",
+        "9da617e3-e5e1-413d-b169-ceac7ed2742b",
+        "a05b67e4-4386-4557-a24e-7ba87877952c",
+        "a7c7297e-12c9-490b-ae3c-f19c4052ba54",
+        "aac2670c-f29c-460a-aef5-f93cdc5961e5",
+        "ab369693-2c72-42c8-9748-fcab0ee991ce",
+        "af18314d-aa77-4c9d-98ac-9e959a17fb36",
+        "bb6fbcbd-cc18-464d-8d89-7c4c116397f4",
+        "bd0844c0-ac35-4d76-9133-cd0455a88f97",
+        "c40f9eb4-df3e-42e6-a53a-f5ba23f5b753",
+        "d3291178-1bd8-49bc-a986-8f4b91f78a7d",
+        "d88eff42-edfe-44f5-b5c3-8860c2b4c127",
+        "d9b98c38-9d83-45f8-ae73-edc1015eea63",
+        "de84fe44-4c89-4d2b-8bd5-54bafd5ba98c",
+        "e55cf921-d405-49be-b44d-c5b078e62b6a",
+        "e8b5a044-0782-4daa-9614-07b44838aef4",
+        "e9f93f40-bf64-487c-9a7d-7cb9bac93b15",
+        "eb10c314-be95-42ea-9662-e4241c647006",
+        "f85fd8fc-9792-4da1-ad22-b8f487763b1b",
+        "f975d0d0-f585-43cb-bfb7-515c4853a2b7"
+      ],
+      "animation_fingerprint": "e1d59840f937dd551b69c7f6c53b027b4260caec46b31cb6f81fd3074790a8ee",
+      "name": "warrior woman with orange hair",
+      "member_ids": [
+        "e60c571b-2e75-4810-bca9-eb8527b8b767",
+        "b4dcd340-91af-4f84-b52a-63c223994eef",
+        "056ad959-9f8e-4f05-ab2d-eda2c7445e0e"
+      ],
+      "sync_version": 16
+    },
+    "fc0ed64f-09b6-4f0c-951c-c1e8202f6e8e": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "animation_ids": [
+        "16eda519-5135-4798-a6ee-cbcd04deea96",
+        "1e43076b-c082-4dd2-996d-a42764f207bc",
+        "1e736ff8-6b5c-4435-a61b-ae4db70ceee3",
+        "368e71ac-3e8c-4844-a777-cfe1298bd92f",
+        "4047dc11-2dad-428b-862c-a601e8e5b048",
+        "50662e77-9d7a-4f7c-918e-5ddbe6310089",
+        "d7dfd798-7752-4010-8067-704a6f7c5fd3",
+        "f096fb86-84d9-44d9-9e06-623e1308a4d5"
+      ],
+      "animation_fingerprint": "81db131f8107f79b7d223801809a2eb8b3ed30d3358221516f9bec2ef6756877",
+      "name": "old man bald",
+      "member_ids": [
+        "fc0ed64f-09b6-4f0c-951c-c1e8202f6e8e"
+      ],
+      "sync_version": 16
+    },
+    "a186e0b5-46cf-4259-b791-d06d5dece872": {
+      "updated_at": "2026-11-05T14:39:28.657218+00:00",
+      "animation_ids": [
+        "00ec3739-1654-42d6-980f-4080422c8685",
+        "0215e294-5d6a-4cae-bd08-61510eb96ec5",
+        "034c377c-c821-4443-a534-2a799a49de49",
+        "070af90d-8b7d-41ea-9f7d-d789378b0515",
+        "117e46cf-854c-4300-8767-fadc38852307",
+        "1c8e139d-cdc4-49b7-808f-d42893f67eaf",
+        "20c1d490-4ede-426a-8993-6fe415888e0c",
+        "2babf97b-a475-4c72-ba3e-ed0e2919e823",
+        "3b12ba8a-b21a-4f15-a189-086b9b040cdf",
+        "4055564f-613b-470f-9e76-571f0ac0cdf9",
+        "5f51285f-d7a3-43ff-bfb6-90a78d3003a0",
+        "691a42bf-241b-4757-a8c6-4e06864e5977",
+        "6f9ee63e-bd4f-4720-80e9-67e8779b8e80",
+        "7362bb52-0df2-460f-acaf-512b6d4a99f4",
+        "776c8343-dac2-4f5e-b74a-e9bda3ef0edd",
+        "85574696-09d5-465c-be53-8200cdca7b95",
+        "8a47da61-1925-4e5e-9eb7-573cd26231e4",
+        "91f16421-5c18-47a5-8df8-82acb8a2ae6a",
+        "afb1b71e-a5a7-4f7e-83e5-8f9c49b146cc",
+        "b3df27ea-f26e-4a80-8085-44925e56d45e",
+        "b4eeca88-1cc2-40cf-94ca-4c7920619cdb",
+        "c602ff9e-e9cb-4e72-aac1-42156ce62291",
+        "fa18be54-5fe3-42e5-890c-a696a440344e",
+        "fa4e8ade-0116-4812-8402-a2262b6a8aba"
+      ],
+      "animation_fingerprint": "8d5631d50c0ac60973def448010f132de95589a071775de03a30b84c1528a186",
+      "name": "Cavaleiro Carmesim",
+      "member_ids": [
+        "a186e0b5-46cf-4259-b791-d06d5dece872"
+      ],
+      "sync_version": 16
+    },
+    "e15cb620-66b4-457e-af22-7357de16bbef": {
+      "updated_at": "2026-11-05T14:39:55.879015+00:00",
+      "animation_ids": [
+        "06a81aa6-dd8b-44a3-9ed3-8570e51380c8",
+        "28544faa-5e03-427e-85d3-c3b4d722c39f",
+        "368ea794-10f3-43cd-806e-081fc4b1ba66",
+        "3ee7fdb1-86fc-4545-a112-baf8a40b3f40",
+        "46108b39-0852-437c-b8a6-55e18e41b8f1",
+        "47537630-f75e-4ca1-85c6-0eb87da09b21",
+        "478310c3-7b30-475e-a26f-2bcf8ee7df53",
+        "520ca3cb-5f8a-4618-b9f5-43707c6a3701",
+        "68198dbe-c251-471f-8c72-0e21459d19fb",
+        "703e0de4-4433-4a50-878e-55e27b6a1574",
+        "a375850f-9b27-4148-88bb-463a49215b75",
+        "a8396b4b-02da-4901-8fe3-5ff5c52aa260",
+        "b4b299cc-190d-4e45-ba05-996846d92e6a",
+        "bc416dbf-4b10-409f-932c-a063dd9d1537",
+        "c19c3484-bd0d-431f-9aa7-d18f61e3bd63",
+        "c3851fc5-e10f-415b-a899-af335d4976b2",
+        "cf0ba7f7-62a8-499f-b38e-8961f147a5d8",
+        "d518c485-0361-417a-8251-da9d46474b42",
+        "dea7039e-47f3-4744-97e2-84aa8ac885df",
+        "ec7b6ab3-90e3-4d53-8269-02c6185a9541",
+        "ecadde1a-c6ad-479d-ad7a-8944656e72cb",
+        "f48afaab-a83b-49ae-865d-fe7c711015b4",
+        "f6000b87-6ca1-4cdc-8a6b-323973efcb16",
+        "fb9532fc-8088-4b81-8724-b240bad6bb65"
+      ],
+      "animation_fingerprint": "97ecda4700dfc8f03cba99ca520c6234e39518a7410ef4730793a8416e859a7b",
+      "name": "Mago Arcano",
+      "member_ids": [
+        "e15cb620-66b4-457e-af22-7357de16bbef"
+      ],
+      "sync_version": 16
+    },
+    "d3c19f60-17ec-49ef-8b75-586ace0a2413": {
+      "updated_at": "2026-11-05T14:39:24.966084+00:00",
+      "animation_ids": [
+        "04a743ca-6b69-48a9-889b-d9746e83d7b4",
+        "0b592aa6-2368-4a75-bb72-c28ef18f6f5f",
+        "0f1e90e6-691f-4750-a8a9-e1a89bafbc5a",
+        "124ca9f3-95de-4ed1-843e-a2eb01036d0d",
+        "39212fb2-c678-4d97-b7d7-f83fff1ed5a8",
+        "39791fbd-8e98-4fa5-bf39-07643f6e9c17",
+        "3c0a7e3e-d78c-48b1-84d7-336421c0cfea",
+        "4cdd895b-f5d1-410d-a687-832bf67143b5",
+        "53827715-1d46-4009-9205-a135964d1e57",
+        "57055e1f-88cf-4931-aeb3-aadfe6bef0a9",
+        "578cf394-77c6-4df8-bf09-c3e957096752",
+        "5867e25b-26b5-482a-9c1a-36cb283d74d6",
+        "5a442636-4177-43b2-9b07-3257c30165f4",
+        "82cff36e-2912-40e8-b78e-4a3b2babd5f9",
+        "99bf1083-8140-4733-99e4-39da4f7aa479",
+        "9e007c49-767f-48d1-917f-ea4e962a0ed1",
+        "a41b7ca0-7ad0-4ee4-a830-080cfaad74b9",
+        "a4bc9471-11c3-47da-afeb-a3b1ec06bc71",
+        "b43fe02d-82d8-4650-8fd6-9f3662cc659e",
+        "cc01e150-9afa-4ff6-8a6d-1b4c6c6530fd",
+        "dfe750ca-a76e-4cd9-b732-ba3695e7e9d7",
+        "e8bd8c0f-939c-4f23-81a3-5c41754210b5",
+        "eede5e77-0c01-44e9-83f5-423f8503c243",
+        "f8625175-a9e1-41e3-8427-ca1a0bf8cac1"
+      ],
+      "animation_fingerprint": "b5c9ce2eab8988da8b6262e07a5ba3a657aafff9a68155d691a132292b22edee",
+      "name": "Elfa Esmeralda",
+      "member_ids": [
+        "d3c19f60-17ec-49ef-8b75-586ace0a2413"
+      ],
+      "sync_version": 16
+    },
+    "9af51a54-5b5a-4c0f-af85-e60403f64df9": {
+      "updated_at": "2026-11-05T14:39:39.809606+00:00",
+      "animation_ids": [
+        "04b11384-749c-4b68-85b2-613593b111da",
+        "054710ae-8925-49ba-abc2-4e321c21b53a",
+        "3df59621-3e4e-4552-8016-37c3b479836e",
+        "46a92066-7eb9-455e-84e2-9ee8352d89e7",
+        "47762ada-dcf7-4656-ad6c-34ff8bf09333",
+        "488b84b2-826c-41ee-a038-306c5a68b647",
+        "57b626dc-e837-42ed-8b35-fbd7fc824fe2",
+        "71d0da4d-fcb4-4c8e-bcff-036115f0a814",
+        "746494aa-c9be-450c-bddc-1667b94ac08d",
+        "748cec42-b27f-48a6-841b-99426336c0e2",
+        "a564e5f4-35b7-439e-9104-b37a8e42059c",
+        "a99c740a-eb5d-4b77-9c51-e8c8b4e049fb",
+        "b046cdab-9804-46e4-be7b-65026e9da586",
+        "b93ac3cf-f4fd-4d39-b0d2-6864f23e7cb4",
+        "be0c0927-7564-40f1-a04e-f1058b46e271",
+        "c5f98eb7-46c6-445c-8208-27ca1e70e9e5",
+        "ca2ea229-2b16-47ce-b9f3-85f6f154c802",
+        "cf508ee2-a761-48ee-8a69-b5d0897a71d1",
+        "cff2e01a-150b-414d-8178-739df6f19638",
+        "d81d8bfa-c9c2-43e6-a713-83c4308927e2",
+        "de79969e-c757-4897-9f7a-d15ac2f315ae",
+        "e5b4cbe6-da27-4240-9f15-806cc9337565",
+        "f29f4dba-f44b-40da-94a8-b5ff2737dd76",
+        "fc65dd3e-86f0-4270-be62-1779343cd22b"
+      ],
+      "animation_fingerprint": "67041f7f9d9d6ea41cdfb43278d8131ffc62cd8723673a817c4f4ee1c519a684",
+      "name": "Gladiador Violeta",
+      "member_ids": [
+        "9af51a54-5b5a-4c0f-af85-e60403f64df9"
+      ],
+      "sync_version": 16
+    },
+    "3a46a0b9-fba0-476d-9085-06ad60a89811": {
+      "updated_at": "2026-11-05T14:40:11.130414+00:00",
+      "animation_ids": [
+        "06c1f481-2c8e-435f-8bfd-acec30232199",
+        "1ebbdd56-67da-4fcb-a532-037b18cd8e8a",
+        "229b78bc-ac8d-48bc-b5c0-8525ecfb1f11",
+        "2875f3ae-846f-4ef1-93ec-84a361285c69",
+        "35f403f1-338c-436d-9df3-cd26e160efbf",
+        "57075e54-a474-40f6-af47-c8b3a4309f8e",
+        "5c535eef-1bec-4657-b7d0-34fcddc7c705",
+        "6bfadd18-c403-4611-b030-496b9009b47b",
+        "6c6e1e13-92d8-4312-82ae-3023c0e4ffea",
+        "750a86b0-8598-49b2-9ab9-b419001cd3e4",
+        "7a69828e-6f12-4e5c-96ee-b779bbc6dbed",
+        "8050ec4e-9876-424a-971b-fff2d1ffb299",
+        "8294f356-59f6-4f2f-9825-d570cc427b6a",
+        "843df9ba-1ee0-446f-8a11-c12b779917ea",
+        "89425471-5cb7-4ef6-a5e3-87b9f615ee17",
+        "8ae280d5-dbd1-482e-99a9-0f551c4aa0b3",
+        "8b151051-9cf3-482d-bca5-4e5e9afcc5dd",
+        "8b164dd2-7406-4425-937b-a3ccc32a142d",
+        "91d0588f-4332-407f-93ce-d262e4f3b501",
+        "ac637bb1-c5ae-495d-9243-746c0a7b97ef",
+        "b5a99949-d286-4b1a-b483-9e85a6745e7d",
+        "cc80f8f6-6972-4df3-aec7-3ab9da6323f7",
+        "e757949a-2d86-4bfb-ad8b-5bbaa2fea8a8",
+        "f1aa5be6-f34a-4772-8846-934a06bb07e6"
+      ],
+      "animation_fingerprint": "d26d45a1d18be5df8e1511ed62b4e48f9ddf2df693908b343cd7d449a1b4c1c0",
+      "name": "Lorde Sombrio",
+      "member_ids": [
+        "3a46a0b9-fba0-476d-9085-06ad60a89811"
+      ],
+      "sync_version": 16
+    },
+    "886cef61-2e1b-4383-83c1-1336588c3261": {
+      "updated_at": "2026-11-05T15:53:33.555344+00:00",
+      "animation_ids": [
+        "147ae877-35d0-40b6-bd26-5627987df51c",
+        "3bfca3db-7251-4425-9db1-60957bda6299",
+        "5f8c1fdc-e058-4565-9b4d-bb1ea1187f22",
+        "666bafb1-8df4-41a8-9e8a-c2177de027ea",
+        "6dcae7a0-b3c3-486e-b366-c10142c592de",
+        "8c552cec-4dc7-4e5e-b92b-98ccd6727263",
+        "919ff576-4982-4c87-91c7-879bf18ea02a",
+        "924a5e59-a62f-4e3d-8eba-9f6bb8c5d41e",
+        "933c36ff-2443-4167-a08f-c1e564a1c3a2",
+        "aa61dddd-69ea-4500-88f6-41068c4ae23a",
+        "cf93be0b-6c6a-4e5d-8bc7-038da2560f38",
+        "d5bff73c-5807-49e1-baba-fb3c04e67c7d",
+        "d8593b84-c4a8-45c3-8581-20b7ba6f8b42",
+        "f381a9f1-ccc2-4338-bdeb-0dcc460e5caf",
+        "f93f927a-586a-4b9c-827a-8153ab574166",
+        "fefe53d9-3a95-4010-bba1-bf1f02919993"
+      ],
+      "animation_fingerprint": "c3e9b529712b08c463f6c7578abd310687c4d366c8a69a5f7f474c3d8e38388b",
+      "name": "Mestre das Asas",
+      "member_ids": [
+        "886cef61-2e1b-4383-83c1-1336588c3261"
+      ],
+      "sync_version": 16
+    },
+    "765a1ab1-0538-4101-9520-bae405d3cbd4": {
+      "updated_at": "2026-11-05T15:53:51.275262+00:00",
+      "animation_ids": [
+        "06e8f850-e4e5-415a-99a0-62fa8a665242",
+        "0860e986-09c7-46c9-b712-0c35b6765695",
+        "10477fa1-4c45-4ea4-b5d8-f0de7e5fedbb",
+        "1404b862-906e-43b6-9d77-7561da16236d",
+        "1634f34b-6d56-4192-ba3a-4950e3e135e1",
+        "16812a1a-f9c6-46e1-a740-e8b3616dc407",
+        "18ebb255-d1d3-46f7-ba8f-301a9ebbef4c",
+        "1af61560-f24c-4ed1-8281-85b605242a61",
+        "23e7978a-bfbd-4321-9201-2b340ee5d534",
+        "381fccea-d2a9-4aa5-9744-49861f7cdd61",
+        "40f960a1-3e0a-4cbb-bd43-53f9ae88ef77",
+        "485dbf35-1270-42ea-98e2-546fbae61004",
+        "4c9d0082-e645-43cc-afd3-bdd4b6ba5823",
+        "4facc9d0-a2ac-476c-b9b8-a065690fbec9",
+        "593bec92-bec9-4379-82ec-6ea9845148e8",
+        "5da5642c-6d7a-433d-b6e0-b1850cb3bb65",
+        "5e386cfd-a380-4ec3-9b14-6a3d1ac3d073",
+        "5ed66ed7-e644-4e9b-b683-c014630a2fec",
+        "63c8614e-cffd-47cf-99d5-042661e62bc2",
+        "63f995c6-acc2-43de-88a2-a186f76394d1",
+        "6671751a-78d1-4ebc-9b9e-cf3f472a0fa6",
+        "6d462ee8-c9f0-4ea1-b89d-e3708b309f80",
+        "6e842d6d-286a-461a-96e2-2754d4a17c2a",
+        "748acd2d-a346-437e-ace1-7471db57a496",
+        "750e77ba-af11-4eed-853b-5a6b702fb53c",
+        "7584280d-c194-4269-8f32-13c8c922cefd",
+        "7916bb52-8675-4987-9b72-4229be7be60d",
+        "79ef14a0-18ab-430a-8f9b-cffab7cb986a",
+        "802544ee-d226-4aee-abc0-83de0ea39d3a",
+        "841fd452-f3dc-42e9-8423-4909fef09f8e",
+        "8af65d5a-c5b8-4d96-a8b5-6f1167c32180",
+        "8ca835cf-90f2-406e-b0e6-e6e75341ef10",
+        "8d7088c6-a082-4ce7-ab8b-c15fb05ca1a3",
+        "98e5c257-0a3b-4745-a0e6-640f2ae9220e",
+        "a6a73eeb-1516-4e44-b9af-1e689be47b7f",
+        "a96ea424-0183-43d1-b02b-8ec0bd0494d7",
+        "b118dcac-ea84-4028-b553-ccf5e5ab9709",
+        "b864447a-9ff2-4c7d-8fcf-daaf7e14be68",
+        "c2c94b47-c133-4fc9-9f4a-1cf3086bfd25",
+        "c498fee2-5d26-48ff-ac94-805117834f1e",
+        "c7f36b1f-ed80-44a8-b5c3-1b0278a56bb9",
+        "c8053e2d-2fde-4b76-baba-6b93ce8e7027",
+        "c85c3802-ba6d-438d-8fec-3620cfc879e3",
+        "c8b3dbce-ee0b-4692-86b3-4dc7a3e820d3",
+        "cb7847d7-682c-4202-843f-f9f3c946949b",
+        "ed293af0-de5b-48fc-b977-0e37602da9e1",
+        "fa745689-93f6-4def-986c-9aab69a267a9",
+        "faad6784-8fe9-4b21-88d6-d5054adbee99"
+      ],
+      "animation_fingerprint": "83eec5c8919ee6eef15e63f34e2edfae1130d8e0269c28173f1d26677d97b41b",
+      "name": "Goblin Saqueador",
+      "member_ids": [
+        "765a1ab1-0538-4101-9520-bae405d3cbd4"
+      ],
+      "sync_version": 16
+    },
+    "298c63d1-7fe8-4b3a-b9ec-dc7b3650aa30": {
+      "updated_at": "2026-11-05T15:54:10.141581+00:00",
+      "animation_ids": [
+        "0b23f645-74b1-4da0-a346-e4c88f484034",
+        "10696c1e-148d-469d-aef3-d2194cc6d1f1",
+        "19bd3150-0f1f-4557-828e-e7697f5457ec",
+        "289558bc-e966-48f9-8382-f593d8ab75b5",
+        "5bb30092-0c49-4bc4-a908-66f65966bd11",
+        "7ac40fa2-aaf7-4ec7-86d6-ed9cbd6d67e7",
+        "7c748070-2e5a-42e4-a052-dbd9b4f77d21",
+        "81e180bc-64ad-4105-8b90-c1f2e740a7fc",
+        "910b97b7-8b7e-4f75-a44f-d10603d38dd4",
+        "960df0b8-35d5-4f12-89c3-6e0a11df2ef1",
+        "98363076-e43e-49f7-a95a-41b92e8a04bd",
+        "ae8cd043-9aa1-4c13-a0fb-f0ca977fb907",
+        "b169ac86-4726-42c3-9847-f1735ffcbf9b",
+        "d3b07c2e-3611-4552-accf-5cb53159a74b",
+        "dce52e77-27b1-497b-9271-86a44bf3b927",
+        "de69dca2-53c4-43d3-9552-de6cd3eed7e4"
+      ],
+      "animation_fingerprint": "bd2e881ec8e3d3958e1819535d8eda912c268fa887dc2a7a42414622eaaf2554",
+      "name": "Guerreiro Esqueleto",
+      "member_ids": [
+        "298c63d1-7fe8-4b3a-b9ec-dc7b3650aa30"
+      ],
+      "sync_version": 16
+    },
+    "6446a239-4e41-4526-89f2-763f6ea9c9a6": {
+      "updated_at": "2026-11-05T15:54:00.052382+00:00",
+      "animation_ids": [
+        "03567476-1c0f-4408-adc3-a192f0adc547",
+        "0e8a2ca0-77a9-4ad5-a76d-17f9d0f4845a",
+        "2008be72-dff9-40b5-85b8-50a0c4cd5c46",
+        "23a8f859-2179-4553-b948-de9808dd1ebe",
+        "2d7e1c76-f5a0-4d7c-8cf9-82743d68dbaf",
+        "6f9846c8-a817-4103-b503-229856b70a55",
+        "707e3514-655a-4501-9b5c-43d97049cde7",
+        "858bf858-39f6-47ff-be09-48a98ae7dd97",
+        "8cd905ba-4a69-4084-94b3-c63969c74a28",
+        "accfe8f9-158c-4f27-99fc-8c01261b722e",
+        "b07a6865-7e5f-4240-87e7-5cdbf413d4ea",
+        "b6ca259e-6161-4bf0-bb53-f081a8727e0b",
+        "bc60b0de-a34e-4471-a126-aac7ca2dbaaf",
+        "d454dba3-f791-42d6-9347-c0c9075f36d0",
+        "d5d41a33-584f-451c-91c6-93b91742882b",
+        "fd6fe114-7c53-4167-869b-4cc87ed102b7"
+      ],
+      "animation_fingerprint": "4d42c0627fe7d05be176e95403d3fe7bca409aa92679784c6e5cdfbd29555691",
+      "name": "Dem\u00f4nio das Brasas",
+      "member_ids": [
+        "6446a239-4e41-4526-89f2-763f6ea9c9a6"
+      ],
+      "sync_version": 16
+    },
+    "88f0a8e6-a227-4ff3-af68-6d70d10fe862": {
+      "updated_at": "2026-11-05T19:11:55.864305+00:00",
+      "animation_ids": [
+        "028e0789-46f3-421e-a3e7-d23e538a00bd",
+        "0b846f72-9646-490a-a206-05b106151603",
+        "0fa38c53-3e3d-4359-a43d-2d2f8e629b78",
+        "1094fc3f-e12a-45be-895a-dd09ebf75ead",
+        "1307e2ba-5e9b-440d-b67e-fc3004f79125",
+        "1508731b-cc6c-4c83-9c38-b3afe7dc7bbe",
+        "230e1022-e669-40fb-94f0-adb11c28c3d4",
+        "29f94997-6808-494b-97a3-bfdecc4a8927",
+        "3639de98-dcd5-4d3d-9b9b-a21fcf6986f0",
+        "36c76632-9337-48b5-bc84-99eee0f72179",
+        "3777af72-54f6-4b26-bc04-a96a3657ee3e",
+        "37c2dbd0-beec-4b9f-8749-04c4fbc563d2",
+        "3a32fab4-ccff-4e44-9799-b854725d891b",
+        "423a8e5b-5771-4b4b-99c6-0099aadf5d88",
+        "472a03d8-2830-43e8-8326-f08fa3ff7691",
+        "49fa1453-0767-497e-96bf-4ae4cf831a06",
+        "4dbac2ab-d3ae-4b9f-b71b-6ec6fe7e0207",
+        "4dd8706a-470d-4b18-ab74-7d5fd783d8a1",
+        "4f3e2349-f30c-43d0-ae31-e777e346dd09",
+        "50c33ad1-8c7f-4134-aae4-4dde7584f062",
+        "551301e8-affc-4cb5-badc-0199a040a6be",
+        "7121473b-953d-4f85-b5d7-eec02a30959d",
+        "728e00ee-46d9-4559-8926-7db231a39f93",
+        "7379e979-27cd-4e77-ba4f-740814693bac",
+        "77d32769-aa27-412e-92bc-16d504406b8f",
+        "82560f58-9942-4a93-b5a9-d685bee338e7",
+        "8418cfc3-4d3d-4e1e-841b-1c26f42cea5b",
+        "848203dd-603c-4a71-ad26-2d5e7c8f5281",
+        "84a2a2de-8881-4ffa-a977-951bbe98f520",
+        "8c2b5335-8f13-4e8d-8620-51e8e7552de5",
+        "8ca3feab-f417-42cc-9032-4c415ba8a584",
+        "8ec7f42b-6d31-4269-94fc-ca5a7acfaa49",
+        "95d030cd-0d2c-4aa6-8494-0ec09053b5c8",
+        "9ae3c690-73e2-4dae-92f0-ebab87d5d92f",
+        "a004df9e-27bf-4e1c-ade7-1a97bbcd40f7",
+        "a2a4421d-5f33-4134-80b1-f3adc85a1178",
+        "a9fe2dca-481d-4b9f-8777-7010e8bbf94c",
+        "afca6a21-babf-4331-95b3-372a1675298e",
+        "b56e6af4-899f-4f62-9360-ae452dbb899f",
+        "c96cefdb-171e-4740-9c03-f85a395b955f",
+        "cdf67c06-472e-434b-adb6-d96b8cb60ad3",
+        "d2054fa7-2ebe-4947-8e25-a113d4b2ff77",
+        "d6f533ac-3a8e-4403-bedc-aae2b2908a10",
+        "f0fbbf1d-9fb8-4cd9-9b3f-371738baf6cc",
+        "f8f19cf1-2732-4266-8041-4fb0f1a28a99",
+        "f9a866fb-ae80-424d-ae72-92595d42e5c5",
+        "fa9e0b6d-0ac1-4b50-b4fd-5d6358530ce0",
+        "feb0f2b5-a2a5-4847-8440-62ac27398489"
+      ],
+      "animation_fingerprint": "4ad402eb13aa68a091051510d9b679f621b35389c0231c1111fb17cb355b3a71",
+      "name": "Bull Fighter",
+      "member_ids": [
+        "88f0a8e6-a227-4ff3-af68-6d70d10fe862"
+      ],
+      "sync_version": 16
+    },
+    "b45625d2-31b9-473e-bff4-95f39090aa44": {
+      "updated_at": "2026-11-05T19:12:07.520247+00:00",
+      "animation_ids": [
+        "0a9cce96-0ed7-4b7e-b156-dbd6eb442317",
+        "0eb9b038-e17e-4597-bac8-182f8675d43c",
+        "0f8dbe28-4cc5-4020-b17e-f2d63af16096",
+        "196f17a0-6900-4039-a475-175463df6269",
+        "19e3cab4-acc3-4e8b-9eaf-6ff4abdbbe55",
+        "2d96bb1c-84e0-497c-87fe-4bfbeb632bf9",
+        "33014177-c7a7-4535-9c24-6a083217300b",
+        "386b0029-fa0d-4954-bef0-2d45c57d185c",
+        "433d5527-e6d5-417e-b03d-e55ee0278235",
+        "47a364b6-3edf-4666-b238-8b9e877e8818",
+        "5bd87a5f-2af6-4fe7-81ca-29dbffcd26fd",
+        "5c0821aa-6a1b-4aa7-8306-e1d273b58580",
+        "5c5dcc6d-dda8-4fbe-a56c-105d60c41bd2",
+        "5e5d7f01-e106-470a-a479-3c60abd64dbb",
+        "60e13275-f5ab-4fa3-84b0-2293df9d726b",
+        "62ce22a2-6a84-4f89-bc26-73ba990b92f2",
+        "649d2cff-e762-4f1e-a509-d70f4b4ccb0d",
+        "6527db6c-ad1a-4bfb-8061-bf63ecaa25b8",
+        "68c57fe1-1740-4570-b463-4808f3857b5a",
+        "78a31953-f4f8-4c72-9ca4-205145b99a09",
+        "7c549f73-4f14-4b02-834d-bfa9720e023f",
+        "807ee365-b2b1-4e3e-8457-e21811fb0148",
+        "847be123-ee01-442b-a7ac-b84e0ed0ceca",
+        "89099a28-a719-4214-986d-de72e8e3f8da",
+        "94606840-d139-4630-8b6b-5e1bc4736364",
+        "94968caa-8bd0-4e33-a73a-757c1203f700",
+        "9f4b8b5a-57d0-4d98-bff0-f3ce8af86da8",
+        "a34b08ac-0dfa-4757-a390-b62643541bea",
+        "a6507c12-5dfe-469e-8fa1-abffc4567cea",
+        "a7fe4ca1-19d2-4a24-977e-00230f66e8e1",
+        "ad762cd0-1507-4a18-a947-5f2b04e5ee3b",
+        "af045df6-95d7-442f-8726-8400bbbed109",
+        "b0ba3b53-6a29-4987-9989-459be37b4995",
+        "b6a68925-279c-49f9-b453-465a19083bb2",
+        "bca055f4-a360-48ba-8cea-9c8cfdf54d5f",
+        "c064c574-8261-4ef3-b70c-bf0b193d24af",
+        "c254f117-b014-449f-93b7-0a3884a77485",
+        "c49a00e7-2c91-4f54-a6bb-cf42d18e3d30",
+        "ce88495b-82a4-4cdd-947b-86ddc6fc6498",
+        "cfa62332-55a3-4649-9e63-f6b81debf663",
+        "d07b3eed-b326-4349-90e4-b289e04a39ca",
+        "d86425e2-d71b-4a79-b97a-b84a300687b1",
+        "d9d01ae9-61b6-4b82-9195-d9bb26ef4af2",
+        "dcc797f1-02a3-4511-9546-a704a45cb948",
+        "e4fa7daf-9331-4bfc-9c26-6e9792be9c04",
+        "e8966191-aadf-4fe6-8c79-b66dfa5402d9",
+        "e8e48021-75fb-455c-8433-2ede9df2afa2",
+        "fe3bfbfb-4c31-4e1c-a0d9-5d5a16ce917d"
+      ],
+      "animation_fingerprint": "206a80ba855282c857ed6ec3d067623d64f88a18096df99444129408f9e2ed53",
+      "name": "Hound",
+      "member_ids": [
+        "b45625d2-31b9-473e-bff4-95f39090aa44"
+      ],
+      "sync_version": 16
+    },
+    "05f6621d-3a21-4b64-891f-ea07544ab4df": {
+      "updated_at": "2026-11-05T19:12:12.632336+00:00",
+      "animation_ids": [
+        "0545f647-784a-4382-8ee7-9eccbb1ad782",
+        "0553cc6a-c747-44ee-90f0-c2916d2b5853",
+        "0ef6e7eb-738b-46e5-871d-be5358d3f224",
+        "1027d0f3-c292-4f48-83c8-4986f97b43a8",
+        "16255fc0-0178-4c45-906f-10f25ecde779",
+        "233d84ef-8dd2-48da-afae-c255ab539396",
+        "2407ce8a-2a12-4560-8fbd-295b2c6eff51",
+        "2dc3095a-05cc-43cd-8009-0c422a9c9c99",
+        "2f9c039a-e9a5-465a-a69c-36e8ad243b2b",
+        "30549ccf-0893-4852-8540-19859358eefa",
+        "3f8cddb5-61e7-4a8d-a75c-14d7198f040a",
+        "41557b42-b05c-47b5-8e7a-f807abcb3b04",
+        "4fec7065-8cff-4d9f-a1da-85e7ca16726d",
+        "566e3cda-9ead-44dc-9dc4-894490677a6b",
+        "5860fdf9-44e6-4897-9c7a-803273158f3e",
+        "5fdc14e7-44b3-4a31-8c49-8f259a4be3da",
+        "62b678d9-2c3b-4bc8-b948-49ed6e528289",
+        "78816150-13e6-4761-81e8-c51dbef0a728",
+        "879361fd-43a6-4e66-ba97-da2ca27a4b30",
+        "8a39ff69-ae2a-4acc-895f-1dbbd5fbc08c",
+        "8a80bbbf-3f91-454f-83c7-721368e13447",
+        "8e986eb9-50f2-4183-9d6c-4f38289a770b",
+        "9471251e-f44d-42f5-adf0-629ebd809a15",
+        "94a9dae4-5d93-4268-8ca3-56173487b955",
+        "9abb3003-6eb8-4d5e-bfce-6507508392e3",
+        "9ba9f24a-0c17-49af-87aa-e888caacd3e6",
+        "a012dbf0-941b-4aae-a5a4-647b4c4df195",
+        "abd7f5df-26b7-497d-b64a-c5867585654b",
+        "ae948897-5952-4a1f-97e4-fb30f69e9071",
+        "b172e9b0-e4e4-40f3-8d27-6a4d3a9ca211",
+        "b5eeb653-6774-44b7-a4ec-85d49a57449c",
+        "b5f36546-ec95-4881-966b-0a695de3eeee",
+        "b6863904-4e63-45e2-9d77-14fcbf0a4486",
+        "b7a96ac2-35bb-409a-a53a-60c16c1383f3",
+        "bd9df493-52d1-4327-99c4-ac5be8c380f5",
+        "bdb12056-672e-4bee-92a3-c109b81d5af7",
+        "bfe6dbac-b029-45ff-bda2-c8c2c3fe4863",
+        "c320b5b3-2921-46d9-ae29-26f2008e7558",
+        "c3fa2837-b764-453f-a124-2fbe1b717fc9",
+        "c78b9eb7-99fb-404c-ae1b-860ea6c9844a",
+        "d83507ec-8516-4a3f-ad8f-8eb691eb0e03",
+        "e119b2e5-5a0c-4880-ba41-4a57c7b4538c",
+        "e7a1e182-d3f9-4b80-8cd0-0b64309913fb",
+        "e915e755-9085-41b4-a9d2-9cf35d3bf9ca",
+        "f3c9f519-3c95-47e4-bcac-e89204f76f16",
+        "fc6682e1-1358-401b-95ea-5feb02ab5ecd",
+        "fcd2fcce-951b-49f8-9b70-1bfa3d9b40c5",
+        "fe3917cd-a129-4ca3-9d43-e2975ef393fd"
+      ],
+      "animation_fingerprint": "8248bdb55b7e9305e808c3fc77deb9e836abdb8b2293f7aff20165d166149cc5",
+      "name": "Lich",
+      "member_ids": [
+        "05f6621d-3a21-4b64-891f-ea07544ab4df"
+      ],
+      "sync_version": 16
+    },
+    "4b0feb8e-8958-4902-b1eb-749c3b15c4a3": {
+      "updated_at": "2026-11-05T19:12:47.102269+00:00",
+      "animation_ids": [
+        "01a31635-c376-4393-a456-8564ed622150",
+        "093b7a50-f8f1-4645-9ed7-7498f0a45937",
+        "0e2c319e-c556-4fbb-86c5-8412d3a50c25",
+        "23a5e158-b710-4c63-bd8a-7fc81d678b68",
+        "24e01817-ebfc-4716-a30c-a39364b1d634",
+        "2522b3de-a593-4ff6-b76d-0525c30b7145",
+        "34d96eb0-4c3a-4127-af59-7534d3a96e7b",
+        "3657326c-34a5-4b0b-9483-408496a970c7",
+        "36805b54-032f-4ec7-b961-3293fb4bcfbe",
+        "390d13c4-cbe7-4eaf-b241-46412606b7c1",
+        "3e04db20-481b-48d3-a14a-0733f14652ba",
+        "477433dd-7970-4760-b4fb-f92863e4dd51",
+        "47f48417-3335-4102-aacc-0de05c1efbb6",
+        "4ac5abfc-895a-4857-bc1c-8f9f3a274742",
+        "5486561f-b5d7-435d-b46c-b467002a390f",
+        "5764fb48-0a31-423c-87f0-bca4ea178cc0",
+        "5bfabfbb-f4d0-4acb-bc6f-0a14e0d26f34",
+        "66ed531e-1e9b-40f6-9dcc-ebc25f5f9d59",
+        "6c45ef93-c635-4bfe-9e3c-ed47caa5ffe6",
+        "6edf353c-9e27-4c0d-b1c7-9d122681fbdf",
+        "73a26d12-8c8f-41ff-8448-4138677e247d",
+        "754ca86b-45c0-4302-b5fb-5cf1c0d181ab",
+        "7884e3aa-5c21-49a9-a9fb-581809a5aa55",
+        "796594ac-9c41-43f2-962d-126fed2b3808",
+        "81fd438b-f2a0-4f0b-b311-6def4216b124",
+        "823c97c3-9148-405f-876c-534da0fb5bdc",
+        "843f37fe-3873-4aa0-882e-70a5aa202b25",
+        "86c4f419-81ee-4a4e-8547-3df642396c08",
+        "8787a9bc-49a2-4430-bd3e-99ee13cadf11",
+        "8beff7be-e563-4eea-b105-ef9dd1ad3202",
+        "8ede4897-e488-4be4-a613-31b29542e39f",
+        "92abef77-0649-4f0b-9655-052c6b337a8b",
+        "94aeacc1-8e40-47f5-a84a-bdb19778cabe",
+        "9bf387aa-dd8d-4180-a62b-d8d4e9d05d8b",
+        "aa86fe13-cbf8-41ab-b2e0-11b353f505df",
+        "acc48cfa-9df1-4112-9cb0-538af651ec00",
+        "b9aab669-92c8-401d-ad12-31938f0460b2",
+        "ba6614b8-e159-4ffa-a099-6d33dc518aa5",
+        "bf8f32f5-9012-4f26-bc84-48cc4f09dfeb",
+        "bfd57313-0f06-441b-9075-89d60ecf34f7",
+        "c4685df9-aa89-4c3e-927a-7b8d16a0b697",
+        "cdfbb7bd-de9a-4e9b-8e58-82f1e61c7902",
+        "d936f4cd-b3c0-4c77-b46b-ec271bebef86",
+        "e4ae7505-44d8-47a3-b9b7-6c64c8ab5fec",
+        "ef792a1a-5615-4dc1-9785-e2abcfa9cf9b",
+        "f07d8524-59d7-4f7c-a421-6da6eafef46a",
+        "f35719c2-5ec1-4c8f-a5ec-eccec3a68dca",
+        "ff9472fb-9fb3-4096-a8e4-9476067040d6"
+      ],
+      "animation_fingerprint": "0f41d553ede7f84e07745ab3389b31e2cc20b6ebb7f56ffd11c8a26bc968576f",
+      "name": "Giant",
+      "member_ids": [
+        "4b0feb8e-8958-4902-b1eb-749c3b15c4a3"
+      ],
+      "sync_version": 16
+    },
+    "32411b98-4eb5-43cc-b8bd-c9b6ed3732bf": {
+      "updated_at": "2026-11-05T19:14:19.989759+00:00",
+      "animation_ids": [
+        "02e0edb2-49b7-4c8c-8da0-859eb8c1e22a",
+        "0733a8ed-bdc4-449a-bc73-7a194581ee45",
+        "0ae908ee-5bd5-4e6e-ace5-149809409063",
+        "0ba4511b-46ed-4852-b3d9-0f76b9d3c2fa",
+        "0e315f8e-8488-423b-b1d3-3477135f82f3",
+        "209be1d8-dd72-43aa-88bc-9bc4172e264e",
+        "24e59b27-1384-40c7-8798-f21296444e5a",
+        "27a4d239-1fd0-4372-bfc2-4b69d1dfc32c",
+        "2b3361bb-31d4-4d8f-aa25-ee7900d2f650",
+        "2c3793a9-e040-44aa-af01-2e96bd4b402d",
+        "3286a9ad-3928-4275-844c-da82bacdc926",
+        "38b40fb5-f2a2-4287-b0ed-7c9f3a794c87",
+        "41bda141-63f8-4c33-a032-a71c8a6983d7",
+        "44924224-5056-40be-86dc-75688c6aa53c",
+        "4fb08e84-432e-4917-8450-d893b199d80a",
+        "50d6b0cc-a8ef-4e81-be75-fc06235fda97",
+        "66cfead0-a1cb-41bc-aea5-9f9236c4dc40",
+        "6f616e05-42a6-449e-a254-77f8927280f1",
+        "7f6936ff-7dc4-4d09-8228-d4a5ae36d9c2",
+        "813283ef-d709-4dc2-a1d4-2f684b16a26d",
+        "8312a733-a320-41b4-a2d9-1b234ef4089d",
+        "8595d2fe-fb47-4865-a035-e51cd3882ecb",
+        "89efd83e-c575-44c3-aec5-5a619dd5f949",
+        "8aaa24bd-f1ec-4f08-a7e2-eef8b69f3ed4",
+        "8b2f4bd5-9011-4a22-bd0b-33486f33b4bf",
+        "8e74e980-12c0-45ca-921e-a21357f0412a",
+        "92e599f5-7cc4-4a36-8ad5-c08914b737b7",
+        "9304640d-1602-4ae1-be8c-f9d0e484fd77",
+        "9bebfe83-5ed6-4681-8ac6-53b69b1a94af",
+        "a0b25fac-ca0e-4904-afe7-fd38246b8a01",
+        "b554722f-0ab4-4141-b9da-85cea77fdd1f",
+        "b881aff8-c3d3-47b1-915a-d823353b990b",
+        "bb19162a-d929-4872-91db-fd6519f8f42d",
+        "bbba19b3-3522-412f-8e26-737adc0c2441",
+        "bf08e6e7-3cc1-454a-83a7-264caf81474d",
+        "c34e6c97-c64d-48f5-a675-cfe10301de74",
+        "cad32627-3c37-45ac-8645-ba06931dc505",
+        "cc0c66a4-7173-4f08-931a-0ebe292f9375",
+        "d2fbabfb-a6f0-4cbc-9bde-560965970dee",
+        "d58f4b6a-8a86-4949-b375-cfc1c64d4e4e",
+        "d8c3ab1a-9d4d-4119-b9a1-ebed872b446a",
+        "de299fca-6581-480f-9105-e6a5d245fc60",
+        "ee6c68cc-2a0d-428c-9bdb-bbeae6a0c398",
+        "f35e270c-979e-48b4-b2c7-b2df7d686bb7",
+        "f60965b0-d5fa-47c5-a3de-4fc1086c5238",
+        "fb18664c-9e35-4936-bc26-17864e7a2095",
+        "fd1a972f-1c66-4688-8f4a-a34ecde038a2",
+        "ff837c35-06d3-4be8-a4f4-6aa56af63e85"
+      ],
+      "animation_fingerprint": "89ef46eeaca667a0b6ffaee917a1f72c782d638bf26bf888dca9a89a3d910512",
+      "name": "Hunter",
+      "member_ids": [
+        "32411b98-4eb5-43cc-b8bd-c9b6ed3732bf"
+      ],
+      "sync_version": 16
+    },
+    "5d23b8c8-d1bd-4e0e-94a9-facecd8f23c9": {
+      "updated_at": "2026-11-05T19:13:44.187485+00:00|2026-11-06T14:49:39.079058+00:00",
+      "animation_ids": [
+        "0256b4a1-863f-44ea-a743-3e14ffd517f0",
+        "09104132-3e48-42cb-ae42-92ab4989a5b1",
+        "14d0a216-4719-49ef-afa5-f8a6113f89ec",
+        "1dadf7c5-f00c-4e2f-9010-223cd6e2b96e",
+        "25fffc26-1c97-4c6d-8287-1dde219e7fc1",
+        "29d41331-4480-4c17-99cb-9e3a21cc6949",
+        "2c2a1860-9b9c-4995-8559-82d994a5acf9",
+        "2fe4d945-e5cd-4b7d-a3f8-6dbf65ab8663",
+        "3160b45d-32fd-44fb-afcc-d7125a84dd37",
+        "42488cbe-03b8-4006-9a95-6151ed24cfc8",
+        "46aa2d93-1592-40db-b6b7-45fe4d050159",
+        "4b593bc7-8328-451e-af65-f494f03651e7",
+        "4e8d6c1c-5f67-401e-ad97-7c1bf13205d9",
+        "5516435a-dbf6-48b8-b459-86f903ced310",
+        "5b1cc8b1-5d50-4276-967c-9fbd614a126b",
+        "5c4b0fa8-2e44-4bda-a8e0-0b3960cbe585",
+        "63d143d3-c732-4b01-b942-aa287180661e",
+        "819ac243-5172-437d-ae03-023e1f7b3274",
+        "86fc38e5-9a14-4597-9182-40023cc99282",
+        "872c0797-ab87-46e3-af20-7ac001cd5f6a",
+        "895cf96f-df29-4097-ad1c-bf201e44037a",
+        "8b4eba69-63c5-40d2-aa04-660496713c80",
+        "8c1b4a5e-a97c-471a-98bc-778f1716405f",
+        "8cfa8870-a04b-448f-b0ea-b397c80c2fe9",
+        "92aec999-1425-4f93-9845-8d1bce5770ca",
+        "97e40aba-b714-46f1-be9d-c9b55fcf6a3c",
+        "9f88f4aa-e4df-470f-98a2-9877161ae035",
+        "a0bb01f6-f751-4151-a8ec-7e1ac887c879",
+        "a59d0acc-0cb8-4720-b4b6-d148d02948e7",
+        "a6e273bd-50c0-4fcc-a55f-45bde38620c8",
+        "ad1bf056-280c-4224-9e26-498a0f649cc8",
+        "b0fedeb2-10a5-4f7c-87d4-a0f884718d01",
+        "babb3a16-d46f-4aad-8d12-97dd96abfaaf",
+        "bf3fb2b8-d462-43eb-80f0-fe6f2f8965b0",
+        "bf6b774c-09e2-484a-a532-59e0c229772e",
+        "c03c39ea-06ed-4f58-8798-4fae029a2026",
+        "cfd323d5-ac56-4618-8777-8296a5fbcfbb",
+        "d6f2906e-65b8-4fe3-b204-2df920aaecac",
+        "da201273-6fcd-4e59-9e66-a529257fd2ee",
+        "da6438fa-1ec2-4429-b1c1-5262334d67fe",
+        "e1f51870-3438-4931-9b37-97d673c1e973",
+        "e31661f2-45cd-49ee-b532-87722306d046",
+        "e4f220d4-dada-434d-b3c6-909f254d3aee",
+        "ee17c1c6-4099-4d41-8b16-3a6227e12b7c",
+        "f03e73bc-a1c6-435f-b5d9-e1f02ac2c07c",
+        "f0b56657-5018-48c2-ac9e-34f43d50f76f",
+        "fac05d21-5ed4-4bb3-8fd0-aa62c37f647d",
+        "fb998e11-31da-4f3f-a899-9c82eb36e1c4"
+      ],
+      "animation_fingerprint": "85003f9d4f62b89fa4307a31a1454477f0ac37156fc366f9230bd321ea685298",
+      "name": "Forest Monster",
+      "member_ids": [
+        "5d23b8c8-d1bd-4e0e-94a9-facecd8f23c9",
+        "fca5b54c-029d-4bd0-833a-adc01190974b"
+      ],
+      "sync_version": 16
+    },
+    "e517606d-a1ba-4e77-9da6-2ba5af387ad1": {
+      "updated_at": "2026-11-05T19:12:42.255421+00:00|2026-11-06T14:49:23.961756+00:00",
+      "animation_ids": [
+        "07f26500-1ab1-4547-aa3b-e93279292882",
+        "0fe97421-1936-41a3-a3a3-92c77598fd27",
+        "20d7d6c3-7ca5-4e70-886c-4269350b08ef",
+        "250764e2-1d5f-4056-819e-bbd4ae225ab7",
+        "29752011-fc44-40af-9402-1808f9b5e17d",
+        "2ae5eb5b-0e09-42df-b137-dd23bae07c2a",
+        "52abafbb-2710-4153-9f00-aa0d92228e5c",
+        "53f30857-e993-4c8a-86ea-4b4c19dd71b4",
+        "541805e7-f8a8-41d2-a581-7430e8064517",
+        "57a84c31-a734-4015-b7c9-b0534bcbf249",
+        "59b2193f-4ba1-475d-a0cd-6e5cdef330ea",
+        "62576431-b096-42f2-89fe-77746bb98259",
+        "65408186-dc35-41e4-8728-c0daad02e57d",
+        "6a4871d2-f107-47ee-b19f-8d71d3de80f6",
+        "6e72fd66-9928-4b25-88f5-a119c950ef37",
+        "70fec7db-182d-44ae-86e9-1b68c1cc2dd6",
+        "72163edc-94f8-417a-b76c-05499f655132",
+        "76ccfbaf-7de3-4b63-810c-3ce4e933bbe6",
+        "796fffa7-e2da-4b2d-ad1e-f2108c2b2e9d",
+        "81f126d7-f6c0-439a-8d18-42fde244a1fd",
+        "83981a0e-8a76-4da6-a7c1-835be1f3d098",
+        "83c3734b-5fc9-4dd7-a458-d7084a761ce6",
+        "88910b59-7c11-4439-af77-ff81a7acf029",
+        "8e75bc7b-c1d0-49bd-b87e-9d45a5398a92",
+        "935c4c1c-4441-4a74-9961-f65ef42acc99",
+        "9c15ec8f-0a6c-4fe5-87b8-65d6b9e01f33",
+        "a451c252-b874-4829-a14f-924d04330c66",
+        "a575af0d-0f8f-405c-af64-c55500a33ffb",
+        "a658ccbf-2a1b-40cd-a4e1-dfdd75c72eda",
+        "b091e759-0341-4182-90cc-ea8a8e38e5f4",
+        "bcbc7060-e8f7-4161-b78e-7e1bbcddbeb6",
+        "c8010467-dc3e-421c-91b4-47efd0fcde30",
+        "c8d9b567-e4e1-4e11-ba04-df7b7918f820",
+        "ca7d14df-892a-495a-b8a9-66a8b2a070b4",
+        "ccb3e3cd-4f3b-43d9-85ad-a3bdae6bb14c",
+        "ce2cb810-88ed-4ff3-91c7-23e669253c37",
+        "cf400452-d351-41e7-a32b-d6d9b45c27d5",
+        "d1392a55-8adb-43e6-8508-e872ddf51546",
+        "d189d58b-68d8-4d56-9403-dbe47bc78efa",
+        "d733bf54-b32c-4fcd-b830-b5eaa68e89db",
+        "e172e767-56db-499d-b357-88d80c981f23",
+        "e274a3bd-da2a-41e0-9ca3-c634e643e9e8",
+        "e5514ad8-7160-4b80-9c13-027f2867680d",
+        "e63ccda3-df30-4bad-98da-5ae712618d4d",
+        "e8bbf246-730a-4067-a6a0-339ab5292921",
+        "e8dd437f-a155-43e7-8bb3-69c584e508b8",
+        "f150065a-20f2-4c34-89e9-c3e32e9c1ae2",
+        "fa02d472-c25d-44ca-b5d1-d4cffeb2b081"
+      ],
+      "animation_fingerprint": "e50981859b16a34a1fa0a9b6af9cc1e798019d59992bdba659682d23166ba66c",
+      "name": "Agon",
+      "member_ids": [
+        "e517606d-a1ba-4e77-9da6-2ba5af387ad1",
+        "62c6cfd9-c11d-4192-9bf7-ba53045ecd9a"
+      ],
+      "sync_version": 16
+    },
+    "5da2797c-f831-489c-ad9b-344b39cd74ea": {
+      "updated_at": "2026-11-05T19:13:54.626966+00:00",
+      "animation_ids": [
+        "00c23246-431c-4c9f-bc48-ee5de475a2ab",
+        "12db63b3-6c50-48ab-be6c-a6c7532be5f2",
+        "181ab59a-51eb-46f7-a3ba-680aa3dea5bf",
+        "1ca7eba6-48bd-421b-82e0-cb9bd7937d67",
+        "2302dffd-e7db-4398-b201-13797b548aa9",
+        "36f763ac-fcb6-44c3-81c8-6816dc76210f",
+        "43c7b6b2-4721-4d97-9914-91fa169de960",
+        "4f19fb9e-68e9-4fce-8f0e-082f330b4829",
+        "5363a0ed-4544-4d0f-87c2-9d4016923f1f",
+        "55c93e83-c215-4fa1-bccd-b4cbf9f0b450",
+        "59f6fc60-0376-4dee-b0eb-8c495fa20bd4",
+        "61f77b9a-d1f7-497c-8c16-5d053b125882",
+        "63162b69-76d6-4eac-9a36-c92a8178812a",
+        "6724ef4e-c765-4e4e-a5a5-b7c6904d86a3",
+        "6a17f6a8-0b6e-4cd6-bdef-bce0752e8bab",
+        "6c6eb57c-5c66-486b-a162-148a4b43a158",
+        "6d8c6652-4883-4d65-be13-965b5a2f0fe5",
+        "79f2704a-4f16-44d4-b12c-6ce7b9776f88",
+        "7b845ed7-fda5-4fde-8b47-069ec5d6f85a",
+        "7d76db72-1c79-48ec-9dd7-3b82f5109b15",
+        "84c91f5c-3671-498e-a925-a0cc30424b17",
+        "86c42844-63cf-4418-989b-3ab8dd3b6d17",
+        "8d6935cf-9efc-4188-8d52-38c1632ed3e1",
+        "9134dd19-0988-41a2-9570-92a1aa64422d",
+        "9309b781-cfc7-4564-98e7-fc3342b40ba9",
+        "94aba650-b173-4818-bde0-aff4816df721",
+        "9cea2c43-e95e-4411-afe2-e03e2ca8e6fe",
+        "b1389d14-8863-4548-88cb-b24ebecdae32",
+        "b1dc2948-ce70-43d4-9cf8-b5a6f86e0613",
+        "b2a02666-fbd2-44dc-aed0-465168911e96",
+        "bb615fdc-2ac4-4fdd-a5c6-477408096f73",
+        "bce93cb7-f209-4b0a-bf88-4d6442c0befb",
+        "be43e8f0-83b8-4e35-b6bc-45bdbcc340a9",
+        "c83cabee-2b08-4ae7-94c4-f84d0f71f2d6",
+        "cb1e67b8-f7f4-44ad-a2b9-ca180ff7dfd8",
+        "cb7e655d-60bb-4878-83a5-57081df2e3ac",
+        "ce242332-cca9-4d61-8fac-cb00cb28f93a",
+        "d25b7de0-db78-4ec7-8667-fa38a3b66358",
+        "dddb059d-3386-4fd8-9cba-57775ca59b61",
+        "dfa78462-8e6a-4f20-bbb3-48458ddac0f6",
+        "e75d6de0-0d24-4160-b227-24c36d200f53",
+        "f0ddd432-4487-49a9-abeb-587cda09a9e1",
+        "f20ef6db-a8ae-4c5a-a7d0-680cb8ecbc5f",
+        "f4872d49-2d8a-4c83-bef8-873fb8ad19be",
+        "f62f3942-6467-4a4b-8fa4-308e08e58340",
+        "fc9982cd-a06b-495f-84e5-c7aa73572aff",
+        "fd98d67c-fd97-45b3-bc46-a2a08e685ddb",
+        "fffdf795-fb63-4d86-84a7-da5c98b74481"
+      ],
+      "animation_fingerprint": "401447ee3442a440b15d47e605867d776cac1932277416853f2b373934bc8a3a",
+      "name": "Ice Monster",
+      "member_ids": [
+        "5da2797c-f831-489c-ad9b-344b39cd74ea"
+      ],
+      "sync_version": 16
+    },
+    "399d4689-9706-4f1f-9a48-bedddb261866": {
+      "updated_at": "2026-11-05T19:13:09.904079+00:00|2026-11-06T14:49:10.538388+00:00",
+      "animation_ids": [
+        "03a1d692-f838-46f6-8426-bd0ccf7f5405",
+        "048ac764-8b4a-40fd-8710-6fc01e7f8e7c",
+        "086aa2e7-1663-4de6-8a9f-aa8524fe4b26",
+        "0d7a5744-365d-424e-8fc3-6b6e6de4631b",
+        "10360216-af4d-441c-9525-65ca8674a031",
+        "1d13aef6-1edc-431b-b07e-5f7c3eec3d41",
+        "2494fe91-1ee8-4290-8647-084fa787873f",
+        "2ab12363-affe-4d62-a2c0-2ad2fdce8a58",
+        "2ab601f7-d125-47d4-bb52-975d149fba69",
+        "2bbaf36d-1c6c-4d7c-b805-3405f91ed6b0",
+        "2ed01bcd-44e9-4c15-ba35-ce1b180e7434",
+        "2ff63b28-77ff-47df-aaaf-3718009438cd",
+        "3139a769-1773-4c88-9b33-1700adc46d76",
+        "33d2f1ae-931e-45a9-b5b2-840d34a2a5e2",
+        "3544bd0c-5459-44ba-9afe-e2a4280f820d",
+        "3857eef4-84ac-4512-b6ab-9cef61b411b7",
+        "3a782659-fc31-4933-b770-1453112940dc",
+        "3ee7fb1c-e0b7-4409-92d1-c2f84fc87e68",
+        "5dcfb841-7ec7-4ba2-8770-33b57a4706bc",
+        "5e6fb0b5-49bf-4cdb-bc08-5afebcaf8470",
+        "619cfad7-d6d4-48da-b2e5-a2afa5a40763",
+        "6ad0cc40-c046-4947-aedc-338afbad05ca",
+        "746ee3e3-e2c7-46df-9b7b-5c5493d865bd",
+        "760a7cb1-4b83-46e0-b3f9-ff6d0ba3afdb",
+        "773db492-c83c-48b2-9299-2b73a8f15b81",
+        "7943d028-75de-4a10-b057-f4e2ef2d2359",
+        "79f4bd1c-f934-47fc-987c-887ac1f8de99",
+        "85b59c4c-c8e7-458a-a971-78a59b76fd7d",
+        "8c33318d-64b5-4f5f-9078-592c218bd07e",
+        "8ddf4821-2379-470a-b1e2-afb8daae9967",
+        "8defef16-f1bb-44ed-b894-b6ac27ad7217",
+        "9457102c-2066-4e95-8883-291b61ac77b9",
+        "9e0370bd-80c4-40af-83c3-27088b5490c3",
+        "a1f18ea8-47c2-4e36-a1e5-0e13299eb26e",
+        "a292b542-5a01-49b0-a9c1-9ab6793431e9",
+        "a73c70b0-1d03-4fdb-bd0b-c84d0b28a1e3",
+        "a8238b74-44aa-4642-be81-5c0f4a0f0b49",
+        "ac028133-ee86-41fc-942d-544f3cd99c40",
+        "b974b85a-1aa5-41c4-8469-5c7180c080bc",
+        "c5dc8ab9-5032-4623-ae1e-f4701b94b91f",
+        "d0b07afe-77b5-4e1e-a170-ff9552d40718",
+        "d0dd71c2-fca7-4255-8a8c-58ba400bdef8",
+        "d4566fbf-fe12-43a4-b33d-a1e90644015d",
+        "d797408f-42ed-43cc-9931-2345448cbc4a",
+        "d7f25242-e283-42b5-ab09-e1809b420d78",
+        "d90877f9-ab12-47e5-b20d-375acd9e04e1",
+        "ea330559-c1ba-4320-830f-5caa4ae67807",
+        "eacfec68-cc66-4be1-a191-740b5b221695"
+      ],
+      "animation_fingerprint": "f81734853a062d7314b60cabd67d7c057feda52add68eba9c1f4d6cddb639583",
+      "name": "Assassin",
+      "member_ids": [
+        "399d4689-9706-4f1f-9a48-bedddb261866",
+        "9c92dd15-1e8e-45ab-ba97-ed9213c39307"
+      ],
+      "sync_version": 16
+    },
+    "b636b0c1-bf91-40ab-9ad8-f89feef13a08": {
+      "updated_at": "2026-11-05T19:12:54.934925+00:00",
+      "animation_ids": [
+        "076b2ac0-a9d2-443c-b50b-a7a801cab40c",
+        "0fef4f8a-083b-457e-b35b-41bb36cd1f4c",
+        "15975e3c-b16a-4ba0-94d7-aaa5cdb396e1",
+        "18e77b91-9705-448b-8306-f1ffd8e12a66",
+        "2102ac27-d069-4851-849e-e44cd1316e71",
+        "21d77813-8a02-4308-952d-bed9ba613754",
+        "23a55a6e-5c2e-4407-b4f5-65f8937260cc",
+        "2cc2e80b-e195-469e-9127-2fa209d7fdb9",
+        "3c2ca6e7-eefa-4e09-8713-1d0e79842190",
+        "5c3d4a4c-b6a7-4ab1-84d4-008c2b84830c",
+        "5cb3d65d-7b04-4acc-97b6-401461043a5a",
+        "60097420-bed2-4183-a57c-c8b5d8c7fd00",
+        "68c6f48e-3e61-4ab6-befa-43a98c34b61d",
+        "72c6e13e-13de-491c-a55a-7c5ef6f0d0d2",
+        "74f88a35-e222-42d3-9b50-889233b4df51",
+        "75a30bbd-bf36-4fcd-b926-12f66b93cdc8",
+        "76165c1b-69a9-42e6-af60-ce46590d2793",
+        "7709b9a5-5ded-41de-a110-2a6a591e4175",
+        "80621ed0-b89e-4dd9-b749-6d660f68f7e6",
+        "83b4b3f0-f5e2-42df-b09c-08a5988e4ed3",
+        "87f03764-d224-4759-9ba5-b8a40c0cd381",
+        "9769b8ea-395a-4a4f-9002-9ad99eca02b0",
+        "9804c15a-e9a6-46b1-9e7b-290244f4857a",
+        "9c12429f-be3c-405f-99d3-e6da19bb1e7c",
+        "9d700cd1-dba4-4a30-8240-92354015faf0",
+        "a794a2f5-9d18-4e16-9825-12acb3040f4e",
+        "a8e4505f-b9a9-43c1-81a5-3850e0b4f00e",
+        "aa6ac309-72f5-4ad3-8f23-d8a320ea0e8f",
+        "ae8c0114-33aa-4bc9-94b9-404f26f916c9",
+        "b145e685-556a-428c-999d-a70182cf3e85",
+        "b2f99d1b-0201-4366-b0c3-d8bee0572307",
+        "b66bcdef-2946-4ba6-b3fe-cf3706c17313",
+        "b9da535f-3d98-4b0a-9e4f-230cdca0a38d",
+        "babe14bd-9a4c-4f83-8ae9-8a0b678a6e6b",
+        "bd0ae4c2-0a68-4a8f-b7fa-8fc2e916ac0d",
+        "c05fcad3-5970-4a7d-b2aa-8b897e8f496d",
+        "c2f5b70b-0c14-4cfd-bce7-5872276f3806",
+        "c514ee50-6263-4756-8234-d8dd73a9eb12",
+        "c5ef1a30-55c4-4dbe-9dd3-92764d513150",
+        "c6280c46-a40f-4e9a-998c-abbb68d5da1c",
+        "c689dc3a-c4a3-4dda-8995-5f199e2b6acb",
+        "d116a065-5ff9-469d-9893-c22809dea15b",
+        "d927fa3a-3ba7-46a6-ba0f-54d76f3d3928",
+        "d9a0871a-2a20-4f6d-b07a-3af22f3de337",
+        "eda2c902-4d49-4a3d-97ee-71258cb7828e",
+        "ee434192-b903-4df6-84b1-c2e6893eb4b6",
+        "f464dac3-8eb3-445f-8eb5-234763a30fd3",
+        "ff7f85da-c06e-4e68-b184-1d70046863c5"
+      ],
+      "animation_fingerprint": "f4a2265356f18e60506f2f8389902391f2d5b40b75171cbdbe40ae0f8059dddf",
+      "name": "Yeti",
+      "member_ids": [
+        "b636b0c1-bf91-40ab-9ad8-f89feef13a08"
+      ],
+      "sync_version": 16
+    },
+    "dfbd2cd2-035e-4d98-97f1-7b64305ff6fe": {
+      "updated_at": "2026-11-05T19:16:38.239698+00:00",
+      "animation_ids": [
+        "016eb188-4c76-4781-ae96-23f014dd7867",
+        "0788244c-afaf-4ba6-92f3-9c59409cecc1",
+        "0ea1a0ea-bb9c-4715-a322-fad9590b4072",
+        "0f8deabe-28a2-404c-9f42-d937b1ba81ee",
+        "11d2c5c6-ce25-459a-ba83-3fa6103fbf2e",
+        "13bbfd25-2e41-4360-8a83-4e24f11f80e3",
+        "1c1b42e5-b552-4f28-9d18-91b051961d0e",
+        "21d48e0f-41a5-48aa-906e-3d97a5b2e5d6",
+        "255f7822-9957-414d-a0cc-b2a7efb5c04b",
+        "2ff3bcbe-d0a9-436b-8daf-468d3b611654",
+        "31e265cf-580f-460f-b42f-9c8aa6ea3c2b",
+        "3bf76bf5-eb6f-45ea-aa7c-138e8059895c",
+        "3d51991a-7bc8-4329-9ae3-f1a4974d617a",
+        "3dd2d9f2-721a-4936-8b0c-7572da707cc7",
+        "44318acb-7007-40a3-aa36-421a14269260",
+        "44783f18-1314-46eb-9ee4-2d8faf526f40",
+        "499988fa-eb54-4bbd-bbbc-b60a8b592c86",
+        "51868189-30cf-41dc-84e5-61a9c8fe1f5d",
+        "54f338b9-1ee9-41d9-97a6-63c23ff0d14d",
+        "63e0edd7-6847-4b90-ac97-00b878c555da",
+        "67967980-7697-4fdb-8171-b5e742ab113f",
+        "6bdd6cf1-f134-452d-8cb3-6698930d143a",
+        "7281d13c-d18b-4588-afce-3c2667f13431",
+        "86f60b9f-6b66-46cf-9d31-0fccb99dbeca",
+        "8821bcbe-4b65-4e10-ba16-81c4894a8af7",
+        "89d02534-aa6a-4012-8fe7-ba883d79229a",
+        "8a3ea628-7090-4406-b8c2-e47efadd05ef",
+        "8ae403e2-75f7-46f1-ad5d-aab0d1e05757",
+        "9d7d294c-037d-48cc-88a9-d5d6ed18d1c0",
+        "a68a7a2b-44ef-4fb6-bd2d-05ab0fc99d82",
+        "a8552028-f1f0-4a2d-8ee0-22c36c44f934",
+        "aac6a181-3c0c-45d1-8d6f-231d9915a73e",
+        "abd9d694-13cb-41e7-9429-93e61ce86bde",
+        "b3300011-07b4-4ad7-9b74-8c08d9abc531",
+        "be79c03e-114b-4f7b-9c95-0a477254f137",
+        "c078c85e-7e5d-4f38-bb74-88d9b0c457d2",
+        "cadb81e4-c21d-4ccf-9f92-6ccd1426ac94",
+        "cd587fdf-c525-4bba-9448-0267e935c2c1",
+        "d6df0445-ab7a-4c42-a74a-d00550cf4365",
+        "d6ef4ba2-596c-438d-91a1-ae0f847268b4",
+        "d8cf27a0-db84-44e0-aaed-dc22d3c7921a",
+        "dcdc790a-1f39-4046-9cc1-b046c38129f8",
+        "dffa334f-c8e1-48a9-a44e-66c80ca78667",
+        "e24531d9-7cbb-4ae2-8ec6-59af38fc1501",
+        "e43c27d8-4367-4436-beca-a1e0705b8d15",
+        "e8ca4c5f-2e53-4125-835c-3c93a3afdff7",
+        "f8fd4cb4-49e9-4135-8f0a-c4e0daa7c19a",
+        "fc381749-3cf7-478f-ad33-cd197a864973"
+      ],
+      "animation_fingerprint": "e6d4948d4e132224fa7b89bececeaa1a342976eec32821f62688933516c69dd5",
+      "name": "Elite Yeti",
+      "member_ids": [
+        "dfbd2cd2-035e-4d98-97f1-7b64305ff6fe"
+      ],
+      "sync_version": 16
+    },
+    "6124e110-2675-4e65-9564-3978479b6880": {
+      "updated_at": "2026-11-06T12:48:54.787395+00:00",
+      "animation_ids": [
+        "0102127f-4a57-46ec-9ca8-0e5cb11ebf39",
+        "1726f2a6-f251-40cf-846e-382980aa2331",
+        "1ec49d73-a2ff-4c77-8961-702059ccd0b1",
+        "248dcd7d-918d-4012-88af-59dfaa7dac0d",
+        "25952423-dc7b-4e39-b325-221af52c4da7",
+        "2bfbfdd5-fad1-4ef6-a2f0-2f31b4d8a39b",
+        "32031ef7-9d1a-46ed-ab17-fb8b066adc5a",
+        "3ce03a18-5f37-4977-b40a-10d563148ee2",
+        "3d6b94d5-2f26-468c-8ed8-14dbf70fb1e7",
+        "4363a277-70ea-4fa3-bc1c-55c88edabdc5",
+        "44ea62da-0bf2-4d23-9a96-5d433f902552",
+        "48de5900-745e-4f2f-bab6-0f0d5aff80e0",
+        "4bdff73e-c680-4413-b1e7-67a6aac6c34f",
+        "555b1cb8-e723-4e59-9672-623ee3723cb2",
+        "574bd67a-120a-4be0-80d1-e75b415da9ae",
+        "5a8defe3-2bf6-4b26-825e-695657fbfdae",
+        "5cd34909-a8d8-48ae-948c-c73d0129a5ec",
+        "64bdc6e4-2c81-4677-9090-df31233a8d1d",
+        "6bc7ce9d-ce3b-48b7-b664-9f04de59b9e8",
+        "712238b3-c3cd-4d2e-8191-bb2532a4aed8",
+        "7534284f-3b72-4c71-ad45-436cd4a53d0d",
+        "7e321d2c-6978-43d2-9cb3-f1efc92c5272",
+        "7e69d14c-935d-410a-bbc6-44d07a932073",
+        "85bfe51c-1fb5-4b2f-acaf-4338f7927126",
+        "885858c0-1346-4855-9af3-0bf1e87a5fcc",
+        "8e940820-bd18-4559-9229-e826862115c6",
+        "9455c550-fe22-4140-9743-2b220b2b8a89",
+        "9464becc-59a0-453a-a322-e65efe2faa77",
+        "954c59a8-aaea-44f7-a893-06debcbc58fb",
+        "965a5e17-b779-4f40-b47f-0abde50e435e",
+        "ae2a5fa1-cc6d-4c84-b265-4540011744e6",
+        "c057ab78-6fff-40c6-b05e-b8e5ba38f41d",
+        "c4e0eef5-23c7-4360-a074-2d3b7cd584f3",
+        "c8e7985d-1bda-4bff-ab6d-d060b8cef275",
+        "c8f1a622-b201-49f7-b412-e7b858be3344",
+        "cc548470-42c8-47ae-a7f1-fc5ee3390da6",
+        "ccf00945-49a9-4d42-bf21-006c053361b2",
+        "cf0f6acd-6f3e-4f73-97a7-e89938d58d90",
+        "d1ebbe6d-bfb1-4d69-b5ed-a53231736669",
+        "d4355a79-b854-438c-900a-93f6f08213ae",
+        "de60236c-173b-4d25-865f-7901acb9ab79",
+        "e54ddb8a-7502-4070-bf3f-f11eaf26c00e",
+        "efb8a1c9-2f70-4a4c-9aa8-1c0e8f70d611",
+        "f11b39d9-631c-4a3b-8321-bda26bd5f8a7",
+        "f322dda6-c705-47d6-ac4c-b140c340b1fc",
+        "fa35a5e0-32cb-4445-ac40-c8babfbc3f75",
+        "fee30f02-17e0-45ba-af67-93f2c45149dd",
+        "fefb4886-7f05-43d8-9bb7-d19ce40b36b5"
+      ],
+      "animation_fingerprint": "b7768496160b6603ab991216b54e2daa6944c155fbfad807de8409979b85df11",
+      "name": "Rei Esqueleto",
+      "member_ids": [
+        "6124e110-2675-4e65-9564-3978479b6880"
+      ],
+      "sync_version": 16
+    },
+    "8c9ae77f-2206-496e-adf6-0f6dbc503986": {
+      "updated_at": "2026-11-06T12:48:47.100107+00:00|2026-11-06T14:48:25.933796+00:00",
+      "animation_ids": [
+        "00513c11-d7b5-4484-bf2c-686b94696f7d",
+        "0a445f66-8436-40a8-9c9a-260ff6d10732",
+        "0a96068c-567c-4333-bae3-ad2916ab014c",
+        "0cb73015-7832-4975-9459-85c4ea2bd484",
+        "19132986-9bb4-475e-8db4-f3bbf4b9f913",
+        "1fb305fb-f597-472e-93c4-0c7bf0ecd7d7",
+        "21ec287f-ac7f-44ff-8405-4cd82666af22",
+        "252fbe17-57da-4ec7-b289-403d3b1c025d",
+        "2fb28fdf-1384-4c21-bef8-6c1d4a1162cf",
+        "2fec8bce-2f84-45bc-9e08-15f1e558ac6f",
+        "37c59a47-5ef5-41fb-a34c-ef4d2ee04c9d",
+        "400284e5-bb16-4ca0-83d6-b5afcdb3ec7f",
+        "410c95e6-d9dd-4872-94a6-818f3edcc83c",
+        "4bf65c8b-a9ea-4e70-bcae-72e3d3bf59b8",
+        "4cbf8295-8b49-485f-bce4-764f8d43694e",
+        "4edd2ecc-e8df-43e5-a4e4-18ea8fd5563e",
+        "4ff8b653-6d57-4c85-9746-2172673c1a97",
+        "56998cac-453a-4b20-a24b-ed77e221f47c",
+        "5ee84d90-c0f2-42d9-bc88-16cd36839de8",
+        "667ce4ba-76a0-4d92-8952-8eef287a4fce",
+        "6c397ce4-1a0c-4af3-b4fa-e0df4eae21e0",
+        "6dd943e6-d8e9-4d8e-9767-1d7a79e6931b",
+        "7067eb26-2520-4abf-b959-ddc3266c6e32",
+        "7bb8db55-714c-4229-a6c2-024d994dfcf7",
+        "7edf7af7-b8c1-4035-96da-89d3b019fcc8",
+        "7fad942e-5f3d-40dc-8595-1f50475aeb9c",
+        "86e2fe5f-5f40-4784-9a38-a89a27d4bfd9",
+        "87b55de4-b477-4e89-877e-8bdaff688e13",
+        "8ed0159a-fbc2-4920-8505-dc2f95e6dce9",
+        "95172836-fbe8-4bc2-b40e-66727b4e82d7",
+        "968f9204-acc5-4bab-bb10-9ac8c475b7aa",
+        "97fd2fb8-540a-49dd-9991-a3c5786fa512",
+        "99a672b7-e32c-42d8-916e-f262112913c1",
+        "9a08c011-e781-43bf-82cf-021c9cb65c31",
+        "9a67ed38-4286-454f-bdc3-0f782d17000c",
+        "ace2926f-7d17-44bd-aac9-101e869a671d",
+        "bc406cb8-66ad-4d73-b47a-e801c264d1d7",
+        "bc6b19d0-94d4-4f68-b0f2-e11f2e114139",
+        "bc9a71b3-5eb2-49fb-baa8-1347f0f5db54",
+        "c04f42eb-673e-4969-b1e1-0c4eac446771",
+        "c9d0a335-ec23-4ee5-844b-6d63a23834ef",
+        "cf0502bb-01cf-4456-97a2-757c3e64a4b4",
+        "ddc5b48b-34fd-43bc-a58e-4b4bbb775af5",
+        "e93d226c-9f45-4b69-9cd3-c0c2cae3e03e",
+        "eb17f466-ecda-4601-b03d-ebca19f412cd",
+        "ee17fcd5-6116-4dde-a215-ec8c730be1ce",
+        "f65046b6-4597-45ec-8b61-7ef5047c8650",
+        "fa381455-cfe4-480a-9b59-f7e4c3525f51"
+      ],
+      "animation_fingerprint": "9fd46e6c47867f9c6ad7656ea6238a9466ab2879c3e9d60065ed9b586288892a",
+      "name": "Arquilich",
+      "member_ids": [
+        "8c9ae77f-2206-496e-adf6-0f6dbc503986",
+        "8acca258-b393-44dc-bcd4-72fdb36c4e8f"
+      ],
+      "sync_version": 16
+    },
+    "a6266665-b6d3-4a04-adb5-c4ab0a7b21cb": {
+      "updated_at": "2026-11-06T12:49:04.186098+00:00",
+      "animation_ids": [
+        "02a56604-0959-4763-bc49-0be53984bda2",
+        "09249c4d-2dc0-4af9-a777-59df3caab7d9",
+        "0a9e16ea-3bbb-42a3-893b-183d87cdb607",
+        "0ac4fd7c-ead1-49e9-a353-b1fe4924b419",
+        "102aaf16-31bf-4e2f-bf99-f6e677da44fc",
+        "1755b067-085c-47c9-b2d4-e2c5f4dbd7fd",
+        "18683ad8-e8e6-470a-bb31-524056ea896e",
+        "18a101f6-b5e4-4ee5-92d6-bf3ca5578c3c",
+        "1ea11823-8ec1-4b92-a258-3268ba4ec810",
+        "23834b06-bdb9-4648-a873-d91eb7582021",
+        "2796222a-b768-40c0-9b18-0d1cc5e87159",
+        "2d7d7b43-533e-497c-bcb1-358d99fbe4b0",
+        "2fdaf6fd-27ea-4e52-8220-2c6e6ee80ac8",
+        "31f3826e-e18e-4c4f-bb17-06b340181341",
+        "329f3438-f8dc-4c34-bcbf-b74b11fb41dc",
+        "387ec6d3-545d-42d6-92df-9bfc86dafde6",
+        "38a843a7-828a-4005-9ddf-96e162f0ec30",
+        "40ee707c-871b-41dd-83dd-feaffee61195",
+        "438ca0be-4a11-4895-b560-34c2a6b77f73",
+        "61fb5d19-a12d-4b07-8856-179896439101",
+        "67686f78-6827-45d9-a97f-afe8a2168964",
+        "6d068f72-f05f-42da-b0a8-ba8d8724fbdf",
+        "6d863a3d-a427-4341-b778-5c26a14f3595",
+        "71b33fc3-8b75-4830-87e4-490c3a331baf",
+        "76980cd7-af6b-48b2-9015-ca19abc4ebb1",
+        "786777ed-c99c-428d-9c44-0aede855a7df",
+        "797238b8-7615-480c-8367-5eea4169d7ce",
+        "7c77b6dd-1801-4d65-993c-2b5357c6a350",
+        "7fe8b195-2f1c-467e-a548-99ba04caedc9",
+        "8b3f12a4-54ba-414c-8078-1f6bb7488484",
+        "8c50679f-2878-4d20-bddd-9764828aac65",
+        "8c737cb2-c1d1-47fc-8e5d-f8bedd1e5e26",
+        "a23676da-544b-4fa8-ad41-bc94cbc0116d",
+        "a7a605f9-a69d-457b-8199-f3a61ecb44bc",
+        "b4a4eaac-2014-4791-a9b3-089657ce3129",
+        "b4c7bf77-79d0-4023-9184-9033b4004889",
+        "b50d5989-948b-4088-8a52-6cbea271816d",
+        "b61f4326-f837-449a-85ad-13d5c59a06c8",
+        "b64b4dca-438e-4c07-8b8e-1feb6a62eba3",
+        "b8a79ac9-1b74-437a-a602-f64adcfffa43",
+        "c3cc0ee5-3bfc-4a23-85c0-0ce5a5d9e854",
+        "caff60ff-a693-4a7b-bdf3-37bf0a0606bc",
+        "e5b2578f-333a-41d9-b443-923d04f88b7a",
+        "e7c27fc0-832e-42fc-9527-318129e09013",
+        "ecb7df9a-00a1-44e5-9ec2-67ae93d14236",
+        "fc416b73-0bf1-4f02-8fd4-d05ca4b7e287",
+        "fccc8bac-44e8-4410-9860-ed673ae207dc",
+        "fd5bd9b8-3535-45a9-98e2-ee262a56e5a6"
+      ],
+      "animation_fingerprint": "c16f9c463d4b0db4a4122e83a3ad5892b40e88a2a4b0138662c99ec78677bdd3",
+      "name": "Senhor Minotauro",
+      "member_ids": [
+        "a6266665-b6d3-4a04-adb5-c4ab0a7b21cb"
+      ],
+      "sync_version": 16
+    },
+    "785aa7bd-06fa-48d7-bc15-c815d3b414b4": {
+      "updated_at": "2026-11-06T12:49:17.414703+00:00",
+      "animation_ids": [
+        "1b49c45d-6f9a-42cd-bd41-e4eb95fdc543",
+        "1c2d250c-4b25-44b1-8c08-af39f8833e8c",
+        "20d56c60-0960-44b1-98cc-1d967c21f7e0",
+        "2a85fd64-1d9f-449b-a08e-55432307026f",
+        "2b8a76f8-37a2-45f6-aa2d-fbd070c0f755",
+        "2f38ea13-e70f-4f6e-83cb-497fd8d2334b",
+        "31601d0d-0a4b-43bb-bc01-1f386aa5ad8e",
+        "31d4f07c-e90d-4455-bb76-fb182dfb95ae",
+        "358ad032-0926-460c-8ae5-92b4a9e7d185",
+        "3db22222-5010-4c23-bc44-96384c983388",
+        "3e130635-b235-4124-9908-33124d46b674",
+        "42ff23ee-0591-441c-9693-ccd940fae8cb",
+        "46dd8869-9c93-493d-ba1a-095a547ed10f",
+        "514f1723-0a15-4369-810a-4eaeda40a967",
+        "5d591e4b-10f1-4101-80e3-946b1bd6c3b9",
+        "5e7f55ca-2a1a-44fb-8f32-034ca7c5a6b2",
+        "64aeed6a-488e-4a3a-af43-d1810d35c53a",
+        "6fe680ef-bdec-444d-a8ef-642d198281e2",
+        "74da57e3-57b7-4414-b513-1f744ee65a89",
+        "775a0a44-cb57-4b39-a787-0fa186c6ecaf",
+        "7b6d23da-9486-424d-9605-9716faf403cc",
+        "7b937fae-b1be-4d48-b75b-d655eb03de02",
+        "7f966d19-3d88-409e-a933-109e4c1f51c4",
+        "865f8fee-9913-487b-9710-4281ead8da7a",
+        "86745bcb-fd53-486c-ad2d-c62a5c35ea17",
+        "8be80f31-e209-4a9c-a3c9-8d9557440b89",
+        "8cc02901-d310-4aff-914a-b53ab36171e3",
+        "9db74f5e-f214-43b6-9ab8-882d72909e13",
+        "a173ba27-f3ac-4aca-adba-8601a42aa0d4",
+        "adee72d8-6c65-4a41-9c2d-5fd74f1dbc2b",
+        "b0325b52-4c01-4dcf-92d8-5c69484ad1fb",
+        "b2d487d1-15ca-4ba9-8a7d-c9de8abd0958",
+        "bb27f6e0-213a-45be-b337-88bfb9c09bb7",
+        "bc82e1c2-53f8-4af1-a627-56623ffa24ff",
+        "be109429-c094-4629-8734-437e1e1ae533",
+        "c246e3aa-c3b7-4d30-8db6-c7d26fc0a408",
+        "cdcd813a-4ce0-4d03-8be5-0e1dd6eb3702",
+        "cefa6316-0749-4128-83f5-e2660da46f67",
+        "d14dbd6d-3273-40e0-84a0-bc40a44fd6ae",
+        "d33ddfad-e1de-46e2-ae77-dbbc2d4a48f2",
+        "d3ce4929-3a55-4fee-8363-e3dbd62d0d47",
+        "db230f84-3f6e-4aed-83ca-037cf7062e92",
+        "e5ba5fd4-aefb-44e3-a1ac-b52b8d71b332",
+        "e6d56642-76af-41f0-a079-0a03630f4143",
+        "e91836fa-e6d8-4def-a215-506d19597095",
+        "f4a7c655-627e-4175-bc27-ed73ec81fe1b",
+        "f625c8fa-33b4-4ce2-87ee-a86339db9f79",
+        "fcf1e3fa-2a83-4bb2-b456-526c3172eb83"
+      ],
+      "animation_fingerprint": "722fd754c41fc0b2abe4e068ca187b010082fd229a721b4f619bc80d5a545ec1",
+      "name": "Tit\u00e3 de Gelo",
+      "member_ids": [
+        "785aa7bd-06fa-48d7-bc15-c815d3b414b4"
+      ],
+      "sync_version": 16
+    },
+    "52291cdd-57c4-497c-879e-8e9d6ca4152a": {
+      "updated_at": "2026-11-06T16:09:54.381782+00:00",
+      "animation_ids": [
+        "00c7e8e7-0a75-453d-afa0-2af31b582028",
+        "1175ab7b-da0e-47e2-8a83-c095cb1b613b",
+        "15d83138-3641-43d0-9146-92862f47796d",
+        "15e9476a-cde4-46ec-84e1-6ce7c6925672",
+        "1b09dae9-3695-442e-80d7-d28ff0130b54",
+        "2ac28570-5840-40c0-9ea8-823060431733",
+        "30bf1ef8-a4d4-4f77-aaa7-71a2e01353f9",
+        "38d85611-0652-43d3-afaa-db7aec9c6448",
+        "3a282527-668c-45a0-a925-d34f68b8fe10",
+        "46fd85b6-56c2-4173-a831-9a56a1934534",
+        "4810ab0f-17cf-4774-acf9-433d775765b2",
+        "4a85e2b1-9fe8-45a1-8a7d-389cf17b0d44",
+        "4c1d705c-6679-45da-aeab-02daef4fb611",
+        "4d92ffe1-7276-451e-ae46-cf7a41ab4b09",
+        "5335ff82-7767-440e-86fe-5ba72958fa6c",
+        "572afc58-d2d5-4110-9d7e-603fc42dc08d",
+        "5737da9d-218b-462b-98ff-5640a37e91f2",
+        "5952354e-ec7b-411a-b38d-731af5e39f92",
+        "5ea5c597-975f-4360-8c61-dde6f4fde17f",
+        "68a47b66-b31f-4f73-84a4-74c7fb4e6332",
+        "6bcd41d6-13eb-4f31-9162-342b6b7d485b",
+        "6c333d7d-7ab3-4092-b973-1351bd8488f7",
+        "75949ccd-93d5-4821-acf6-432b395c6893",
+        "79dbf467-0930-48c9-8508-3d8b7da4bac3",
+        "8562a01a-71d7-4f16-9046-1df62c84c7fc",
+        "9e9224ac-c635-437a-81c1-f39c044305c2",
+        "9ea9416d-2e73-417f-b64c-1d0393d7a4cf",
+        "a15dcd2e-a117-4f43-aba7-e33adbd04176",
+        "a3eb7061-b6e7-477e-a67a-7a804220cd78",
+        "a6d7dba6-2f4e-4016-afdc-cbe4c0936399",
+        "abf62b67-079c-485b-a43b-c015b9e6234b",
+        "b4c5a5d7-08ec-4913-bffc-315f25b9b261",
+        "c10f6fa3-cb0c-4510-afd1-4c1a0dc8c5d9",
+        "c2b0c7b2-25b6-4592-991b-a6d37313d436",
+        "c2b82c74-66a0-4403-9ddf-22788adb7e61",
+        "c2bd6856-b938-4e3e-9007-cdba874b0f4e",
+        "d0588e74-64c3-4071-81de-b76a458e8313",
+        "d3d05daf-5a82-413f-aaa5-7385f974e2c9",
+        "d6d72cd0-668d-429e-b70a-b7bdf141bbb0",
+        "dacb6d3e-cbae-4791-ae25-73b265f37aae",
+        "e0cd7352-4fcb-4ffb-8d31-6ffa9c48ed8c",
+        "e0fcdbf8-1534-49df-8d2c-05e3ed047a95",
+        "e2f6d195-9316-4ff0-a252-f03014c72f83",
+        "e7c4ba95-81c8-406e-9dae-17ab11d24a64",
+        "e8319465-a590-446f-8dbf-2f900b26543e",
+        "eb8cf9c4-a677-49aa-a349-c45ad2d770ab",
+        "ec2d2219-5c73-4564-a15c-309f28e7e318",
+        "f85172e5-528b-4b41-b453-0fb4499b9a4f"
+      ],
+      "animation_fingerprint": "a3ab21f89511e0c9b876df399ecc7165366b785a32dd46e129db2a6700462695",
+      "name": "Montaria Taurina \u00c1urea",
+      "member_ids": [
+        "52291cdd-57c4-497c-879e-8e9d6ca4152a"
+      ],
+      "sync_version": 16
+    },
+    "021d33d6-27c3-40b9-9711-d325936f6751": {
+      "updated_at": "2026-11-06T21:19:09.343857+00:00",
+      "animation_ids": [
+        "0abfb65a-ec11-46b2-8311-be8e0cddaf27",
+        "0ad4ccad-da1e-4351-812b-5afb480ee90e",
+        "13712257-5d74-454f-9a94-8685240fca04",
+        "16efba3a-caef-42ad-857f-75b63a775142",
+        "33351912-a122-4945-a964-100486a14ebc",
+        "3ddfb8f8-c23b-4ebe-b044-eab74fc408ce",
+        "47e43b3b-af1e-4cdf-bee7-cff6b7ec3930",
+        "4b037105-0d88-41aa-9c14-e0ab46f5d209",
+        "4e9d6115-8c4d-4645-bb0c-a54c28b756ce",
+        "5866d4f6-f628-4dc3-a4e3-5cbe07e841a3",
+        "5e1f6b1a-d7da-486c-8f1c-b1102e8441c6",
+        "6449d3ab-4ed6-409d-b223-b1cedcb48053",
+        "67524148-c6cb-4dd5-9bb8-8bace281aae2",
+        "6f4b954b-b776-4387-8f69-6f63375291cc",
+        "70e72807-8bf2-4aba-8c19-3365225a9570",
+        "a1a1e612-0ad6-4351-becc-23e3a1ae3777",
+        "a57335a4-738d-4a8f-9298-6b9100a49b82",
+        "ad001e1f-737d-441f-bb09-503450d10fe3",
+        "ba192d1a-b79c-4bcb-bfa0-15217c141bc8",
+        "bae583ea-899e-4a10-8cf8-e23c36c340d6",
+        "bb965d2b-bc28-4ea4-9c19-a5b51f2b475d",
+        "c38e1190-28e3-467c-9652-213597396139",
+        "e09e41bf-10f4-409b-bdc1-7f403643143f",
+        "f7a68d18-45eb-4b6e-8adb-fd4d6a3060cd"
+      ],
+      "animation_fingerprint": "ab737380095282508cc495e2933038439e29fcfda38d0f177923618134957840",
+      "name": "Cavaleiro \u2014 Iniciante Desarmado",
+      "member_ids": [
+        "021d33d6-27c3-40b9-9711-d325936f6751"
+      ],
+      "sync_version": 16
+    },
+    "e7bc562c-85bf-40a7-afdf-35494b06af1d": {
+      "updated_at": "2026-11-06T21:19:09.249948+00:00",
+      "animation_ids": [
+        "0cf31265-6544-461e-b9c7-57e154fcaa02",
+        "0d24feb1-00ab-48d9-a1c9-0739df128463",
+        "0dd72fbe-a0b3-4dd8-81c3-c38254f86b06",
+        "0e344632-c68e-43ee-9342-455bb195d403",
+        "0e60c2d5-b4b9-4b4c-bd38-9bb9c711708b",
+        "17acff3d-146a-4fe9-bed0-741df7263613",
+        "18804f2a-ef31-46b2-a3cb-3639acfbf22f",
+        "18afadd2-c809-46ce-bdf4-709a163fbfca",
+        "1a7f1155-bc6d-4e89-ad5e-838d748d2057",
+        "1c859003-35bc-447d-8338-d81ca4e9260a",
+        "1d819e36-99a4-46bf-8065-d8aac1522eb7",
+        "26e3a83e-b193-4dea-8dc2-3ba4d71e7e46",
+        "3959d4ff-8e5b-4400-a9cf-17042f724fc4",
+        "3a616523-54e0-460b-853b-08dcd09c5751",
+        "3bf9c36f-2f56-43bf-8683-429cbc2c6a3a",
+        "3d47de96-32b5-48be-ae8f-7ace4d560c13",
+        "4d2e58ce-d99f-496f-8579-e4be4a852dda",
+        "68f7031e-60fc-4fe7-8cb6-2b5631effd91",
+        "6a5a9b08-73c5-400e-9a8e-7aa9c5d5ef93",
+        "9d014d2d-dd08-4801-88f6-4373e374b471",
+        "b90df3c6-1e53-42f0-b5cf-fe36bbd17a70",
+        "f0011d7e-3d94-4c8d-9280-37a660f87226",
+        "f98bc9c9-7acc-4aab-aaf2-2c2b6bfbeb16",
+        "fa230c5f-9fe3-4e39-a169-55bee120f5c3"
+      ],
+      "animation_fingerprint": "5000b710df0fd1bbae2f1e94282defb13d9074e5a243086c77cdc7468df07051",
+      "name": "Feiticeiro \u2014 Iniciante Desarmado",
+      "member_ids": [
+        "e7bc562c-85bf-40a7-afdf-35494b06af1d"
+      ],
+      "sync_version": 16
+    },
+    "00efc997-1c47-4ed8-af0d-ade9db50967a": {
+      "updated_at": "2026-11-06T21:20:54.161353+00:00",
+      "animation_ids": [
+        "0d9fd794-677d-45a7-8617-512fd4883fff",
+        "132ad2e3-b6a7-44fc-9c2e-e5172f0765c5",
+        "14824c47-f7ec-447e-b829-0d7a850863c2",
+        "160083dd-a5db-482e-98fb-742f323447f6",
+        "2a6cd488-c6e3-426e-947f-a01dd248acfc",
+        "2c2e9fd3-d29f-4fff-994b-3e5223cea51a",
+        "3c6622b2-d95c-4206-a590-512c44290a1c",
+        "466a0d87-a773-46db-91c1-a265c5222101",
+        "46a38e7b-915e-49d0-ba84-c415b8e162d1",
+        "67ed7409-cc8d-4088-ae74-8aaf72ec625b",
+        "798a188b-fa95-49df-9a92-db679194ba9e",
+        "79cc13df-6aeb-440f-a164-1e6f21d90833",
+        "80968d55-2290-4a4c-9400-401938646539",
+        "8a9009a9-e90a-41e6-878a-c04446651032",
+        "8e487a4c-e6fd-4450-a9d2-6e55f5a530d6",
+        "a282a9ce-a8fc-42a7-ad4b-393fd8e1ece6",
+        "c03d4c24-68b5-4575-a95d-f25cec75b1d2",
+        "c47f3e66-aafa-4ef4-991b-b5d44c8851f1",
+        "c5a78c99-6309-42b1-9359-6b7e566449d3",
+        "c7dcfaba-2217-418e-88f3-8757c98ce911",
+        "c7f77404-89bb-4daf-8b87-dbc64bd6ba1a",
+        "d00ef1c8-5de1-410c-b08a-b034ac63b04b",
+        "e25882f0-c6a8-4700-b0ba-b8c8b96d83c4",
+        "f2c998a8-a739-49c4-bad4-9e01867c465f"
+      ],
+      "animation_fingerprint": "d5637bceadb0990429e2e42acfa0afc9890e2c28f9ce064d09a07cb641e3c502",
+      "name": "Arqueiro Elfa \u2014 Iniciante Desarmada",
+      "member_ids": [
+        "00efc997-1c47-4ed8-af0d-ade9db50967a"
+      ],
+      "sync_version": 16
+    },
+    "711bba78-5cdc-4813-b6bc-75fae771b629": {
+      "updated_at": "2026-11-06T21:20:20.287141+00:00",
+      "animation_ids": [
+        "16fd2d25-d1f2-4183-8f32-2545b6fcd535",
+        "32f192c2-9b46-4051-b2ca-07a7a247db1a",
+        "4eb9541b-c874-4eb1-82bb-bc8d53adbf25",
+        "61fd8aa2-12f9-4d4e-ae28-7c4a6761c3b0",
+        "6639a6ce-9675-4a32-b355-96c79c131aea",
+        "73cf3a59-a670-4843-8ed6-caf8dc903547",
+        "7c79edd4-fa69-44e4-898a-3d1b9b8b3e91",
+        "914521fd-4b84-4cf8-916a-43b0afe3933c",
+        "941cb73d-7bce-4c0c-963a-a2db370587c8",
+        "a164e1ff-3610-4097-9f3f-61c88758cafb",
+        "a2259bf6-de14-4a01-9fe7-736dc116771a",
+        "bb16a745-7245-4fdd-b460-06977212357a",
+        "c4737c95-bd47-4218-b76f-b5c88d627866",
+        "c5c822c8-966f-436f-980d-db4cb1ac6948",
+        "cac0582b-7e94-4742-876d-04782e5cf3f5",
+        "cb5a2ec6-3144-4ee8-9958-ecd62284b298",
+        "ced61b8f-4a25-4fda-a3d9-32850d6d81a2",
+        "d2633289-c4bf-4ee2-8853-bbcdbfe96146",
+        "d3b8832f-77de-4daa-86ed-242d25fe6725",
+        "e3ac8283-dd22-4e67-8325-dea5fb42753e",
+        "eac0b968-9485-4e9b-9b5f-99a389292238",
+        "ee690737-808d-4b5f-ae13-148b1160bc7f",
+        "f2d5904c-98fe-4990-864c-1e945c81ab48",
+        "fb810b00-4b4b-4582-a469-5513607533d5"
+      ],
+      "animation_fingerprint": "82e8554179be971f73b74c46ba2965e97925eaca1262a0f8fc2e0657dee15f10",
+      "name": "Gladiador \u2014 Iniciante Desarmado",
+      "member_ids": [
+        "711bba78-5cdc-4813-b6bc-75fae771b629"
+      ],
+      "sync_version": 16
+    },
+    "a3465549-9dbe-4e4b-929e-9041eb8d2875": {
+      "updated_at": "2026-11-06T21:21:08.000788+00:00",
+      "animation_ids": [
+        "0feadda9-7bac-4343-be3f-1e2bf0e8f4b2",
+        "192a615f-ecf0-4ee4-bc72-243efa216efe",
+        "20bba49a-1416-46cb-9522-faa08e49282c",
+        "215fb65d-a7a2-4250-bbee-c9d68bcc8e59",
+        "2311e19e-ad6a-4d9b-8c45-003f7562ca68",
+        "24367323-6d9f-44de-bb09-847f7c1c8d78",
+        "374e0ee0-63d4-4fe0-8e52-eb5014fd7957",
+        "411ad9ee-112f-4c52-a6d7-dca909311621",
+        "49fab6e3-e74a-4571-8a10-2db99e80af91",
+        "4a612a43-45f8-4d41-b4bb-c7d811c5ea5a",
+        "5b622151-d3fe-44aa-bc04-6c1cac7e601c",
+        "5f93995c-0db8-4edb-9e40-cc3d9e3e2830",
+        "647741f3-75e7-4ba3-8e52-56f9ba35a26a",
+        "6479f21a-2fcc-4d58-8ee3-c61b60ce7eba",
+        "6748e9a9-d56a-4a2a-b535-dcaac7a03384",
+        "713cef38-28fa-4307-9e3a-0322e157fac1",
+        "75f21f28-80fd-4716-a8ef-d213f54b590b",
+        "8bfc931c-e42b-4cdc-a407-cdd1e13748e2",
+        "9a19b06a-246d-4363-aff5-148c0d47d6b9",
+        "9d326a4c-1d48-4ff8-ae61-e25222d4e3a4",
+        "a50e4b91-c370-484c-8291-1b23fc5b8fe7",
+        "d866daa0-1754-4943-8d81-fa535866e30f",
+        "da1f935a-8da0-4e11-b0e6-31f449bb9d0e",
+        "e7bdfa50-5114-4cf4-aa08-8b3b1d0be078"
+      ],
+      "animation_fingerprint": "c3c58fbde25d40288a5ecabcbc9e73a34038d3da584a6b15513c72daddc30e20",
+      "name": "Lorde Sombrio \u2014 Iniciante Desarmado",
+      "member_ids": [
+        "a3465549-9dbe-4e4b-929e-9041eb8d2875"
+      ],
+      "sync_version": 16
+    }
+  },
+  "images": {
+    "e451dc5e-e905-5eaa-be7f-5cddb8cc582f": {
+      "updated_at": "2026-11-07T06:48:12.932604+00:00",
+      "image_url": "https://backblaze.pixellab.ai/file/pixellab-generations/production/creator/15e50eb9-9330-4c66-9f3e-96f273c7aaee/e451dc5e-e905-5eaa-be7f-5cddb8cc582f/image.png",
+      "frame_urls": [],
+      "sync_version": 3
+    },
+    "19bc3bbd-f4d6-5fb2-89b8-f862ab99ce28": {
+      "updated_at": "2026-11-07T06:48:12.285163+00:00",
+      "image_url": "https://backblaze.pixellab.ai/file/pixellab-generations/production/creator/15e50eb9-9330-4c66-9f3e-96f273c7aaee/19bc3bbd-f4d6-5fb2-89b8-f862ab99ce28/image.png",
+      "frame_urls": [],
+      "sync_version": 3
+    },
+    "8caf05a2-3b34-57a0-a547-8df09499d0ee": {
+      "updated_at": "2026-11-07T06:48:08.668742+00:00",
+      "image_url": "https://backblaze.pixellab.ai/file/pixellab-generations/production/creator/15e50eb9-9330-4c66-9f3e-96f273c7aaee/8caf05a2-3b34-57a0-a547-8df09499d0ee/image.png",
+      "frame_urls": [],
+      "sync_version": 3
+    },
+    "44a4e91d-6cb7-5279-a7dd-8bcb0d0107d0": {
+      "updated_at": "2026-11-07T06:48:07.154890+00:00",
+      "image_url": "https://backblaze.pixellab.ai/file/pixellab-generations/production/creator/15e50eb9-9330-4c66-9f3e-96f273c7aaee/44a4e91d-6cb7-5279-a7dd-8bcb0d0107d0/image.png",
+      "frame_urls": [],
+      "sync_version": 3
+    }
+  },
+  "maps": {
+    "60cb3c22-9f2d-4901-8a6b-885aed9c3cb8": {
+      "updated_at": "2026-11-06T19:01:49.873663+00:00",
+      "name": "Dungeon 1",
+      "export_version": 13,
+      "tilesets": {
+        "5a696d44-9c41-4ec3-b2ff-95678c0c0023": "2026-11-05T18:56:55.419808+00:00"
+      }
+    },
+    "89ccec89-ade8-43a5-a820-3a4138377d28": {
+      "updated_at": "2026-11-06T19:01:40.700515+00:00",
+      "name": "Dungeon 2",
+      "export_version": 13,
+      "tilesets": {
+        "5a696d44-9c41-4ec3-b2ff-95678c0c0023": "2026-11-05T18:56:55.419808+00:00"
+      }
+    },
+    "f23f98c5-f199-49e4-9a25-ad8eb6594501": {
+      "updated_at": "2026-11-06T19:01:22.686987+00:00",
+      "name": "Dungeon 3",
+      "export_version": 13,
+      "tilesets": {
+        "5a696d44-9c41-4ec3-b2ff-95678c0c0023": "2026-11-05T18:56:55.419808+00:00"
+      }
+    },
+    "730f9c96-dfd3-4179-8b22-2f7c0e662a58": {
+      "updated_at": "2026-11-06T19:01:11.926455+00:00",
+      "name": "Lost Tower 1",
+      "export_version": 13,
+      "tilesets": {
+        "a250c233-2c4c-45de-b660-ab35e0b042a1": "2026-11-05T18:56:32.333835+00:00"
+      }
+    },
+    "d3368fd2-5b23-4159-8e41-8be45ed58a5a": {
+      "updated_at": "2026-11-06T19:00:59.759207+00:00",
+      "name": "Lost Tower 2",
+      "export_version": 13,
+      "tilesets": {
+        "a250c233-2c4c-45de-b660-ab35e0b042a1": "2026-11-05T18:56:32.333835+00:00"
+      }
+    },
+    "f70049a7-7e83-4d37-bdd6-135c0a3fc489": {
+      "updated_at": "2026-11-06T19:00:48.277469+00:00",
+      "name": "Lost Tower 3",
+      "export_version": 13,
+      "tilesets": {
+        "a250c233-2c4c-45de-b660-ab35e0b042a1": "2026-11-05T18:56:32.333835+00:00"
+      }
+    },
+    "9de06e84-f455-4ff2-b6ea-26b2f03799a1": {
+      "updated_at": "2026-11-06T19:00:36.098418+00:00",
+      "name": "Lost Tower 4",
+      "export_version": 13,
+      "tilesets": {
+        "a250c233-2c4c-45de-b660-ab35e0b042a1": "2026-11-05T18:56:32.333835+00:00"
+      }
+    },
+    "2c207762-ae37-49c7-8714-5563841c1a8a": {
+      "updated_at": "2026-11-06T19:00:24.300300+00:00",
+      "name": "Lost Tower 5",
+      "export_version": 13,
+      "tilesets": {
+        "a250c233-2c4c-45de-b660-ab35e0b042a1": "2026-11-05T18:56:32.333835+00:00"
+      }
+    },
+    "130ec747-4994-4680-967c-e4192915ab09": {
+      "updated_at": "2026-11-06T19:00:03.921946+00:00",
+      "name": "Lost Tower 6",
+      "export_version": 13,
+      "tilesets": {
+        "a250c233-2c4c-45de-b660-ab35e0b042a1": "2026-11-05T18:56:32.333835+00:00"
+      }
+    },
+    "5a494f65-d257-4191-8307-9fcdaa1d6968": {
+      "updated_at": "2026-11-06T18:59:53.427614+00:00",
+      "name": "Lost Tower 7",
+      "export_version": 13,
+      "tilesets": {
+        "a250c233-2c4c-45de-b660-ab35e0b042a1": "2026-11-05T18:56:32.333835+00:00"
+      }
+    },
+    "7a05cac6-182b-4c77-90f3-83adac62d672": {
+      "updated_at": "2026-11-06T18:59:41.422483+00:00",
+      "name": "Atlans",
+      "export_version": 13,
+      "tilesets": {
+        "13bfec11-6c2e-46ea-93d3-aabbfd397120": "2026-11-05T18:56:48.820737+00:00"
+      }
+    },
+    "ce58480f-29c4-4adc-9cd7-7534a08412a0": {
+      "updated_at": "2026-11-06T18:59:26.908183+00:00",
+      "name": "Tarkan",
+      "export_version": 13,
+      "tilesets": {
+        "fc95330f-1404-40c1-9fbf-5f80c574ac50": "2026-11-05T18:56:57.964983+00:00"
+      }
+    },
+    "84136bbf-af47-4fa4-bbca-c03e77b8b412": {
+      "updated_at": "2026-11-06T18:59:14.483726+00:00",
+      "name": "Icarus",
+      "export_version": 13,
+      "tilesets": {
+        "f8d740e4-de74-4a52-ab77-f02ab571af8a": "2026-11-05T18:56:49.311988+00:00"
+      }
+    },
+    "e4fddb2b-5119-4e39-add5-9ca0e37a7ba1": {
+      "updated_at": "2026-11-06T18:59:01.972101+00:00",
+      "name": "Arena / Stadium",
+      "export_version": 13,
+      "tilesets": {
+        "9ca89266-e4d4-4fc2-8c15-7e8dffbeefbe": "2026-11-05T18:56:48.153041+00:00"
+      }
+    },
+    "62027a19-d871-415a-a487-5a6b88820075": {
+      "updated_at": "2026-11-06T18:58:46.424532+00:00",
+      "name": "Exile",
+      "export_version": 13,
+      "tilesets": {
+        "4ab0f820-c094-4555-9ca5-1cb877255ed7": "2026-11-05T18:57:04.669684+00:00"
+      }
+    },
+    "6d22bddf-a846-4af2-84e6-67cc44cb7ee9": {
+      "updated_at": "2026-11-06T18:58:17.667936+00:00",
+      "name": "Blood Castle",
+      "export_version": 13,
+      "tilesets": {
+        "a562e76a-1154-4995-86f9-e575809cf09f": "2026-11-05T18:56:52.103070+00:00"
+      }
+    },
+    "bc1bd264-859d-4d51-9acc-18eac3e24bb1": {
+      "updated_at": "2026-11-06T18:57:49.749378+00:00",
+      "name": "Lorencia",
+      "export_version": 13,
+      "tilesets": {
+        "c07a2485-7d0f-4d5b-a03a-c133085699af": "2026-11-05T18:55:54.078909+00:00"
+      }
+    },
+    "fc2a2feb-517a-4666-9c9e-ddcb0bb1f69b": {
+      "updated_at": "2026-11-06T18:57:36.246870+00:00",
+      "name": "Noria",
+      "export_version": 13,
+      "tilesets": {
+        "38095e6d-a232-42c6-b983-21fc6bec352d": "2026-11-05T18:56:12.138602+00:00"
+      }
+    },
+    "a780fd5b-16bd-4ac2-82c0-21ce07a50e7c": {
+      "updated_at": "2026-11-06T18:57:19.762594+00:00",
+      "name": "Devias",
+      "export_version": 13,
+      "tilesets": {
+        "a0c4ddcc-6b68-452e-8649-2b9623127495": "2026-11-05T18:56:22.266543+00:00"
+      }
+    },
+    "0fb385a9-0c29-4ee4-a200-4897daf9cd19": {
+      "updated_at": "2026-11-05T18:59:57.322165+00:00",
+      "name": "Devil Square",
+      "export_version": 13,
+      "tilesets": {
+        "7e9e881f-edb1-4ddf-8a14-17dcfd38ae4d": "2026-11-05T18:58:05.836986+00:00"
+      }
+    },
+    "301615f8-9baa-40e8-98a5-f2e6467623bb": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "name": "Island Map",
+      "export_version": 13,
+      "tilesets": {
+        "ead821ba-c3a4-4480-86be-1d25cf344a4d": "2026-11-05T14:26:29.129502+00:00",
+        "fcc53800-595a-46dd-82cf-1364b9ea6fea": "2026-11-05T14:26:29.129502+00:00"
+      }
+    }
+  },
+  "objects": {
+    "330666db-9a20-435d-bb09-bced64d2a074": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "330666db-9a20-435d-bb09-bced64d2a074"
+      ],
+      "sync_version": 3
+    },
+    "35093773-ba4a-40e6-b981-c7e6ff8b1bbf": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "35093773-ba4a-40e6-b981-c7e6ff8b1bbf"
+      ],
+      "sync_version": 3
+    },
+    "4fdf4013-40ef-4217-a757-2d0eb16031ed": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "4fdf4013-40ef-4217-a757-2d0eb16031ed"
+      ],
+      "sync_version": 3
+    },
+    "793e0270-d95a-44e4-8b68-ad8983d39050": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "793e0270-d95a-44e4-8b68-ad8983d39050"
+      ],
+      "sync_version": 3
+    },
+    "7eacbe8b-e4da-44e1-9e5e-f35cc4a2436a": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "7eacbe8b-e4da-44e1-9e5e-f35cc4a2436a"
+      ],
+      "sync_version": 3
+    },
+    "87fa3a56-4d9b-4bb4-885a-9d1fdc093178": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "87fa3a56-4d9b-4bb4-885a-9d1fdc093178"
+      ],
+      "sync_version": 3
+    },
+    "bf0fd2d4-13fe-41bf-bb52-572c34273c75": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "bf0fd2d4-13fe-41bf-bb52-572c34273c75"
+      ],
+      "sync_version": 3
+    },
+    "c81c151f-b0fb-441e-92a5-02679e148374": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "c81c151f-b0fb-441e-92a5-02679e148374"
+      ],
+      "sync_version": 3
+    },
+    "b02a85e2-8a92-4b70-8d4b-8dcb9f3eb4f7": {
+      "updated_at": "2026-11-05T14:39:52.492387+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "b02a85e2-8a92-4b70-8d4b-8dcb9f3eb4f7"
+      ],
+      "sync_version": 3
+    },
+    "10c71833-716f-488d-b801-2840d0489f46": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "10c71833-716f-488d-b801-2840d0489f46"
+      ],
+      "sync_version": 3
+    },
+    "343d1475-f4d7-479a-9c37-7af3b9021e2d": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "343d1475-f4d7-479a-9c37-7af3b9021e2d"
+      ],
+      "sync_version": 3
+    },
+    "34a836a4-d245-47e0-8979-ff3c6030cbad": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "34a836a4-d245-47e0-8979-ff3c6030cbad"
+      ],
+      "sync_version": 3
+    },
+    "523801e7-93e6-4fa3-8ca0-884166d8ada2": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "523801e7-93e6-4fa3-8ca0-884166d8ada2"
+      ],
+      "sync_version": 3
+    },
+    "52712e2c-f2e1-49e0-aa40-40cf7933ee3f": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "52712e2c-f2e1-49e0-aa40-40cf7933ee3f"
+      ],
+      "sync_version": 3
+    },
+    "5e468b5d-ec29-4e38-88dc-51bc8335ed80": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "5e468b5d-ec29-4e38-88dc-51bc8335ed80"
+      ],
+      "sync_version": 3
+    },
+    "81e8ac4e-eb25-4289-aa2a-14e2ef199272": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "81e8ac4e-eb25-4289-aa2a-14e2ef199272"
+      ],
+      "sync_version": 3
+    },
+    "88ed7c17-f63f-4d9f-a409-533b782cec76": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "88ed7c17-f63f-4d9f-a409-533b782cec76"
+      ],
+      "sync_version": 3
+    },
+    "8b398fbe-7a2f-45fd-b3f0-77b790905f9d": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "8b398fbe-7a2f-45fd-b3f0-77b790905f9d"
+      ],
+      "sync_version": 3
+    },
+    "9eb644ec-d086-48a2-befe-962d7282c3dc": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "9eb644ec-d086-48a2-befe-962d7282c3dc"
+      ],
+      "sync_version": 3
+    },
+    "aa6d7ac6-7445-472d-983f-457e56c5b3dc": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "aa6d7ac6-7445-472d-983f-457e56c5b3dc"
+      ],
+      "sync_version": 3
+    },
+    "b125fc05-548f-4006-8a80-3d22fe964fa8": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "b125fc05-548f-4006-8a80-3d22fe964fa8"
+      ],
+      "sync_version": 3
+    },
+    "c09812c4-60e1-4b5b-b303-499e7d2c6b7c": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "c09812c4-60e1-4b5b-b303-499e7d2c6b7c"
+      ],
+      "sync_version": 3
+    },
+    "c2ea9ec8-1718-4e7a-9c00-e096e32d34b1": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "c2ea9ec8-1718-4e7a-9c00-e096e32d34b1"
+      ],
+      "sync_version": 3
+    },
+    "c418a26f-0b60-4460-806a-1f9b8f8df53c": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "c418a26f-0b60-4460-806a-1f9b8f8df53c"
+      ],
+      "sync_version": 3
+    },
+    "d5d76595-749f-45ec-bdca-9757e385c483": {
+      "updated_at": "2026-11-05T15:54:37.255502+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "d5d76595-749f-45ec-bdca-9757e385c483"
+      ],
+      "sync_version": 3
+    },
+    "3d2759e9-ecba-4c02-b169-d464af85b28e": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "3d2759e9-ecba-4c02-b169-d464af85b28e"
+      ],
+      "sync_version": 3
+    },
+    "65b7179c-5978-4d6b-88cc-0ad2f7ac83b2": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "65b7179c-5978-4d6b-88cc-0ad2f7ac83b2"
+      ],
+      "sync_version": 3
+    },
+    "90ccb4db-5c08-4a9b-a1ee-9f2616d59d7f": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "90ccb4db-5c08-4a9b-a1ee-9f2616d59d7f"
+      ],
+      "sync_version": 3
+    },
+    "916a5fac-9984-41ac-9cf9-ce458d4a16e9": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "916a5fac-9984-41ac-9cf9-ce458d4a16e9"
+      ],
+      "sync_version": 3
+    },
+    "9dc7aab1-341b-49b5-94c5-8b8de1ba0da2": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "9dc7aab1-341b-49b5-94c5-8b8de1ba0da2"
+      ],
+      "sync_version": 3
+    },
+    "a072fddd-5576-4f8f-83a7-ff32da5bd624": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "a072fddd-5576-4f8f-83a7-ff32da5bd624"
+      ],
+      "sync_version": 3
+    },
+    "a1437254-3c5e-4037-9e30-1cd36c453bdf": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "a1437254-3c5e-4037-9e30-1cd36c453bdf"
+      ],
+      "sync_version": 3
+    },
+    "aee40f41-3fce-45bc-9ee5-c1f023773f66": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "aee40f41-3fce-45bc-9ee5-c1f023773f66"
+      ],
+      "sync_version": 3
+    },
+    "c217f23d-a2b5-4b18-894c-40782e1dfca5": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "c217f23d-a2b5-4b18-894c-40782e1dfca5"
+      ],
+      "sync_version": 3
+    },
+    "cc87e56f-caa1-42e1-8360-9e0e52f877d9": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "cc87e56f-caa1-42e1-8360-9e0e52f877d9"
+      ],
+      "sync_version": 3
+    },
+    "db31cf54-3006-4ed2-a4ea-7b477711c200": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "db31cf54-3006-4ed2-a4ea-7b477711c200"
+      ],
+      "sync_version": 3
+    },
+    "e0a60502-7609-4e04-823d-51670fadb69f": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "e0a60502-7609-4e04-823d-51670fadb69f"
+      ],
+      "sync_version": 3
+    },
+    "e3b0c3dc-5cf9-47e5-896b-10de59556e53": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "e3b0c3dc-5cf9-47e5-896b-10de59556e53"
+      ],
+      "sync_version": 3
+    },
+    "e4dac244-ce82-43d6-8cb5-65ef46d0b763": {
+      "updated_at": "2026-11-05T15:54:40.701209+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "e4dac244-ce82-43d6-8cb5-65ef46d0b763"
+      ],
+      "sync_version": 3
+    },
+    "3a762cc5-ffe9-4714-91ba-58e137dd8d04": {
+      "updated_at": "2026-11-06T07:23:36.329295+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "3a762cc5-ffe9-4714-91ba-58e137dd8d04"
+      ],
+      "sync_version": 3
+    },
+    "509f0444-d448-46cb-ac5c-a884df5b5153": {
+      "updated_at": "2026-11-06T07:23:36.895368+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "509f0444-d448-46cb-ac5c-a884df5b5153"
+      ],
+      "sync_version": 3
+    },
+    "4152c5d3-34c0-45a3-9cbd-1cc5add949a1": {
+      "updated_at": "2026-11-06T07:23:37.668885+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "4152c5d3-34c0-45a3-9cbd-1cc5add949a1"
+      ],
+      "sync_version": 3
+    },
+    "6ad63400-e453-420c-bbda-ab84c5ad4ee1": {
+      "updated_at": "2026-11-06T07:23:38.063480+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "6ad63400-e453-420c-bbda-ab84c5ad4ee1"
+      ],
+      "sync_version": 3
+    },
+    "d0720586-8746-4402-9962-e7c5601d3f10": {
+      "updated_at": "2026-11-06T07:23:38.423847+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "d0720586-8746-4402-9962-e7c5601d3f10"
+      ],
+      "sync_version": 3
+    },
+    "b02aa97a-db21-4fa2-b9f8-fbb19fa1c265": {
+      "updated_at": "2026-11-06T07:23:39.116763+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "b02aa97a-db21-4fa2-b9f8-fbb19fa1c265"
+      ],
+      "sync_version": 3
+    },
+    "9d674cdc-a93f-493e-a18d-1478a6109a5c": {
+      "updated_at": "2026-11-06T07:23:39.708213+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "9d674cdc-a93f-493e-a18d-1478a6109a5c"
+      ],
+      "sync_version": 3
+    },
+    "a15caf94-0f54-4d7c-ba31-faa16f765562": {
+      "updated_at": "2026-11-06T07:23:40.130116+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "a15caf94-0f54-4d7c-ba31-faa16f765562"
+      ],
+      "sync_version": 3
+    },
+    "ab8b4789-747b-4b97-b582-22269b246062": {
+      "updated_at": "2026-11-06T07:23:40.832067+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "ab8b4789-747b-4b97-b582-22269b246062"
+      ],
+      "sync_version": 3
+    },
+    "97ae9e9e-6d14-4e30-ac27-765adce84833": {
+      "updated_at": "2026-11-06T07:23:41.294919+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "97ae9e9e-6d14-4e30-ac27-765adce84833"
+      ],
+      "sync_version": 3
+    },
+    "fa52c761-ad87-40e8-830c-9e1a8d2e87d4": {
+      "updated_at": "2026-11-06T07:24:25.809903+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "fa52c761-ad87-40e8-830c-9e1a8d2e87d4"
+      ],
+      "sync_version": 3
+    },
+    "5aa579aa-4b3a-4250-8a7a-f8fd306ee230": {
+      "updated_at": "2026-11-06T07:24:26.843476+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "5aa579aa-4b3a-4250-8a7a-f8fd306ee230"
+      ],
+      "sync_version": 3
+    },
+    "7e1e1931-ab70-4305-bcae-9a02bb1a39d7": {
+      "updated_at": "2026-11-06T07:24:47.728848+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "7e1e1931-ab70-4305-bcae-9a02bb1a39d7"
+      ],
+      "sync_version": 3
+    },
+    "0f20aa8f-4eb8-433b-9e3d-0560c267cadb": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "0f20aa8f-4eb8-433b-9e3d-0560c267cadb"
+      ],
+      "sync_version": 3
+    },
+    "21a3ad80-5d70-43c0-b046-e87d035d02e4": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "21a3ad80-5d70-43c0-b046-e87d035d02e4"
+      ],
+      "sync_version": 3
+    },
+    "2a2f0f29-82c8-44ba-b805-cf8ccd2089de": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "2a2f0f29-82c8-44ba-b805-cf8ccd2089de"
+      ],
+      "sync_version": 3
+    },
+    "55b6354a-7d66-4785-ba33-1f7b8b888972": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "55b6354a-7d66-4785-ba33-1f7b8b888972"
+      ],
+      "sync_version": 3
+    },
+    "7500ce50-2a78-46fe-b47f-c214fb786813": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "7500ce50-2a78-46fe-b47f-c214fb786813"
+      ],
+      "sync_version": 3
+    },
+    "939db10f-11cd-4ddc-80c0-96ca19966f77": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "939db10f-11cd-4ddc-80c0-96ca19966f77"
+      ],
+      "sync_version": 3
+    },
+    "9bef2a2d-8188-44f0-b2b2-4948d61effc1": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "9bef2a2d-8188-44f0-b2b2-4948d61effc1"
+      ],
+      "sync_version": 3
+    },
+    "9e253a6e-dc1e-4894-85e3-3467d904409e": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "9e253a6e-dc1e-4894-85e3-3467d904409e"
+      ],
+      "sync_version": 3
+    },
+    "aa769713-2679-46a5-8d90-b172cd51b38d": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "aa769713-2679-46a5-8d90-b172cd51b38d"
+      ],
+      "sync_version": 3
+    },
+    "b06ba738-dd33-4123-9b18-d4217611d2a7": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "b06ba738-dd33-4123-9b18-d4217611d2a7"
+      ],
+      "sync_version": 3
+    },
+    "c1b10962-fad4-4c88-b3d9-c868d0458905": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "c1b10962-fad4-4c88-b3d9-c868d0458905"
+      ],
+      "sync_version": 3
+    },
+    "c6e65286-e66c-42fd-abd9-d4b3cfd22c4c": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "c6e65286-e66c-42fd-abd9-d4b3cfd22c4c"
+      ],
+      "sync_version": 3
+    },
+    "ccfcd8d3-1e90-4131-a53f-1bf4304cc7af": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "ccfcd8d3-1e90-4131-a53f-1bf4304cc7af"
+      ],
+      "sync_version": 3
+    },
+    "d0bab0a3-9f34-45ed-980d-9d5cb481928b": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "d0bab0a3-9f34-45ed-980d-9d5cb481928b"
+      ],
+      "sync_version": 3
+    },
+    "fb93437e-4925-4ab9-b062-a50d8a75420e": {
+      "updated_at": "2026-11-06T15:36:18.136190+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "fb93437e-4925-4ab9-b062-a50d8a75420e"
+      ],
+      "sync_version": 3
+    },
+    "573bbd98-3021-4c26-8ef2-eb56b42a2900": {
+      "updated_at": "2026-11-06T15:49:38.579323+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "573bbd98-3021-4c26-8ef2-eb56b42a2900"
+      ],
+      "sync_version": 3
+    },
+    "a6846df4-8636-4e2a-b6ec-5f37c7e4751a": {
+      "updated_at": "2026-11-06T15:49:38.579323+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "a6846df4-8636-4e2a-b6ec-5f37c7e4751a"
+      ],
+      "sync_version": 3
+    },
+    "bcd0aaa0-3839-45fb-8b14-6479986f3e78": {
+      "updated_at": "2026-11-06T15:49:38.579323+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "bcd0aaa0-3839-45fb-8b14-6479986f3e78"
+      ],
+      "sync_version": 3
+    },
+    "bf439c70-aa07-4ff5-bdeb-a39302a12d82": {
+      "updated_at": "2026-11-06T15:49:38.579323+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "bf439c70-aa07-4ff5-bdeb-a39302a12d82"
+      ],
+      "sync_version": 3
+    },
+    "c6a97497-ff5d-4e3d-a355-2e719bb514d6": {
+      "updated_at": "2026-11-06T15:49:38.579323+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "c6a97497-ff5d-4e3d-a355-2e719bb514d6"
+      ],
+      "sync_version": 3
+    },
+    "206bf9e6-6e64-4b5c-a5ce-7f3716fb02b2": {
+      "updated_at": "2026-11-06T15:49:40.347718+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "206bf9e6-6e64-4b5c-a5ce-7f3716fb02b2"
+      ],
+      "sync_version": 3
+    },
+    "3713bfe6-4ba3-48ca-b775-06637c5512ee": {
+      "updated_at": "2026-11-06T15:49:40.347718+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "3713bfe6-4ba3-48ca-b775-06637c5512ee"
+      ],
+      "sync_version": 3
+    },
+    "6df9ae7c-3318-4ec5-bf74-f8d531550b2f": {
+      "updated_at": "2026-11-06T15:49:40.347718+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "6df9ae7c-3318-4ec5-bf74-f8d531550b2f"
+      ],
+      "sync_version": 3
+    },
+    "d57422eb-709f-4bcb-917b-5ecfcc0cb414": {
+      "updated_at": "2026-11-06T15:49:40.347718+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "d57422eb-709f-4bcb-917b-5ecfcc0cb414"
+      ],
+      "sync_version": 3
+    },
+    "fd6c6f44-8cfc-4372-afa7-f9bc193f871b": {
+      "updated_at": "2026-11-06T15:49:40.347718+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "fd6c6f44-8cfc-4372-afa7-f9bc193f871b"
+      ],
+      "sync_version": 3
+    },
+    "4f894998-dda7-47b0-a6e3-2d8d49eb3239": {
+      "updated_at": "2026-11-06T15:49:41.462756+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "4f894998-dda7-47b0-a6e3-2d8d49eb3239"
+      ],
+      "sync_version": 3
+    },
+    "5a9e73b0-bf74-41ed-9e83-2ca6bcd93f3e": {
+      "updated_at": "2026-11-06T15:49:41.462756+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "5a9e73b0-bf74-41ed-9e83-2ca6bcd93f3e"
+      ],
+      "sync_version": 3
+    },
+    "ab2f67c7-e36c-4b0e-942f-83ef19ac79d1": {
+      "updated_at": "2026-11-06T15:49:41.462756+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "ab2f67c7-e36c-4b0e-942f-83ef19ac79d1"
+      ],
+      "sync_version": 3
+    },
+    "aeb4e0e9-7ad4-41da-8f44-00bba3ca53e7": {
+      "updated_at": "2026-11-06T15:49:41.462756+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "aeb4e0e9-7ad4-41da-8f44-00bba3ca53e7"
+      ],
+      "sync_version": 3
+    },
+    "e3c4533a-4ea1-4039-8b84-603f93f9e1f4": {
+      "updated_at": "2026-11-06T15:49:41.462756+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "e3c4533a-4ea1-4039-8b84-603f93f9e1f4"
+      ],
+      "sync_version": 3
+    },
+    "0d9372dc-ff97-4312-8697-d25605f77a74": {
+      "updated_at": "2026-11-06T15:49:42.689877+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "0d9372dc-ff97-4312-8697-d25605f77a74"
+      ],
+      "sync_version": 3
+    },
+    "4aa269a1-9564-4cc4-a11d-dd264947db6b": {
+      "updated_at": "2026-11-06T15:49:42.689877+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "4aa269a1-9564-4cc4-a11d-dd264947db6b"
+      ],
+      "sync_version": 3
+    },
+    "4c4de214-83e0-4927-bf34-112a7455eb23": {
+      "updated_at": "2026-11-06T15:49:42.689877+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "4c4de214-83e0-4927-bf34-112a7455eb23"
+      ],
+      "sync_version": 3
+    },
+    "6d406830-66a4-4ef1-a4c3-df61bfcdad62": {
+      "updated_at": "2026-11-06T15:49:42.689877+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "6d406830-66a4-4ef1-a4c3-df61bfcdad62"
+      ],
+      "sync_version": 3
+    },
+    "a52e3712-5237-473d-a157-ad6a8a6832e7": {
+      "updated_at": "2026-11-06T15:49:42.689877+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "a52e3712-5237-473d-a157-ad6a8a6832e7"
+      ],
+      "sync_version": 3
+    },
+    "1d388d62-fbd6-451d-aeac-c6006c84c646": {
+      "updated_at": "2026-11-06T19:45:54.698551+00:00",
+      "animation_ids": [
+        "9895277b-bf42-4205-b7f8-1aa9cb0ff4f9"
+      ],
+      "name": "base",
+      "member_ids": [
+        "1d388d62-fbd6-451d-aeac-c6006c84c646"
+      ],
+      "sync_version": 3
+    },
+    "472e0773-7101-488c-a5ca-127c4b6b07a1": {
+      "updated_at": "2026-11-06T19:45:54.698551+00:00",
+      "animation_ids": [
+        "14bc9619-1991-4575-826f-24dd004c465e"
+      ],
+      "name": "base",
+      "member_ids": [
+        "472e0773-7101-488c-a5ca-127c4b6b07a1"
+      ],
+      "sync_version": 3
+    },
+    "5e2f3c12-e231-4a6a-b72e-266944089625": {
+      "updated_at": "2026-11-06T19:45:54.698551+00:00",
+      "animation_ids": [
+        "cbcd13a2-2941-4f0d-836e-80a1471870db"
+      ],
+      "name": "base",
+      "member_ids": [
+        "5e2f3c12-e231-4a6a-b72e-266944089625"
+      ],
+      "sync_version": 3
+    },
+    "75d696a3-76b6-4a21-a03c-5e3f7469d72a": {
+      "updated_at": "2026-11-06T19:45:54.698551+00:00",
+      "animation_ids": [
+        "164aac47-8d7a-483c-9e03-ddfacae41c2e"
+      ],
+      "name": "base",
+      "member_ids": [
+        "75d696a3-76b6-4a21-a03c-5e3f7469d72a"
+      ],
+      "sync_version": 3
+    },
+    "8974d684-28c7-4b2c-a08c-54df21e1ef23": {
+      "updated_at": "2026-11-06T19:45:54.698551+00:00",
+      "animation_ids": [
+        "379aadef-9dc2-4b28-8913-307b84dc0733"
+      ],
+      "name": "base",
+      "member_ids": [
+        "8974d684-28c7-4b2c-a08c-54df21e1ef23"
+      ],
+      "sync_version": 3
+    },
+    "bec12bdc-d727-4ddd-a5c8-30ae4b3251a4": {
+      "updated_at": "2026-11-06T19:45:54.698551+00:00",
+      "animation_ids": [
+        "d20c0322-7132-4bc4-bc41-afe9a0238bac"
+      ],
+      "name": "base",
+      "member_ids": [
+        "bec12bdc-d727-4ddd-a5c8-30ae4b3251a4"
+      ],
+      "sync_version": 3
+    },
+    "f6a3012d-7b75-4410-be1a-740218845571": {
+      "updated_at": "2026-11-06T19:45:54.698551+00:00",
+      "animation_ids": [
+        "4d240e0f-ad43-492d-8f99-d8711b757fb2"
+      ],
+      "name": "base",
+      "member_ids": [
+        "f6a3012d-7b75-4410-be1a-740218845571"
+      ],
+      "sync_version": 3
+    },
+    "207a92b4-7bb1-41e6-ae7c-3c73fc3b1b7d": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "207a92b4-7bb1-41e6-ae7c-3c73fc3b1b7d"
+      ],
+      "sync_version": 3
+    },
+    "2d157e78-99b3-4ef5-a1a9-503841bc752c": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "2d157e78-99b3-4ef5-a1a9-503841bc752c"
+      ],
+      "sync_version": 3
+    },
+    "3b65cbcc-edc0-4949-84d8-94d8956ccbd1": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "3b65cbcc-edc0-4949-84d8-94d8956ccbd1"
+      ],
+      "sync_version": 3
+    },
+    "474e6b40-62d1-419e-8cac-f14a482b1b76": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "474e6b40-62d1-419e-8cac-f14a482b1b76"
+      ],
+      "sync_version": 3
+    },
+    "50bdf543-3a1a-4f45-af18-61c4728a63c1": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "50bdf543-3a1a-4f45-af18-61c4728a63c1"
+      ],
+      "sync_version": 3
+    },
+    "6402dd3c-b84c-4298-abc8-8802b027d9c9": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "6402dd3c-b84c-4298-abc8-8802b027d9c9"
+      ],
+      "sync_version": 3
+    },
+    "805c9fb9-cc92-40fd-b37a-cf94ac2b0667": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "805c9fb9-cc92-40fd-b37a-cf94ac2b0667"
+      ],
+      "sync_version": 3
+    },
+    "8f7a70ed-4db8-4cb2-ade2-c02fa25cc9c4": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "8f7a70ed-4db8-4cb2-ade2-c02fa25cc9c4"
+      ],
+      "sync_version": 3
+    },
+    "9471f80f-6715-4fbe-b8c4-f61c9a10e11c": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "9471f80f-6715-4fbe-b8c4-f61c9a10e11c"
+      ],
+      "sync_version": 3
+    },
+    "b67c0422-33dc-4a0d-9e70-bf3be63603b1": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "b67c0422-33dc-4a0d-9e70-bf3be63603b1"
+      ],
+      "sync_version": 3
+    },
+    "cb18e11d-f857-47f9-b904-111efb451333": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "cb18e11d-f857-47f9-b904-111efb451333"
+      ],
+      "sync_version": 3
+    },
+    "d6333ee3-cd60-4768-acef-51fe667fc109": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "d6333ee3-cd60-4768-acef-51fe667fc109"
+      ],
+      "sync_version": 3
+    },
+    "e79a9eeb-a66b-49bd-b59e-2a93b2c6675c": {
+      "updated_at": "2026-11-07T06:48:39.508615+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "e79a9eeb-a66b-49bd-b59e-2a93b2c6675c"
+      ],
+      "sync_version": 3
+    },
+    "eb2fd33a-ce00-4d3a-94e8-93e9a71deb0b": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "eb2fd33a-ce00-4d3a-94e8-93e9a71deb0b"
+      ],
+      "sync_version": 3
+    },
+    "ee0e4a97-da83-4175-b753-2fb67fc46099": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "ee0e4a97-da83-4175-b753-2fb67fc46099"
+      ],
+      "sync_version": 3
+    },
+    "f55b8fcd-6d0b-408c-9145-775635700b06": {
+      "updated_at": "2026-11-07T06:47:40.994026+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "f55b8fcd-6d0b-408c-9145-775635700b06"
+      ],
+      "sync_version": 3
+    },
+    "19d06b4e-8a7c-4628-92dc-081f7db52db6": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "19d06b4e-8a7c-4628-92dc-081f7db52db6"
+      ],
+      "sync_version": 3
+    },
+    "207a451d-d139-4d86-ab98-6290321320d4": {
+      "updated_at": "2026-11-07T06:48:40.322723+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "207a451d-d139-4d86-ab98-6290321320d4"
+      ],
+      "sync_version": 3
+    },
+    "21616329-4a0a-4acc-a9a5-4d9aa327ece7": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "21616329-4a0a-4acc-a9a5-4d9aa327ece7"
+      ],
+      "sync_version": 3
+    },
+    "359cf2eb-5ef1-4e00-96ee-7d894f66d020": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "359cf2eb-5ef1-4e00-96ee-7d894f66d020"
+      ],
+      "sync_version": 3
+    },
+    "407168a0-d692-410f-8ec2-872d7f1b1d02": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "407168a0-d692-410f-8ec2-872d7f1b1d02"
+      ],
+      "sync_version": 3
+    },
+    "4dded50c-647d-4084-b9e8-794d38447ddb": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "4dded50c-647d-4084-b9e8-794d38447ddb"
+      ],
+      "sync_version": 3
+    },
+    "587552ff-b72b-4f0f-b7ce-b51f0233b36b": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "587552ff-b72b-4f0f-b7ce-b51f0233b36b"
+      ],
+      "sync_version": 3
+    },
+    "6350fc2e-e36f-484e-a98d-4d7dd33e7da2": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "6350fc2e-e36f-484e-a98d-4d7dd33e7da2"
+      ],
+      "sync_version": 3
+    },
+    "79a09c64-4ba2-42eb-8e57-3bbecf4b8bcc": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "79a09c64-4ba2-42eb-8e57-3bbecf4b8bcc"
+      ],
+      "sync_version": 3
+    },
+    "8231d4f4-dc21-41ca-bba7-5dc63588ae2a": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "8231d4f4-dc21-41ca-bba7-5dc63588ae2a"
+      ],
+      "sync_version": 3
+    },
+    "915f9c5d-e00e-469a-8c22-3366185ff209": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "915f9c5d-e00e-469a-8c22-3366185ff209"
+      ],
+      "sync_version": 3
+    },
+    "933afa19-5510-4618-af02-454cc79a7729": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "933afa19-5510-4618-af02-454cc79a7729"
+      ],
+      "sync_version": 3
+    },
+    "9a5e3b69-d2d6-438d-873d-c391fcde03bc": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "9a5e3b69-d2d6-438d-873d-c391fcde03bc"
+      ],
+      "sync_version": 3
+    },
+    "9c569f0f-fbd5-448b-8452-c8a93086eef8": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "9c569f0f-fbd5-448b-8452-c8a93086eef8"
+      ],
+      "sync_version": 3
+    },
+    "cb1e9a56-ad00-4dfc-8d29-e6933961b3d2": {
+      "updated_at": "2026-11-07T06:47:43.242020+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "cb1e9a56-ad00-4dfc-8d29-e6933961b3d2"
+      ],
+      "sync_version": 3
+    },
+    "e3adf094-f36a-4d06-9a77-61e942060859": {
+      "updated_at": "2026-11-07T06:48:46.507896+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "e3adf094-f36a-4d06-9a77-61e942060859"
+      ],
+      "sync_version": 3
+    },
+    "f7d7cd4f-7583-4fb0-9213-716f5c06f6bf": {
+      "updated_at": "2026-11-07T06:48:49.021431+00:00",
+      "animation_ids": [],
+      "name": "base",
+      "member_ids": [
+        "f7d7cd4f-7583-4fb0-9213-716f5c06f6bf"
+      ],
+      "sync_version": 3
+    },
+    "08f80838-db8a-4e78-b092-779df6f900fc": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "82b01bf6-0204-407a-acca-c18e59e34295"
+      ],
+      "name": "base",
+      "member_ids": [
+        "08f80838-db8a-4e78-b092-779df6f900fc"
+      ],
+      "sync_version": 3
+    },
+    "0cea0475-ea23-4a07-938e-71d026ba63ee": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "6acbee26-6baa-4734-b5da-1f58f792abd2"
+      ],
+      "name": "base",
+      "member_ids": [
+        "0cea0475-ea23-4a07-938e-71d026ba63ee"
+      ],
+      "sync_version": 3
+    },
+    "1051d7f0-bbac-4085-b9fe-d702b6cc1a93": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "e4768f9c-4241-45dc-9230-a5df87fd8c56"
+      ],
+      "name": "base",
+      "member_ids": [
+        "1051d7f0-bbac-4085-b9fe-d702b6cc1a93"
+      ],
+      "sync_version": 3
+    },
+    "6435dbdf-254e-442b-9e6d-317ae81b6b83": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "39dacb02-5ee9-4ed7-9a28-98140be92842"
+      ],
+      "name": "base",
+      "member_ids": [
+        "6435dbdf-254e-442b-9e6d-317ae81b6b83"
+      ],
+      "sync_version": 3
+    },
+    "8a0a655f-b20c-4d1d-9dc9-ecd96612fecf": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "d45ce2e7-b2ba-48f6-91ef-41e18af85da2"
+      ],
+      "name": "base",
+      "member_ids": [
+        "8a0a655f-b20c-4d1d-9dc9-ecd96612fecf"
+      ],
+      "sync_version": 3
+    },
+    "a486541c-f037-4052-9077-3f7d59cab641": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "f139f5b8-7212-4274-9d86-0a9ac25c6099"
+      ],
+      "name": "base",
+      "member_ids": [
+        "a486541c-f037-4052-9077-3f7d59cab641"
+      ],
+      "sync_version": 3
+    },
+    "ab68f8e7-c5bb-494d-bf1a-4dac01dfec37": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "1e038c24-b7fa-47de-84d8-5a99bc877821"
+      ],
+      "name": "base",
+      "member_ids": [
+        "ab68f8e7-c5bb-494d-bf1a-4dac01dfec37"
+      ],
+      "sync_version": 3
+    },
+    "c68bb6af-4916-4bed-9ad5-ddc0907eaf26": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "9c06e78f-6204-4a4e-b358-b311275bdfbb"
+      ],
+      "name": "base",
+      "member_ids": [
+        "c68bb6af-4916-4bed-9ad5-ddc0907eaf26"
+      ],
+      "sync_version": 3
+    },
+    "ce4149ad-36ae-43d8-b5f7-ab64b8e60b27": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "a669f5e0-299a-4903-96a8-71a42f5c0864"
+      ],
+      "name": "base",
+      "member_ids": [
+        "ce4149ad-36ae-43d8-b5f7-ab64b8e60b27"
+      ],
+      "sync_version": 3
+    },
+    "d74e8ef8-4239-46df-af5e-e755372ea7de": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "12640072-e87c-43af-8e8a-34d0df8a7d85"
+      ],
+      "name": "base",
+      "member_ids": [
+        "d74e8ef8-4239-46df-af5e-e755372ea7de"
+      ],
+      "sync_version": 3
+    },
+    "dcd3ea62-651b-4a51-9468-60a3044a47ca": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "0d7ffc4b-3986-44da-9907-4cefec04e217"
+      ],
+      "name": "base",
+      "member_ids": [
+        "dcd3ea62-651b-4a51-9468-60a3044a47ca"
+      ],
+      "sync_version": 3
+    },
+    "dd00f0ba-e6b1-4e86-9b9f-2e696358a06f": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "206db8a5-6e3a-477f-8696-8d0220e38f59"
+      ],
+      "name": "base",
+      "member_ids": [
+        "dd00f0ba-e6b1-4e86-9b9f-2e696358a06f"
+      ],
+      "sync_version": 3
+    },
+    "de60d9f6-1d6f-4d9d-a51c-a6b21d139cf6": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "d6fa9279-1114-4e75-a945-4f3e5e059172"
+      ],
+      "name": "base",
+      "member_ids": [
+        "de60d9f6-1d6f-4d9d-a51c-a6b21d139cf6"
+      ],
+      "sync_version": 3
+    },
+    "de85e0a6-f952-4053-a730-426bd8207a87": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "ab422aa4-1698-469b-a002-0b5eeee2636d"
+      ],
+      "name": "base",
+      "member_ids": [
+        "de85e0a6-f952-4053-a730-426bd8207a87"
+      ],
+      "sync_version": 3
+    },
+    "e97d0331-04e9-49d6-ac16-28fde1e05a8f": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "1e732c07-1d33-42c3-ae39-bf7e2810af1d"
+      ],
+      "name": "base",
+      "member_ids": [
+        "e97d0331-04e9-49d6-ac16-28fde1e05a8f"
+      ],
+      "sync_version": 3
+    },
+    "f03813ff-5751-4985-84d8-1569abc753bb": {
+      "updated_at": "2026-11-07T06:58:56.667065+00:00",
+      "animation_ids": [
+        "11352fe4-3188-4527-b111-b3f6a9db0169"
+      ],
+      "name": "base",
+      "member_ids": [
+        "f03813ff-5751-4985-84d8-1569abc753bb"
+      ],
+      "sync_version": 3
+    }
+  },
+  "tilesets": {
+    "7e9e881f-edb1-4ddf-8a14-17dcfd38ae4d": {
+      "updated_at": "2026-11-05T18:58:05.836986+00:00",
+      "name": "Devil Square black volcanic crust with red ember \u2197 Devil Square dark blood red demonic plaza floor",
+      "sync_version": 2
+    },
+    "4ab0f820-c094-4555-9ca5-1cb877255ed7": {
+      "updated_at": "2026-11-05T18:57:04.669684+00:00",
+      "name": "Exile bleak charcoal cracked wasteland earth \u2197 Exile ashen gray ruined stone road with sickly",
+      "sync_version": 2
+    },
+    "fc95330f-1404-40c1-9fbf-5f80c574ac50": {
+      "updated_at": "2026-11-05T18:56:57.964983+00:00",
+      "name": "Tarkan orange wind blown desert sand \u2197 Tarkan ancient ochre sandstone ruined pavement",
+      "sync_version": 2
+    },
+    "5a696d44-9c41-4ec3-b2ff-95678c0c0023": {
+      "updated_at": "2026-11-05T18:56:55.419808+00:00",
+      "name": "Dungeon dark rough underground bedrock wall top \u2197 Dungeon ancient cracked gray flagstone floor in a",
+      "sync_version": 2
+    },
+    "a562e76a-1154-4995-86f9-e575809cf09f": {
+      "updated_at": "2026-11-05T18:56:52.103070+00:00",
+      "name": "Blood Castle deep crimson abyss below fortress \u2197 Blood Castle gothic silver gray fortress bridge",
+      "sync_version": 2
+    },
+    "f8d740e4-de74-4a52-ab77-f02ab571af8a": {
+      "updated_at": "2026-11-05T18:56:49.311988+00:00",
+      "name": "Icarus azure sky and soft white clouds \u2197 Icarus floating ivory stone celestial platform",
+      "sync_version": 2
+    },
+    "13bfec11-6c2e-46ea-93d3-aabbfd397120": {
+      "updated_at": "2026-11-05T18:56:48.820737+00:00",
+      "name": "Atlans deep turquoise ocean seabed \u2197 Atlans pale aquamarine submerged stone paths with",
+      "sync_version": 2
+    },
+    "9ca89266-e4d4-4fc2-8c15-7e8dffbeefbe": {
+      "updated_at": "2026-11-05T18:56:48.153041+00:00",
+      "name": "Arena stadium rough gray outer flagstones \u2197 Arena stadium red brown packed training sand with",
+      "sync_version": 2
+    },
+    "a250c233-2c4c-45de-b660-ab35e0b042a1": {
+      "updated_at": "2026-11-05T18:56:32.333835+00:00",
+      "name": "Lost Tower dark violet abyss \u2197 Lost Tower obsidian violet stone floor with",
+      "sync_version": 2
+    },
+    "a0c4ddcc-6b68-452e-8649-2b9623127495": {
+      "updated_at": "2026-11-05T18:56:22.266543+00:00",
+      "name": "Devias blue frozen ice ground \u2197 Devias snowy medieval road with pale snow covered",
+      "sync_version": 2
+    },
+    "38095e6d-a232-42c6-b983-21fc6bec352d": {
+      "updated_at": "2026-11-05T18:56:12.138602+00:00",
+      "name": "Noria deep emerald forest ground with roots and \u2197 Noria bright green grassy woodland clearing with",
+      "sync_version": 2
+    },
+    "c07a2485-7d0f-4d5b-a03a-c133085699af": {
+      "updated_at": "2026-11-05T18:55:54.078909+00:00",
+      "name": "Lorencia dark fantasy mossy green meadow \u2197 Lorencia medieval town weathered warm gray",
+      "sync_version": 2
+    },
+    "fcc53800-595a-46dd-82cf-1364b9ea6fea": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "name": "water \u2197 wood",
+      "sync_version": 2
+    },
+    "ead821ba-c3a4-4480-86be-1d25cf344a4d": {
+      "updated_at": "2026-11-05T14:26:29.129502+00:00",
+      "name": "water \u2197 grass",
+      "sync_version": 2
+    }
+  },
+  "ui_assets": {},
+  "rooms": {}
+}

@@ -1,0 +1,22 @@
+{
+  "group_id": "34682bd6-ef61-4a81-9b33-e2970400b25a",
+  "states": [
+    {
+      "id": "de60d9f6-1d6f-4d9d-a51c-a6b21d139cf6",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-wooden-bow-stays-fixed-in-plac": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}

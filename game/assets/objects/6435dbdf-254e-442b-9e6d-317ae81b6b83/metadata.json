@@ -1,0 +1,22 @@
+{
+  "group_id": "1ba7c249-b48d-4a78-8788-33714e20b8f2",
+  "states": [
+    {
+      "id": "6435dbdf-254e-442b-9e6d-317ae81b6b83",
+      "name": "base",
+      "folder": "base",
+      "directions": [
+        "unknown"
+      ],
+      "animations": {
+        "seamless-idle-loop-elven-bow-stays-still-emerald": {
+          "frame_count": 8,
+          "directions": [
+            "unknown"
+          ]
+        }
+      }
+    }
+  ],
+  "export_version": "3.0"
+}
