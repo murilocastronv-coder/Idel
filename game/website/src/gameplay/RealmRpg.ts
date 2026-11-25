@@ -90,6 +90,9 @@ export class RealmRpg {
   private autoMs: number = 0;
   private autoWalkMs: number = 0;
   private autoTarget?: Mob;
+  private autoIgnore = new Map<Mob, number>();
+  private autoLast = { x: 0, y: 0 };
+  private autoStill: number = 0;
   private hudMs: number = 0;
   private accountMessage: string = "";
   constructor(private scene: Phaser.Scene, private player: PlayerController, private map: LoadedMap) {
@@ -129,7 +132,7 @@ export class RealmRpg {
     this.weaponShots.destroy(); this.weaponShots=new WeaponProjectiles(this.scene,map);
     this.monsterCombat.destroy();this.monsterCombat=new MonsterCombat(this.scene,map);
     for(const m of this.mobs){m.agent.destroy();m.label.destroy();m.bar.destroy();}
-    this.mobs=[];this.wingMaster.destroy();this.masterLabel.destroy();this.masterButton.remove();
+    this.mobs=[];this.autoTarget=undefined;this.autoIgnore.clear();this.wingMaster.destroy();this.masterLabel.destroy();this.masterButton.remove();
     this.map=map;this.home={...this.player.worldPosition};this.createMobs();this.createWingMaster();
     this.log(`Chegou em ${map.map.name}.`);this.render();
   }
@@ -245,6 +248,7 @@ export class RealmRpg {
     this.masterLabel=this.scene.add.text(p.x,p.y-27,"MESTRE DAS ASAS",{fontFamily:"Arial",fontSize:"8px",color:"#f4d78e",stroke:"#15151d",strokeThickness:3}).setOrigin(.5);setYDepth(this.masterLabel,p.y+10,2);
     this.masterButton=document.createElement("button");this.masterButton.dataset.action="master";this.masterButton.textContent="E · Conversar com Mestre das Asas";this.masterButton.style.cssText="position:absolute;left:50%;bottom:180px;transform:translateX(-50%);pointer-events:auto;padding:12px;border:1px solid #c8a56b;background:#171d29;color:#f4d78e;border-radius:8px;max-width:90%";this.masterButton.hidden=true;this.root.append(this.masterButton);
   }
+  private respawnFor(mob: Mob): number { const base=mob.classic?.respawnMs ?? (mob.boss ? 22000 : 10000); return mob.boss ? Math.round(base*0.6) : Math.max(4000, Math.round(base*0.3)); }
   private hitMob(mob: Mob,x: number,y: number,strength: number): boolean {
     if (!this.active || this.inSafeZone(this.player.worldPosition) || this.inSafeZone(mob.sprite) || mob.dead || !mob.agent.hit(x,y,strength)) return false;
     const dmg = Math.max(1,Math.round((this.damage + (this.spellHit ? (this.save.hero === "Feiticeiro" ? 22 : 10) : 0))*this.powerMultiplier)-(mob.classic?.defense??0));
@@ -252,7 +256,8 @@ export class RealmRpg {
     if(mob.classic)mob.hurtMs=mob.agent.playControlled("hurt",mob.facing,true);
     mob.health = Math.max(0,mob.health-dmg); this.float(mob.sprite.x,mob.sprite.y-18,`${dmg}`,"#f6d596");
     if (!mob.health) {
-      mob.dead = mob.classic?.respawnMs ?? (mob.boss ? 22000 : 10000);
+      // Respawn mais rápido: monstros comuns em ~4-6 s, bosses em 60% do tempo original.
+      mob.dead = this.respawnFor(mob);
       mob.hurtMs=0;
       if(mob.classic){mob.sprite.clearTint();mob.agent.playControlled("death",mob.facing,true);}else mob.sprite.setVisible(false); mob.label.setVisible(false); mob.bar.clear();
       const xp = hardKillXp(mob.classic?.exp ?? (mob.boss ? 120 : 35), this.cloud.vip); const gold = Math.round((mob.classic?.zen ?? (mob.boss ? 100 : 20)) * (this.cloud.vip==="diamante"?1.5:this.cloud.vip==="ouro"?1.25:1));
@@ -311,7 +316,7 @@ export class RealmRpg {
     if(this.auto&&!this.touchMovement.engaged)this.autoHunt(delta);
     this.elapsed+=delta; this.mana=Math.min(80,this.mana+delta*.004); this.health=Math.min(this.maxHealth,this.health+delta*.0007);
     for(const m of this.mobs) {
-      if(m.dead) { if(m.classic){m.agent.update(delta);if(m.dead<(m.classic.respawnMs-1200))m.sprite.setVisible(false);} m.dead-=delta; if(m.dead<=0) {m.dead=0;m.health=m.max;m.sprite.setPosition(m.home.x,m.home.y).setVisible(true);m.label.setVisible(true);m.path=[];m.attackMs=0;m.hurtMs=0;m.cooldown=1800;if(m.classic)m.agent.playControlled("idle",m.facing);} continue; }
+      if(m.dead) { if(m.classic){m.agent.update(delta);if(m.dead<(this.respawnFor(m)-1200))m.sprite.setVisible(false);} m.dead-=delta; if(m.dead<=0) {m.dead=0;m.health=m.max;m.sprite.setPosition(m.home.x,m.home.y).setVisible(true);m.label.setVisible(true);m.path=[];m.attackMs=0;m.hurtMs=0;m.cooldown=1800;if(m.classic)m.agent.playControlled("idle",m.facing);} continue; }
       if(m.classic){this.updateClassicMob(m,delta);continue;}
       const beforeX=m.sprite.x,beforeY=m.sprite.y;
       m.agent.update(delta); m.cooldown-=delta; m.repath-=delta;
@@ -337,6 +342,7 @@ export class RealmRpg {
       const slot=this.slot;try{localStorage.removeItem(slotKey(slot));}catch{/* ignore */}
       void (this.cloud.loggedIn?this.cloud.deleteChar(slot):Promise.resolve(true)).finally(()=>location.reload());return;}
     if(action==="account"){this.showAccount();return;}
+    if(action==="adm"){this.persist();void this.cloud.flush().finally(()=>{location.href="/status";});return;}
     if(action==="discord"){// Abre o Discord em outra aba/app sem sair do jogo (só sai se o navegador bloquear a aba nova).
       const w=window.open("https://discord.gg/bSEx5JYUF7","_blank");if(w){try{w.opener=null;}catch{/* ignore */}}else{this.persist();location.href="https://discord.gg/bSEx5JYUF7";}return;}
     if(action==="site"){this.persist();void this.cloud.flush().finally(()=>{location.href="/";});return;}
@@ -410,7 +416,7 @@ export class RealmRpg {
     if(action==="R"){if(this.targets.some(m=>Phaser.Math.Distance.Between(m.sprite.x,m.sprite.y,this.player.sprite.x,this.player.sprite.y)<100)){this.log("Afaste-se dos monstros para retornar ao refúgio.");return;}this.player.teleportTo(this.home.x,this.home.y);this.health=this.maxHealth;this.mana=80;this.log("Refúgio: vida e mana recuperadas.");}
     if(action==="attack" && this.active && this.inSafeZone(this.player.worldPosition)){this.banner("Zona segura: saia da cidade para lutar.");return;}
     if(action==="attack" && this.active){const range=!this.unarmed&&(this.save.hero==="Arqueiro"||this.save.hero==="Feiticeiro")?260:52;const near=this.targets.filter(m=>Phaser.Math.Distance.Between(m.sprite.x,m.sprite.y,this.player.sprite.x,this.player.sprite.y)<range).sort((a,b)=>Phaser.Math.Distance.Between(a.sprite.x,a.sprite.y,this.player.sprite.x,this.player.sprite.y)-Phaser.Math.Distance.Between(b.sprite.x,b.sprite.y,this.player.sprite.x,this.player.sprite.y))[0];this.player.performAttack(near?directionFromVector(near.sprite.x-this.player.sprite.x,near.sprite.y-this.player.sprite.y):this.player.facing);}
-    if(action==="auto"){this.auto=!this.auto;this.autoMs=0;if(!this.auto)(window as unknown as {stopWalk?:()=>void}).stopWalk?.();this.banner(this.auto?"Auto caça ligada":"Auto caça desligada");this.log(this.auto?"AUTO: atacando monstros próximos automaticamente.":"AUTO desligado.");this.render();return;}
+    if(action==="auto"){this.auto=!this.auto;this.autoMs=0;this.autoTarget=undefined;this.autoIgnore.clear();this.autoStill=0;if(!this.auto)(window as unknown as {stopWalk?:()=>void}).stopWalk?.();this.banner(this.auto?"Auto caça ligada":"Auto caça desligada");this.log(this.auto?"AUTO: atacando monstros próximos automaticamente.":"AUTO desligado.");this.render();return;}
     if(action==="spell" && this.active){if(this.inSafeZone(this.player.worldPosition)){this.banner("Combate desativado na zona segura.");return;}const near=this.nearestTarget(260);this.player.performSpell(near?directionFromVector(near.sprite.x-this.player.sprite.x,near.sprite.y-this.player.sprite.y):this.player.facing);return;}
     if(action==="E") {if(this.nearMaster)this.action("master");else this.castPower(1);return;}
     if(action.startsWith("power:")){if(this.inSafeZone(this.player.worldPosition)){this.banner("Combate desativado na zona segura.");return;}const slot=Number(action.slice(6));if(Number.isInteger(slot)&&slot>=0&&slot<4)this.castPower(slot);return;}
@@ -488,9 +494,16 @@ export class RealmRpg {
     if(this.health<this.maxHealth*.35&&this.save.potions>0){this.action("Q");}
     const p=this.player.worldPosition;
     // Alvo fixo: continua no mesmo monstro até ele morrer (ou fugir para longe), sem ficar trocando.
-    const cur=this.autoTarget&&!this.autoTarget.dead&&!this.inSafeZone(this.autoTarget.sprite)?this.autoTarget:null;
+    const now=this.elapsed;
+    for(const [m,until] of this.autoIgnore)if(until<now||m.dead)this.autoIgnore.delete(m);
+    // Travado (3 s sem andar nem bater): larga esse alvo por 8 s e procura outro.
+    const moved=Math.hypot(p.x-this.autoLast.x,p.y-this.autoLast.y)>2||this.player.attackState.active;
+    if(moved){this.autoLast={x:p.x,y:p.y};this.autoStill=0;}else this.autoStill+=140;
+    if(this.autoStill>3000&&this.autoTarget){this.autoIgnore.set(this.autoTarget,now+8000);this.autoTarget=undefined;this.autoStill=0;(window as unknown as {stopWalk?:()=>void}).stopWalk?.();}
+    const ok=(m:Mob)=>this.mobs.includes(m)&&!m.dead&&!this.inSafeZone(m.sprite)&&!this.autoIgnore.has(m);
+    const cur=this.autoTarget&&ok(this.autoTarget)?this.autoTarget:null;
     const curD=cur?Math.hypot(cur.sprite.x-p.x,cur.sprite.y-p.y):Infinity;
-    const prey=cur&&curD<1100?{m:cur,d:curD}:this.mobs.filter(m=>!m.dead&&!this.inSafeZone(m.sprite)).map(m=>({m,d:Math.hypot(m.sprite.x-p.x,m.sprite.y-p.y)})).filter(o=>o.d<1100).sort((a,b)=>a.d-b.d)[0];
+    const prey=cur?{m:cur,d:curD}:this.mobs.filter(ok).map(m=>({m,d:Math.hypot(m.sprite.x-p.x,m.sprite.y-p.y)})).sort((a,b)=>a.d-b.d)[0];
     this.autoTarget=prey?.m;
     const walk=window as unknown as {walkTo?:(x:number,y:number)=>void;stopWalk?:()=>void};
     if(!prey){walk.stopWalk?.();return;}
@@ -511,6 +524,7 @@ export class RealmRpg {
     let gotGear=false;
     for(const it of this.cloud.items){
       if(it.startsWith("set:")){const ids=ARMOR_ITEMS.filter(i=>i.setId===it.slice(4)).map(i=>i.id);const cur=this.save.gearOwned??[];const add=ids.filter(id=>!cur.includes(id));if(add.length){this.save.gearOwned=[...cur,...add];gotGear=true;}}
+      if(it==="elemental:all"){const cur=this.save.elementalOwned??[];const add=ELEMENTAL_WEAPONS.map(i=>i.id).filter(id=>!cur.includes(id));if(add.length){this.save.elementalOwned=[...cur,...add];gotGear=true;}}
       if(it==="glacial:all"){const cur=this.save.glacialOwned??[];const add=GLACIAL_ITEMS.map(i=>i.id).filter(id=>!cur.includes(id));if(add.length){this.save.glacialOwned=[...cur,...add];gotGear=true;}}
     }
     if(gotGear){try{localStorage.setItem(slotKey(this.slot),JSON.stringify(this.save));}catch{/* ignore */}this.banner("Compra entregue! Veja em Sets / Glacial.");this.render();}
@@ -544,7 +558,7 @@ export class RealmRpg {
     const esc=(t:string)=>t.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
     const msg=this.accountMessage?`<p class="rpg-account-msg">${esc(this.accountMessage)}</p>`:"";
     const body=this.cloud.loggedIn
-      ?`<p>Conectado como <b>${esc(this.cloud.username!)}</b>. Seu herói (nível ${this.save.level}) é salvo automaticamente na nuvem e pode ser continuado em qualquer aparelho.</p>${msg}<div class="rpg-account-actions"><button class="rpg-primary" data-action="cloud-save">☁ Salvar agora</button><button data-action="logout">Sair da conta</button><button data-action="account-back">Voltar</button></div>`
+      ?`<p>Conectado como <b>${esc(this.cloud.username!)}</b>. Seu herói (nível ${this.save.level}) é salvo automaticamente na nuvem e pode ser continuado em qualquer aparelho.</p>${msg}<div class="rpg-account-actions"><button class="rpg-primary" data-action="cloud-save">☁ Salvar agora</button>${this.cloud.username?.toLowerCase()==="murilonv"?`<button data-action="adm">⚙ Painel ADM</button>`:""}<button data-action="logout">Sair da conta</button><button data-action="account-back">Voltar</button></div>`
       :`<p>Entre com a mesma conta do jogo antigo (usuário ou e-mail) ou crie uma nova. Sem conta, o progresso fica salvo só neste aparelho.</p>${msg}
         <div class="rpg-account-forms"><form data-form="login"><h3>Entrar</h3><input name="login" autocomplete="username" placeholder="Usuário ou e-mail" maxlength="254"><input name="password" type="password" autocomplete="current-password" placeholder="Senha" maxlength="128"><button class="rpg-primary" data-action="login">Entrar</button></form>
         <form data-form="register"><h3>Criar conta</h3><input name="username" autocomplete="username" placeholder="Usuário (2-20, qualquer letra)" maxlength="20"><input name="email" type="email" autocomplete="email" placeholder="E-mail" maxlength="254"><input name="password" type="password" autocomplete="new-password" placeholder="Senha (8+, letras e números)" maxlength="128"><button data-action="register">Criar conta</button></form></div>

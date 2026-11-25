@@ -56,6 +56,9 @@ function premium() {
 function expandItem(item) {
   if (item.startsWith('wing:')) return { wingsOwned: [item.slice(5)] };
   if (item.startsWith('set:')) return { gearOwned: [0, 1, 2, 3, 4].map((i) => `armor:${item.slice(4)}:${i}`) };
+  if (item === 'elemental:all') {
+    return { elementalOwned: Array.from({ length: 16 }, (_, i) => `elemental:weapon:${i}`) };
+  }
   if (item === 'glacial:all') {
     const ids = [];
     for (let c = 0; c < 5; c++) for (let i = 0; i < 6; i++) ids.push(`glacial:${c}:${i}`);
@@ -65,4 +68,9 @@ function expandItem(item) {
   return {};
 }
 
-module.exports = { SRC, literal, stringConst, wingShop, premium, expandItem };
+/** Todos os conjuntos de armadura do jogo (para o painel de ADM dar de presente). */
+function armorSets() {
+  return literal('ArmorSets.ts', 'ARMOR_SETS').map((s) => ({ id: `set:${s.id}`, name: `Conjunto ${s.name}`, rarity: s.rarity, source: s.source || 'loja', level: s.level }));
+}
+
+module.exports = { SRC, literal, stringConst, wingShop, premium, expandItem, armorSets };

@@ -133,7 +133,9 @@
     if (!products) return '';
     var o = function (id, name) { return '<option value="' + esc(id) + '">' + esc(name) + '</option>'; };
     return '<optgroup label="VIP">' + products.vip.map(function (v) { return o(v.id, v.name + ' ' + v.days + ' dias'); }).join('') + '</optgroup>' +
-      '<optgroup label="Conjuntos">' + products.packs.map(function (p) { return o(p.id, p.name); }).join('') + '</optgroup>' +
+      '<optgroup label="💎 Conjuntos Premium">' + products.packs.map(function (p) { return o(p.id, p.name); }).join('') + '</optgroup>' +
+      '<optgroup label="⚔ Conjuntos de queda e da loja">' + (products.sets || []).map(function (p) { return o(p.id, p.name + ' (' + p.rarity + ', nv.' + p.level + ')'); }).join('') + '</optgroup>' +
+      '<optgroup label="Armas">' + (products.extras || []).map(function (p) { return o(p.id, p.name); }).join('') + '</optgroup>' +
       '<optgroup label="Serviços (1 uso)">' + products.services.map(function (s) { return o(s.id, s.name); }).join('') + '</optgroup>' +
       '<optgroup label="Asas">' + products.wings.map(function (w) { return o(w.id, w.name); }).join('') + '</optgroup>';
   }

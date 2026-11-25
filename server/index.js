@@ -8,7 +8,7 @@ const zlib = require('zlib');
 const { WSServer } = require('./ws');
 const sec = require('./security');
 const crypto = require('crypto');
-const { wingShop, premium, expandItem } = require('../scripts/game-data');
+const { wingShop, premium, expandItem, armorSets } = require('../scripts/game-data');
 
 const PORT = Number(process.env.PORT || 3000);
 const ROOT = path.join(__dirname, '..', 'game', 'website', 'out');
@@ -187,7 +187,7 @@ async function handleAdmin(req, res, url) {
   if (p === '/api/admin/give' && req.method === 'POST') {
     const body = await readJson(req);
     const accountId = Number(body.accountId);
-    const product = productFor(String(body.item || ''));
+    const product = productFor(String(body.item || '')) || adminOnlyProduct(String(body.item || ''));
     if (!Number.isInteger(accountId) || !product) throw fail(400, 'Conta ou item inválido.');
     const days = product.vip ? Math.max(1, Math.min(365, Number(body.days) || product.vip.days)) : 0;
     await db.tx(async (t) => {
@@ -208,9 +208,19 @@ async function handleAdmin(req, res, url) {
   }
   if (p === '/api/admin/products' && req.method === 'GET') {
     return json(res, 200, { ok: true, vip: PREMIUM.vip, packs: PREMIUM.packs.filter((x) => !x.hidden), services: PREMIUM.services,
+      sets: ARMOR_SETS_ALL.filter((x) => x.source !== 'premium'), extras: [{ id: 'elemental:all', name: 'Arsenal Elemental completo (16 armas)' }],
       wings: SHOP.filter((w) => !w.free).map((w) => ({ id: `wing:${w.id}`, name: `Asa ${w.family} Nv.${w.level}` })) });
   }
   throw fail(404, 'not found');
+}
+
+const ARMOR_SETS_ALL = armorSets();
+/** Itens que só o ADM pode dar (não estão à venda): conjuntos de queda/loja e o Arsenal Elemental. */
+function adminOnlyProduct(item) {
+  const set = ARMOR_SETS_ALL.find((x) => x.id === item);
+  if (set) return { item, cents: 0, name: set.name, once: true };
+  if (item === 'elemental:all') return { item, cents: 0, name: 'Arsenal Elemental completo', once: true };
+  return null;
 }
 
 function clientIp(req) {

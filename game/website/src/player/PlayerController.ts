@@ -75,6 +75,8 @@ export class PlayerController {
   private jumpElapsedMs = 0;
   private jumpSpeed = 0;
   private visualYOffset = 0;
+  /** Balanço dos passos: alguns desenhos (túnicas) quase não mexem as pernas andando de frente. */
+  private stepPhase = 0;
   private jumping = false;
   private unarmed: boolean = false;
   private nextPunchStrong: boolean = false;
@@ -238,8 +240,13 @@ export class PlayerController {
         this.elevation.level,
       );
       this.absorbLedgeHop(moved.y, speed, deltaMs);
+      const stepped = Math.hypot(moved.x - this.groundX, moved.y - this.groundY) > 0.01;
       this.groundX = moved.x;
       this.groundY = moved.y;
+      // Passos: sobe/desce 2 px e inclina de leve a cada passo (mais rápido correndo).
+      this.stepPhase = stepped ? this.stepPhase + deltaMs / 1000 * (isRunning ? 13 : 9) : 0;
+      this.visualYOffset = stepped ? -Math.abs(Math.sin(this.stepPhase)) * 2 : 0;
+      this.sprite.setRotation(stepped ? Math.sin(this.stepPhase) * 0.045 : 0);
       this.playRole(
         this.hopAnimMs > 0
           ? ["jump", "walk", "idle"]
@@ -249,6 +256,8 @@ export class PlayerController {
       );
     } else {
       this.visualYOffset = 0;
+      this.stepPhase = 0;
+      this.sprite.setRotation(0);
       this.playRole(["idle"]);
     }
 
@@ -310,6 +319,7 @@ export class PlayerController {
   }
 
   private startAction(actionName: PlayerActionName): boolean {
+    this.sprite.setRotation(0);
     if (this.activeAction || this.actionElapsedMs > 0) return false;
     const punch = this.unarmed;
     const strong = actionName === "spell" || this.nextPunchStrong;
