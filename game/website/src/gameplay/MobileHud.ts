@@ -34,6 +34,7 @@ const MENU: [action: string, icon: string, label: string][] = [
   ["pvp", "⚔️", "PvP"],
   ["account", "👤", "Conta"],
   ["discord", "💬", "Discord"],
+  ["lang", "🌐", (window as unknown as { MUI18N?: { label: () => string } }).MUI18N?.label() ?? "EN"],
   ["site", "🏠", "Site"],
 ];
 

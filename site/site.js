@@ -5,6 +5,10 @@
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var fmt = function (n) { return Number(n).toLocaleString('pt-BR'); };
 
+  // Idioma PT/EN
+  var lt = $('lang-toggle');
+  if (lt && window.MUI18N) { lt.textContent = MUI18N.label(); lt.addEventListener('click', function () { MUI18N.toggle(); }); }
+
   // Menu do celular
   var toggle = document.querySelector('.menu-toggle'), menu = $('menu');
   toggle.addEventListener('click', function () { var o = menu.classList.toggle('open'); toggle.setAttribute('aria-expanded', o); });

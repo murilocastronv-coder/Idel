@@ -179,3 +179,5 @@ footer{text-align:center;padding:26px 20px 40px;color:#6f7775;font-size:12px;bor
 .btn.discord{background:linear-gradient(#6b74f5,#4752c4);border-color:#8c93ff;color:#fff}
 .final .btn{margin:6px}
 @media (max-width:860px){.nav .btn.discord{display:none}}
+.lang-toggle{background:#1a2024;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 10px;font:700 12px Inter,sans-serif;cursor:pointer;white-space:nowrap}
+@media (max-width:860px){.lang-toggle{margin-left:auto}.nav .btn.btn-gold{margin-left:0}}

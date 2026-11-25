@@ -10,6 +10,13 @@ import "./styles.css";
 {
   const factory = Phaser.GameObjects.GameObjectFactory.prototype as unknown as Record<string, (...args: unknown[]) => Phaser.GameObjects.Text>;
   const original = factory.text;
+  // Inglês/português: textos desenhados no mapa (nomes, monstros, avisos) passam pelo tradutor.
+  const textProto = Phaser.GameObjects.Text.prototype as unknown as { setText: (v: string | string[]) => unknown };
+  const setText = textProto.setText;
+  textProto.setText = function (this: unknown, value: string | string[]) {
+    const i18n = (window as unknown as { MUI18N?: { t: (s: string) => string } }).MUI18N;
+    return setText.call(this, i18n && typeof value === "string" ? i18n.t(value) : value);
+  };
   factory.text = function (this: unknown, ...args: unknown[]) {
     const t = original.apply(this, args);
     t.setResolution(Math.min(5, Math.max(3, Math.ceil((window.devicePixelRatio || 1) * 2))));
