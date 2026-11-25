@@ -7,7 +7,7 @@
   "usage": [
     "Read this file before choosing character states or animation clip names.",
     "Animation name is the exact physical clip key. display_name and source_name describe it; aliases are semantic role hints only.",
-    "Resolve the exact stateFolder and clipName with the resolver this file exports \u2014 resolveCharacterAnimation(manifest, candidates, { state?, direction? }), or selectCharacterState(...) where that is what it exports.",
+    "Resolve the exact stateFolder and clipName with the resolver this file exports — resolveCharacterAnimation(manifest, candidates, { state?, direction? }), or selectCharacterState(...) where that is what it exports.",
     "Prefer an exact user-requested display name or clip name before generic roles such as idle, walk, run, jump, or attack.",
     "CharacterAgent resolves idle, movement, and attack clips across the full manifest and switches state folders automatically.",
     "Rotations are static poses only. Use animator.setPose(...) or characterRotationFrameName(...) for a deliberate static pose; setClip('idle', ...) always means a real animated idle clip.",
@@ -114,6 +114,32 @@
           ],
           "path_pattern": "idle/animations/walk/{direction}/frame_{frame}.png",
           "atlas_frame_pattern": "idle/animations/walk/{direction}/frame_{frame}"
+        },
+        {
+          "name": "run",
+          "id": "run-mago-arcano-v3",
+          "source_name": "running-8-frames",
+          "display_name": "Correr",
+          "description": "running",
+          "generation_model": "user-upload",
+          "frame_count": 8,
+          "fps": 10,
+          "directions": [
+            "south",
+            "east",
+            "north",
+            "west",
+            "south-east",
+            "north-east",
+            "north-west",
+            "south-west"
+          ],
+          "loop": true,
+          "aliases": [
+            "run"
+          ],
+          "path_pattern": "idle/animations/run/{direction}/frame_{frame}.png",
+          "atlas_frame_pattern": "idle/animations/run/{direction}/frame_{frame}"
         }
       ]
     }

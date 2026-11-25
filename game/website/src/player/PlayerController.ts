@@ -252,7 +252,7 @@ export class PlayerController {
           ? ["jump", "walk", "idle"]
           : isRunning
             ? ["run", "walk", "idle"]
-            : ["walk", "idle"],
+            : ["run", "walk", "idle"], // quem tem animação de correr (ex.: Mago Arcano) usa ela ao andar
       );
     } else {
       this.visualYOffset = 0;
