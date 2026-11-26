@@ -598,6 +598,10 @@ const server = http.createServer(async (req, res) => {
     if (!f) return send(res, 404, 'not found');
     return serveFile(req, res, f, 'no-cache');
   } catch (e) {
+    // Banco de dados fora do ar (ex.: plano vencido): resposta clara em vez de "Erro no servidor".
+    if (!e.status && /ENOTFOUND|ECONNREFUSED|ETIMEDOUT|terminating connection|Connection terminated|timeout exceeded/i.test(String(e.message))) {
+      e.status = 503; e.message = 'Banco de dados fora do ar no momento. Seu progresso continua salvo neste aparelho; tente de novo mais tarde.';
+    }
     const status = e.status || 500;
     if (status >= 500) console.error('[erro]', req.method, p, e);
     if (!res.headersSent) json(res, status, { ok: false, error: status >= 500 && status !== 503 ? 'Erro no servidor.' : e.message });

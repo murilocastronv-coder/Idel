@@ -37,6 +37,9 @@ const collectedErrors: GameError[] = [];
 function showFatalError(message: string): void {
   console.error("[GAME_ERROR]", message);
   collectedErrors.push({ message, isWarning: false });
+  // A tela vermelha de erro é ferramenta de teste: para os jogadores ela só aparece com ?debug.
+  // (O navegador Samsung dispara erros vazios "unknown" de scripts dele mesmo, que cobriam o jogo.)
+  if (!/[?&]debug\b/.test(location.search)) return;
   let overlay = document.getElementById("error-overlay");
   if (!overlay) {
     overlay = document.createElement("div");
